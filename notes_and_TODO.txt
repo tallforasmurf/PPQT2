@@ -1,0 +1,100 @@
+
+Program and module structure
+============================
+
+mainwindow.py creates the main window and its menus:
+
+	it instantiates all the other panels
+
+	? It has the code for panel drag-out and drop back
+
+	It maintains a list of open Book objects
+
+	It knows which Book is the frontmost
+
+	Each Book, upon focus-in event, signals Main to
+		make it the frontmost if not already
+
+	On an actual change in the frontmost Book the main
+		somehow? changes all book-related
+		panels to display that book's stuff
+
+	filemenu.py is the code for all file-menu operations
+		calling the frontmost book object as needed
+
+	Instantiates and manages panels the are global to all books
+
+		helppanel.py displays the Help
+
+		findpanel.py displays and executes Find
+
+		flowpanel.py displays the Flow controls and executes
+			reflow and html conversion
+
+
+book.py defines class Book to represent one book:
+
+	it instantiates the metadata objects
+
+	it supports load_old, load_new, and load_gg
+	it supports export_gg and save_book
+		-- methods called from filemenu.py
+
+	it holds the book text as a QPlainTextDocument
+
+metadata objects created by a Book. These act as data models
+for the view objects:
+
+	metamanager.py to direct metadata load/save
+
+	worddata.py to hold word and character census data
+
+	notesdata.py to hold user notes
+
+	pagesdata.py to hold page table info
+
+	fnotedata.py to hold footnote data
+
+visual objects created by a Book; these are in the abstract,
+data views on the models implemented by the Book and metadata objects.
+
+	editpanel.py to implement the QPlainTextEditor
+		inc. keyboard cmds and syntax highlighter
+
+	imagepanel.py to display page images
+		draws data from pagesdata
+
+	wordpanel.py to display the Words panel
+		draws data from and updates worddata
+
+	charspanel.py to display the Chars panel
+		draws data from worddata
+
+	notespanel.py to display the Notes panel
+		draws data from notesdata
+
+	pagepanel.py to display the Pages panel
+		draws data from and updates pagesdata
+
+	viewpanel.py to display the Preview
+		draws data from the Book
+
+	?loupepanel.py to display bookloupe diagnostics
+		draws data from the Book
+
+	?w3cpanel.py to display w3c validator errors
+		draws data from the Book
+
+Test modules are stored in the ppqt/tests folder.
+For every name.py there is to be a tests/name_test.py that
+performs a unit test, executed by py.test
+
+TODO:
+
+Implement all above as stub files (test files are stubs that
+just "assert '' == 'I am not implemented'"). Commit and push.
+
+Read up on logging. All modules are to use log INFO and log ERROR extensively.
+
+Read up on translations. All user-visible labels and messages are to use tr().
+
