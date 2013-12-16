@@ -1,16 +1,38 @@
+__license__ = '''
+ License (GPL-3.0) :
+    This file is part of PPQT Version 2.
+    PPQT is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You can find a copy of the GNU General Public License in the file
+    extras/COPYING.TXT included in the distribution of this program, or see:
+    <http://www.gnu.org/licenses/>.
+'''
+__version__ = "2.0.0"
+__author__  = "David Cortesi"
+__copyright__ = "Copyright 2013, 2014 David Cortesi"
+__maintainer__ = "David Cortesi"
+__email__ = "tallforasmurf@yahoo.com"
 
 '''
 
                           WORDDATA.PY
 
-The class defined here makes an object to build and store the census of
+Defines a class for an object to build and store the census of
 word-tokens and characters of a document, with their properties, and also
 the good-words, bad-words, and scannos lists, and implement spell-check.
 
 One of these objects is created by each Book object. It is:
   * initialized by the Book while loading or creating metadata.
   * called by the Book during save, to write metadata.
-  * interrogated by the Chars and Words panels
+  * acts as Data Model to the Chars and Words view panels
   * interrogated by the Edit syntax highlighter checking scannos and misspelled words
   * called from the Word panel to add to the good-words list
   * called to recheck spelling when the default spelling dictionary is changed.
@@ -23,22 +45,16 @@ check(word,dict_tag) method returning True when word checks correct against
 dict_tag or the default dict. If the user chooses a new spelling dictionary,
 recheck_spelling is passed a new speller object.
 
-    Save Process
-
-During a Save, the metamanager calls the methods good_save(),
-bad_save(), scanno_save(), vocab_save() and char_save() in some order,
-passing each a text stream to write.
-
     Load Process
 
-On creation this object registers with the metamanager to read and write
-the good-words, bad-words, and scannos metadata sections. The Book object
-creates or locates the streams for these, and they are passed to
+On creation this object registers with the metamanager to read and write the
+scanno sections for word-census, char-census, good-words, bad-words, and
+scannos Good-words, bad-words, and scannos sections are handled by
 good_read(), bad_read() and scanno_read() respectively, and saved in separate
-sets. (Sets, because they basically have no properties aside from being good
-or bad or scanno-ish.)
+sets. (Sets, because these words basically have no properties aside from
+being good or bad or scanno-ish.)
 
-When loading an existing doc, the metadata section for vocabulary is passed
+When loading an existing book, the metadata section for vocabulary is passed
 to vocab_read() which uses it to initialize the vocabulary dict. The info on
 these lines can differ between version-1 and -2 metadata or if a word has
 been edited into the metadata by the user.
@@ -64,10 +80,16 @@ edited out.
 Characters are stored in a sorteddict. Their only property is their
 count of occurences, tallied during the census of each line.
 
+    Save Process
+
+During a Save, the metamanager calls the methods good_save(), bad_save(),
+scanno_save(), vocab_save() and char_save() in some order, passing each a
+text stream to write.
+
     Storing Word-tokens
 
 It is not unusual to have 10k-20k unique word tokens, hence performance is an
-issue. We use a blist sorteddict to record the tokens, with the token as key
+issue. We use a blist.sorteddict to record the tokens, with the token as key
 and its value a list of [count, property_set].
 
 The tokens are Python unicode strings. We flatten them by applying NFKC
@@ -119,9 +141,9 @@ The Chars panel calls char_count() for the count and char_at(n) for a tuple of
 The Edit syntax highlighter, when misspelled highlights are requested, calls
 spelling_test(tokstr) and gets back "XX not in" that token's properties.
 Because the user is editing all the time, it is possible the tested token is
-new to the list; it is processed and entered at this time. The vast majority
-of the time, word_test() finds the word in the table and returns an answer in
-O(log2(N)) time.
+new to the list; if so it is processed and entered at this time. The vast
+majority of the time, word_test() finds the word in the table and returns an
+answer in O(log2(N)) time.
 
 When scanno highlighting is on, the syntax highlighter also calls scanno_test()
 to see if a token is in the scanno set.
