@@ -1,6 +1,25 @@
-from __future__ import print_function
-from __future__ import unicode_literals
-from future_builtins import *
+__license__ = '''
+ License (GPL-3.0) :
+    This file is part of PPQT Version 2.
+    PPQT is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You can find a copy of the GNU General Public License in the file
+    extras/COPYING.TXT included in the distribution of this program, or see:
+    <http://www.gnu.org/licenses/>.
+'''
+__version__ = "2.0.0"
+__author__  = "David Cortesi"
+__copyright__ = "Copyright 2013, 2014 David Cortesi"
+__maintainer__ = "David Cortesi"
+__email__ = "tallforasmurf@yahoo.com"
 
 
 '''
@@ -10,7 +29,7 @@ from future_builtins import *
 The class defined here supervises the loading and saving of metadata, and
 provides a level of indirection (symbolic binding) between file management and
 data management. One object of this class is created by a Book to handle the
-metadata for that book. Also included: method to import a Guiguts .bin file,
+metadata for that book. Also included: a method to import a Guiguts .bin file,
 convert to a metadata stream, and then load that.
 
 The .meta data file comprises a number of sections that are marked
@@ -24,8 +43,9 @@ It also contains a number of one-line items of the form:
 
     {{SECTIONNAME single-value}}
 
-Because we expect some users will sometimes edit .meta files, we impose no
-rules about:
+Because we expect some users will sometimes edit .meta files, first,
+the file must be editable UTF-8 (no binary data, or binary data must
+be converted to hex characters) and second, we freely allow:
     * blank lines within sections,
     * blank lines between sections,
     * leading and trailing spaces on section header/footer lines or data lines
@@ -33,11 +53,11 @@ rules about:
     * order of data lines (the user might stick in lines anywhere)
     * sections occuring multiple times (usually just additive)
 
-We want to encapsulate knowledge of the content and format of metadata
-in the classes that create and use it. We don't want that knowledge to
-leak into the load/save logic. So we set up a level of indirection in the
-form of a dict that relates SECTIONNAMEs to the functions that read and
-write the data in those sections.
+We want to encapsulate knowledge of the content and format of metadata in the
+classes that create and use it. We do not want that knowledge to leak into
+the load/save logic as it did in version 1. So we set up a level of
+indirection in the form of a dict that relates SECTIONNAMEs to the functions
+that read and write the data in those sections.
 
 The key to self.section_dict is some SECTIONNAME; the value is [reader, writer] where
 those are functions. The Register(section,reader,writer) function is called
