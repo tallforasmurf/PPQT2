@@ -166,12 +166,6 @@ Other resource modules:
 
 TODO:
 
-Implement all above as stub files with
-	* license boilerplate
-	* other global info
-	* preliminary prolog
-	* test file stubs that assert 'implemented' == 'not yet'
-
 Read up on logging. All modules are to use log INFO and log ERROR extensively.
 	http://docs.python.org/3.3/library/logging.html
 
