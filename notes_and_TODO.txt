@@ -1,100 +1,209 @@
 
+New Hierarchy of auxiliary files
+================================
+
+	distribution-folder/extras is R/O and protected, can change
+		on any update w/o apology
+
+	File menu option "Choose Local Extras..." selects a folder
+		for local extra stuff, choice stored in Settings
+		If selected folder n'existe pas, offer to populate it
+		from distrib/extras
+
+	distrib/extras/help.html is the help displayed by the Help panel
+		this is a move from distrib/pqhelp.html. NO support
+		for local/extras/help.html because help contents are
+		part of app and need to be updated in sync with it.
+
+	Spelling dictionary:
+		When mainwindow starts up it gets a list of available
+		dic/aff pairs from distrib/extras/dicts with override
+		from local/extras/dicts if defined.
+
+		When Book starts up it gets mainwindow dict list but
+		also abspath of book folder: adds any dic/aff pairs
+		from book folder overriding mainwindow list items.
+
+		Book makes own spellcheck object with that dict list.
+
+	Scannos:
+		Change of distributed scanno file name from en-common*.* to
+			e.g. scannos-en.txt, scannos-fr.utf)
+		When Book is called at load_new() File will provide
+		a handle to a scannos stream or None. Search is:
+			- book folder/scannos*.*
+			- local/extras/scannos*.*
+			- distrib/extras/scannos*.*
+		File>Load Scannos calls Book.load_scannos() to
+			refresh/replace scanno list. Book is
+			responsible for causing re-draw of highlights.
+
+	Find Button files:
+		File > Load Find Buttons initializes file dialog to local/extras
+		folder if any, else to distrib/extras folder.
+
+		n.b. not going to start in the front book's folder because we
+		are not supporting book-unique find buttons, they are global.
+
+		Why not? Because of complexity of (a) saving Find buttons in
+		.meta file, (b) API to reload Find buttons whenever a
+		Book comes to the front, (c) which buttons to save/load from
+		settings on shutdown/startup?
+
+
 Program and module structure
 ============================
+PPQT.py -- is the top level program, handles arguments,
+initializes Qt application and other global resources TBS
 
 mainwindow.py creates the main window and its menus:
 
-	it instantiates all the other panels
+	initializes all menus and a tool bar
+	code for menus may be modularized out:
+		?filemenu.py the code for all file-menu operations
+		calling into the frontmost Book object as needed
+	TBS: how to make Edit>Cut/Copy/Paste/etc. direct their actions
+		to the focused panel unlike in v1
 
-	? It has the code for panel drag-out and drop back
 
-	It maintains a list of open Book objects
+	Instantiates and manages panels the are global to all books
 
-	It knows which Book is the frontmost
+		helpview.py displays the help
+
+		findview.py displays and executes Find
+
+		flowview.py displays the Flow controls and executes
+			reflow and html conversion
+
+	instantiates Book objects in response to File menu commands
+
+	has the code for panel drag-out and drop back, allowing
+		any panel (not just Books) to be made into independent
+		windows -- this state has to be recorded in Settings
+		at shutdown and restored at startup
+
+	maintains a list of open Book objects: the Book(s) that were
+		open at shutdown are re-opened at startup
+
+	knows which Book is the frontmost
 
 	Each Book, upon focus-in event, signals Main to
 		make it the frontmost if not already
 
-	On an actual change in the frontmost Book the main
-		somehow? changes all book-related
-		panels to display that book's stuff
-
-	filemenu.py is the code for all file-menu operations
-		calling the frontmost book object as needed
-
-	Instantiates and manages panels the are global to all books
-
-		helppanel.py displays the Help
-
-		findpanel.py displays and executes Find
-
-		flowpanel.py displays the Flow controls and executes
-			reflow and html conversion
-
+	On an actual change in the frontmost Book, the main
+		?somehow? changes all book-related
+		panels to display that book's metadata views
 
 book.py defines class Book to represent one book:
 
-	it instantiates the metadata objects
+	it instantiates the metadata objects (below)
 
-	it supports load_old, load_new, and load_gg
-	it supports export_gg and save_book
-		-- methods called from filemenu.py
+	it supports load_old, load_new, and load_gg methods
+	it supports load_scannos method
+	it supports export_gg and save_book methods
+		-- all methods called from filemenu.py
 
 	it holds the book text as a QPlainTextDocument
 
 metadata objects created by a Book. These act as data models
 for the view objects:
 
-	metamanager.py to direct metadata load/save
+	metadata.py to direct metadata load/save
 
-	worddata.py to hold word and character census data
+	worddata.py to hold word and character census data and scannos
 
-	notesdata.py to hold user notes
+	notedata.py to hold user notes
 
-	pagesdata.py to hold page table info
+	pagedata.py to hold page table info
 
-	fnotedata.py to hold footnote data
+	fnotdata.py to hold footnote data
 
-visual objects created by a Book; these are in the abstract,
-data views on the models implemented by the Book and metadata objects.
+visual objects created by a Book; these are data views on the models
+implemented by the Book and metadata objects.
 
-	editpanel.py to implement the QPlainTextEditor
+	editview.py to implement the QPlainTextEditor
 		inc. keyboard cmds and syntax highlighter
+		draws data from parent Book
 
-	imagepanel.py to display page images
+	imageview.py to display page images
 		draws data from pagesdata
 
-	wordpanel.py to display the Words panel
+	wordview.py to display the Words panel
 		draws data from and updates worddata
 
-	charspanel.py to display the Chars panel
+	charsview.py to display the Chars panel
 		draws data from worddata
 
-	notespanel.py to display the Notes panel
-		draws data from notesdata
+	notesview.py to display the Notes panel
+		draws data from notedata
 
-	pagepanel.py to display the Pages panel
+	pageview.py to display the Pages panel
 		draws data from and updates pagesdata
 
-	viewpanel.py to display the Preview
+	viewview.py to display the Preview
 		draws data from the Book
 
-	?loupepanel.py to display bookloupe diagnostics
+	?loupeview.py to display bookloupe diagnostics
 		draws data from the Book
 
-	?w3cpanel.py to display w3c validator errors
+	?w3cview.py to display w3c validator errors
 		draws data from the Book
 
 Test modules are stored in the ppqt/tests folder.
 For every name.py there is to be a tests/name_test.py that
 performs a unit test, executed by py.test
 
+Other resource modules:
+	spellcheck.py implements a hunspell access object
+		with default and alt dictionary support
+
+	const.py defines global >>constant<< values used in
+		more than one module, e.g. keystrokes.
+		n.b. a constant shared only between a data model
+		and its view, is defined in the model, not const.py
+
+	distrib/extras/help.html is the help displayed by Help panel
+
 TODO:
 
-Implement all above as stub files (test files are stubs that
-just "assert '' == 'I am not implemented'"). Commit and push.
+Implement all above as stub files with
+	* license boilerplate
+	* other global info
+	* preliminary prolog
+	* test file stubs that assert 'implemented' == 'not yet'
 
 Read up on logging. All modules are to use log INFO and log ERROR extensively.
+	http://docs.python.org/3.3/library/logging.html
 
-Read up on translations. All user-visible labels and messages are to use tr().
+Read up on translations. All user-visible labels and messages are to
+	be translated per the locale.
+	* what is the file structure, where do the texts reside?
+	* is there a processing step to "make" the message texts?
+	* how is locale set for testing purposes?
 
+Research how to support drag/drop of book files onto main window.
+	Is it different in each platform or does Qt cover it?
+
+Design how to handle more-complicated Settings data:
+	* global settings for main window geometry, various parms, as before
+		but new app name to avoid conflict during changeover
+	* record of open books at shutdown: just abspath each?
+	* per-Book settings for Book panel geometry
+		- should that be kept in the .meta file?
+		- most book-unique choices e.g. flow panel choices
+			would be in the .meta file...
+
+Consider design: given Flow panel settings should be book-unique,
+and it would make sense for Find button contents and Find settings
+(list of prior searches etc) to be book-unique, should Flow and Find
+also be unique to the Book, instantiated by Book, swapped in when
+Book comes to the front, and each register metadata reader/writer pairs?
+
+Check further on bookloupe, appears to be win-only?
+
+Finish initial exemplary modules:
+	metadata.py	metadata_test.py
+	worddata.py	worddata_test.py
+	notedata.py	notedata_test.py
+	pagedata.py	pagedata_test.py
+	fnotdata.py	fnotdata_test.py
