@@ -207,3 +207,7 @@ Finish initial exemplary modules:
 	notedata.py	notedata_test.py
 	pagedata.py	pagedata_test.py
 	fnotdata.py	fnotdata_test.py
+
+The mainwindow implements the window title with "modified" flag,
+how do the different books tell it they are edited. Flag should
+be the logical OR of all open books.
