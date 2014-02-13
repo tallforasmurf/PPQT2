@@ -100,12 +100,16 @@ import pagedata # for the format constants
 def open_string( section, parm = None ):
     if parm :
         section = section + ' ' + str(parm)
-    return '{{' + section + '}}\n'
+    return '{{' + section + '}}'
+def open_line( section, parm = None ):
+    return open_string(section, parm) + '\n'
 #
 # 2. Format a close string given a sentinel
 #
 def close_string(section) :
-    return '{{/' + section + '}}\n'
+    return '{{/' + section + '}}'
+def close_line(section) :
+    return close_string(section) + '\n'
 #
 # 3. Provide a generator that reads a stream to a sentinel or end of file.
 # This makes for simple coding of a loop to process the lines of a section or
@@ -142,8 +146,7 @@ class MetaMgr(object):
         Version_read = parm
     def v_writer(qts, section) :
         global Version_write
-        qts << open_string(section, Version_write)
-        qts << '\n'
+        qts << open_line(section, Version_write)
 
     # Other members of the Book's fleet of objects call this method
     # to register to read and write a section of metadata.
