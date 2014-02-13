@@ -30,7 +30,7 @@ The class defined here supervises the loading and saving of metadata, and
 provides a level of indirection (symbolic binding) between file management and
 data management. One object of this class is created by a Book to handle the
 metadata for that book. Also included: a method to import a Guiguts .bin file,
-convert to a metadata stream, and then load that.
+convert it to a metadata stream, and then load that.
 
 The .meta data file comprises a number of sections that are marked
 off by boundary lines similar to:
@@ -39,19 +39,9 @@ off by boundary lines similar to:
     ...data lines...
     {{/SECTIONNAME}}
 
-It also contains a number of one-line items of the form:
+It also contains one-line items of the form:
 
     {{SECTIONNAME single-value}}
-
-Because we expect some users will sometimes edit .meta files, first,
-the file must be editable UTF-8 (no binary data, or binary data must
-be converted to hex characters) and second, we freely allow:
-    * blank lines within sections,
-    * blank lines between sections,
-    * leading and trailing spaces on section header/footer lines or data lines
-    * undefined nonblank data between sections
-    * order of data lines (the user might stick in lines anywhere)
-    * sections occuring multiple times (usually just additive)
 
 We want to encapsulate knowledge of the content and format of metadata in the
 classes that create and use it. We do not want that knowledge to leak into
@@ -59,24 +49,35 @@ the load/save logic as it did in version 1. So we set up a level of
 indirection in the form of a dict that relates SECTIONNAMEs to the functions
 that read and write the data in those sections.
 
-The key to self.section_dict is some SECTIONNAME; the value is [reader, writer] where
-those are functions. The Register(section,reader,writer) function is called
-to register a reader and a writer for a given section.
+Because we expect some users will sometimes edit .meta files, first,
+the file must be editable UTF-8 (no binary data, or binary data must
+be converted to hex characters) and second, we do not restrict:
+    * blank lines within sections,
+    * blank lines between sections,
+    * leading and trailing spaces on section header/footer lines or data lines
+    * undefined nonblank data between sections
+    * order of data lines (the user might stick in lines anywhere)
+    * sections occuring multiple times (usually just additive)
+
+The key to self.section_dict is a SECTIONNAME. The value is [reader, writer]
+where those are functions. The Register(section,reader,writer) method is
+called to register the reader and a writer for a given section.
 
 During load_meta(), the code scans a file for "{{SECTIONNAME...}}", looks up
 that section in self.section_dict, and calls the reader. During save_meta(), we go
 through the keys of self.section_dict, calling each writer in turn.
 
-The signature of a reader is f(qts, section, vers, parm), where
+The signature of a reader is rdr(qts, section, vers, parm), where
     * qts is a QTextStream positioned at the line after the {{SECTIONNAME line,
     * vers is the value of a {{VERSION n}} line if one has been seen,
     * section is the SECTIONNAME as a Python string,
     * parm is whatever text was found between SECTIONNAME and }}.
 
 The reader is expected to consume the stream through the {{/SECTIONNAME}} line
-if any. A single-line section of course needs no file input; the value is in parm.
+if any. A single-line section of course needs no input; the value is in parm
+and the stream is already positioned after it.
 
-The signature of a writer is f(qts, section). The writer is expected to write
+The signature of a writer is wtr(qts, section). The writer is expected to write
 the entire section including {{SECTIONNAME}} and {{/SECTIONNAME}}, or the single
 line of a one-line section.
 
@@ -96,19 +97,19 @@ import pagedata # for the format constants
 #
 # 1. Format an open string given a sentinel.
 #
-def open_string(section, parm):
+def open_string( section, parm = None ):
     if parm :
         section = section + ' ' + str(parm)
-    return '{{' + section + '}}'
+    return '{{' + section + '}}\n'
 #
 # 2. Format a close string given a sentinel
 #
 def close_string(section) :
-    return '{{/' + section + '}}'
+    return '{{/' + section + '}}\n'
 #
-# 3. Return a generator that reads to a sentinel or end of file.
-# This makes for simple coding of a loop to process the lines of
-# a section or a whole file.
+# 3. Provide a generator that reads a stream to a sentinel or end of file.
+# This makes for simple coding of a loop to process the lines of a section or
+# a whole file.
 #
 def read_to(qts, sentinel):
     stopper = close_string(sentinel)
@@ -118,7 +119,7 @@ def read_to(qts, sentinel):
         else:
             line = unicode(qts.readLine()).encode('UTF-8').strip()
         if line == stopper :
-            break # end the loop for one reason or the toher
+            break # end the loop for one reason or the other
         yield line
 
 class MetaMgr(object):
