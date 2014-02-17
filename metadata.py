@@ -57,7 +57,7 @@ be converted to hex characters) and second, we do not restrict:
     * leading and trailing spaces on section header/footer lines or data lines
     * undefined nonblank data between sections
     * order of data lines (the user might stick in lines anywhere)
-    * sections occuring multiple times (usually just additive)
+    * sections occuring multiple times (reader determines if later sections add or replace)
 
 The key to self.section_dict is a SECTIONNAME. The value is [reader, writer]
 where those are functions. The Register(section,reader,writer) method is
@@ -69,27 +69,52 @@ through the keys of self.section_dict, calling each writer in turn.
 
 The signature of a reader is rdr(qts, section, vers, parm), where
     * qts is a QTextStream positioned at the line after the {{SECTIONNAME line,
-    * vers is the value of a {{VERSION n}} line if one has been seen,
+    * vers is the value "n" of a {{VERSION n}} line if one has been seen,
     * section is the SECTIONNAME as a Python string,
     * parm is whatever text was found between SECTIONNAME and }}.
 
-The reader is expected to consume the stream through the {{/SECTIONNAME}} line
-if any. A single-line section of course needs no input; the value is in parm
-and the stream is already positioned after it.
+The reader is expected to consume the stream through the {{/SECTIONNAME}}
+line if any. The utility read_to() is provided as a generator that returns
+lines up to the section boundary or end of file. A single-line section of
+course needs no input; the value is in parm and the stream is already
+positioned after it.
 
 The signature of a writer is wtr(qts, section). The writer is expected to write
 the entire section including {{SECTIONNAME}} and {{/SECTIONNAME}}, or the single
-line of a one-line section.
+line of a one-line section. The utilities open_line() and close_line() return
+strings ready to be output.
 
+The class MemoryStream implements a QTextStream with an in-memory buffer.
+This is used by unit tests and when calling translate_bin() below.
 '''
 
-from PyQt4.QtCore import QString, QTextStream
+from PyQt5.QtCore import QTextStream, QTextCodec, QByteArray
+
+class MemoryStream(QTextStream):
+    def __init__(self):
+        # Create a byte array that stays in scope as long as we do
+        self.buffer = QByteArray()
+        # Initialize the "real" QTextStream with a ByteArray buffer.
+        super().__init__(self.buffer)
+        # Set a codec that should involve minimal or no translation
+        self.setCodec( QTextCodec.codecForName('UTF-32') )
+    def rewind(self):
+        self.seek(0)
+
 import types
-import re
-# set up an RE to recognize a sentinel and capture its parameter
-# if any. This can be global because the result of using it
-# is a match object that is local to the caller.
-re_sentinel = re.compile("^\\{\\{([A-Z]+)([^}]*)\\}\\}")
+import regex
+import const # for Folio Rule constants
+
+
+# Set up an RE to recognize a sentinel and capture its parameter if any. This
+# can be global because the result of using it is a match object, which is
+# local to the caller. Correct use is m=re_sentinel.match(string), after
+# which m.group(1) is the section name and m.group(2) is all that followed it
+# before the closing braces, including spaces, so apply strip() to that
+# before using it. Don't use re_sentinel.search as this would allow
+# non-spaces to precede a sentinel. Whitespace ok, others not.
+
+re_sentinel = regex.compile("^\\s*\\{\\{([A-Z]+)([^}]*)\\}\\}")
 
 import pagedata # for the format constants
 
@@ -121,10 +146,14 @@ def read_to(qts, sentinel):
         if qts.atEnd() :
             line = stopper # end of file before sentinel seen
         else:
-            line = unicode(qts.readLine()).encode('UTF-8').strip()
+            line = qts.readLine().strip()
         if line == stopper :
             break # end the loop for one reason or the other
         yield line
+
+# Each instance of MetaMgr encapsulates what is known about the
+# metadata of a single book. The book creates one of these and
+# all of its components register for their sections through it.
 
 class MetaMgr(object):
     def __init__(self):
@@ -134,27 +163,30 @@ class MetaMgr(object):
         self.version_read = '0'
         # Initialize the important section_dict with our version
         # reader and writer pre-registered.
-        self.section_dict = {'VERSION':[v_reader, v_writer]}
-        # This string remains "in scope" forever so it can be the basis of a
-        # QTextStream that is handed around.
-        self.stream_string = QString()
+        self.section_dict = {'VERSION':[self.v_reader, self.v_writer]}
         # End of __init__
 
     # The reader and writer methods for the {{VERSION n}} section.
-    def v_reader(qts, section, vers, parm) :
-        global Version_read
-        Version_read = parm
-    def v_writer(qts, section) :
-        global Version_write
-        qts << open_line(section, Version_write)
+    def v_reader(self, qts, section, vers, parm) :
+        if len(parm) :
+            # some nonempty parameter followed VERSION
+            self.version_read = parm
+        else:
+            pass # TODO Log invalid version parm
+
+    def v_writer(self, qts, section) :
+        qts << open_line(section, self.version_write)
+
+    def version(self):
+        return self.version_read
 
     # Other members of the Book's fleet of objects call this method
     # to register to read and write a section of metadata.
 
-    def register(sentinel, rdr, wtr):
+    def register(self, sentinel, rdr, wtr):
         if type(rdr) == types.FunctionType \
         and type(wtr) == types.FunctionType \
-        and type(sentinel) == types.UnicodeType :
+        and type(sentinel) == type('') :
             if sentinel not in self.section_dict :
                 # TODO: log info
                 self.section_dict[sentinel] = [rdr, wtr]
@@ -166,24 +198,22 @@ class MetaMgr(object):
     # This reader/writer pair is entered into the self.section_dict when a
     # section with no registered handler is found.
 
-    def unknown_reader(qts, section, vers, parm) :
+    def unknown_reader(self, qts, section, vers, parm) :
         # TODO: log reading unknown section
-        line = unicode(qts.readLine()).strip()
-        while not qts.atEnd() :
-            if line == close_string(section) :
-                break
-            line = unicode(qts.readLine()).strip()
-    def unknown_writer(qts, section) :
+        for line in read_to(qts, section) :
+            pass
+
+    def unknown_writer(self, qts, section) :
         pass
 
-    # Load the contents of a metadata file by directing each section
+    # Load the contents of a metadata file stream by directing each section
     # to its registered reader. If there is no registered reader,
     # set that sentinel to the unknowns above.
 
-    def load_meta(qts) :
+    def load_meta(self, qts) :
         global re_sentinel
         while not qts.atEnd() :
-            line = unicode(qts.readLine()).strip()
+            line = qts.readLine().strip()
             m = re_sentinel.match(line)
             if m :
                 section = m.group(1)
@@ -191,7 +221,7 @@ class MetaMgr(object):
                 if section not in self.section_dict :
                     # Nobody has registered for this section (or it is
                     # {{USER-TYPO}}) so register it to the garbage reader/writer.
-                    self.section_dict[section] = [unknown_reader,unknown_writer]
+                    self.section_dict[section] = [self.unknown_reader, self.unknown_writer]
                 # Call the reader.
                 self.section_dict[section][0](qts, section, self.version_read, parm)
 
@@ -199,132 +229,151 @@ class MetaMgr(object):
     # each registered section. Call VERSION first, others in whatever order
     # the dictionary hash gives them.
 
-    def write_meta(qts) :
+    def write_meta(self, qts) :
         self.section_dict['VERSION'][1](qts,'VERSION')
-        for section, [r, w] in self.section_dict.items() :
+        for section, [rdr, wtr] in self.section_dict.items() :
             if section != 'VERSION' :
-                w(qts, section)
+                wtr(qts, section)
 
-    # Load the contents of a Guiguts .bin file by converting it to our .meta
-    # format as a QTextStream and passing that to load_meta(). The code needs
-    # access to the book file in order to convert char offsets into line numbers.
+# Utility to translate the contents of a Guiguts .bin file to our .meta
+# format and return it in a QTextStream. Arguments are:
+# bin_stream, an open QTextStream representing a GG .bin file
+# book_stream, the book file described by bin_stream (we need to read
+#    through it to get the character offset to each line, in order to
+#    translate GG line numbers into PPQT char offsets
+# meta_stream, a new QTextStream to write metadata into.
 
-    def load_gg_bin(book_stream, bin_stream) :
-        self.stream_string = QString() # gcoll any residual stuff
-        meta_stream = QTextStream(self.stream_string)
+import ast # for literal_eval
 
-        # Regex to recognize the page info string, a perl dict like:
-        # 'Pg001' => {'offset' => 'ppp.0', 'label' => 'Pg 1', 'style' => 'Arabic', 'action' => 'Start @', 'base' => '001'},
-        rePage = QRegExp(u"\s+'Pg([^']+)'\s+=>\s+(\{.*\}),")
+def translate_bin(bin_stream, book_stream, meta_stream) :
 
-        # Regex to recognize the proofer info string, something like this:
-        # $::proofers{'002'}[2] = 'susanskinner';
-        #     png # ---^^^   ^ index - we assume these come in sequence 1-n!
-        reProof = QRegExp(u"\$::proofers\{'(.*)'\}\[\d\] = '(.*)'")
+    # Regex to recognize the GG page info string, which is a perl dict:
+    #    'Pg001' => {'offset' => 'ppp.0', 'label' => 'Pg 1', 'style' => 'Arabic', 'action' => 'Start @', 'base' => '001'},
+    #cap(1) ^^^     ^ ------ cap(2) ------->
+    re_page = regex.compile("\s+'Pg([^']+)'\s+=>\s+(\{.*\}),")
 
-        # Regex to recognize the bookmark info string, like this:
-        # $::bookmarks[0] = 'ppp.lll';
-        reMark = QRegExp(u"\$::bookmarks\[(\d)\]\s*=\s*'(\d+)\.(\d+)'")
+    # Regex to recognize the proofer info string, something like this:
+    # $::proofers{'002'}[2] = 'susanskinner';
+    #     png # ---^^^   ^ index - we assume these come in sequence 1-n!
+    re_proof = regex.compile("\$::proofers\{'(.*)'\}\[\d\] = '(.*)'")
 
-        # Read the book_stream and note the offset of each line.
-        line_offsets = [] # an integer for every line in book_stream
-        offset = 0
-        while not book_stream.atEnd() :
-            line_offsets.append(offset)
-            line = book_stream.readLine()
-            offset += len(line) + 1
-        # Reposition book_stream to the start
-        book_stream.seek(0)
+    # Regex to recognize the bookmark info string, like this:
+    # $::bookmarks[0] = 'ppp.lll';
+    #   cap(1)-----^  (2)^^^ ^^^--cap(3)
+    re_mark = regex.compile("\$::bookmarks\[(\d)\]\s*=\s*'(\d+)\.(\d+)'")
 
-        in_pgnum = False # True while in the page-info section of the .bin
-        proofers = defaultdict(str) # accumulates proofer string per page
-        # This list gets for each page, a dict of info with keys of
-        # offset, label, style, action and base, from the perl dict.
-        page_list = []
-        mark_list = [] # list of ( key, offset ) bookmark values
+    # Read the book_stream and note the offset of each line.
+    # When the book is in the QPlainTextDocument each line has its length
+    # in characters plus 1 for the \u2029 line-separator.
+    line_offsets = [] # an integer for every line in book_stream
+    offset = 0
+    while not book_stream.atEnd() :
+        line_offsets.append(offset)
+        line = book_stream.readLine()
+        offset += len(line) + 1
+    line_offsets.append(offset) # offset to EOF just in case
 
-        # Scan the .bin text collecting page and proofer data.
-        while not bin_stream.atEnd() :
-            # n.b. blank lines and things we don't recognize are just ignored
-            line = bin_stream.readLine()
-            if line.startsWith(u"%::pagenumbers") :
-                in_pgnum = True
-                continue
-            if in_pgnum and line.startsWith(u");") :
-                in_pgnum = False
-                continue
-            if in_pgnum and (0 <= rePage.indexIn(line) ) :
-                # We have a page-info line. Convert the perl dict syntax to
-                # python dict syntax.
-                perl_dict_line = rePage.cap(2)
-                perl_dict_line.replace(u"=>", u":")
-                # Note that eval() is a security hole that could be used for
-                # code injection. See pqFind for a safer method. Using eval here
-                # because who would want to inject code into this obscure app?
-                page = eval(unicode(perl_dict_line))
+    # Reposition book_stream to the start as a courtesy to our caller
+    book_stream.seek(0)
+
+    # A dict in which the keys are page #s and the values, proofer strings
+    proofers = defaultdict(str)
+
+    # A list that gets for each page, a dict of info with keys of
+    # offset, label, style, action and base, all from the perl dict.
+    page_list = []
+
+    # list of that gets ( key, offset ) tuples for bookmark values.
+    mark_list = []
+
+    # Scan the .bin text collecting page and proofer data.
+    # Blank lines and things we don't recognize are just ignored.
+
+    in_pgnum = False # True while in the page-info section of the .bin
+
+    while not bin_stream.atEnd() :
+        line = bin_stream.readLine()
+        if line.startswith('%::pagenumbers') :
+            in_pgnum = True
+            continue
+        if in_pgnum and line.startswith(');') :
+            in_pgnum = False
+            continue
+        match = re_page.search(line)
+        if in_pgnum and ( match ) :
+            # We have a page-info line. Convert the perl dict syntax to
+            # python syntax, so 'key'=>'val' becomes 'key':'val'
+            perl_dict_line = match.cap(2)
+            perl_dict_line.replace('=>', ':')
+            try: # some things with a small chance of failing
+                page_info = ast.literal_eval(perl_dict_line)
                 # convert "offset:ppp.ccc" into a document offset integer
-                (ppp, ccc) = page['offset'].split('.')
-                page['offset'] = int( line_offsets[int(ppp)-1] + int(ccc) )
-                # add png number string to the dict
-                page['png'] = unicode(rePage.cap(1))
-                # save for later
-                page_list.append(page)
+                (ppp, ccc) = page_info['offset'].split('.')
+                page['offset'] = int( line_offsets[ int(ppp) - 1 ] + int(ccc) )
+            except Exception as whatever:
+                # TODO log bad .bin line
                 continue
-            if 0 <= reProof.indexIn(line) :
-                # append this proofer name to the (possibly zero) others for
-                # the given line. They can contain spaces! Replace with numspace.
-                # Going from QString to Python string to use defaultdict.
-                one_proofer = unicode(reProof.cap(2).replace(QChar(" "), QChar(0x2002)))
-                proofers[ unicode(reProof.cap(1)) ] += ("\\" + one_proofer)
-                continue
-            if 0 <= reMark.indexIn(line) :
-                offset = int( line_offsets[ int(unicode(reMark.cap(2)))-1 ] \
-                                        + int( unicode(reMark.cap(3)) ) )
-                key = int( reMark.cap(1) )
-                mark_list.append( (key, offset) )
-            # blank line, whatever, ignored
-        # For convenience add the accumulated proofer strings to the info dict
-        # for each page.
-        for page in page_list :
-            page['proofers'] = proofers[page['png']]
-        #Write the accumulated data into the meta_stream.
-        meta_stream << u"{{VERSION 0}}\n"
-        meta_stream << u"{{STALECENSUS TRUE}}\n"
-        meta_stream << u"{{NEEDSPELLCHECK TRUE}}\n"
-        meta_stream << u"{{PAGETABLE}}\n"
-        # TODO: pagetable.py
-        prior_format = pagedata.FolioFormatArabic # Default starting folio format
-        for page in page_list :
-            # See pagedata.py for the PAGETABLE metadata format.
-            # Translate the GG folio actions
-            folio_rule = pagedata.FolioRuleSkip # Skip anything not recognized
-            if page['action'] == '+1' :
-                folio_rule = pagedata.FolioRuleAdd1
-            elif page['action'] == 'Start @':
-                folio_rule = pagedata.FolioRuleSet
-            # Translate the GG folio styles
-            folio_format = pagedata.FolioFormatArabic # in case nothing matches
-            if page['style'] == '"' :
-                folio_format = prior_format
-            elif page['style'] == 'Roman':
-                folio_format = pagedata.FolioFormatLCRom
-            elif page['style'] == 'Arabic' :
-                folio_format = pagedata.FolioFormatArabic
-            prior_format = folio_format
-            # Note: we are not collecting the GG "label" data, as it
-            # is the formatted value "Pg xiv" or "Pg 25". Instead we
-            # keep the "base" data which is the integer for "Start @"
-            # entries, or null. In the Page panel folio numbers will be
-            # mostly 0 until you click Update, then all will be correct.
-            meta_stream << '{0} {1} {2} {3} {4} {5}\n'.format(
-                page['offset'], page['png'], page['proofers'],
-                folio_rule, folio_format, int(page['base'] or 1)
-                )
-        meta_stream << u"{{/PAGETABLE}}\n"
-        meta_stream << u"{{BOOKMARKS}}\n"
-        for (key, offset) in marks :
-            meta_stream << '{0} {1}\n'.format(key, offset)
-        meta_stream << u"{{/BOOKMARKS}}\n"
-        meta_stream.seek(0) # that's all, folks
+            # add png number string to the dict
+            page['png'] = match.cap(1)
+            # save for later
+            page_list.append(page)
+            continue # finished with page info...
+        # not page info, is it a proofer line?
+        match = re_proof.indexIn(line)
+        if match :
+            # append this proofer name to the (possibly zero) others for
+            # the given line. They can contain spaces! Replace with numspace.
+            one_proofer = match.cap(2).replace(' ', '\u2002')
+            proofers[ match.cap(1) ] += ('\\' + one_proofer)
+            continue
+        # neither of those, is it a bookmark?
+        match = re_mark.match(line)
+        if match :
+            offset = int( line_offsets[ int(match.cap(2))-1 ] + int(match.cap(3)) )
+            key = int( match.cap(1) )
+            mark_list.append( (key, offset) )
+        # blank line, whatever, ignored
 
-        self.load_meta(meta_stream)
+    # For convenience add the accumulated proofer strings to the info dict
+    # for each page.
+    for page in page_list :
+        page['proofers'] = proofers[page['png']]
+    #Write the accumulated data into the meta_stream.
+    meta_stream << u"{{VERSION 2}}\n"
+    meta_stream << u"{{STALECENSUS TRUE}}\n"
+    meta_stream << u"{{NEEDSPELLCHECK TRUE}}\n"
+    meta_stream << u"{{PAGETABLE}}\n"
+    prior_format = pagedata.FolioFormatArabic # Default starting folio format
+    for page in page_list :
+        # See pagedata.py for the PAGETABLE metadata format.
+        # Translate the GG folio actions to our pagetable form.
+        folio_rule = pagedata.FolioRuleSkip # Skip anything not recognized
+        if page['action'] == '+1' :
+            folio_rule = const.FolioRuleAdd1
+        elif page['action'] == 'Start @':
+            folio_rule = const.FolioRuleSet
+        # Translate the GG folio styles
+        folio_format = const.FolioFormatArabic # in case nothing matches
+        if page['style'] == '"' :
+            folio_format = prior_format
+        elif page['style'] == 'Roman':
+            folio_format = const.FolioFormatLCRom
+        elif page['style'] == 'Arabic' :
+            folio_format = const.FolioFormatArabic
+        prior_format = folio_format
+        # Note: we are not collecting the GG "label" data, as it
+        # is the formatted value "Pg xiv" or "Pg 25". Instead we
+        # keep the "base" data which is the integer for "Start @"
+        # entries, or null. In the Page panel folio numbers will be
+        # mostly 0 until you click Update, then all will be correct.
+        meta_stream << '{0} {1} {2} {3} {4} {5}\n'.format(
+            page['offset'], page['png'], page['proofers'],
+            folio_rule, folio_format, int(page['base'] or 1)
+            )
+    meta_stream << u"{{/PAGETABLE}}\n"
+    meta_stream << u"{{BOOKMARKS}}\n"
+    for (key, offset) in marks :
+        meta_stream << '{0} {1}\n'.format(key, offset)
+    meta_stream << u"{{/BOOKMARKS}}\n"
+    meta_stream.seek(0) # that's all, folks
+# that's it. Return data written into the stream.
