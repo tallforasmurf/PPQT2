@@ -6,13 +6,20 @@ import io
 log_stream = io.StringIO()
 import logging
 logging.basicConfig(stream=log_stream,level=logging.INFO)
-def check_log(text):
+def check_log(text, level):
+    '''check that the log_stream contains the given text at the given level,
+       and rewind the log, then return T/F'''
     global log_stream
-    "check that the log_stream contains text, rewind the log, return T/F"
+    level_dict = {logging.DEBUG:'DEBUG',
+                  logging.INFO:'INFO',
+                  logging.WARN:'WARN',
+                  logging.ERROR:'ERROR',
+                  logging.CRITICAL:'CRITICAL'}
     log_data = log_stream.getvalue()
     x = log_stream.seek(0)
     x = log_stream.truncate()
-    return (-1 < log_data.find(text))
+    return (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
+
 # add .. dir to sys.path so we can import ppqt modules which
 # are up one directory level
 import sys
@@ -74,7 +81,7 @@ mstream = metadata.MemoryStream()
 mstream << '{{VERSION   }}'
 mstream.rewind()
 MGR.load_meta(mstream)
-assert check_log('no parameter: assuming 1')
+assert check_log('no parameter: assuming 1',logging.WARN)
 
 # Force execution of unknown_rdr and unknown_wtr
 # expecting warning log msgs
@@ -88,7 +95,7 @@ mstream.rewind()
 f = log_stream.seek(0)
 f = log_stream.truncate()
 MGR.load_meta(mstream)
-assert check_log('No reader registered for')
+assert check_log('No reader registered for',logging.ERROR)
 
 # When we read it back we should get nothing but version 2
 mstream = metadata.MemoryStream()
@@ -141,10 +148,10 @@ assert line == expected
 # Test registration errors, expecting log lines
 # duplicate registration
 MGR.register(sentinel, t_rdr, t_wtr)
-assert check_log('duplicate metadata registration ignored')
+assert check_log('duplicate metadata registration ignored',logging.WARN)
 # non-string section name
 MGR.register(2, t_rdr, t_wtr)
-assert check_log('sentinel not a string value')
+assert check_log('sentinel not a string value',logging.ERROR)
 # non-function rdr/wtr
 MGR.register(sentinel, MGR, t_wtr)
-assert check_log('rdr/wtr not function types')
+assert check_log('rdr/wtr not function types',logging.ERROR)
