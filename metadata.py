@@ -101,10 +101,12 @@ class MemoryStream(QTextStream):
     def rewind(self):
         self.seek(0)
 
-import types
 import regex
+import logging
+import types # for FunctionType validation in register
 import const # for Folio Rule constants
 
+metadata_logger = logging.getLogger(name='metadata')
 
 # Set up an RE to recognize a sentinel and capture its parameter if any. This
 # can be global because the result of using it is a match object, which is
@@ -136,7 +138,9 @@ def close_string(section) :
 def close_line(section) :
     return close_string(section) + '\n'
 #
-# 3. Provide a generator that reads a stream to a sentinel or end of file.
+# 3. Provide a generator that reads a stream to a given end-sentinel,
+# or to any end-sentinel (preventing runaway if the opening sentinel
+# is mis-typed) or to end of file, whichever comes first.
 # This makes for simple coding of a loop to process the lines of a section or
 # a whole file.
 #
@@ -147,7 +151,7 @@ def read_to(qts, sentinel):
             line = stopper # end of file before sentinel seen
         else:
             line = qts.readLine().strip()
-        if line == stopper :
+        if line.startswith('{{/') : # looks like a /sentinel
             break # end the loop for one reason or the other
         yield line
 
@@ -171,8 +175,10 @@ class MetaMgr(object):
         if len(parm) :
             # some nonempty parameter followed VERSION
             self.version_read = parm
+            metadata_logger.debug('metadata VERSION '+parm)
         else:
-            pass # TODO Log invalid version parm
+            metadata_logger.warn('{{VERSION}} with no parameter: assuming 1')
+            self.version_read = '1'
 
     def v_writer(self, qts, section) :
         qts << open_line(section, self.version_write)
@@ -185,26 +191,17 @@ class MetaMgr(object):
 
     def register(self, sentinel, rdr, wtr):
         if type(rdr) == types.FunctionType \
-        and type(wtr) == types.FunctionType \
-        and type(sentinel) == type('') :
-            if sentinel not in self.section_dict :
-                # TODO: log info
-                self.section_dict[sentinel] = [rdr, wtr]
-            else :
-                pass # TODO: log an error
+        and type(wtr) == types.FunctionType:
+            if type(sentinel) == type('') :
+                if sentinel not in self.section_dict :
+                    self.section_dict[sentinel] = [rdr, wtr]
+                    metadata_logger.debug('registered metadata for '+sentinel)
+                else :
+                    metadata_logger.warn('duplicate metadata registration ignored for '+sentinel)
+            else:
+                metadata_logger.error('metadata reg. sentinel not a string value')
         else:
-            pass # TODO: log an error or raise Type Error?
-
-    # This reader/writer pair is entered into the self.section_dict when a
-    # section with no registered handler is found.
-
-    def unknown_reader(self, qts, section, vers, parm) :
-        # TODO: log reading unknown section
-        for line in read_to(qts, section) :
-            pass
-
-    def unknown_writer(self, qts, section) :
-        pass
+            metadata_logger.error('metadata reg. rdr/wtr not function types')
 
     # Load the contents of a metadata file stream by directing each section
     # to its registered reader. If there is no registered reader,
@@ -218,12 +215,15 @@ class MetaMgr(object):
             if m :
                 section = m.group(1)
                 parm = m.group(2).strip()
-                if section not in self.section_dict :
+                if section in self.section_dict :
+                    metadata_logger.debug('reading '+section+' metadata')
+                    self.section_dict[section][0](qts, section, self.version_read, parm)
+                else:
                     # Nobody has registered for this section (or it is
-                    # {{USER-TYPO}}) so register it to the garbage reader/writer.
-                    self.section_dict[section] = [self.unknown_reader, self.unknown_writer]
-                # Call the reader.
-                self.section_dict[section][0](qts, section, self.version_read, parm)
+                    # {{USER-TYPO}}) so skip all its lines.
+                    metadata_logger.error('No reader registered for '+section+' - skipping')
+                    for line in read_to(qts, section):
+                        pass
 
     # Write the contents of a metadata file by calling the writer for
     # each registered section. Call VERSION first, others in whatever order
@@ -233,6 +233,7 @@ class MetaMgr(object):
         self.section_dict['VERSION'][1](qts,'VERSION')
         for section, [rdr, wtr] in self.section_dict.items() :
             if section != 'VERSION' :
+                metadata_logger.debug('writing '+section+' metadata')
                 wtr(qts, section)
 
 # Utility to translate the contents of a Guiguts .bin file to our .meta
@@ -311,7 +312,9 @@ def translate_bin(bin_stream, book_stream, meta_stream) :
                 (ppp, ccc) = page_info['offset'].split('.')
                 page['offset'] = int( line_offsets[ int(ppp) - 1 ] + int(ccc) )
             except Exception as whatever:
-                # TODO log bad .bin line
+                msg = line
+                if len(line) > 30 : msg = line[:30] + '...'
+                metadata_logger.warn('error on .bin line '+msg)
                 continue
             # add png number string to the dict
             page['png'] = match.cap(1)
@@ -376,4 +379,4 @@ def translate_bin(bin_stream, book_stream, meta_stream) :
         meta_stream << '{0} {1}\n'.format(key, offset)
     meta_stream << u"{{/BOOKMARKS}}\n"
     meta_stream.seek(0) # that's all, folks
-# that's it. Return data written into the stream.
+# that's it. output data written into the stream.

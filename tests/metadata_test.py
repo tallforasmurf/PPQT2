@@ -1,10 +1,28 @@
-import os
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Unit test module boilerplate stuff
+#
+# set up logging to a stream
+import io
+log_stream = io.StringIO()
+import logging
+logging.basicConfig(stream=log_stream,level=logging.INFO)
+def check_log(text):
+    global log_stream
+    "check that the log_stream contains text, rewind the log, return T/F"
+    log_data = log_stream.getvalue()
+    x = log_stream.seek(0)
+    x = log_stream.truncate()
+    return (-1 < log_data.find(text))
+# add .. dir to sys.path so we can import ppqt modules which
+# are up one directory level
 import sys
-# add .. dir to sys.path so we can import the modules
+import os
 path = os.path.realpath(__file__)
 path = os.path.dirname(path)
 path = os.path.dirname(path)
 sys.path.append(path)
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 import metadata # things to test and incidentally, MemoryStream
 #test utilities
 assert u'{{FOO}}' == metadata.open_string(u'FOO',None)
@@ -26,9 +44,8 @@ assert m.group(2).strip() == 'Babaloo 6'
 MGR = metadata.MetaMgr()
 
 # test reading, writing of VERSION, incidentally ignoring blank lines
-# garbage and leading and trailing spaces. When making a text stream
-# from a bytearray, be sure to keep a reference to it until finished
-# or you crash python.
+# garbage and leading and trailing spaces.
+
 mstream = metadata.MemoryStream()
 mstream << '''
   garbage
@@ -40,17 +57,27 @@ mstream << '''
 '''
 mstream.rewind()
 MGR.load_meta(mstream)
-
 # Did the manager get the version value?
 assert MGR.version_read == '5'
+# Should be no log output yet
+x = log_stream.getvalue()
+assert len(x) == 0
+
 # Test writing metadata, which will be only VERSION
 mstream = metadata.MemoryStream()
 MGR.write_meta(mstream)
 mstream.rewind()
 line = mstream.readLine()
 assert line == u'{{VERSION 2}}'
+# Test reading bad VERSION w/ log output
+mstream = metadata.MemoryStream()
+mstream << '{{VERSION   }}'
+mstream.rewind()
+MGR.load_meta(mstream)
+assert check_log('no parameter: assuming 1')
+
 # Force execution of unknown_rdr and unknown_wtr
-# Nothing we can assert about, use breakpoint to check
+# expecting warning log msgs
 mstream = metadata.MemoryStream()
 mstream << '''
 {{NOTDEFINED}}
@@ -58,13 +85,18 @@ ignored line
 {{/NOTDEFINED}}
 '''
 mstream.rewind()
+f = log_stream.seek(0)
+f = log_stream.truncate()
 MGR.load_meta(mstream)
-# When we read it back we should get nothing but version
+assert check_log('No reader registered for')
+
+# When we read it back we should get nothing but version 2
 mstream = metadata.MemoryStream()
 MGR.write_meta(mstream)
 mstream.rewind()
 line = mstream.readLine()
 assert line == u'{{VERSION 2}}'
+assert mstream.atEnd()
 
 # Test registration and invocation of a reader and writer
 sentinel = u'FOOBAR'
@@ -73,7 +105,7 @@ called = 0
 def t_rdr(qts, section, vers, parm):
     global sentinel, called, data
     assert section == sentinel
-    assert vers == '5' # version_read from earlier test
+    assert vers == '1' # version_read default from prior error test
     assert len(parm) == 0 # no parm value
     n = 1
     for line in metadata.read_to(qts, section) :
@@ -105,3 +137,14 @@ line = mstream.readLine()
 assert line == u'{{VERSION 2}}'
 line = mstream.readAll()
 assert line == expected
+
+# Test registration errors, expecting log lines
+# duplicate registration
+MGR.register(sentinel, t_rdr, t_wtr)
+assert check_log('duplicate metadata registration ignored')
+# non-string section name
+MGR.register(2, t_rdr, t_wtr)
+assert check_log('sentinel not a string value')
+# non-function rdr/wtr
+MGR.register(sentinel, MGR, t_wtr)
+assert check_log('rdr/wtr not function types')
