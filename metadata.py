@@ -29,8 +29,8 @@ __email__ = "tallforasmurf@yahoo.com"
 The class defined here supervises the loading and saving of metadata, and
 provides a level of indirection (symbolic binding) between file management and
 data management. One object of this class is created by a Book to handle the
-metadata for that book. Also included: a method to import a Guiguts .bin file,
-convert it to a metadata stream, and then load that.
+metadata for that book. Also included: a method to translate a Guiguts .bin file
+into our metadata format.
 
 The .meta data file comprises a number of sections that are marked
 off by boundary lines similar to:
@@ -46,20 +46,21 @@ It also contains one-line items of the form:
 We want to encapsulate knowledge of the content and format of metadata in the
 classes that create and use it. We do not want that knowledge to leak into
 the load/save logic as it did in version 1. So we set up a level of
-indirection in the form of a dict that relates SECTIONNAMEs to the functions
-that read and write the data in those sections.
+indirection in the form of a dict that relates SECTIONNAME strings to the
+functions that read and write the data in those sections.
 
-Because we expect some users will sometimes edit .meta files, first,
-the file must be editable UTF-8 (no binary data, or binary data must
-be converted to hex characters) and second, we do not restrict:
+Because we expect some users will sometimes edit .meta files we assume,
+first, the file must be editable UTF-8 (no binary data, or binary data must
+be converted to hex characters) and second, we cannot restrict:
     * blank lines within sections,
     * blank lines between sections,
     * leading and trailing spaces on section header/footer lines or data lines
-    * undefined nonblank data between sections
-    * order of data lines (the user might stick in lines anywhere)
-    * sections occuring multiple times (reader determines if later sections add or replace)
+    * undefined nonblank data between sections e.g. commentary
+    * order of data lines (the user might stick in vocabulary words out of order)
+    * sections occuring multiple times (the reader function determines if later
+      sections should add or replace earlier ones)
 
-The key to self.section_dict is a SECTIONNAME. The value is [reader, writer]
+The key to self.section_dict is a SECTIONNAME and its value is [reader, writer]
 where those are functions. The Register(section,reader,writer) method is
 called to register the reader and a writer for a given section.
 
@@ -70,19 +71,22 @@ through the keys of self.section_dict, calling each writer in turn.
 The signature of a reader is rdr(qts, section, vers, parm), where
     * qts is a QTextStream positioned at the line after the {{SECTIONNAME line,
     * vers is the value "n" of a {{VERSION n}} line if one has been seen,
-    * section is the SECTIONNAME as a Python string,
+    * section is the SECTIONNAME string,
     * parm is whatever text was found between SECTIONNAME and }}.
 
 The reader is expected to consume the stream through the {{/SECTIONNAME}}
 line if any. The utility read_to() is provided as a generator that returns
-lines up to the section boundary or end of file. A single-line section of
+lines up to a section boundary or end of file. A single-line section of
 course needs no input; the value is in parm and the stream is already
-positioned after it.
+positioned after it. It is possible to register the same reader function for
+multiple SECTIONNAME values, and it can use the section parameter to tell
+which it is decoding.
 
 The signature of a writer is wtr(qts, section). The writer is expected to write
 the entire section including {{SECTIONNAME}} and {{/SECTIONNAME}}, or the single
 line of a one-line section. The utilities open_line() and close_line() return
-strings ready to be output.
+strings ready to be output. A given writer function could be registered for
+multiple sections, distinguishing which to do from the section parameter.
 
 The class MemoryStream implements a QTextStream with an in-memory buffer.
 This is used by unit tests and when calling translate_bin() below.
@@ -96,8 +100,10 @@ class MemoryStream(QTextStream):
         self.buffer = QByteArray()
         # Initialize the "real" QTextStream with a ByteArray buffer.
         super().__init__(self.buffer)
-        # Set a codec that should involve minimal or no translation
-        self.setCodec( QTextCodec.codecForName('UTF-32') )
+        # The default codec is codecForLocale, which might vary with
+        # the platform, so set a codec here for consistency. UTF-16
+        # should entail minimal or no conversion on input or output.
+        self.setCodec( QTextCodec.codecForName('UTF-16') )
     def rewind(self):
         self.seek(0)
 
