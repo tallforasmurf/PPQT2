@@ -27,10 +27,24 @@ __email__ = "tallforasmurf@yahoo.com"
 Defines a class for the edit object, which implements the user
 access to a document for editing, based on QPlainTextEdit.
 
-Gets its data (QPlainTextDocument) from the Book object.
+Given a reference to its data (editdata.py) in creation by the Book object.
 
 Implements all keyboard actions (ctl-F, etc) in the editor. Implements the
 syntax highlighter that colors scannos and spelling errors. Calls on a
 WordData object to identify scannos and spelling errors.
+
+Offers these additional methods:
+
+    center_this(tc)      given a text cursor with a selection, put the top
+                         of the selection in the middle of the window, unless
+                         the selection is taller than 1/2 the window in which
+                         case put the top of the selection as high as needed
+                         but in no case, off the top of the window.
+
+    show_this(tc)        given a text cursor with a selection, make sure
+                         the top of the selection is visible in the edit
+                         window. If it is already visible, do nothing, else
+                         pass to center_this().
+
 
 '''
