@@ -25,9 +25,15 @@ __email__ = "tallforasmurf@yahoo.com"
                           mainwindow.py
 
 Create and manage the main window, menus, and toolbars.
-Instantiate global panels for help and -- TBS.
+This code manages app-level global resources for example
+  * the path(s) to user resources (the V1 "extras")
+  * tags and paths to available spellcheck dicts
+  * the Help file and its display panel
 
-Instantiate and manage multiple Book objects.
+Within the main window it creates the widgets that display the various
+"view" objects.
+
+Instantiates and manages multiple Book objects.
 
 Support the user action of dragging a panel out of the tab-set to be an
 independent window, or vice-versa.
