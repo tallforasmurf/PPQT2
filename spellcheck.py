@@ -34,4 +34,20 @@ Receives a list of available dicts from the Book.
 Implements check(word, alt-tag=None) method used by worddata.py
 to check spelling in a default or alternate dictionary.
 
+If there is no active main dictionary or the alt-dictionary cannot
+be created, return True, in other words, we do not see misspellings
+unless we actually can check them.
+
 '''
+
+# THIS IS A STUB TODO see v1 pqSpell.py
+class Speller(object):
+    def __init__(self, my_book):
+        self.book = my_book
+        # TODO get main dict tag from book
+        # TODO instantiate a dictionary for it
+        # TODO get list of available dicts from book
+
+
+    def check(word, alt_tag = None):
+        return True
