@@ -25,7 +25,72 @@ __email__ = "tallforasmurf@yahoo.com"
                           book.py
 
 Defines a class for the Book object, which creates and maintains
-all data that is unique to one book (edited document).
+all data that is unique to one book (edited document). This is an
+astonishing amount of stuff that, in V1, was distributed throughout
+the app as globals, specifically:
 
+* paths to the book file, meta file, and images folder
+* the current main (default) spell-check dictionary
+* the current scannos file
+* whether the editor should hilite scannos or spelling
+* good-words, bad-words, the vocabulary and character censii
+* the document itself and an editor on it
+* the list of recent Find and Replace strings
+...and etc
+
+The book keeps a reference to the main window from which it
+gets things like the list of available spelling dictionaries,
+and the paths to them.
+
+The Book instantiates the objects that hold and display all this
+data, organized as *data and *view objects. When the keyboard focus
+enters a book editview, the main window fetches all the other *view
+objects and installs them in the relevant panels it displays.
+
+provide document ref
+provide metamanager ref
+provide spellcheck ref
 
 '''
+from PyQt5.QtCore import QObject
+import metadata
+import editdata
+import editview
+import worddata
+import spellcheck
+
+class Book(QObject):
+    def _init_(self, main_window): #TODO: API?
+        #
+        # Create the metadata manager
+        #
+        self.metamgr = metadata.MetaMgr(self)
+        #
+        # Create the objects that hold the document
+        #
+        self.editm = editdata.Document(self)
+        # TODO self.editv = editview.Editor(self)
+        # TODO: connect focus-in signal of editv to what?
+        #
+        # Create the spellchecker
+        #
+        # TODO from the main window get the list of available dicts
+        #
+        self.dict_paths = []
+        self.speller = spellcheck.Speller(self)
+        #
+        # Create the objects that hold and display words data
+        #
+        self.wordm = worddata.WordData(self)
+        # self.wordv = wordview.WordPanel(self)
+        # TODO other init
+
+    # give access to the Document object
+    def get_edit_model(self):
+        return self.editm
+    # give access to the metadata manager
+    def get_meta_manager(self):
+        return self.metamgr
+    # give access to the spellcheck object
+    def get_speller(self):
+        return self.speller
