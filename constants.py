@@ -22,28 +22,36 @@ __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
 '''
-                         const.py
+                         constants.py
 
-Defines global values that are used in multiple modules. These values are
+Define global values that are used in multiple modules. These values are
 read-only. Stylistically they should be ALL-CAP.
 
-Note that values that are used only between a data model and its view,
-or between a Book and its metadata models generally,
-are defined in the data modules. These are CamelCase.
-
-This module has no _test case.
-
-TODO: convert the initial "self." entries (from pqIMC) into
-all-cap global names.
+Note that values that are used only between a data model and its view, or
+between a Book and its metadata models generally, are defined in the data
+modules. These are CamelCase.
 
 '''
 # constant value for the line-delimiter used by QPlainTextEdit
-UnicodeLineDelim = '\u2029'
+UNICODE_LINE_DELIM = '\u2029'
 # constant value for the zero-width-non-joiner used as a marker in reflow
-UnicodeZWNJ = '\200C'
+UNICODE_ZWNJ = '\200C'
 
-# These values are used to encode folio controls for the
-# Page/folio table.
+'''
+Names for sections of the metadata file.
+'''
+MD_GW = 'GOODWORDS'
+MD_BW = 'BADWORDS'
+MD_SC = 'SCANNOLIST'
+MD_VL = 'WORDCENSUS'
+MD_V  = 'VERSION'
+MD_PT = 'PAGETABLE'
+MD_BM = 'BOOKMARKS'
+'''
+These values are used to encode folio controls for the
+Page/folio table.
+'''
+
 FolioFormatArabic = 0x00
 FolioFormatUCRom = 0x01
 FolioFormatLCRom = 0x02
@@ -52,103 +60,119 @@ FolioRuleAdd1 = 0x00
 FolioRuleSet = 0x01
 FolioRuleSkip = 0x02
 
-        ## Keystrokes checked by editor and other panels that monitor KeyEvent signals.
-        ## In rough order of frequency of use, we support:
-        ## ^g and ^G, search again forward/backward,
-        ## ^f start search,
-        ## ^t and ^T replace and search forward/backward,
-        ## ^1-9 bookmarks
-        ## ^F start search with selection
-        ## ^= replace,
-        ## ^-alt-1-9 set bookmarks
-        ## ^+ and ^- for zoom in/out
-        ## ctl-plus can also appear as ctl-shft-equal and ctl-sht-plus!
-        ## ^l and ^-alt-l, ^p and ^-alt-p for the Notes panel
-        ## Define these in a way easy to check in a keyEvent slot, and also put
-        ## them in python lists for quick lookup.
-        #self.keypadDeModifier = int(0xffffffff ^ Qt.KeypadModifier)
-        #self.ctl_G = Qt.ControlModifier | Qt.Key_G
-        #self.ctl_shft_G = Qt.ShiftModifier | self.ctl_G
-        #self.ctl_F = Qt.ControlModifier | Qt.Key_F
-        #self.ctl_shft_F = Qt.ShiftModifier | self.ctl_F
-        #self.ctl_T = Qt.ControlModifier | Qt.Key_T
-        #self.ctl_shft_T = Qt.ShiftModifier | self.ctl_T
-        #self.ctl_1 = Qt.ControlModifier | Qt.Key_1
-        #self.ctl_2 = Qt.ControlModifier | Qt.Key_2
-        #self.ctl_3 = Qt.ControlModifier | Qt.Key_3
-        #self.ctl_4 = Qt.ControlModifier | Qt.Key_4
-        #self.ctl_5 = Qt.ControlModifier | Qt.Key_5
-        #self.ctl_6 = Qt.ControlModifier | Qt.Key_6
-        #self.ctl_7 = Qt.ControlModifier | Qt.Key_7
-        #self.ctl_8 = Qt.ControlModifier | Qt.Key_8
-        #self.ctl_9 = Qt.ControlModifier | Qt.Key_9
-        #self.ctl_shft_1 = Qt.ShiftModifier | self.ctl_1
-        #self.ctl_shft_2 = Qt.ShiftModifier | self.ctl_2
-        #self.ctl_shft_3 = Qt.ShiftModifier | self.ctl_3
-        #self.ctl_shft_4 = Qt.ShiftModifier | self.ctl_4
-        #self.ctl_shft_5 = Qt.ShiftModifier | self.ctl_5
-        #self.ctl_shft_6 = Qt.ShiftModifier | self.ctl_6
-        #self.ctl_shft_7 = Qt.ShiftModifier | self.ctl_7
-        #self.ctl_shft_8 = Qt.ShiftModifier | self.ctl_8
-        #self.ctl_shft_9 = Qt.ShiftModifier | self.ctl_9
-        #self.ctl_alt_1 = Qt.AltModifier | self.ctl_1
-        #self.ctl_alt_2 = Qt.AltModifier | self.ctl_2
-        #self.ctl_alt_3 = Qt.AltModifier | self.ctl_3
-        #self.ctl_alt_4 = Qt.AltModifier | self.ctl_4
-        #self.ctl_alt_5 = Qt.AltModifier | self.ctl_5
-        #self.ctl_alt_6 = Qt.AltModifier | self.ctl_6
-        #self.ctl_alt_7 = Qt.AltModifier | self.ctl_7
-        #self.ctl_alt_8 = Qt.AltModifier | self.ctl_8
-        #self.ctl_alt_9 = Qt.AltModifier | self.ctl_9
-        #self.ctl_minus = Qt.ControlModifier | Qt.Key_Minus
-        #self.ctl_equal = Qt.ControlModifier | Qt.Key_Equal
-        #self.ctl_plus = Qt.ControlModifier | Qt.Key_Plus
-        #self.ctl_shft_equal = Qt.ShiftModifier | self.ctl_equal
-        #self.ctl_shft_plus = Qt.ShiftModifier | self.ctl_plus
-        #self.ctl_M = Qt.ControlModifier | Qt.Key_M
-        #self.ctl_alt_M = Qt.AltModifier | self.ctl_M
-        #self.ctl_L = Qt.ControlModifier | Qt.Key_L
-        #self.ctl_alt_L = Qt.AltModifier | self.ctl_L
-        #self.ctl_P = Qt.ControlModifier | Qt.Key_P
-        #self.ctl_alt_P = Qt.AltModifier | self.ctl_P
-        #self.ctl_Left = Qt.ControlModifier | Qt.Key_Left
-        #self.ctl_left_pad = self.ctl_Left | Qt.KeypadModifier
-        #self.ctl_LBracket = Qt.ControlModifier | Qt.Key_BracketLeft
-        #self.ctl_B = Qt.ControlModifier | Qt.Key_B
-        #self.keysOfInterest = [
-                #self.ctl_G, self.ctl_shft_G, self.ctl_F, self.ctl_shft_F,
-                #self.ctl_T, self.ctl_shft_T, self.ctl_equal,
-                #self.ctl_1, self.ctl_2, self.ctl_3, self.ctl_4, self.ctl_5,
-                #self.ctl_6, self.ctl_7, self.ctl_8, self.ctl_9,
-                #self.ctl_shft_1, self.ctl_shft_2, self.ctl_shft_3,
-                #self.ctl_shft_4, self.ctl_shft_5, self.ctl_shft_6,
-                #self.ctl_shft_7, self.ctl_shft_8, self.ctl_shft_9,
-                #self.ctl_alt_1, self.ctl_alt_2, self.ctl_alt_3,
-                #self.ctl_alt_4,  self.ctl_alt_5,  self.ctl_alt_6,
-                #self.ctl_alt_7, self.ctl_alt_8,  self.ctl_alt_9,
-                #self.ctl_minus, self.ctl_plus, self.ctl_shft_equal,
-                #self.ctl_shft_plus,
-                #self.ctl_M,self.ctl_alt_M,self.ctl_P,self.ctl_alt_P]
-        #self.backKeys = [self.ctl_B, self.ctl_Left, self.ctl_LBracket, self.ctl_left_pad]
-        #self.zoomKeys = [self.ctl_minus, self.ctl_plus,
-                         #self.ctl_shft_equal, self.ctl_shft_plus]
-        #self.findKeys = [self.ctl_G, self.ctl_shft_G, self.ctl_F, self.ctl_shft_F,
-                        #self.ctl_T, self.ctl_equal, self.ctl_shft_T]
-        #self.markKeys = [self.ctl_1, self.ctl_2, self.ctl_3, self.ctl_4, self.ctl_5,
-                #self.ctl_6, self.ctl_7, self.ctl_8, self.ctl_9 ]
-        #self.markSetKeys = [self.ctl_alt_1, self.ctl_alt_2, self.ctl_alt_3,
-                #self.ctl_alt_4,  self.ctl_alt_5,  self.ctl_alt_6,  self.ctl_alt_7,
-                #self.ctl_alt_8,  self.ctl_alt_9 ]
-        #self.markShiftKeys = [self.ctl_shft_1, self.ctl_shft_2, self.ctl_shft_3,
-                #self.ctl_shft_4, self.ctl_shft_5, self.ctl_shft_6,
-                #self.ctl_shft_7, self.ctl_shft_8, self.ctl_shft_9 ]
+'''
+Keystrokes checked by editor and other panels that monitor KeyEvent signals.
 
-# A dictionary of the 252 Named Entities of HTML 4. The names are indexed by
-# the unicode characters they translate. To complete an entity prepend & and
-# append ;, thus quot -> &quot; This list was lifted from
-# en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references
-# and processed into this form using regex changes in BBEdit.
-NamedEntityDict = {
+^f start search,
+^F start search with selection
+^g and ^G, search again forward/backward,
+^= replace (using rep#1)
+^t and ^T replace (rep#1) then search forward/backward,
+
+^1-9 bookmarks
+^-alt-1-9 set bookmarks
+^-shift-1-9 select from cursor to bookmark
+
+^+ and ^- for zoom in/out
+    note ctl-plus can be received as ctl-shft-equal and ctl-sht-plus!
+
+^l and ^-alt-l, ^p and ^-alt-p for the Notes panel
+
+^b, ^[, ^<- : "Back" in the html windows
+
+The following definitions combine the key value with the modifier value,
+so the test in a keyEvent method becomes
+    key = int(event.key()) | int(event.modifiers())
+    if key in <list of relevant keys>...
+'''
+
+from PyQt5.QtCore import Qt # Qt namespace including keys
+
+KEYPAD_MOD_CLEAR = int(0xffffffff ^ Qt.KeypadModifier)
+CTL_F = Qt.ControlModifier | Qt.Key_F
+CTL_SHFT_F = Qt.ShiftModifier | CTL_F
+CTL_G = Qt.ControlModifier | Qt.Key_G
+CTL_SHFT_G = Qt.ShiftModifier | CTL_G
+CTL_EQUAL = Qt.ControlModifier | Qt.Key_Equal
+CTL_T = Qt.ControlModifier | Qt.Key_T
+CTL_SHFT_T = Qt.ShiftModifier | CTL_T
+CTL_1 = Qt.ControlModifier | Qt.Key_1
+CTL_2 = Qt.ControlModifier | Qt.Key_2
+CTL_3 = Qt.ControlModifier | Qt.Key_3
+CTL_4 = Qt.ControlModifier | Qt.Key_4
+CTL_5 = Qt.ControlModifier | Qt.Key_5
+CTL_6 = Qt.ControlModifier | Qt.Key_6
+CTL_7 = Qt.ControlModifier | Qt.Key_7
+CTL_8 = Qt.ControlModifier | Qt.Key_8
+CTL_9 = Qt.ControlModifier | Qt.Key_9
+CTL_SHFT_1 = Qt.ShiftModifier | CTL_1
+CTL_SHFT_2 = Qt.ShiftModifier | CTL_2
+CTL_SHFT_3 = Qt.ShiftModifier | CTL_3
+CTL_SHFT_4 = Qt.ShiftModifier | CTL_4
+CTL_SHFT_5 = Qt.ShiftModifier | CTL_5
+CTL_SHFT_6 = Qt.ShiftModifier | CTL_6
+CTL_SHFT_7 = Qt.ShiftModifier | CTL_7
+CTL_SHFT_8 = Qt.ShiftModifier | CTL_8
+CTL_SHFT_9 = Qt.ShiftModifier | CTL_9
+CTL_ALT_1 = Qt.AltModifier | CTL_1
+CTL_ALT_2 = Qt.AltModifier | CTL_2
+CTL_ALT_3 = Qt.AltModifier | CTL_3
+CTL_ALT_4 = Qt.AltModifier | CTL_4
+CTL_ALT_5 = Qt.AltModifier | CTL_5
+CTL_ALT_6 = Qt.AltModifier | CTL_6
+CTL_ALT_7 = Qt.AltModifier | CTL_7
+CTL_ALT_8 = Qt.AltModifier | CTL_8
+CTL_ALT_9 = Qt.AltModifier | CTL_9
+CTL_MINUS = Qt.ControlModifier | Qt.Key_Minus
+CTL_PLUS = Qt.ControlModifier | Qt.Key_Plus
+CTL_SHFT_EQUAL = Qt.ShiftModifier | CTL_EQUAL
+CTL_SHFT_PLUS = Qt.ShiftModifier | CTL_PLUS
+CTL_M = Qt.ControlModifier | Qt.Key_M
+CTL_ALT_M = Qt.AltModifier | CTL_M
+CTL_L = Qt.ControlModifier | Qt.Key_L
+CTL_ALT_L = Qt.AltModifier | CTL_L
+CTL_P = Qt.ControlModifier | Qt.Key_P
+CTL_ALT_P = Qt.AltModifier | CTL_P
+CTL_LEFT = Qt.ControlModifier | Qt.Key_Left
+CTL_LEFT_PAD = CTL_LEFT | Qt.KeypadModifier
+CTL_LEFT_BRACKET = Qt.ControlModifier | Qt.Key_BracketLeft
+CTL_B = Qt.ControlModifier | Qt.Key_B
+KEYS_OF_INTEREST = [
+        CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F,
+        CTL_T, CTL_SHFT_T, CTL_EQUAL,
+        CTL_1, CTL_2, CTL_3, CTL_4, CTL_5,
+        CTL_6, CTL_7, CTL_8, CTL_9,
+        CTL_SHFT_1, CTL_SHFT_2, CTL_SHFT_3,
+        CTL_SHFT_4, CTL_SHFT_5, CTL_SHFT_6,
+        CTL_SHFT_7, CTL_SHFT_8, CTL_SHFT_9,
+        CTL_ALT_1, CTL_ALT_2, CTL_ALT_3,
+        CTL_ALT_4,  CTL_ALT_5,  CTL_ALT_6,
+        CTL_ALT_7, CTL_ALT_8,  CTL_ALT_9,
+        CTL_MINUS, CTL_PLUS, CTL_SHFT_EQUAL,
+        CTL_SHFT_PLUS,
+        CTL_M,CTL_ALT_M,CTL_P,CTL_ALT_P]
+KEYS_BACK = [CTL_B, CTL_LEFT, CTL_LEFT_BRACKET, CTL_LEFT_PAD]
+KEYS_ZOOM = [CTL_MINUS, CTL_PLUS,
+                 CTL_SHFT_EQUAL, CTL_SHFT_PLUS]
+KEYS_FIND = [CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F,
+                CTL_T, CTL_EQUAL, CTL_SHFT_T]
+KEYS_MARK = [CTL_1, CTL_2, CTL_3, CTL_4, CTL_5,
+        CTL_6, CTL_7, CTL_8, CTL_9 ]
+KEYS_MARK_SET = [CTL_ALT_1, CTL_ALT_2, CTL_ALT_3,
+        CTL_ALT_4,  CTL_ALT_5,  CTL_ALT_6,  CTL_ALT_7,
+        CTL_ALT_8,  CTL_ALT_9 ]
+KEYS_MARK_SHIFT = [CTL_SHFT_1, CTL_SHFT_2, CTL_SHFT_3,
+        CTL_SHFT_4, CTL_SHFT_5, CTL_SHFT_6,
+        CTL_SHFT_7, CTL_SHFT_8, CTL_SHFT_9 ]
+
+'''
+A dictionary of the 252 Named Entities of HTML 4. The names are indexed by
+the unicode characters they translate. To complete an entity prepend & and
+append ;, thus quot -> &quot; This list was lifted from
+en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references and
+processed into this form using regex changes in BBEdit.
+'''
+NAMED_ENTITIES = {
 u'\u0022' : u'quot', # quotation mark (= APL quote)
 u'\u0026' : u'amp', # ampersand
 u'\u0027' : u'apos', # apostrophe (= apostrophe-quote); see below
