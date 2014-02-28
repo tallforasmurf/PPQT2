@@ -47,6 +47,9 @@ data, organized as *data and *view objects. When the keyboard focus
 enters a book editview, the main window fetches all the other *view
 objects and installs them in the relevant panels it displays.
 
+Naming convention: xxxxm is a model, e.g. editm = editdata.Document
+and xxxxxv is a view, e.g. wordv = wordview.WordPanel
+
 provide document ref
 provide metamanager ref
 provide spellcheck ref
@@ -60,11 +63,12 @@ import worddata
 import spellcheck
 
 class Book(QObject):
-    def _init_(self, main_window): #TODO: API?
+    def __init__(self, main_window): #TODO: API?
+        super().__init__(main_window)
         #
         # Create the metadata manager
         #
-        self.metamgr = metadata.MetaMgr(self)
+        self.metamgr = metadata.MetaMgr()
         #
         # Create the objects that hold the document
         #
