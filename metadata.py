@@ -107,6 +107,7 @@ class MemoryStream(QTextStream):
     def rewind(self):
         self.seek(0)
 
+import constants as C
 import regex
 import logging
 import types # for FunctionType validation in register
@@ -123,8 +124,6 @@ metadata_logger = logging.getLogger(name='metadata')
 # non-spaces to precede a sentinel. Whitespace ok, others not.
 
 re_sentinel = regex.compile("^\\s*\\{\\{([A-Z]+)([^}]*)\\}\\}")
-
-import pagedata # for the format constants
 
 # Helpful utilities for our reader/writer clients:
 #
@@ -173,7 +172,7 @@ class MetaMgr(object):
         self.version_read = '0'
         # Initialize the important section_dict with our version
         # reader and writer pre-registered.
-        self.section_dict = {'VERSION':[self.v_reader, self.v_writer]}
+        self.section_dict = {C.MD_V : [self.v_reader, self.v_writer]}
         # End of __init__
 
     # The reader and writer methods for the {{VERSION n}} section.
@@ -181,9 +180,9 @@ class MetaMgr(object):
         if len(parm) :
             # some nonempty parameter followed VERSION
             self.version_read = parm
-            metadata_logger.debug('metadata VERSION '+parm)
+            metadata_logger.debug('metadata {0} {1}'.format(section,parm) )
         else:
-            metadata_logger.warn('{{VERSION}} with no parameter: assuming 1')
+            metadata_logger.warn('{0} with no parameter: assuming 1'.format(section))
             self.version_read = '1'
 
     def v_writer(self, qts, section) :
@@ -236,10 +235,10 @@ class MetaMgr(object):
     # the dictionary hash gives them.
 
     def write_meta(self, qts) :
-        self.section_dict['VERSION'][1](qts,'VERSION')
+        self.section_dict[C.MD_V][1](qts,C.MD_V)
         for section, [rdr, wtr] in self.section_dict.items() :
-            if section != 'VERSION' :
-                metadata_logger.debug('writing '+section+' metadata')
+            if section != C.MD_V :
+                metadata_logger.debug('writing {0} metadata'.format(section) )
                 wtr(qts, section)
 
 # Utility to translate the contents of a Guiguts .bin file to our .meta
@@ -348,27 +347,25 @@ def translate_bin(bin_stream, book_stream, meta_stream) :
     for page in page_list :
         page['proofers'] = proofers[page['png']]
     #Write the accumulated data into the meta_stream.
-    meta_stream << u"{{VERSION 2}}\n"
-    meta_stream << u"{{STALECENSUS TRUE}}\n"
-    meta_stream << u"{{NEEDSPELLCHECK TRUE}}\n"
-    meta_stream << u"{{PAGETABLE}}\n"
-    prior_format = pagedata.FolioFormatArabic # Default starting folio format
+    meta_stream << u"{{" + C.MD_V + "2}}\n"
+    meta_stream << u"{{" + C.MD_PT + "}}\n"
+    prior_format = C.FolioFormatArabic # Default starting folio format
     for page in page_list :
         # See pagedata.py for the PAGETABLE metadata format.
         # Translate the GG folio actions to our pagetable form.
-        folio_rule = pagedata.FolioRuleSkip # Skip anything not recognized
+        folio_rule = C.FolioRuleSkip # Skip anything not recognized
         if page['action'] == '+1' :
-            folio_rule = const.FolioRuleAdd1
+            folio_rule = C.FolioRuleAdd1
         elif page['action'] == 'Start @':
-            folio_rule = const.FolioRuleSet
+            folio_rule = C.FolioRuleSet
         # Translate the GG folio styles
-        folio_format = const.FolioFormatArabic # in case nothing matches
+        folio_format = C.FolioFormatArabic # in case nothing matches
         if page['style'] == '"' :
             folio_format = prior_format
         elif page['style'] == 'Roman':
-            folio_format = const.FolioFormatLCRom
+            folio_format = C.FolioFormatLCRom
         elif page['style'] == 'Arabic' :
-            folio_format = const.FolioFormatArabic
+            folio_format = C.FolioFormatArabic
         prior_format = folio_format
         # Note: we are not collecting the GG "label" data, as it
         # is the formatted value "Pg xiv" or "Pg 25". Instead we
@@ -379,10 +376,10 @@ def translate_bin(bin_stream, book_stream, meta_stream) :
             page['offset'], page['png'], page['proofers'],
             folio_rule, folio_format, int(page['base'] or 1)
             )
-    meta_stream << u"{{/PAGETABLE}}\n"
-    meta_stream << u"{{BOOKMARKS}}\n"
+    meta_stream << u"{{/" + C.MD_PT + "}}\n"
+    meta_stream << u"{{" + C.MD_BM + "}}\n"
     for (key, offset) in marks :
         meta_stream << '{0} {1}\n'.format(key, offset)
-    meta_stream << u"{{/BOOKMARKS}}\n"
+    meta_stream << u"{{/" + C.MD_BM + "}}\n"
     meta_stream.seek(0) # that's all, folks
 # that's it. output data written into the stream.
