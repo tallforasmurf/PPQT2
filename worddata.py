@@ -154,8 +154,9 @@ the given token is in the scanno list. Thus when no scannos have been loaded,
 none will be found.
 
 '''
+import constants as C
 import metadata
-from blist import sorteddict
+import blist
 import unicodedata # for NFKC
 import ast # for literal_eval
 import logging
@@ -200,11 +201,10 @@ class WordData(object):
         self.metamgr = my_book.get_meta_manager()
         # The vocabulary list, as a sorted dict with a default so that new
         # keys have zero count and empty property set
-        self.vocab = sorteddict()
-        self.vocab.setdefault([0,set()])
+        self.vocab = blist.sorteddict()
         # Key and Values views on the vocab list for indexing by table row.
-        self.vocab_kview = self.vocab.KeysView()
-        self.vocab_vview = self.vocab.ValuesView()
+        self.vocab_kview = self.vocab.keys()
+        self.vocab_vview = self.vocab.values()
         # The good- and bad-words sets and the scannos set.
         self.good_words = set()
         self.bad_words = set()
@@ -217,10 +217,10 @@ class WordData(object):
         # load and metadata save.
         self.modified = False
         # Register metadata readers and writers.
-        self.metamgr.register('GOODWORDS', self.good_read, self.good_save)
-        self.metamgr.register('BADWORDS', self.bad_read, self.bad_save)
-        self.metamgr.register('SCANNOLIST', self.scanno_read, self.scanno_save)
-        self.metamgr.register('WORDCENSUS', self.vocab_read, self.vocab_save)
+        self.metamgr.register(C.MD_GW, self.good_read, self.good_save)
+        self.metamgr.register(C.MD_BW, self.bad_read, self.bad_save)
+        self.metamgr.register(C.MD_SC, self.scanno_read, self.scanno_save)
+        self.metamgr.register(C.MD_VL, self.word_read, self.word_save)
     # End of __init__
 
     #
@@ -235,8 +235,8 @@ class WordData(object):
     # or after the vocabulary. So we allow for either sequence. If there are
     # multiples of these sections, they are additive.
     #
-    def good_read(self, stream, v, sentinel) :
-        for line in self.metamgr.read_to(stream, sentinel):
+    def good_read(self, stream, sentinel, v, parm) :
+        for line in metadata.read_to(stream, sentinel):
             # note depending on read_to to strip whitespace
             if line in self.bad_words :
                 worddata_logger.warn(
@@ -251,8 +251,8 @@ class WordData(object):
     #
     # 2. Load a bad_words file or metadata segment.
     #
-    def bad_read(self, stream, v, sentinel) :
-        for line in self.metamgr.read_to(stream, sentinel):
+    def bad_read(self, stream, sentinel, v, parm) :
+        for line in metadata.read_to(stream, sentinel):
             if line in self.good_words :
                 worddata_logger.warn(
                     '"{0}" is in both good and bad words - ignored'.format(line)
@@ -272,9 +272,9 @@ class WordData(object):
     # a scannos file because read_to() stops on either a sentinel or end of
     # file.
     #
-    def scanno_read(self, stream, v, sentinel) :
+    def scanno_read(self, stream, sentinel, v, parm) :
         self.scannos = set() # clear any prior values
-        for line in self.metamgr.read_to(stream, sentinel):
+        for line in metadata.read_to(stream, sentinel):
             self.scannos.add(line)
     #
     # 4. Load the vocabulary segment of a metadata file, allowing for old and
@@ -287,9 +287,9 @@ class WordData(object):
     # flat in the file, but we didn't do that in V1, and anyway the user can
     # add words to the file.)
     #
-    def word_read(self, stream, v, sentinel) :
+    def word_read(self, sentinel, v, parm) :
         line_num = 0
-        for line in self.metamgr.read_to(stream, sentinel):
+        for line in metadata.read_to(stream, sentinel):
             line_num += 1
             word = None
             count = 0
@@ -301,16 +301,15 @@ class WordData(object):
                 if word.find('/') : # word/alt-tag
                     (word, alt_tag) = word.split('/')
                 word = unicodedata.normalize('NFKC',word)
-                if 2 > len(parts) : # just the word, so user addition
-                    count = 1
-                else:
-                    count = int(parts[1]) # exception if not an int str
-                    count = max(1,count) # convert 0, negative to 1
-                if 3 > len(parts) : # just the word (and count?) but no props
-                    # have to allow for user-inserted hyphenated phrase
-                    prop_set = self._add_token(word, alt_tag)
-                    continue
-                elif v < '2' :
+                if 3 > len(parts) :
+                    # just the word (and count?), so: user addition. Just add
+                    # it to the vocabulary with count 1, handling hyphens and all.
+                    self._add_token(word, alt_tag)
+                    continue # that's that, on to next line
+                # line had 3 (or more?) parts: assume proper metadata.
+                count = int(parts[1]) # exception if not an int str
+                count = max(1,count) # convert 0, negative to 1
+                if v < '2' :
                     # In V.1 the third item is an integer representing a set of bits
                     # decoded as follows.
                     bits = int(parts[2]) # throws exception if not an int
@@ -339,15 +338,14 @@ class WordData(object):
                 worddata_logger.warn('line {0} of word census list invalid'.format(line_num))
                 worddata_logger.warn('  "'+line+'"')
                 worddata_logger.warn(' -- '+msg)
-                word = None
-            if word : # line format was ok, count & prop_set ready
-                # note we are not checking for duplicates
-                if word in self.bad_words : prop_set.add(BW)
-                if word in self.good_words : prop_set.add(GW)
-                if alt_tag :
-                    prop_set.add(AD)
-                    self.alt_tags[word] = alt_tag
-                self.vocab[word] = [count, prop_set]
+                continue # on to next line.
+            # note we are not checking for duplicates
+            if word in self.bad_words : prop_set.add(BW)
+            if word in self.good_words : prop_set.add(GW)
+            if alt_tag :
+                prop_set.add(AD)
+                self.alt_tags[word] = alt_tag
+            self.vocab[word] = [count, prop_set]
         # end of "for line in vocabulary section"
     #
     # Methods used when saving a metadata file. The stream argument is
@@ -417,7 +415,7 @@ class WordData(object):
 
     def _add_token(self, tok_str, dic_tag ) :
         # Count the entire token regardless of hyphens
-        self._count(tok_str, dic_tag)
+        self._count(tok_str, dic_tag) # this definitely puts it in the dict
         [count, prop_set] = self.vocab[tok_str]
         if (count == 1) and (HY in prop_set) :
             # We just added a hyphenated token: add its parts also.
@@ -441,8 +439,8 @@ class WordData(object):
     # add it to the vocabulary with a count of 1. Returns nothing.
 
     def _count(self, word, dic_tag ) :
-        [count, prop_set] = self.vocab[word]
-        if count : # it was in the list: new words have count == 0
+        [count, prop_set] = self.vocab.get( word, [0,set()] )
+        if count : # it was in the list: a new words would have count=0
             self.vocab[word][0] += 1 # increment its count
         else:
             # word was not in the list (but is now): count is 0 and prop_set is {}
