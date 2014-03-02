@@ -111,7 +111,7 @@ import constants as C
 import regex
 import logging
 import types # for FunctionType validation in register
-import const # for Folio Rule constants
+import constants # for Folio Rule constants
 
 metadata_logger = logging.getLogger(name='metadata')
 
@@ -193,10 +193,11 @@ class MetaMgr(object):
 
     # Other members of the Book's fleet of objects call this method
     # to register to read and write a section of metadata.
-
+    _rdr_wtr_types = (types.FunctionType, types.MethodType, types.LambdaType)
     def register(self, sentinel, rdr, wtr):
-        if type(rdr) == types.FunctionType \
-        and type(wtr) == types.FunctionType:
+
+        if isinstance(rdr, self._rdr_wtr_types) \
+        and isinstance(wtr, self._rdr_wtr_types) :
             if type(sentinel) == type('') :
                 if sentinel not in self.section_dict :
                     self.section_dict[sentinel] = [rdr, wtr]
