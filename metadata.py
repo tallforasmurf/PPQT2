@@ -106,6 +106,9 @@ class MemoryStream(QTextStream):
         self.setCodec( QTextCodec.codecForName('UTF-16') )
     def rewind(self):
         self.seek(0)
+    def writeLine(self, str):
+        self << str
+        self << '\n'
 
 import constants as C
 import regex
