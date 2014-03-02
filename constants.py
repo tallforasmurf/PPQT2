@@ -27,10 +27,6 @@ __email__ = "tallforasmurf@yahoo.com"
 Define global values that are used in multiple modules. These values are
 read-only. Stylistically they should be ALL-CAP.
 
-Note that values that are used only between a data model and its view, or
-between a Book and its metadata models generally, are defined in the data
-modules. These are CamelCase.
-
 '''
 # constant value for the line-delimiter used by QPlainTextEdit
 UNICODE_LINE_DELIM = '\u2029'
