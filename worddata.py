@@ -354,25 +354,25 @@ class WordData(object):
     # 1, 2, 3. Save the good-words, bad-words and scanno sets.
     #
     def good_save(self, stream, sentinel) :
-        stream << metadata.open_string(sentinel)
+        stream << metadata.open_line(sentinel)
         for word in self.good_words:
             stream << word + '\n'
-        stream << metadata.close_string(sentinel)
+        stream << metadata.close_line(sentinel)
     def bad_save(self, stream, sentinel) :
-        stream << metadata.open_string(sentinel)
+        stream << metadata.open_line(sentinel)
         for word in self.bad_words:
             stream << word + '\n'
-        stream << metadata.close_string(sentinel)
+        stream << metadata.close_line(sentinel)
     def scanno_save(self, stream, sentinel) :
-        stream << metadata.open_string(sentinel)
+        stream << metadata.open_line(sentinel)
         for word in self.scannos:
             stream << word + '\n'
-        stream << metadata.close_string(sentinel)
+        stream << metadata.close_line(sentinel)
     #
     # 4. Save the vocabulary, each as WORD count {set}
     #
     def word_save(self, stream, sentinel) :
-        stream << metadata.open_string(sentinel)
+        stream << metadata.open_line(sentinel)
         for word in self.vocab:
             [count, prop_set] = self.vocab[word]
             stream << word
@@ -381,7 +381,7 @@ class WordData(object):
             stream << ' ' + str(count) + ' '
             stream << str(prop_set).replace(' ','')
             stream << '\n'
-        stream << metadata.close_string(sentinel)
+        stream << metadata.close_line(sentinel)
     #
     # The following is called by the document when the user chooses a
     # different spelling dictionary. Store a new spellcheck object. Recheck
