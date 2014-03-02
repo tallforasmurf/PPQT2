@@ -287,7 +287,7 @@ class WordData(object):
     # flat in the file, but we didn't do that in V1, and anyway the user can
     # add words to the file.)
     #
-    def word_read(self, sentinel, v, parm) :
+    def word_read(self, stream, sentinel, v, parm) :
         line_num = 0
         for line in metadata.read_to(stream, sentinel):
             line_num += 1
@@ -298,7 +298,7 @@ class WordData(object):
             parts = line.split()
             try:
                 word = parts[0] # throws an exception if line is empty.
-                if word.find('/') : # word/alt-tag
+                if 0 < word.find('/') : # word/alt-tag
                     (word, alt_tag) = word.split('/')
                 word = unicodedata.normalize('NFKC',word)
                 if 3 > len(parts) :
@@ -334,10 +334,9 @@ class WordData(object):
                                 prop_set.add(i)
                     else: # it was a valid literal but not a set
                         raise ValueError('bad property set')
-            except Exception as msg :
+            except Exception as whatever :
                 worddata_logger.warn('line {0} of word census list invalid'.format(line_num))
                 worddata_logger.warn('  "'+line+'"')
-                worddata_logger.warn(' -- '+msg)
                 continue # on to next line.
             # note we are not checking for duplicates
             if word in self.bad_words : prop_set.add(BW)
@@ -445,7 +444,7 @@ class WordData(object):
         else:
             # word was not in the list (but is now): count is 0 and prop_set is {}
             self.modified = True
-            work = word.copy() # copy the key, we may modify it next.
+            work = word[:] # copy the word, we may modify it next.
             # If word has apostrophes, note that and delete for following tests.
             if -1 < work.find("'") : # look for ascii apostrophe
                 prop_set.add(AP)
@@ -500,25 +499,37 @@ class WordData(object):
     def word_at(self, n):
         try:
             return self.vocab_kview[n]
-        except whatever:
+        except Exception as whatever:
             worddata_logger.error('bad call to word_at({0})'.format(n))
             return ('?')
     #
-    # Get the count or property-set of the word at position n in the
+    # Get the count and/or property-set of the word at position n in the
     # vocabulary, using the blist ValuesView for O(1) lookup time.
     #
+    def word_info_at(self, n):
+        try:
+            return self.vocab_vview[n]
+        except Exception as whatever:
+            worddata_logger.error('bad call to word_count_at({0})'.format(n))
+            return [0, set()]
     def word_count_at(self, n):
         try:
             return self.vocab_vview[n][0]
-        except whatever:
+        except Exception as whatever:
             worddata_logger.error('bad call to word_count_at({0})'.format(n))
-            return (set())
+            return 0
     def word_props_at(self, n):
         try:
             return self.vocab_vview[n][1]
-        except whatever:
+        except Exception as whatever:
             worddata_logger.error('bad call to word_props_at({0})'.format(n))
             return (set())
+    def word_index(self, w):
+        try:
+            return self.vocab_kview.index(w)
+        except Exception as whatever:
+            worddata_logger.error('bad call to word_index({0})'.format(v))
+            return -1
 
     # The following methods are used by the edit syntax highlighter to set flags.
     #
