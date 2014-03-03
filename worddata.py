@@ -487,22 +487,19 @@ class WordData(object):
                 prop_set.add(MC) # next most common case
             else : # work.upper() == work
                 prop_set.add(UC)
-            if HY not in prop_set :
-                # word has some alphas and is not hyphenated,
-                # so check its spelling.
-                if word not in self.good_words :
-                    if word not in self.bad_words :
-                        # Word in neither good- nor bad-words
-                        if dic_tag : # uses an alt dictionary
-                            self.alt_tags[word] = dic_tag
-                            prop_set.add(AD)
-                        if not self.speller.check(word, dic_tag) :
-                            prop_set.add(XX)
-                    else : # in bad-words
+        if HY not in prop_set : # word is not hyphenated, so check its spelling.
+            if word not in self.good_words :
+                if word not in self.bad_words :
+                    # Word in neither good- nor bad-words
+                    if dic_tag : # uses an alt dictionary
+                        self.alt_tags[word] = dic_tag
+                        prop_set.add(AD)
+                    if not self.speller.check(word, dic_tag) :
                         prop_set.add(XX)
-                # else in good-words
-            # else hyphenated, spellcheck only its parts
-        # else all numeric - assume good spelling
+                else : # in bad-words
+                    prop_set.add(XX)
+            # else in good-words
+        # else hyphenated, spellcheck only its parts
         self.vocab[word] = [1, prop_set]
     #
     # The following methods are used by the Words panel.
