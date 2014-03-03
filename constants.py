@@ -43,6 +43,7 @@ MD_VL = 'WORDCENSUS'
 MD_V  = 'VERSION'
 MD_PT = 'PAGETABLE'
 MD_BM = 'BOOKMARKS'
+MD_DD = 'DEFAULTDICT'
 '''
 These values are used to encode folio controls for the
 Page/folio table.
