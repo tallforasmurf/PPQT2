@@ -168,6 +168,9 @@ def read_to(qts, sentinel):
 # all of its components register for their sections through it.
 
 class MetaMgr(object):
+    # class constant for validating readers and writers
+    _rdr_wtr_types = (types.FunctionType, types.MethodType, types.LambdaType)
+
     def __init__(self):
         # Initialize version flags: we always write v.2, but
         # version_read is set by reading a file.
@@ -196,9 +199,8 @@ class MetaMgr(object):
 
     # Other members of the Book's fleet of objects call this method
     # to register to read and write a section of metadata.
-    _rdr_wtr_types = (types.FunctionType, types.MethodType, types.LambdaType)
+    # TODO a way to prioritize single-line items like VERSION, DEFAULTDICT
     def register(self, sentinel, rdr, wtr):
-
         if isinstance(rdr, self._rdr_wtr_types) \
         and isinstance(wtr, self._rdr_wtr_types) :
             if type(sentinel) == type('') :
