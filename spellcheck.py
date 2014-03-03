@@ -42,12 +42,37 @@ unless we actually can check them.
 
 # THIS IS A STUB TODO see v1 pqSpell.py
 class Speller(object):
-    def __init__(self, my_book):
-        self.book = my_book
-        # TODO get main dict tag from book
-        # TODO instantiate a dictionary for it
-        # TODO get list of available dicts from book
+    def __init__(self, primary_tag, dict_path_dict ):
+        self.primary_tag = primary_tag
+        self.dict_path_dict = dict_path_dict
+        self.primary_dictionary = None
+        self.alt_dictionary = None
+        self.alt_tag = None
+        # TODO make primary dict now
 
+    # Called by the book when the user chooses a new default
+    # dictionary: if it is a change, get rid of the old and
+    # make a new one.
+    def new_primary_dict(self, primary_tag):
+        if primary_tag != self.primary_tag :
+            self.primary_dictionary = None
+            # TODO make new primary dictionary
+
+    def make_a_dict(self, tag):
+        # TODO: implement
+        return None
 
     def check(word, alt_tag = None):
-        return True
+        if alt_tag : # is not None:
+            if alt_tag != self.alt_tag :
+                self.alt_dictionary = None
+            if self.alt_dictionary is None:
+                self.alt_dictionary = self.make_a_dict(alt_tag)
+                self.alt_tag = alt_tag
+            dict_to_use = self.alt_dictionary
+        else :
+            dict_to_use = self.primary_dictionary
+        if dict_to_use :
+            return True #TODO
+        else:
+            return True

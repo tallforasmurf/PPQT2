@@ -39,3 +39,17 @@ Support the user action of dragging a panel out of the tab-set to be an
 independent window, or vice-versa.
 
 '''
+from PyQt5.QtWidgets import QMainWindow
+# TEMP TODO REMOVE vv
+import os
+temp_path = os.path.dirname(__file__)
+# REMOVE ^^
+
+class MainWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        # TODO get default spell dict from settings
+        self.default_dic_tag = "en_US"
+        # TODO develop a dict of available dic-tags,
+        #       key is tag, value is path to containing folder
+        self.dictionary_paths = {'en_US':temp_path}
