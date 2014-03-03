@@ -186,6 +186,10 @@ prop_decode = {
     'UC':UC, 'LC':LC, 'MC':MC, 'HY':HY, 'AP':AP,
     'ND':ND, 'BW':BW, 'GW':GW, 'XX':XX, 'AD':AD
     }
+# set to test spell-check-ability
+prop_bgh = set([BW,GW,HY])
+# set to clear XX -- set.remove(XX) raises an exception if no XX
+prop_nox = set([UC,LC,MC,HY,AP,ND,BW,GW,AD])
 
 # ====================================================================
 # Class to implement saving all the census data related to one book.
@@ -383,12 +387,22 @@ class WordData(object):
             stream << '\n'
         stream << metadata.close_line(sentinel)
     #
-    # The following is called by the document when the user chooses a
-    # different spelling dictionary. Store a new spellcheck object. Recheck
-    # the spelling of all words except those with properties HY, GW, or BW.
+    # The following is called by the Book when the user chooses a different
+    # spelling dictionary. Store a new spellcheck object. Recheck the
+    # spelling of all words except those with properties HY, GW, or BW.
     #
     def recheck_spelling(self, speller):
-        pass # TODO complete
+        global prop_bgh, prop_nox
+        self.speller = speller
+        for i in range(len(self.vocab)) :
+            (c, p) = self.vocab_vview[i]
+            if not( prop_bgh & p ) : # then p lacks BW, GW and HY
+                p = p & prop_nox # and now it also lacks XX
+                w = self.vocab_kview[i]
+                t = self.alt_tags.get(w,None)
+                if not self.speller.check(w,t):
+                    p.add(XX)
+                self.vocab_vview[i][1] = p
     #
     # Methods to perform a census:
     #
@@ -396,7 +410,8 @@ class WordData(object):
         pass # TODO
 
     # Internal method for adding a possibly-hyphenated token to the vocabulary,
-    # incrementing its count. This is used during the census/refresh scan only.
+    # incrementing its count. This is used during the census/refresh scan, and
+    # can be called from word_read to process a user-added word.
     # Arguments:
     #    tok_str: a normalized word-like token; may be hyphenated a/o apostrophized
     #    dic_tag: an alternate dictionary tag
@@ -405,7 +420,8 @@ class WordData(object):
     # token is hyphenated, we enter each part of it alone, then add the
     # phrase with the union of the prop_sets of its parts, plus HY. Thus
     # "mother-in-law's" will be added as "mother", "in" and "law's", and as
-    # itself with HY, LC, AP, and with XX if "law's" fails the spellchecker.
+    # itself with HY, LC, AP. If a part of a phrase fails spellcheck, it
+    # will have XX but we do not propogate that to the phrase itself.
     # "1989-1995" puts 1989 and 1995 in the list and will have HY and ND.
     # Yes, this means that a hyphenation could have all of UC, MC and LC.
     #
@@ -415,6 +431,7 @@ class WordData(object):
     # Defensive programming: '-'.split('-') --> ['','']; '-9'.split('-') --> ['','9']
 
     def _add_token(self, tok_str, dic_tag ) :
+        global prop_nox
         # Count the entire token regardless of hyphens
         self._count(tok_str, dic_tag) # this definitely puts it in the dict
         [count, prop_set] = self.vocab[tok_str]
@@ -427,7 +444,7 @@ class WordData(object):
                     self._count(member, dic_tag)
                     [x, part_props] = self.vocab[member]
                     prop_set |= part_props
-            self.vocab[tok_str] = [count, prop_set]
+            self.vocab[tok_str] = [count, prop_set & prop_nox]
 
     # Internal method to count a token, adding it to the list if necessary.
     # An /alt-tag must already be removed. The word must be already
