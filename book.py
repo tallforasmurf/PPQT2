@@ -66,6 +66,8 @@ class Book(QObject):
     def __init__(self, main_window): #TODO: API?
         super().__init__(main_window)
         #
+        self.main_window = main_window
+        #
         # Create the metadata manager
         #
         self.metamgr = metadata.MetaMgr()
@@ -78,10 +80,12 @@ class Book(QObject):
         #
         # Create the spellchecker
         #
-        # TODO from the main window get the list of available dicts
-        #
-        self.dict_paths = []
-        self.speller = spellcheck.Speller(self)
+        # Copy the default dictionary as it is now
+        # TODO: register to save and load it from metadata
+        self.default_dic_tag = self.main_window.default_dic_tag
+        self._speller = spellcheck.Speller(
+            self.default_dic_tag,
+            self.main_window.dictionary_paths )
         #
         # Create the objects that hold and display words data
         #
@@ -97,4 +101,4 @@ class Book(QObject):
         return self.metamgr
     # give access to the spellcheck object
     def get_speller(self):
-        return self.speller
+        return self._speller
