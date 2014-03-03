@@ -62,7 +62,7 @@ class Speller(object):
         # TODO: implement
         return None
 
-    def check(word, alt_tag = None):
+    def check(self, word, alt_tag = None):
         if alt_tag : # is not None:
             if alt_tag != self.alt_tag :
                 self.alt_dictionary = None

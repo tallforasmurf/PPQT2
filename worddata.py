@@ -302,8 +302,9 @@ class WordData(object):
                     (word, alt_tag) = word.split('/')
                 word = unicodedata.normalize('NFKC',word)
                 if 3 > len(parts) :
-                    # just the word (and count?), so: user addition. Just add
-                    # it to the vocabulary with count 1, handling hyphens and all.
+                    # just the word (and count?), so: user addition to meta
+                    # file. Just add it to the vocabulary with count 1,
+                    # handling hyphens and all.
                     self._add_token(word, alt_tag)
                     continue # that's that, on to next line
                 # line had 3 (or more?) parts: assume proper metadata.
@@ -406,6 +407,7 @@ class WordData(object):
     # "mother-in-law's" will be added as "mother", "in" and "law's", and as
     # itself with HY, LC, AP, and with XX if "law's" fails the spellchecker.
     # "1989-1995" puts 1989 and 1995 in the list and will have HY and ND.
+    # Yes, this means that a hyphenation could have all of UC, MC and LC.
     #
     # Note: en-dash \u2013 is not supported here, only the ascii hyphen.
     # Support for it could be added if required.
@@ -419,12 +421,12 @@ class WordData(object):
         if (count == 1) and (HY in prop_set) :
             # We just added a hyphenated token: add its parts also.
             parts = tok_str.split('-')
-            prop_set = set()
+            prop_set = {HY}
             for member in parts :
                 if len(member) : # if not null split from leading -
                     self._count(member, dic_tag)
-                    [x, part_props] = self.vocab(member)
-                    prop_set += part_props
+                    [x, part_props] = self.vocab[member]
+                    prop_set |= part_props
             self.vocab[tok_str] = [count, prop_set]
 
     # Internal method to count a token, adding it to the list if necessary.
@@ -439,52 +441,52 @@ class WordData(object):
 
     def _count(self, word, dic_tag ) :
         [count, prop_set] = self.vocab.get( word, [0,set()] )
-        if count : # it was in the list: a new words would have count=0
+        if count : # it was in the list: a new word would have count=0
             self.vocab[word][0] += 1 # increment its count
-        else:
-            # word was not in the list (but is now): count is 0 and prop_set is {}
-            self.modified = True
-            work = word[:] # copy the word, we may modify it next.
-            # If word has apostrophes, note that and delete for following tests.
-            if -1 < work.find("'") : # look for ascii apostrophe
-                prop_set.add(AP)
-                work.replace("'","")
-            if -1 < work.find('\u02bc') : # look for MODIFIER LETTER APOSTROPHE
-                prop_set.add(AP)
-                work.replace('\u02bc','')
-            # If word has hyphens, note that and remove them.
-            if -1 < work.find('-') :
-                prop_set.add(HY)
-                work.replace('-','')
-            # With the hyphens and apostrophes out, check letter case
-            if not work.isalpha() :
-                # word has at least some numerics
-                prop_set.add(ND)
-            if not work.isnumeric() :
-                # word is not all-numeric, determine case of letters
-                if work.lower() == work :
-                    prop_set.add(LC) # most common case
-                elif work.upper() != work :
-                    prop_set.add(MC) # next most common case
-                else : # work.upper() == work
-                    prop_set.add(UC)
-                if HY not in prop_set :
-                    # word has some alphas and is not hyphenated,
-                    # so check its spelling.
-                    if word not in self.good_words :
-                        if word not in self.bad_words :
-                            # Word in neither good- nor bad-words
-                            if dic_tag : # uses an alt dictionary
-                                self.alt_tags[word] = dic_tag
-                                prop_set.add(AD)
-                            if not self.speller.check(word, dic_tag) :
-                                prop_set.add(XX)
-                        else : # in bad-words
+            return # and done.
+        # word was not in the list (but is now): count is 0, prop_set is empty
+        self.modified = True
+        work = word[:] # copy the word, we may modify it next.
+        # If word has apostrophes, note that and delete for following tests.
+        if -1 < work.find("'") : # look for ascii apostrophe
+            prop_set.add(AP)
+            work = work.replace("'","")
+        if -1 < work.find('\u02bc') : # look for MODIFIER LETTER APOSTROPHE
+            prop_set.add(AP)
+            work = work.replace('\u02bc','')
+        # If word has hyphens, note that and remove them.
+        if -1 < work.find('-') :
+            prop_set.add(HY)
+            work = work.replace('-','')
+        # With the hyphens and apostrophes out, check letter case
+        if not work.isalpha() :
+            # word has at least some numerics
+            prop_set.add(ND)
+        if not work.isnumeric() :
+            # word is not all-numeric, determine case of letters
+            if work.lower() == work :
+                prop_set.add(LC) # most common case
+            elif work.upper() != work :
+                prop_set.add(MC) # next most common case
+            else : # work.upper() == work
+                prop_set.add(UC)
+            if HY not in prop_set :
+                # word has some alphas and is not hyphenated,
+                # so check its spelling.
+                if word not in self.good_words :
+                    if word not in self.bad_words :
+                        # Word in neither good- nor bad-words
+                        if dic_tag : # uses an alt dictionary
+                            self.alt_tags[word] = dic_tag
+                            prop_set.add(AD)
+                        if not self.speller.check(word, dic_tag) :
                             prop_set.add(XX)
-                    # else in good-words
-                # else hyphenated, spellcheck only its parts
-            # else all numeric - assume good spelling
-            self.vocab[word] = [1, prop_set]
+                    else : # in bad-words
+                        prop_set.add(XX)
+                # else in good-words
+            # else hyphenated, spellcheck only its parts
+        # else all numeric - assume good spelling
+        self.vocab[word] = [1, prop_set]
     #
     # The following methods are used by the Words panel.
     #
@@ -524,11 +526,12 @@ class WordData(object):
         except Exception as whatever:
             worddata_logger.error('bad call to word_props_at({0})'.format(n))
             return (set())
+    # mostly used by unit test, get the index of a word by its key
     def word_index(self, w):
         try:
             return self.vocab_kview.index(w)
         except Exception as whatever:
-            worddata_logger.error('bad call to word_index({0})'.format(v))
+            worddata_logger.error('bad call to word_index({0})'.format(w))
             return -1
 
     # The following methods are used by the edit syntax highlighter to set flags.
@@ -548,12 +551,11 @@ class WordData(object):
     # work.
     #
     def spelling_test(self, tok_str) :
-        [count, prop_set] = self.vocab[tok_str]
+        count, prop_set = self.vocab.get(tok_str,[0,set()])
         if count : # it was in the list
             return XX in prop_set
         tok_nlz = unicodedata.normalize('NFKC',tok_str)
-        [count, prop_set] = self.vocab[tok_nlz]
-        # If normalized token is not in the list, prop_set is {}
+        [count, prop_set] = self.vocab.get(tok_nlz,[0,set()])
         return XX in prop_set
     #
     # 2. Check a token for being in the scannos list. If no scannos
