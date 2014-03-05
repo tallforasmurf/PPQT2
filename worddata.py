@@ -82,9 +82,10 @@ When the user requests a "refresh" of the Words panel the refresh() method is
 called. This method gets the Document (see editdata.py) from the Book and
 from it gets an iterator to fetch the lines of the document.
 
-We zero out the counts on all known tokens. Then we parse each line into
-tokens using a regex, adding tokens to the dictionary only as necessary, and
-incrementing the counts of all.
+We zero out the counts on all known tokens. We also empty our dictionary of
+words that use alt-dict tags, as the user might have edited in or out, some
+lang= properties. Then we parse each line into tokens using a regex, adding
+tokens to the dictionary only as necessary, and incrementing the counts.
 
 After scanning all lines we delete from the dict any token whose count is zero.
 That could happen if the token was once in the document, but has since been
@@ -157,6 +158,7 @@ none will be found.
 import constants as C
 import metadata
 import blist
+import regex
 import unicodedata # for NFKC
 import ast # for literal_eval
 import logging
@@ -192,6 +194,73 @@ prop_bgh = set([BW,GW,HY])
 prop_nox = set([UC,LC,MC,HY,AP,ND,BW,GW,AD])
 
 # ====================================================================
+# A suite of regexes to parse out important tokens from a text line.
+#
+# First, a word composed of digits and/or letters, where
+# the letters may include PGDP ligature notation: [OE]dipus, ma[~n]ana
+
+xp_word = "(\\w*(\\[..\\])?\\w+)+"
+
+# Note that although xp_word recognizes words with multiple ligatures, it
+# does not recognize adjacent ligatures (problem?). It does not recognize
+# terminal ligatures on the grounds that a word-terminal [..] is likely a
+# two-digit footnote anchor.
+
+# Next: the above with embedded hyphens or apostrophes (incl. u2019's):
+# She's my mother-in-law's 100-year-old ph[oe]nix by [OE]dipus.
+
+xp_hyap = "(" + xp_word + "[\\'\\-\u2019])*" + xp_word
+
+# re_word is used to select word-like tokens only.
+re_word = regex.compile(xp_hyap, regex.IGNORECASE)
+
+# Detect an HTML starting tag with possible attributes:
+# <div lang=en_GB>, <hr class='major'>, or <br />
+
+xp_start = '''(<(\w+)([^>]*)>)'''
+
+# Detect an HTML end tag, not allowing for any attributes (or spaces)
+
+xp_end = '''(</(\w+)>)'''
+
+# Put it all together: a token is any of those three things:
+xp_any = '|'.join([xp_hyap,xp_start,xp_end])
+
+re_token = regex.compile(xp_any, regex.IGNORECASE)
+
+# When re_token.search returns a match object its groups are:
+#   a word-like token,
+#       0 is the token string
+#       6 and 9 are None
+#   an HTML start tag,
+#       6 is the tag, e.g. "div" or "i"
+#   an HTML end tag,
+#       9 is the tag, e.g. "div" or "i"
+#
+# Note I am fully aware of stackoverflow.com/questions/1732348, the
+# great rant on not using REs to parse HTML. We are not parsing HTML.
+# We are selecting and recognizing isolated HTML productions which
+# *are* regular and hence, parseable by regular expressions.
+#
+# For a start tag (group(6) is not None), group(7) is its attribute string,
+# e.g. "class='x' lang='en_GB'"
+#
+# According to W3C (www.w3.org/TR/html401/struct/dirlang.html) you can put
+# lang= into any tag, esp. span, para, div, td, and so forth. . We scan that
+# for lang='value' allowing for single, double, or no quotes on the value.
+
+xp_lang = '''lang=[\\'\\"]*([\\w\\-]+)[\\'\\"]*'''
+re_lang_attr = regex.compile(xp_lang, regex.IGNORECASE)\
+
+# The value string matched by re_lang_attr.group(0) is a language designation
+# but we require it to be a dictionary tag such as 'en_US' or 'fr_FR'. It is
+# not clear from the W3C docs whether all (or any) of our dic tags are
+# language designations. Nevertheless, during the refresh() we save the dict
+# tag as an alternate dictionary for all words until the matching close tag
+# is seen.
+
+
+# ====================================================================
 # Class to implement saving all the census data related to one book.
 # speller is a spellcheck object. metamgr is the MetaMgr object for
 # the controlling book.
@@ -203,6 +272,8 @@ class WordData(object):
         self.speller = my_book.get_speller()
         # Save reference to the metamanager
         self.metamgr = my_book.get_meta_manager()
+        # Save reference to the edited document
+        self.document = my_book.get_edit_model()
         # The vocabulary list, as a sorted dict with a default so that new
         # keys have zero count and empty property set
         self.vocab = blist.sorteddict()
@@ -391,6 +462,8 @@ class WordData(object):
     # spelling dictionary. Store a new spellcheck object. Recheck the
     # spelling of all words except those with properties HY, GW, or BW.
     #
+    # NOTE IF THIS IS A PERFORMANCE BURDEN, KILL IT AND REQUIRE REFRESH
+    #
     def recheck_spelling(self, speller):
         global prop_bgh, prop_nox
         self.speller = speller
@@ -404,10 +477,51 @@ class WordData(object):
                     p.add(XX)
                 self.vocab_vview[i][1] = p
     #
-    # Methods to perform a census:
+    # Method to perform a census. This is called from wordview when the
+    # user clicks the Refresh button asking for a new scan over all words in
+    # the book.
     #
+    # TODO: progress bar API!
     def refresh(self):
-        pass # TODO
+        global re_lang_attr, re_token
+
+        # clear the alt-dict dictionary.
+        self.alt_tags = blist.sorteddict()
+
+        # zero out all counts that we have so far
+        for j in range(len(self.vocab)) :
+            self.vocab_vview[j][0] = 0
+
+        # iterate over all lines extracting tokens and processing them.
+        alt_dict = None
+        alt_tag = None
+        for line in self.document.all_lines():
+            j = 0
+            m = re_token.search(line,0)
+            while m : # while match is not None
+                if m.group(6) : # start-tag; has it lang= ?
+                    d = re_lang_attr.search(m.group(8))
+                    if d :
+                        alt_dict = d.group(1)
+                        alt_tag = m.group(7)
+                elif m.group(9) :
+                    if m.group(10) == alt_tag :
+                        # end tag of a lang= start tag
+                        alt_dict = None
+                        alt_tag = None
+                else :
+                    self._add_token(m.group(0),alt_dict)
+                j = m.end()
+                m = re_token.search(line,j)
+
+        # look for zero counts and delete those items. In order not to
+        # confuse the value and keys views, make a list and then execute it.
+        togo = []
+        for j in range(len(self.vocab)) :
+            if self.vocab_vview[j][0] == 0 :
+                togo.append(self.vocab_kview[j])
+        for key in togo:
+            del self.vocab[key]
 
     # Internal method for adding a possibly-hyphenated token to the vocabulary,
     # incrementing its count. This is used during the census/refresh scan, and
