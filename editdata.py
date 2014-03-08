@@ -94,10 +94,10 @@ class Document(QTextDocument):
     def text_modified(self):
         self._text = None
 
-    # The following functions return iterators over sequences of
-    # QTextBlocks, producing a Python string of the contents of each.
-    # They gives read-access to sequences of lines, as for a census
-    # or when parsing text for reflow.
+    # The following functions create iterators over sequences of QTextBlocks,
+    # producing a Python string of the contents of each. They gives read
+    # access to sequences of lines, as for a census or when parsing text for
+    # reflow.
     #
     # Note that findBlockByNumber(x)==end() for any x that is invalid,
     # whether negative or greater than blockCount.
@@ -148,8 +148,9 @@ class Document(QTextDocument):
 
     # The following functions return iterators over sequences of
     # QTextBlocks, returning the QTextBlocks themselves. These are
-    # only used when access to QTextBlock methods are needed, as
-    # for example setUserData.
+    # only used when access to QTextBlock methods are needed.
+    # pagedata for example needs to know the .position() of the
+    # textblocks that contain page separator lines.
     #
     # 1. The whole document from top to bottom, as for a census.
     #
