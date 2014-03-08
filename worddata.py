@@ -30,7 +30,8 @@ word-tokens of a document, with their properties, and also
 the good-words, bad-words, and scannos lists, and apply spell-check.
 
 One of these objects is created by each Book object. It:
-  * is initialized by the Book while loading or creating metadata.
+  * is called by the Book while loading metadata for a known book
+  * or is initialized by the user clicking Refresh in the Words panel
   * is called by the Book during save, to write metadata.
   * acts as Data Model to the the Word view panel
   * also is data model to the Edit syntax highlighter for scannos and misspelled words
@@ -288,9 +289,6 @@ class WordData(object):
         # tag the value. Any word that needs an alt dict is entered here as
         # a key with the alt-tag as its value.
         self.alt_tags = blist.sorteddict()
-        # The modified flag, set whenever a word is added. Cleared on metadata
-        # load and metadata save.
-        self.modified = False
         # Register metadata readers and writers.
         self.metamgr.register(C.MD_GW, self.good_read, self.good_save)
         self.metamgr.register(C.MD_BW, self.bad_read, self.bad_save)
@@ -372,7 +370,7 @@ class WordData(object):
             alt_tag = None
             parts = line.split()
             try:
-                word = parts[0] # throws an exception if line is empty.
+                word = parts[0] # IndexError if line is empty.
                 if 0 < word.find('/') : # word/alt-tag
                     (word, alt_tag) = word.split('/')
                 word = unicodedata.normalize('NFKC',word)
@@ -383,12 +381,12 @@ class WordData(object):
                     self._add_token(word, alt_tag)
                     continue # that's that, on to next line
                 # line had 3 (or more?) parts: assume proper metadata.
-                count = int(parts[1]) # exception if not an int str
+                count = int(parts[1]) # ValueError if not an int str
                 count = max(1,count) # convert 0, negative to 1
                 if v < '2' :
                     # In V.1 the third item is an integer representing a set of bits
                     # decoded as follows.
-                    bits = int(parts[2]) # throws exception if not an int
+                    bits = int(parts[2]) # ValueError if not an int
                     bitcase = 0x03 & bits
                     if 0x03 == bitcase : prop_set.add(MC)
                     if 0x01 == bitcase : prop_set.add(UC)
@@ -402,7 +400,7 @@ class WordData(object):
                     # of a set of ints with spaces compressed out so it
                     # splits as one token. Convert back to a set and
                     # cautiously add its members to prop_set. literal_eval
-                    # will throw an exception on bad syntax.
+                    # will throw SyntaxError on bad syntax.
                     input_set = ast.literal_eval(parts[2])
                     if type(input_set) == type(prop_set) :
                         for i in input_set :
@@ -410,7 +408,7 @@ class WordData(object):
                                 prop_set.add(i)
                     else: # it was a valid literal but not a set
                         raise ValueError('bad property set')
-            except Exception as whatever :
+            except (IndexError, ValueError, SyntaxError):
                 worddata_logger.warn('line {0} of word census list invalid'.format(line_num))
                 worddata_logger.warn('  "'+line+'"')
                 continue # on to next line.
@@ -576,7 +574,7 @@ class WordData(object):
             self.vocab[word][0] += 1 # increment its count
             return # and done.
         # word was not in the list (but is now): count is 0, prop_set is empty
-        self.modified = True
+        self.my_book.metadata_modified()
         work = word[:] # copy the word, we may modify it next.
         # If word has apostrophes, note that and delete for following tests.
         if -1 < work.find("'") : # look for ascii apostrophe

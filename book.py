@@ -102,3 +102,7 @@ class Book(QObject):
     # give access to the spellcheck object
     def get_speller(self):
         return self._speller
+    # Note when metadata changes and needs save
+    # TODO implement
+    def metadata_modified(self):
+        pass
