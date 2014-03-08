@@ -30,6 +30,9 @@ read-only. Stylistically they should be ALL-CAP.
 '''
 # constant value for the line-delimiter used by QPlainTextEdit
 UNICODE_LINE_DELIM = '\u2029'
+# constant for the en-space used instead of spaces when
+# writing a proofer string to metadata
+UNICODE_EN_SPACE = '\u2002'
 # constant value for the zero-width-non-joiner used as a marker in reflow
 UNICODE_ZWNJ = '\200C'
 
