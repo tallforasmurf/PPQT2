@@ -25,25 +25,296 @@ __email__ = "tallforasmurf@yahoo.com"
 
                           PAGEDATA.PY
 
-Defines a class to store info extracted from page boundary lines. Acts as the
-Data Model for pageview.py, which displays the page table with user controls.
-Defines some constants used by pagedata and pageview.
+Defines a class to store info extracted from page boundary lines and act as
+the Data Model for pageview.py, which displays the page table with user
+controls. Defines some constants used by pagedata and pageview.
 
-Created by a Book object. Registers page_load and page_save methods
-to read/write {{PAGETABLE}} metadata section.
+One of these objects is created by each Book object. It:
+  * is called by the Book to load metadata for a known book.
+  * is called by the Book to scan page separators for a new book.
+  * is called by the Book during save, to write metadata.
+  * acts as Data Model to the the Pages view panel
+  * also is data model to the Images view panel
+
+    Load Process
+
+When the Book is created it creates a PageData object which registers a
+reader and writer for the PAGETABLE metadata section. The main window tells
+the Book to load either a known file (one with matching .meta file) or a new
+file (without). In the first case the metadata manager calls the registered
+read_pages method to store the page info from the metadata file.
+
+In the second case the Book calls the scan_pages() method, which uses the
+editdata's all_blocks iterator to scan the document and extract the key info
+from all page separator lines. At either time QTextCursors are created to mark
+the start of each page in the book.
+
+scan_pages() is only called the first time a document is loaded. From
+then on we save and load page info in the metadata file.
+
+    Save Process
+
+The metadata manager calls the write_pages() method to write the metadata
+lines. The format is unchanged from V1.
+
+    Data Storage
+
+This "data model" has 6 items to store about each scan page:
+
+  * The page start offset in the document. This is stored as a QTextCursor so
+  that Qt will update it continuously as the document is edited -- sometimes!
+  See the note on Page Boundary Cursors below.
+
+  * The scan image filename string, usually a number like "002" or "0075" but
+  sometimes alphanumeric.
+
+  * Three ints related to the Folio value:
+       - the folio rule, e.g. C.FolioRuleAdd1
+       - the folio format, e.g. C.FolioFormatArabic
+       - the folio number, e.g. 17
+
+  * A string of proofer names separated by backslashes, e.g.
+        \\Frau Sma\\fsmwalb\Scribe
+    When writing the metadata file, spaces within this string are replaced
+    with C.UNICODE_EN_SPACE so the string will remain a unit under split().
+    Note also some names may be null, as the 1st and 3rd in the example.
+
+In effect this is a 6-column table indexed by row number. However
+in memory, data is in lists indexed by row number:
+
+  * cursor_list is a list of QTextCursor objects
+  * filename_list is a list of filename strings
+  * folio_list is a list of three-item lists [rule,format,number]
+    -- a list not a tuple because it needs to be mutable
+  * proofer_list is a list of lists containing proofer names, e.g.
+    [ "", "Frau Sma", "", "fsmwalb", "Scribe" ] with u2002's converted.
+
+    Public Methods
+
+pagedata has two clients: imageview displays the scan images using the filenames;
+and pageview displays all the data in the Pages panel.
+
+    active()    returns True when pagedata is available, False else.
+
+    page_count()returns the count of pages (for sizing the page table).
+
+    page_at(P)  returns the filename string for the page that contains
+                document offset P, or None if P precedes the first page.
+                This is called every time the edit cursor moves.
+
+    pagename(j) returns the filename string for row j.
+
+    proofers(j) returns the proofer string list for row j.
+
+    folios(j)   returns the folio item list for row j.
+
+    set_folios(j, [r,t,p]) update the folio values for row j.
+
+    Page Boundary Cursors
+
+We rely on Qt to keep the page-start cursors accurate under editing. This
+does not always happen. Under some types of edit, the start-offset of a
+page can be misplaced.
+
+Specifically, if the user selects a span of text that includes one or more
+page boundaries, and deletes or replaces that span of text, the cursor(s)
+that mark(s) the start(s) of the page(s) move to the end of the changed or
+deleted span. This part is inevitable (what else could the editor do?), but
+it does mean that if a span of text covering two or more pages is
+deleted/replaced, the affected page boundaries all end up pointing to the
+same point, the end of the replaced span.
+
+The bug (bugreports.qt-project.org/browse/QTBUG-32689) is that if you UNDO
+such an edit change -- as in "OMG did I really just delete three pages?
+Quick, control-z!" -- the cursors are NOT restored to their former positions
+but remain pointing to the end of the now-restored section of text. So Undo
+fails to restore the page boundary positions once they are moved.
+
+Note that in the Reflow process, which often replaces spans of text that
+overlap page boundaries, there is special code to preserve these markers.
+However if you reflow and then Undo, bug 32689 bites you.
+
+One possible approach would be to give the user a "Refresh" button on the
+Pages panel, asking us to re-scan the page separator lines, if they still
+exist. (If they have been deleted, nothing could be done.) This refresh would
+look for psep lines and update only the start offsets and cursors, preserving
+any folio work that had been done. This could also be coded as a standalone
+utility. (This wouldn't help reflow, which is done after page sep lines are
+deleted.)
 
 '''
+import logging
+pagedata_logger = logging.getLogger(name='pagedata')
 
-# These values are used to encode folio controls for the
-# Page/folio table.
-FolioFormatArabic = 0x00
-FolioFormatUCRom = 0x01
-FolioFormatLCRom = 0x02
-FolioFormatSame = 0x03 # the "ditto" format
-FolioRuleAdd1 = 0x00
-FolioRuleSet = 0x01
-FolioRuleSkip = 0x02
+import regex
+import constants as C
+import metadata
+import editdata
+from PyQt5.QtGui import QTextBlock, QTextCursor
 
-# Each .meta page info is a list of 6 items, specifically
-# 0: page start offset, 1: png# string, 2: prooferstring,
-# 3: folio rule, 4: folio format, 5: folio number
+class PageData(object):
+    def __init__(self, my_book):
+        self.my_book = my_book
+        # Save reference to the metamanager
+        self.metamgr = my_book.get_meta_manager()
+        # Save reference to the edited document
+        self.document = my_book.get_edit_model()
+        # Set up lists
+        self.cursor_list = []
+        self.filename_list = []
+        self.folio_list = []
+        self.proofers_list = []
+        # Last-returned page row
+        self.last_row = 0
+        # Register to read and write metadata
+        self.metamgr.register(C.MD_PT, self.read_pages, self.write_pages)
+
+    # This regex recognizes a page separator line and captures:
+    #   1: image filename -- usually but not always numeric
+    #   2: string of proofer names divided by backslashes
+
+    re_line_sep = regex.compile(
+        '''-----File: ([^\\.]+)\\.png---((\\\\[^\\\\]*)+)\\\\-*'''
+        ,regex.IGNORECASE)
+
+    #
+    # Scan all lines of a new document and create page sep info.
+    # We fetch QTextBlocks, not just content strings, because we
+    # need to get the .position() of the matching lines.
+    #
+    # Set all folios to Arabic, Add 1, and the sequence number.
+    # This operation creates new data, so we set metadata_modified.
+    #
+    def scan_pages(self):
+        # first page is Arabic starting at 1
+        rule = C.FolioRuleSet
+        fmt = C.FolioFormatArabic
+        nbr = 1
+        for qtb in self.document.all_blocks() :
+            m = re_line_sep.match(qtb.text())
+            if m :
+                fname = m.group(1)
+                plist = m.group(2).split('\\')
+                qtc = QTextCursor(self.document)
+                qtc.setPosition(qtb.position())
+                self.cursor_list.append(qtc)
+                self.filename_list.append(fname)
+                self.folio_list.append( [rule,fmt,nbr] )
+                self.proofers_list.append(plist)
+                # remaining pages are ditto, add 1, next number
+                rule = C.FolioRuleAdd1
+                fmt = C.FolioFormatSame
+                nbr += 1
+        if 0 < len(self.cursor_list) : # we found at least 1
+            self.my_book.metadata_modified()
+            self._add_stopper()
+
+    # common to scan_pages and read_pages, add a search-stopper
+    # to the list of cursors - see page_at() below.
+    def _add_stopper(self) :
+        qtc = QTextCursor(self.document)
+        qtc.setPosition( self.cursor_list[-1].position() + 1000000 )
+        self.cursor_list.append(qtc)
+
+    # Read the metadata lines and store in our lists. Tdata format is
+    # the same between V1 and V2, 6 space-delimited items, e.g.
+    #     35460 027 \\fmmarshall\\fsmwalb\Scribe 0 0 22
+    #
+    # NOTE that unlike worddata we make no allowances here for user
+    # meddling/editing of page data, except for guarding it in a try block.
+    #
+    def read_pages(self, stream, sentinel, vers, parm):
+        for line in metadata.read_to(stream, sentinel):
+            try:
+                (P, fn, pfrs, rule, fmt, nbr) = line.split()
+                tc = QTextCursor(self.document)
+                tc.setPosition(P)
+                self.cursor_list.append(tc)
+                self.filename_list.append(fn)
+                self.folio_list.append( [int(rule), int(fmt), int(nbr)] )
+                plist = pfs.replace(C.UNICODE_EN_SPACE,' ').split('\\')
+                self.proofers_list.append(plist)
+            except Exception as who_cares:
+                pagedata_logger.error('invalid line of page metadata:')
+                worddata_logger.error('  "'+line+'"')
+        if 0 < len(self.filename_list) :
+            self._add_stopper()
+
+    # Write our data as metadata lines.
+
+    def write_pages(self, stream, sentinel):
+        stream << metadata.open_line(sentinel)
+        for R in range(len(self.filename_list)):
+            P = self.cursor_list[R].position()
+            fn = self.filename_list[R]
+            plist = self.proofers_list[R]
+            pfs = '\\'.join(plist).replace(' ',C.UNICODE_EN_SPACE)
+            [rule, fmt, nbr] = self.folio_list[R]
+            stream << '{0} {1} {2} {3} {4} {5}\n'.format(
+                     P,  fn, pfs, rule, fmt, nbr )
+        stream << metadata.close_line(sentinel)
+
+    # Use filename_list as the official length; cursor_list has an extra row.
+    def active(self) :
+        return 0 < len(self.filename_list)
+    def page_count(self) :
+        return len(self.filename_list)
+
+    # Return the scan filename matching a document offset. imageview calls
+    # this every time the user moves the cursor, so it needs to be quick. Use
+    # binary search to find the cursor in the cursor_list with the highest
+    # position less than or equal to the given offset.
+    #
+    # Speed that with heuristics based on these assumptions:
+    # * the user typically moves the cursor forward, incrementing P
+    # * forward or backward, the user typically stays on one page for a while.
+    # So we keep track of the row index of the last-returned page L.
+    # If P > cursor_list[L].position(),
+    #     if P < cursor_list[L+1].position() return filename_list[L]
+    #     else do binary search between L and max
+    # else do binary search between 0 and L
+
+    def page_at(self,P):
+        if P < self.cursor_list[0].position() :
+            self.last_row = 0
+            return None # fiddling around above page 1 text
+        L = self.last_row
+        if P > self.cursor_list[L].position() :
+            if P < self.cursor_list[L+1].position() :
+                return self.filename_list[L] # still in same page span
+            hi = len(self.cursor_list) - 1 # moved on, search in ..
+            lo = L # .. upper part of list
+        else :
+            hi = L # moved back, search in lower part of list
+            lo = 0
+        while lo < hi :
+            mid = (lo + hi)//2
+            if P < self.cursor_list[mid].position() :
+                hi = mid
+            else :
+                lo = mid + 1
+        self.last_row = lo-1
+        return self.filename_list[self.last_row]
+
+    # Return page values for display by pageview. Note that
+    # returning a reference to a list (like the list of folio data)
+    # means the caller can modify it in place. However to maintain
+    # the integrity of the model/view structure, pagedata does not do
+    # this, it calls set_folios with one or more modified values.
+    #
+    # At this time there is no need to modify proofer names.
+
+    def pagename(self, J):
+        return self.filename_list[J]
+
+    def proofers(self, J):
+        return self.proofers_list[J]
+
+    def folios(self, J):
+        return self.folio_list[J]
+
+    def set_folios(self, J, rule = None, fmt = None, nbr = None ):
+        if rule : self.folio_list[J][0] = rule
+        if fmt : self.folio_list[J][1] = fmt
+        if nbr : self.folio_list[J][2] = nbr
+        self.my_book.metadata_modified()
