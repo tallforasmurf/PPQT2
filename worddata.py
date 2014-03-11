@@ -269,6 +269,8 @@ re_lang_attr = regex.compile(xp_lang, regex.IGNORECASE)\
 class WordData(object):
 
     def __init__(self, my_book):
+        # Save reference to the book
+        self.my_book = my_book
         # Save reference to the spell-check object
         self.speller = my_book.get_speller()
         # Save reference to the metamanager
