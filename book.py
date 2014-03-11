@@ -60,6 +60,7 @@ import metadata
 import editdata
 import editview
 import worddata
+import pagedata
 import spellcheck
 
 class Book(QObject):
@@ -86,6 +87,11 @@ class Book(QObject):
         self._speller = spellcheck.Speller(
             self.default_dic_tag,
             self.main_window.dictionary_paths )
+        #
+        # Create the pagedata model and its clients
+        #
+        self.pagem = pagedata.PageData(self)
+        # self.pagev = pageview.PagePanel(self) TODO
         #
         # Create the objects that hold and display words data
         #
