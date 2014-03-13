@@ -114,7 +114,6 @@ import constants as C
 import regex
 import logging
 import types # for FunctionType validation in register
-import constants # for Folio Rule constants
 
 metadata_logger = logging.getLogger(name='metadata')
 
@@ -203,7 +202,7 @@ class MetaMgr(object):
     def register(self, sentinel, rdr, wtr):
         if isinstance(rdr, self._rdr_wtr_types) \
         and isinstance(wtr, self._rdr_wtr_types) :
-            if type(sentinel) == type('') :
+            if isinstance(sentinel,str) :
                 if sentinel not in self.section_dict :
                     self.section_dict[sentinel] = [rdr, wtr]
                     metadata_logger.debug('registered metadata for '+sentinel)
@@ -256,6 +255,7 @@ class MetaMgr(object):
 # meta_stream, a new QTextStream to write metadata into.
 
 import ast # for literal_eval
+import collections # for defaultdict
 
 def translate_bin(bin_stream, book_stream, meta_stream) :
 
@@ -289,7 +289,7 @@ def translate_bin(bin_stream, book_stream, meta_stream) :
     book_stream.seek(0)
 
     # A dict in which the keys are page #s and the values, proofer strings
-    proofers = defaultdict(str)
+    proofers = collections.defaultdict(str)
 
     # A list that gets for each page, a dict of info with keys of
     # offset, label, style, action and base, all from the perl dict.
@@ -318,11 +318,11 @@ def translate_bin(bin_stream, book_stream, meta_stream) :
             perl_dict_line = match.cap(2)
             perl_dict_line.replace('=>', ':')
             try: # some things with a small chance of failing
-                page_info = ast.literal_eval(perl_dict_line)
+                page = ast.literal_eval(perl_dict_line)
                 # convert "offset:ppp.ccc" into a document offset integer
-                (ppp, ccc) = page_info['offset'].split('.')
+                (ppp, ccc) = page['offset'].split('.')
                 page['offset'] = int( line_offsets[ int(ppp) - 1 ] + int(ccc) )
-            except Exception as whatever:
+            except Exception:
                 msg = line
                 if len(line) > 30 : msg = line[:30] + '...'
                 metadata_logger.warn('error on .bin line '+msg)
@@ -384,7 +384,7 @@ def translate_bin(bin_stream, book_stream, meta_stream) :
             )
     meta_stream << u"{{/" + C.MD_PT + "}}\n"
     meta_stream << u"{{" + C.MD_BM + "}}\n"
-    for (key, offset) in marks :
+    for (key, offset) in mark_list :
         meta_stream << '{0} {1}\n'.format(key, offset)
     meta_stream << u"{{/" + C.MD_BM + "}}\n"
     meta_stream.seek(0) # that's all, folks
