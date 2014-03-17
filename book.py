@@ -105,6 +105,9 @@ class Book(QObject):
     # give access to the metadata manager
     def get_meta_manager(self):
         return self.metamgr
+    # give access to the pagedata object
+    def get_page_model(self):
+        return self.pagem
     # give access to the spellcheck object
     def get_speller(self):
         return self._speller
