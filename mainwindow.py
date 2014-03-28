@@ -28,6 +28,7 @@ Create and manage the main window, menus, and toolbars.
 This code manages app-level global resources for example
   * the path(s) to user resources (the V1 "extras")
   * tags and paths to available spellcheck dicts
+  * fonts (by way of initializing the font module)
   * the Help file and its display panel
 
 Within the main window it creates the widgets that display the various
@@ -40,6 +41,8 @@ independent window, or vice-versa.
 
 '''
 from PyQt5.QtWidgets import QMainWindow
+import fonts
+
 # TEMP TODO REMOVE vv
 import os
 temp_path = os.path.dirname(__file__)
@@ -48,6 +51,9 @@ temp_path = os.path.dirname(__file__)
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
+        # initialize our font db
+        fonts.initialize()
+
         # TODO get default spell dict from settings
         self.default_dic_tag = "en_US"
         # TODO develop a dict of available dic-tags,
