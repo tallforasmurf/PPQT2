@@ -64,6 +64,8 @@ from PyQt5.QtWidgets import (
     QPlainTextDocumentLayout
     )
 
+import fonts
+
 class Document(QTextDocument):
     # TODO study qtdocument and do many overrides - resource? redos?
     def __init__(self, my_book):
@@ -74,6 +76,8 @@ class Document(QTextDocument):
 
         # TODO do I want to customize the layout?
         self.setDocumentLayout(QPlainTextDocumentLayout(self))
+        # Set my default font to the current mono font.
+        self.setDefaultFont( fonts.get_fixed(my_book.get_font_size()) )
 
     #
     # Return a reference to a Python string containing the entire document.
