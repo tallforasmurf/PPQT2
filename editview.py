@@ -63,6 +63,8 @@ from PyQt5.QtGui import QTextBlock, QTextCursor
 
 import editview_uic
 import fonts
+import logging
+editview_logger = logging.getLogger(name='editview')
 
 class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     def __init__(self, my_book, parent=None):
@@ -123,19 +125,22 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # Slot to receive the modificationChanged signal from the document.
     # Change the color of the DocName to match.
     def mod_change_signal(self,bool):
+        # TODO: get color from colors.py
         color = 'color:Magenta' if bool else 'color:Black'
         self.DocName.setStyleSheet(color)
 
-    # Position the cursor at a given document character position.
+    # Position the cursor at a given document character position. Call our
+    # cursor_moved slot because just setting our text cursor doesn't do it.
     # Make sure the focus ends up in the editor.
     def go_to_pos(self, pos):
         tc = self.Editor.textCursor()
         tc.setPosition(pos)
         self.Editor.setTextCursor(tc)
+        self.cursor_moved()
         self.Editor.setFocus(Qt.TabFocusReason)
 
     # Position the cursor at the head of a given QTextBlock (line)
-    # and get the focus. Does not assume tb is a valid number.
+    # and get the focus. Does not assume tb is a valid textblock.
     def go_to_tb(self, tb):
         if not tb.isValid():
             tb = self.document.end()
@@ -152,6 +157,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             tb = self.document.findBlockByLineNumber(lnum-1) # text block is origin-0
             if not tb.isValid() : raise ValueError
         except ValueError:
+            editview_logger.info('Request for invalid line number {0}'.format(self.LineNumber.text()))
             # TODO figure out how to beep
             self.cursor_moved() # restore current line nbr the easy way
             self.Editor.setFocus(Qt.TabFocusReason)
@@ -167,6 +173,8 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         if pn is not None :
             self.go_to_pos(self.page_model.position(pn))
         else : # unknown image filename, restore current value the easy way
+            editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
+            # TODO figure out how to beep
             self.cursor_moved()
             self.Editor.setFocus(Qt.TabFocusReason)
 
