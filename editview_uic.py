@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'editview.ui'
 #
-# Created: Mon Mar 31 15:14:11 2014
+# Created: Tue Apr  1 11:52:14 2014
 #      by: PyQt5 UI code generator 5.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -147,9 +147,9 @@ class Ui_EditViewWidget(object):
         self.LineNumber.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.LineNumber.setAcceptDrops(False)
         self.LineNumber.setLayoutDirection(QtCore.Qt.LeftToRight)
-        #self.LineNumber.setInputMask("00000D")
+        self.LineNumber.setInputMask("00000D")
         self.LineNumber.setText("")
-        #self.LineNumber.setCursorPosition(0)
+        self.LineNumber.setCursorPosition(0)
         self.LineNumber.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.LineNumber.setPlaceholderText("")
         self.LineNumber.setCursorMoveStyle(QtCore.Qt.LogicalMoveStyle)
@@ -170,7 +170,7 @@ class Ui_EditViewWidget(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.ColNumber.sizePolicy().hasHeightForWidth())
         self.ColNumber.setSizePolicy(sizePolicy)
-        self.ColNumber.setMinimumSize(QtCore.QSize(24, 12))
+        self.ColNumber.setMinimumSize(QtCore.QSize(30, 12))
         self.ColNumber.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         self.ColNumber.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.ColNumber.setFrameShadow(QtWidgets.QFrame.Plain)
