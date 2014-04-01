@@ -22,6 +22,9 @@
     <height>250</height>
    </size>
   </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::CustomContextMenu</enum>
+  </property>
   <property name="windowTitle">
    <string notr="true">Form</string>
   </property>
@@ -302,6 +305,9 @@
               <height>12</height>
              </size>
             </property>
+            <property name="mouseTracking">
+             <bool>false</bool>
+            </property>
             <property name="focusPolicy">
              <enum>Qt::ClickFocus</enum>
             </property>
@@ -309,7 +315,7 @@
              <enum>Qt::NoContextMenu</enum>
             </property>
             <property name="acceptDrops">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="toolTip">
              <string>Scan image filename</string>
@@ -386,11 +392,17 @@
               <height>12</height>
              </size>
             </property>
+            <property name="mouseTracking">
+             <bool>false</bool>
+            </property>
             <property name="focusPolicy">
              <enum>Qt::ClickFocus</enum>
             </property>
+            <property name="contextMenuPolicy">
+             <enum>Qt::NoContextMenu</enum>
+            </property>
             <property name="acceptDrops">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="toolTip">
              <string>Line number at cursor</string>
@@ -403,9 +415,6 @@
             </property>
             <property name="layoutDirection">
              <enum>Qt::LeftToRight</enum>
-            </property>
-            <property name="inputMask">
-             <string notr="true">00000D</string>
             </property>
             <property name="text">
              <string notr="true"/>
@@ -507,6 +516,11 @@
     </layout>
    </item>
   </layout>
+  <action name="actionContextMenu">
+   <property name="text">
+    <string>contextMenu</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

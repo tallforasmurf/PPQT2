@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'editview.ui'
 #
-# Created: Tue Apr  1 11:52:14 2014
+# Created: Tue Apr  1 13:00:12 2014
 #      by: PyQt5 UI code generator 5.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -19,6 +19,7 @@ class Ui_EditViewWidget(object):
         sizePolicy.setHeightForWidth(EditViewWidget.sizePolicy().hasHeightForWidth())
         EditViewWidget.setSizePolicy(sizePolicy)
         EditViewWidget.setMinimumSize(QtCore.QSize(250, 250))
+        EditViewWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         EditViewWidget.setWindowTitle("Form")
         EditViewWidget.setToolTip("")
         EditViewWidget.setStatusTip("")
@@ -118,9 +119,10 @@ class Ui_EditViewWidget(object):
         sizePolicy.setHeightForWidth(self.ImageFilename.sizePolicy().hasHeightForWidth())
         self.ImageFilename.setSizePolicy(sizePolicy)
         self.ImageFilename.setMinimumSize(QtCore.QSize(30, 12))
+        self.ImageFilename.setMouseTracking(False)
         self.ImageFilename.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.ImageFilename.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
-        self.ImageFilename.setAcceptDrops(False)
+        self.ImageFilename.setAcceptDrops(True)
         self.ImageFilename.setInputMask("")
         self.ImageFilename.setText("")
         self.ImageFilename.setMaxLength(8)
@@ -144,10 +146,11 @@ class Ui_EditViewWidget(object):
         sizePolicy.setHeightForWidth(self.LineNumber.sizePolicy().hasHeightForWidth())
         self.LineNumber.setSizePolicy(sizePolicy)
         self.LineNumber.setMinimumSize(QtCore.QSize(0, 12))
+        self.LineNumber.setMouseTracking(False)
         self.LineNumber.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.LineNumber.setAcceptDrops(False)
+        self.LineNumber.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
+        self.LineNumber.setAcceptDrops(True)
         self.LineNumber.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.LineNumber.setInputMask("00000D")
         self.LineNumber.setText("")
         self.LineNumber.setCursorPosition(0)
         self.LineNumber.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
@@ -182,6 +185,8 @@ class Ui_EditViewWidget(object):
         self.horizontalLayout_2.addLayout(self.horizontalLayout)
         self.verticalLayout.addWidget(self.frame)
         self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
+        self.actionContextMenu = QtWidgets.QAction(EditViewWidget)
+        self.actionContextMenu.setObjectName("actionContextMenu")
         self.ImageFilenameLabel.setBuddy(self.ImageFilename)
         self.LineNumberLabel.setBuddy(self.LineNumber)
 
@@ -211,4 +216,5 @@ class Ui_EditViewWidget(object):
         self.ColNumber.setToolTip(_translate("EditViewWidget", "Cursor column number"))
         self.ColNumber.setStatusTip(_translate("EditViewWidget", "Cursor column number"))
         self.ColNumber.setWhatsThis(_translate("EditViewWidget", "The column number position of the cursor in the current line."))
+        self.actionContextMenu.setText(_translate("EditViewWidget", "contextMenu"))
 
