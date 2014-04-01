@@ -103,6 +103,11 @@ and pageview displays all the data in the Pages panel.
                 document offset P, or None if P precedes the first page.
                 This is called every time the edit cursor moves.
 
+    name_index(fname) returns the row index R of the page with filename
+                fname, if it exists.
+
+    position(R) returns the document position for row R
+
     filename(R) returns the filename string for row R.
 
     proofers(R) returns the proofer string list for row R.
@@ -332,6 +337,18 @@ class PageData(object):
     def page_count(self) :
         return len(self.filename_list)
 
+    # Return the index of a user-entered filename (in editview).
+    # There is NO constraint on image filenames. Although they are conventionally
+    # just numbers, 0005.png, 099.png, etc., there is no requirement that
+    # they be numeric or ascending: frontispiece.png, indexA.png, all ok.
+    # Hence the only way to look up filenames is a linear search.
+    def name_index(self, fname):
+        if self.active() :
+            for j in range(len(self.filename_list)):
+                if fname == self.filename_list[j] :
+                    return j
+        return None # no data, or fname not found
+
     # Return page values for display by pageview. Note that
     # returning a reference to a list (like the list of folio data)
     # means the caller can modify it in place. However to maintain
@@ -345,6 +362,12 @@ class PageData(object):
             return self.filename_list[R]
         except IndexError as I:
             return ''
+
+    def position(self, R):
+        try :
+            return self.cursor_list[R].position()
+        except IndexError as I:
+            return 0
 
     def proofers(self, R):
         try :
