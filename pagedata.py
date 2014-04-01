@@ -33,8 +33,9 @@ One of these objects is created by each Book object. It:
   * is called by the Book to load metadata for a known book.
   * is called by the Book to scan page separators for a new book.
   * is called by the Book during save, to write metadata.
-  * acts as Data Model to the the Pages view panel
+  * acts as data model to the the Pages view panel
   * also is data model to the Images view panel
+  * also is data model to the Edit view panel (for folio number display)
 
     Load Process
 
