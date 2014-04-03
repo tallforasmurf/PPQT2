@@ -69,19 +69,19 @@ Keystrokes checked by editor and other panels that monitor KeyEvent signals.
 ^= replace (using rep#1)
 ^t and ^T replace (rep#1) then search forward/backward,
 
-^1-9 bookmarks
+^1-9 go to bookmarks
 ^-alt-1-9 set bookmarks
-^-shift-1-9 select from cursor to bookmark
+^-shift-1-9 go to bookmark with selection from cursor
 
 ^+ and ^- for zoom in/out
     note ctl-plus can be received as ctl-shft-equal and ctl-sht-plus!
 
-^l and ^-alt-l, ^p and ^-alt-p for the Notes panel
+^m and ^-alt-m, ^p and ^-alt-p used by the Notes panel
 
-^b, ^[, ^<- : "Back" in the html windows
+^b, ^[, ^left : "Back" in html windows
 
 The following definitions combine the key value with the modifier value,
-so the test in a keyEvent method becomes
+so a keyEvent method begins with
     key = int(event.key()) | int(event.modifiers())
     if key in <list of relevant keys>...
 '''
@@ -129,8 +129,6 @@ CTL_SHFT_EQUAL = Qt.ShiftModifier | CTL_EQUAL
 CTL_SHFT_PLUS = Qt.ShiftModifier | CTL_PLUS
 CTL_M = Qt.ControlModifier | Qt.Key_M
 CTL_ALT_M = Qt.AltModifier | CTL_M
-CTL_L = Qt.ControlModifier | Qt.Key_L
-CTL_ALT_L = Qt.AltModifier | CTL_L
 CTL_P = Qt.ControlModifier | Qt.Key_P
 CTL_ALT_P = Qt.AltModifier | CTL_P
 CTL_LEFT = Qt.ControlModifier | Qt.Key_Left
@@ -138,7 +136,8 @@ CTL_LEFT_PAD = CTL_LEFT | Qt.KeypadModifier
 CTL_LEFT_BRACKET = Qt.ControlModifier | Qt.Key_BracketLeft
 CTL_B = Qt.ControlModifier | Qt.Key_B
 KEYS_OF_INTEREST = [
-        CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F,
+        CTL_F, CTL_SHFT_F, CTL_G, CTL_SHFT_G,
+        CTL_M, CTL_ALT_M, CTL_P, CTL_ALT_P,
         CTL_T, CTL_SHFT_T, CTL_EQUAL,
         CTL_1, CTL_2, CTL_3, CTL_4, CTL_5,
         CTL_6, CTL_7, CTL_8, CTL_9,
@@ -148,22 +147,17 @@ KEYS_OF_INTEREST = [
         CTL_ALT_1, CTL_ALT_2, CTL_ALT_3,
         CTL_ALT_4,  CTL_ALT_5,  CTL_ALT_6,
         CTL_ALT_7, CTL_ALT_8,  CTL_ALT_9,
-        CTL_MINUS, CTL_PLUS, CTL_SHFT_EQUAL,
-        CTL_SHFT_PLUS,
-        CTL_M,CTL_ALT_M,CTL_P,CTL_ALT_P]
+        CTL_MINUS,
+        CTL_PLUS, CTL_SHFT_EQUAL, CTL_SHFT_PLUS]
 KEYS_BACK = [CTL_B, CTL_LEFT, CTL_LEFT_BRACKET, CTL_LEFT_PAD]
-KEYS_ZOOM = [CTL_MINUS, CTL_PLUS,
-                 CTL_SHFT_EQUAL, CTL_SHFT_PLUS]
-KEYS_FIND = [CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F,
-                CTL_T, CTL_EQUAL, CTL_SHFT_T]
-KEYS_MARK = [CTL_1, CTL_2, CTL_3, CTL_4, CTL_5,
-        CTL_6, CTL_7, CTL_8, CTL_9 ]
-KEYS_MARK_SET = [CTL_ALT_1, CTL_ALT_2, CTL_ALT_3,
-        CTL_ALT_4,  CTL_ALT_5,  CTL_ALT_6,  CTL_ALT_7,
-        CTL_ALT_8,  CTL_ALT_9 ]
+KEYS_ZOOM = [CTL_MINUS, CTL_PLUS, CTL_SHFT_EQUAL, CTL_SHFT_PLUS]
+KEYS_FIND = [CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F, CTL_T, CTL_EQUAL, CTL_SHFT_T]
+KEYS_MARK = [CTL_1, CTL_2, CTL_3, CTL_4, CTL_5, CTL_6, CTL_7, CTL_8, CTL_9 ]
+KEYS_MARK_SET = [CTL_ALT_1, CTL_ALT_2, CTL_ALT_3, CTL_ALT_4,
+                 CTL_ALT_5, CTL_ALT_6, CTL_ALT_7, CTL_ALT_8, CTL_ALT_9 ]
 KEYS_MARK_SHIFT = [CTL_SHFT_1, CTL_SHFT_2, CTL_SHFT_3,
-        CTL_SHFT_4, CTL_SHFT_5, CTL_SHFT_6,
-        CTL_SHFT_7, CTL_SHFT_8, CTL_SHFT_9 ]
+                   CTL_SHFT_4, CTL_SHFT_5, CTL_SHFT_6,
+                   CTL_SHFT_7, CTL_SHFT_8, CTL_SHFT_9 ]
 
 '''
 A dictionary of the 252 Named Entities of HTML 4. The names are indexed by
