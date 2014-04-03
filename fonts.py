@@ -69,10 +69,10 @@ families = font_db.families()
 libmono = [family for family in families if 'Liberation Mono' in family]
 couriermono = [family for family in families if 'Courier New' in family]
 if libmono :
-    qf_mono = font_db.font(libmono[0],'Regular',C.DEFAULT_POINT_SIZE)
+    qf_mono = font_db.font(libmono[0],'Regular',C.DEFAULT_FONT_SIZE)
     dbg = qf_mono.family()
 elif couriermono :
-    qf_mono = font_db.font(couriermono[0],'Regular',C.DEFAULT_POINT_SIZE)
+    qf_mono = font_db.font(couriermono[0],'Regular',C.DEFAULT_FONT_SIZE)
 else:
     qf_mono = font_db.systemFont(QFontDatabase.FixedFont)
 
@@ -80,11 +80,11 @@ def initialize(settings):
     # TODO: Implement
     fonts_logger.debug('Fonts initializing')
 
-def get_fixed(point_size=C.DEFAULT_POINT_SIZE):
+def get_fixed(point_size=C.DEFAULT_FONT_SIZE):
     # TODO: implement point size arg
     return qf_mono
 
-def get_general(point_size=C.DEFAULT_POINT_SIZE):
+def get_general(point_size=C.DEFAULT_FONT_SIZE):
     # TODO: implement point size arg
     return qf_general
 
