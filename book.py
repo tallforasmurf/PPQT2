@@ -168,9 +168,12 @@ class Book(QObject):
     # give access to the bookname
     def get_bookname(self):
         return self.bookname
+
     # give access to the last-set edit font size
     def get_font_size(self):
         return self.edit_point_size
+    def save_font_size(self, size):
+        self.edit_point_size = size
 
     # give access to the metadata manager
     def get_meta_manager(self):
