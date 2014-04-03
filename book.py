@@ -79,6 +79,8 @@ class Book(QObject):
         self.edit_point_size = C.DEFAULT_FONT_SIZE
         self.bookname = '' # set during New or load
         self.image_path = '' # set during load
+        # Initialize bookmarks, loaded from metadata later
+        self.bookmarks = [None, None, None, None, None, None, None, None, None]
         #
         # Create the metadata manager
         #
@@ -87,6 +89,7 @@ class Book(QObject):
         # TODO: register to save and load spellcheck and scanno colors!
         # TODO: register to save and load editor font size
         # TODO: register to save and load editor position cursor
+        # TODO: register to save and load bookmarks
         #
         # Create a document, it will be initialized later.
         self.editm = editdata.Document(self)
