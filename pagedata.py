@@ -337,11 +337,20 @@ class PageData(object):
     def page_count(self) :
         return len(self.filename_list)
 
-    # Return the index of a user-entered filename (in editview).
-    # There is NO constraint on image filenames. Although they are conventionally
-    # just numbers, 0005.png, 099.png, etc., there is no requirement that
-    # they be numeric or ascending: frontispiece.png, indexA.png, all ok.
-    # Hence the only way to look up filenames is a linear search.
+    # Return the index of a user-entered filename (in editview). This is
+    # called only from the edit view when the user keys an image name and
+    # hits return. There is NO constraint on image filenames. Although they
+    # are conventionally just numbers, 0005.png, 099.png, etc., there is no
+    # requirement that they be numeric or ascending: frontispiece.png,
+    # indexA.png, all ok. Here we are just doing a linear search of the list.
+    #
+    # If linear search should become a performance problem, two alternatives.
+    # One, we could look at the fname and if it is numeric or starts with
+    # digits, we could start the linear search just below the numeric index,
+    # eg start the search for "100a" at row 99. Or, with more trouble, during
+    # reading or scanning of the page metadata we could store a separate dict
+    # of {name:row#} so we could do a quick hash lookup of any fname.
+
     def name_index(self, fname):
         if self.active() :
             for j in range(len(self.filename_list)):
