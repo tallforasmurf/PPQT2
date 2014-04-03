@@ -36,18 +36,20 @@ Calls on a WordData object to identify scannos and spelling errors.
 
 Offers these additional methods:
 
-    center_this(tc)      given a text cursor with a selection, put the top
+    center_this(tc)      Given a text cursor with a selection, put the top
                          of the selection in the middle of the window, unless
                          the selection is taller than 1/2 the window in which
                          case put the top of the selection as high as needed
                          but in no case, off the top of the window.
+
+    center_position(pos) Same as center_this but for an integer position.
 
     show_this(tc)        given a text cursor with a selection, make sure
                          the top of the selection is visible in the edit
                          window. If it is already visible, do nothing, else
                          pass to center_this().
 
-    go_to_pos(position)  given a document position, jump the edit cursor to there.
+    show_position(pos)   Same a show_this but for an integer position.
 
     go_to_tb(tb)         given a text block, put the edit cursor at its start
 
@@ -126,25 +128,8 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # Change the color of the DocName to match.
     def mod_change_signal(self,bool):
         # TODO: get color from colors.py
-        color = 'color:Magenta' if bool else 'color:Black'
+        color = 'color:Magenta;font-weight:bold;' if bool else 'color:Black;font-weight:normal;'
         self.DocName.setStyleSheet(color)
-
-    # Position the cursor at a given document character position. Call our
-    # cursor_moved slot because just setting our text cursor doesn't do it.
-    # Make sure the focus ends up in the editor.
-    def go_to_pos(self, pos):
-        tc = self.Editor.textCursor()
-        tc.setPosition(pos)
-        self.Editor.setTextCursor(tc)
-        self.cursor_moved()
-        self.Editor.setFocus(Qt.TabFocusReason)
-
-    # Position the cursor at the head of a given QTextBlock (line)
-    # and get the focus. Does not assume tb is a valid textblock.
-    def go_to_tb(self, tb):
-        if not tb.isValid():
-            tb = self.document.end()
-        self.go_to_pos(tb.position())
 
     # This slot receives the ReturnPressed signal from the LineNumber field.
     # Get the specified textblock by number, or if it doesn't exist, the end
@@ -162,6 +147,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             self.cursor_moved() # restore current line nbr the easy way
             self.Editor.setFocus(Qt.TabFocusReason)
             return
+        # TODO make it self.center_this instead
         self.go_to_tb(tb)
 
     # This slot receives the ReturnPresssed signal from ImageFilename.
@@ -171,7 +157,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         fname = self.ImageFilename.text()
         pn = self.page_model.name_index(fname)
         if pn is not None :
-            self.go_to_pos(self.page_model.position(pn))
+            self.center_position(self.page_model.position(pn))
         else : # unknown image filename, restore current value the easy way
             editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
             # TODO figure out how to beep
@@ -192,3 +178,38 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             self.ImageFilename.setText(self.page_model.filename(pn))
         else: # no image data, or positioned above page 1
             self.ImageFilename.setText('')
+
+    # Center a position or text selection on in the middle of the window.
+    # If a selection is taller than 1/2 the window height, put the top of
+    # the selection higher, but in no case off the top of the window.
+
+    def center_position(self, pos):
+        tc = self.Editor.textCursor()
+        tc.setPosition(pos)
+        self.center_this(tc)
+
+    def center_this(self, tc):
+        #TODO Implement properly
+        self.show_this(tc)
+
+    # Position the cursor at a given document character position or the top
+    # of a selection. Call our cursor_moved slot to update the widgets at the
+    # bottom of the window, because just setting our text cursor doesn't do
+    # that. Make sure the focus ends up in the editor.
+
+    def show_position(self, pos):
+        tc = self.Editor.textCursor()
+        tc.setPosition(pos)
+        self.show_this(tc)
+
+    def show_this(self, tc):
+        self.Editor.setTextCursor(tc)
+        self.cursor_moved()
+        self.Editor.setFocus(Qt.TabFocusReason)
+
+    # Position the cursor at the head of a given QTextBlock (line)
+    # and get the focus. Does not assume tb is a valid textblock.
+    def go_to_tb(self, tb):
+        if not tb.isValid():
+            tb = self.document.end()
+        self.show_position(tb.position())

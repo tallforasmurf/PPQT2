@@ -161,7 +161,7 @@ class Book(QObject):
             self.editm.setPlainText(doc_stream.readAll())
         self.editm.setModified(modified)
         self.editv = editview.EditView(self)
-        self.editv.go_to_pos(cursor_pos)
+        self.editv.show_position(cursor_pos)
     # TODO: connect focus-in signal of editv to what?
 
     # give access to the bookname
