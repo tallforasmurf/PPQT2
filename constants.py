@@ -135,22 +135,8 @@ CTL_LEFT = Qt.ControlModifier | Qt.Key_Left
 CTL_LEFT_PAD = CTL_LEFT | Qt.KeypadModifier
 CTL_LEFT_BRACKET = Qt.ControlModifier | Qt.Key_BracketLeft
 CTL_B = Qt.ControlModifier | Qt.Key_B
-KEYS_OF_INTEREST = [
-        CTL_F, CTL_SHFT_F, CTL_G, CTL_SHFT_G,
-        CTL_M, CTL_ALT_M, CTL_P, CTL_ALT_P,
-        CTL_T, CTL_SHFT_T, CTL_EQUAL,
-        CTL_1, CTL_2, CTL_3, CTL_4, CTL_5,
-        CTL_6, CTL_7, CTL_8, CTL_9,
-        CTL_SHFT_1, CTL_SHFT_2, CTL_SHFT_3,
-        CTL_SHFT_4, CTL_SHFT_5, CTL_SHFT_6,
-        CTL_SHFT_7, CTL_SHFT_8, CTL_SHFT_9,
-        CTL_ALT_1, CTL_ALT_2, CTL_ALT_3,
-        CTL_ALT_4,  CTL_ALT_5,  CTL_ALT_6,
-        CTL_ALT_7, CTL_ALT_8,  CTL_ALT_9,
-        CTL_MINUS,
-        CTL_PLUS, CTL_SHFT_EQUAL, CTL_SHFT_PLUS]
+# Groups of keys by function
 KEYS_BACK = [CTL_B, CTL_LEFT, CTL_LEFT_BRACKET, CTL_LEFT_PAD]
-KEYS_ZOOM = [CTL_MINUS, CTL_PLUS, CTL_SHFT_EQUAL, CTL_SHFT_PLUS]
 KEYS_FIND = [CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F, CTL_T, CTL_EQUAL, CTL_SHFT_T]
 KEYS_MARK = [CTL_1, CTL_2, CTL_3, CTL_4, CTL_5, CTL_6, CTL_7, CTL_8, CTL_9 ]
 KEYS_MARK_SET = [CTL_ALT_1, CTL_ALT_2, CTL_ALT_3, CTL_ALT_4,
@@ -158,6 +144,12 @@ KEYS_MARK_SET = [CTL_ALT_1, CTL_ALT_2, CTL_ALT_3, CTL_ALT_4,
 KEYS_MARK_SHIFT = [CTL_SHFT_1, CTL_SHFT_2, CTL_SHFT_3,
                    CTL_SHFT_4, CTL_SHFT_5, CTL_SHFT_6,
                    CTL_SHFT_7, CTL_SHFT_8, CTL_SHFT_9 ]
+KEYS_ZOOM = [CTL_MINUS, CTL_PLUS, CTL_SHFT_EQUAL, CTL_SHFT_PLUS]
+# Keys acted on by the edit view
+KEYS_EDITOR = KEYS_FIND + KEYS_MARK + KEYS_MARK_SET + KEYS_MARK_SHIFT + KEYS_ZOOM
+# Keys acted on by the Notes panel
+KEYS_NOTES = [CTL_M, CTL_ALT_M, CTL_P, CTL_ALT_P] + KEYS_ZOOM
+# TODO keys acted on by html panel, others?
 
 '''
 A dictionary of the 252 Named Entities of HTML 4. The names are indexed by
