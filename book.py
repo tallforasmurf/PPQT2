@@ -68,6 +68,7 @@ import editview
 import worddata
 import pagedata
 import spellcheck
+import constants as C
 
 class Book(QObject):
     def __init__(self, main_window): #TODO: API?
@@ -75,7 +76,7 @@ class Book(QObject):
         #
         self.main_window = main_window
         #
-        self.edit_point_size = 16 # default
+        self.edit_point_size = C.DEFAULT_FONT_SIZE
         self.bookname = '' # set during New or load
         self.image_path = '' # set during load
         #

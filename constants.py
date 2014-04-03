@@ -35,6 +35,8 @@ UNICODE_LINE_DELIM = '\u2029'
 UNICODE_EN_SPACE = '\u2002'
 # constant value for the zero-width-non-joiner used as a marker in reflow
 UNICODE_ZWNJ = '\200C'
+# default size for fonts, used only in totally clean installation
+DEFAULT_FONT_SIZE = 13
 
 '''
 Names for sections of the metadata file.
