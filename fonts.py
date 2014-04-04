@@ -98,15 +98,15 @@ def get_size(qf):
 
 def scale(zoom_key, qfont ) :
     if zoom_key in C.KEYS_ZOOM :
-        pts = qf.pointSize()
+        pts = qfont.pointSize()
         pts += (-1 if zoom_key == C.CTL_MINUS else 1)
         if (pts >= POINT_SIZE_MINIMUM) and (pts <= POINT_SIZE_MAXIMUM) :
-            qf.setPointSize(pts)
+            qfont.setPointSize(pts)
         else:
             fonts_logger.error('rejecting zoom to {0} points'.format(pts))
     else:
         fonts_logger.error('ignoring non-zoom key argument')
-    return qf
+    return qfont
 
 def choose_font(mono=True, parent=None):
     fonts_logger.error('Unimplemented:choose_font')
