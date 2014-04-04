@@ -82,7 +82,7 @@ Keystrokes checked by editor and other panels that monitor KeyEvent signals.
 
 ^b, ^[, ^left : "Back" in html windows
 
-The following definitions combine the key value with the modifier value,
+The following definitions combine the key value with the modifier) value,
 so a keyEvent method begins with
     key = int(event.key()) | int(event.modifiers())
     if key in <list of relevant keys>...
@@ -91,67 +91,67 @@ so a keyEvent method begins with
 from PyQt5.QtCore import Qt # Qt namespace including keys
 
 KEYPAD_MOD_CLEAR = int(0xffffffff ^ Qt.KeypadModifier)
-CTL_F = Qt.ControlModifier | Qt.Key_F
-CTL_SHFT_F = Qt.ShiftModifier | CTL_F
-CTL_G = Qt.ControlModifier | Qt.Key_G
-CTL_SHFT_G = Qt.ShiftModifier | CTL_G
-CTL_EQUAL = Qt.ControlModifier | Qt.Key_Equal
-CTL_T = Qt.ControlModifier | Qt.Key_T
-CTL_SHFT_T = Qt.ShiftModifier | CTL_T
-CTL_1 = Qt.ControlModifier | Qt.Key_1
-CTL_2 = Qt.ControlModifier | Qt.Key_2
-CTL_3 = Qt.ControlModifier | Qt.Key_3
-CTL_4 = Qt.ControlModifier | Qt.Key_4
-CTL_5 = Qt.ControlModifier | Qt.Key_5
-CTL_6 = Qt.ControlModifier | Qt.Key_6
-CTL_7 = Qt.ControlModifier | Qt.Key_7
-CTL_8 = Qt.ControlModifier | Qt.Key_8
-CTL_9 = Qt.ControlModifier | Qt.Key_9
-CTL_SHFT_1 = Qt.ShiftModifier | CTL_1
-CTL_SHFT_2 = Qt.ShiftModifier | CTL_2
-CTL_SHFT_3 = Qt.ShiftModifier | CTL_3
-CTL_SHFT_4 = Qt.ShiftModifier | CTL_4
-CTL_SHFT_5 = Qt.ShiftModifier | CTL_5
-CTL_SHFT_6 = Qt.ShiftModifier | CTL_6
-CTL_SHFT_7 = Qt.ShiftModifier | CTL_7
-CTL_SHFT_8 = Qt.ShiftModifier | CTL_8
-CTL_SHFT_9 = Qt.ShiftModifier | CTL_9
-CTL_ALT_1 = Qt.AltModifier | CTL_1
-CTL_ALT_2 = Qt.AltModifier | CTL_2
-CTL_ALT_3 = Qt.AltModifier | CTL_3
-CTL_ALT_4 = Qt.AltModifier | CTL_4
-CTL_ALT_5 = Qt.AltModifier | CTL_5
-CTL_ALT_6 = Qt.AltModifier | CTL_6
-CTL_ALT_7 = Qt.AltModifier | CTL_7
-CTL_ALT_8 = Qt.AltModifier | CTL_8
-CTL_ALT_9 = Qt.AltModifier | CTL_9
-CTL_MINUS = Qt.ControlModifier | Qt.Key_Minus
-CTL_PLUS = Qt.ControlModifier | Qt.Key_Plus
-CTL_SHFT_EQUAL = Qt.ShiftModifier | CTL_EQUAL
-CTL_SHFT_PLUS = Qt.ShiftModifier | CTL_PLUS
-CTL_M = Qt.ControlModifier | Qt.Key_M
-CTL_ALT_M = Qt.AltModifier | CTL_M
-CTL_P = Qt.ControlModifier | Qt.Key_P
-CTL_ALT_P = Qt.AltModifier | CTL_P
-CTL_LEFT = Qt.ControlModifier | Qt.Key_Left
-CTL_LEFT_PAD = CTL_LEFT | Qt.KeypadModifier
-CTL_LEFT_BRACKET = Qt.ControlModifier | Qt.Key_BracketLeft
-CTL_B = Qt.ControlModifier | Qt.Key_B
+CTL_F = int(Qt.ControlModifier) | Qt.Key_F
+CTL_SHFT_F = int(Qt.ShiftModifier) | CTL_F
+CTL_G = int(Qt.ControlModifier) | Qt.Key_G
+CTL_SHFT_G = int(Qt.ShiftModifier) | CTL_G
+CTL_EQUAL = int(Qt.ControlModifier) | Qt.Key_Equal
+CTL_T = int(Qt.ControlModifier) | Qt.Key_T
+CTL_SHFT_T = int(Qt.ShiftModifier) | CTL_T
+CTL_1 = int(Qt.ControlModifier) | Qt.Key_1
+CTL_2 = int(Qt.ControlModifier) | Qt.Key_2
+CTL_3 = int(Qt.ControlModifier) | Qt.Key_3
+CTL_4 = int(Qt.ControlModifier) | Qt.Key_4
+CTL_5 = int(Qt.ControlModifier) | Qt.Key_5
+CTL_6 = int(Qt.ControlModifier) | Qt.Key_6
+CTL_7 = int(Qt.ControlModifier) | Qt.Key_7
+CTL_8 = int(Qt.ControlModifier) | Qt.Key_8
+CTL_9 = int(Qt.ControlModifier) | Qt.Key_9
+CTL_SHFT_1 = int(Qt.ShiftModifier) | CTL_1
+CTL_SHFT_2 = int(Qt.ShiftModifier) | CTL_2
+CTL_SHFT_3 = int(Qt.ShiftModifier) | CTL_3
+CTL_SHFT_4 = int(Qt.ShiftModifier) | CTL_4
+CTL_SHFT_5 = int(Qt.ShiftModifier) | CTL_5
+CTL_SHFT_6 = int(Qt.ShiftModifier) | CTL_6
+CTL_SHFT_7 = int(Qt.ShiftModifier) | CTL_7
+CTL_SHFT_8 = int(Qt.ShiftModifier) | CTL_8
+CTL_SHFT_9 = int(Qt.ShiftModifier) | CTL_9
+CTL_ALT_1 = int(Qt.AltModifier) | CTL_1
+CTL_ALT_2 = int(Qt.AltModifier) | CTL_2
+CTL_ALT_3 = int(Qt.AltModifier) | CTL_3
+CTL_ALT_4 = int(Qt.AltModifier) | CTL_4
+CTL_ALT_5 = int(Qt.AltModifier) | CTL_5
+CTL_ALT_6 = int(Qt.AltModifier) | CTL_6
+CTL_ALT_7 = int(Qt.AltModifier) | CTL_7
+CTL_ALT_8 = int(Qt.AltModifier) | CTL_8
+CTL_ALT_9 = int(Qt.AltModifier) | CTL_9
+CTL_MINUS = int(Qt.ControlModifier) | Qt.Key_Minus
+CTL_PLUS = int(Qt.ControlModifier) | Qt.Key_Plus
+CTL_SHFT_EQUAL = int(Qt.ShiftModifier) | CTL_EQUAL
+CTL_SHFT_PLUS = int(Qt.ShiftModifier) | CTL_PLUS
+CTL_M = int(Qt.ControlModifier) | Qt.Key_M
+CTL_ALT_M = int(Qt.AltModifier) | CTL_M
+CTL_P = int(Qt.ControlModifier) | Qt.Key_P
+CTL_ALT_P = int(Qt.AltModifier) | CTL_P
+CTL_LEFT = int(Qt.ControlModifier) | Qt.Key_Left
+CTL_LEFT_PAD = CTL_LEFT | int(Qt.KeypadModifier)
+CTL_LEFT_BRACKET = int(Qt.ControlModifier) | Qt.Key_BracketLeft
+CTL_B = int(Qt.ControlModifier) | Qt.Key_B
 # Groups of keys by function
-KEYS_BACK = [CTL_B, CTL_LEFT, CTL_LEFT_BRACKET, CTL_LEFT_PAD]
-KEYS_FIND = [CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F, CTL_T, CTL_EQUAL, CTL_SHFT_T]
-KEYS_MARK = [CTL_1, CTL_2, CTL_3, CTL_4, CTL_5, CTL_6, CTL_7, CTL_8, CTL_9 ]
-KEYS_MARK_SET = [CTL_ALT_1, CTL_ALT_2, CTL_ALT_3, CTL_ALT_4,
-                 CTL_ALT_5, CTL_ALT_6, CTL_ALT_7, CTL_ALT_8, CTL_ALT_9 ]
-KEYS_MARK_SHIFT = [CTL_SHFT_1, CTL_SHFT_2, CTL_SHFT_3,
+KEYS_BACK = {CTL_B, CTL_LEFT, CTL_LEFT_BRACKET, CTL_LEFT_PAD}
+KEYS_FIND = {CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F, CTL_T, CTL_EQUAL, CTL_SHFT_T}
+KEYS_MARK = {CTL_1, CTL_2, CTL_3, CTL_4, CTL_5, CTL_6, CTL_7, CTL_8, CTL_9 }
+KEYS_MARK_SET = {CTL_ALT_1, CTL_ALT_2, CTL_ALT_3, CTL_ALT_4,
+                 CTL_ALT_5, CTL_ALT_6, CTL_ALT_7, CTL_ALT_8, CTL_ALT_9 }
+KEYS_MARK_SHIFT = {CTL_SHFT_1, CTL_SHFT_2, CTL_SHFT_3,
                    CTL_SHFT_4, CTL_SHFT_5, CTL_SHFT_6,
-                   CTL_SHFT_7, CTL_SHFT_8, CTL_SHFT_9 ]
-KEYS_BOOKMARKS = KEYS_MARK + KEYS_MARK_SET + KEYS_MARK_SHIFT
-KEYS_ZOOM = [CTL_MINUS, CTL_PLUS, CTL_SHFT_EQUAL, CTL_SHFT_PLUS]
+                   CTL_SHFT_7, CTL_SHFT_8, CTL_SHFT_9 }
+KEYS_BOOKMARKS = KEYS_MARK | KEYS_MARK_SET | KEYS_MARK_SHIFT
+KEYS_ZOOM = {CTL_MINUS, CTL_PLUS, CTL_SHFT_EQUAL, CTL_SHFT_PLUS}
 # Keys acted on by the edit view
-KEYS_EDITOR = KEYS_FIND + KEYS_BOOKMARKS + KEYS_ZOOM
+KEYS_EDITOR = KEYS_FIND | KEYS_BOOKMARKS | KEYS_ZOOM
 # Keys acted on by the Notes panel
-KEYS_NOTES = [CTL_M, CTL_ALT_M, CTL_P, CTL_ALT_P] + KEYS_ZOOM
+KEYS_NOTES = {CTL_M, CTL_ALT_M, CTL_P, CTL_ALT_P} | KEYS_ZOOM
 # TODO keys acted on by html panel, others?
 
 '''
@@ -269,7 +269,7 @@ u'\u0160' : u'Scaron', # Latin capital letter s with caron
 u'\u0161' : u'scaron', # Latin small letter s with caron
 u'\u0178' : u'Yuml', # Latin capital letter y with diaeresis
 u'\u0192' : u'fnof', # Latin small letter f with hook (= function = florin)
-u'\u02C6' : u'circ', # modifier letter circumflex accent
+u'\u02C6' : u'circ', # modifier) letter circumflex accent
 u'\u02DC' : u'tilde', # small tilde
 u'\u0391' : u'Alpha', # Greek capital letter Alpha
 u'\u0392' : u'Beta', # Greek capital letter Beta
