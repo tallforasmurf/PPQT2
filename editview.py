@@ -59,7 +59,7 @@ xp_hyap = "(" + xp_word + "[\\'\\-\u2019])*" + xp_word
 #reWord = QRegExp(xp_hyap, Qt.CaseInsensitive)
 
 import regex
-from PyQt5.Qt import Qt # Qt.namespace
+from PyQt5.Qt import Qt, QEvent, QObject
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QTextBlock, QTextCursor
 
@@ -67,6 +67,7 @@ import editview_uic
 import fonts
 import logging
 editview_logger = logging.getLogger(name='editview')
+import constants as C
 
 class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     def __init__(self, my_book, parent=None):
@@ -114,6 +115,8 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.ImageFilename.returnPressed.connect(self.image_request)
         # Connect the Editor's cursorPositionChanged signal to our slot
         self.Editor.cursorPositionChanged.connect(self.cursor_moved)
+        # Filter the Editor's key events:
+        self.Editor.installEventFilter(self)
 
 
     # Set the fonts of all widgets. Done in a method because this
@@ -213,3 +216,65 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         if not tb.isValid():
             tb = self.document.end()
         self.show_position(tb.position())
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.KeyPress :
+            return self.editorKeyPressEvent(event)
+        return False
+
+    # Re-implement keyPressEvent for the Editor widget to provide bookmarks,
+    # text zoom, and find. Because Editor is defined down in the Qt Designer
+    # boilerplate, we can't override its keyPressEvent, so we use the above
+    # eventFilter to get them. Because this is the eventFilter API not the
+    # keyPressEvent API, it doesn't matter if we do event.accept(), it only
+    # matters that we return True if we handled the event, False if not.
+    #
+    #   Zoom:
+    # ctrl-plus, ctrl-minus zoom the font size by +/-1 point. Note that since
+    # Qt5, QPlainTextEdit has zoomIn/zoomOut slots, but as we also need the
+    # function in other panels, we do it ourselves.
+    #
+    #   Bookmarks:
+    # ctrl-n for n in 1..9 jumps the insertion point to bookmark n
+    # ctrl-shift-n extends the current selection to bookmark n
+    # ctrl-alt-n sets bookmark n to the current position
+    #
+    #   Find:
+    # ctrl-f/F/g/G/t/T/= interact with the Find panel to begin or continue
+    # search and replace operations.
+
+    def editorKeyPressEvent(self, event):
+        retval = False # assume we don't handle this event
+        kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key())
+        #print('key {0:08X}'.format(kkey))
+        if kkey in C.KEYS_EDITOR :
+            retval = True # yes, this is one we handle
+            if kkey in C.KEYS_FIND :
+                # ^f, ^g, etc. -- just pass them straight to the Find panel
+                # TODO: define private signal and emit
+                # self.emit(SIGNAL("editKeyPress"),kkey)
+                pass
+            elif kkey in C.KEYS_ZOOM :
+                self.Editor.setFont( fonts.scale(kkey, self.Editor.font()) )
+                self.my_book.save_font_size(self.Editor.font().pointSize())
+            elif kkey in C.KEYS_BOOKMARKS :
+                # Something to do with a bookmark. They are kept in the Book
+                # because they are read and written in the metadata.
+                mark_number = int(event.key()) - 0x31  # number in 0..8
+                mark_list = self.my_book.bookmarks # quick reference to the list
+                if kkey in C.KEYS_MARK_SET :
+                    # Set a bookmark to the current edit selection
+                    mark_list[mark_number] = QTextCursor(self.Editor.textCursor)
+                    self.my_book.metadata_modified()
+                else : # kkey in C.KEYS_MARK or MARK_SHIFT :
+                    # move to saved location, if that bookmark is set,
+                    # extending the selection if the shift modifier is on.
+                    if mark_list[mark_number] is not None:
+                        pos = mark_list[mark_number].position()
+                        move_mode = QTextCursor.KeepAnchor if kkey in C.KEYS_MARK_SHIFT \
+                               else QTextCursor.MoveAnchor
+                        tc = QTextCursor(self.Editor.textCursor)
+                        tc.setPosition(pos, move_mode)
+                        self.Editor.setTextCursor(tc)
+        # else:  not a key for the editor, return False
+        return retval
