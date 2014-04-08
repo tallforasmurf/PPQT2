@@ -61,10 +61,17 @@ xp_hyap = "(" + xp_word + "[\\'\\-\u2019])*" + xp_word
 import regex
 from PyQt5.Qt import Qt, QEvent, QObject
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtGui import QTextBlock, QTextCursor
+from PyQt5.QtGui import (
+    QBrush,
+    QTextBlock,
+    QTextCursor,
+    QTextCharFormat,
+    QTextBlockFormat
+    )
 
 import editview_uic
 import fonts
+import colors
 import logging
 editview_logger = logging.getLogger(name='editview')
 import constants as C
@@ -102,6 +109,8 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.Editor.setDocument(self.document)
         # Set the fonts of our widgets.
         self.set_fonts()
+        # Get the current highlight colors.
+        self.set_colors()
         # Put the document name in our widget
         self.DocName.setText(self.my_book.get_bookname())
         # Connect the Editor's modificationChanged signal to our slot.
@@ -115,9 +124,21 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.ImageFilename.returnPressed.connect(self.image_request)
         # Connect the Editor's cursorPositionChanged signal to our slot
         self.Editor.cursorPositionChanged.connect(self.cursor_moved)
-        # Filter the Editor's key events:
+        # Filter the Editor's key events. We have to do this because,
+        # when the Editor widget is created by Qt Creator, we do not
+        # get the option of inserting a keyPressEvent() slot in it.
         self.Editor.installEventFilter(self)
 
+
+    # Set up text formats for the current line, spellcheck words
+    # and for scanno words. Done in a method because this has to be
+    # redone when the colorsChanged signal happens.
+    def set_colors(self):
+        self.scanno_format = colors.get_scanno_format()
+        self.spelling_format = colors.get_spelling_format()
+        self.current_line_format = colors.get_current_line_format()
+        self.norm_style = 'color:Black;font-weight:normal;'
+        self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
 
     # Set the fonts of all widgets. Done in a method because this
     # needs to be redone when the fontsChanged signal happens.
@@ -130,9 +151,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # Slot to receive the modificationChanged signal from the document.
     # Change the color of the DocName to match.
     def mod_change_signal(self,bool):
-        # TODO: get color from colors.py
-        color = 'color:Magenta;font-weight:bold;' if bool else 'color:Black;font-weight:normal;'
-        self.DocName.setStyleSheet(color)
+        self.DocName.setStyleSheet(self.mod_style if bool else self.norm_style)
 
     # This slot receives the ReturnPressed signal from the LineNumber field.
     # Get the specified textblock by number, or if it doesn't exist, the end
