@@ -53,6 +53,9 @@ Offers these additional methods:
 
     go_to_block(tb)      given a text block, put the edit cursor at its start
 
+    get_cursor()         Return a COPY of the current edit cursor.
+    set_cursor(tc)       Set a new edit cursor.
+
 '''
 xp_word = "(\\w*(\\[..\\])?\\w+)+"
 xp_hyap = "(" + xp_word + "[\\'\\-\u2019])*" + xp_word
@@ -255,6 +258,13 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         if not tb.isValid():
             tb = self.document.end()
         self.show_position(tb.position())
+
+    # Lots of other code needs a textcursor for the current document.
+    def get_cursor(self):
+        return QTextCursor(self.Editor.textCursor())
+    # Some other code likes to reposition the edit selection:
+    def set_cursor(self, tc):
+        self.Editor.setTextCursor(tc)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress :
