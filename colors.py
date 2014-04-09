@@ -66,7 +66,7 @@ from PyQt5.QtGui import QBrush, QColor, QTextCharFormat, QTextBlockFormat
 MD_COLOR = QColor('red')
 SC_COLOR = QColor('thistle')
 SP_COLOR = QColor('lightpink')
-CL_COLOR = QColor('#ECECEC') # very light gray
+CL_COLOR = QColor('#FAFAE0') # very light yellow
 
 # TODO temps
 def get_modified_color():
