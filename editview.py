@@ -111,41 +111,43 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # Connect the editor to the document.
         self.Editor.setDocument(self.document)
         # Set up a single QTextEdit.ExtraSelection thing to highlight
-        # the current line with. See set_colors and cursor_moved
+        # the current line with. See _set_colors and _cursor_moved
         self.current_line_thing = QTextEdit.ExtraSelection()
         self.current_line_thing.format = QTextCharFormat()
         # Set the fonts of our widgets.
-        self.set_fonts()
+        self._set_fonts()
         # Get the current highlight colors.
-        self.set_colors()
+        self._set_colors()
         # Put the document name in our widget
         self.DocName.setText(self.my_book.get_bookname())
         # Connect the Editor's modificationChanged signal to our slot.
-        self.Editor.modificationChanged.connect(self.mod_change_signal)
+        self.Editor.modificationChanged.connect(self._mod_change_signal)
         # Set the color of the DocName by faking that signal.
-        self.mod_change_signal(self.document.isModified())
+        self._mod_change_signal(self.document.isModified())
         # Connect the returnPressed signal of the LineNumber widget
         # to our go to line method.
-        self.LineNumber.returnPressed.connect(self.line_number_request)
+        self.LineNumber.returnPressed.connect(self._line_number_request)
         # Connect returnPressed of the ImageFilename widget to our slot.
-        self.ImageFilename.returnPressed.connect(self.image_request)
+        self.ImageFilename.returnPressed.connect(self._image_request)
         # TODO: get starting cursor position from metadata, set self.cursor
         #
         self.last_line_number = None
         # Connect the Editor's cursorPositionChanged signal to our slot
-        self.Editor.cursorPositionChanged.connect(self.cursor_moved)
+        self.Editor.cursorPositionChanged.connect(self._cursor_moved)
         # Fill in the line and column number by faking that signal
-        self.cursor_moved()
+        self._cursor_moved()
         # Filter the Editor's key events. We have to do this because,
         # when the Editor widget is created by Qt Creator, we do not
         # get the option of inserting a keyPressEvent() slot in it.
         self.Editor.installEventFilter(self)
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    #                 INTERNAL METHODS
 
     # Set up text formats for the current line, spellcheck words
     # and for scanno words. Done in a method because this has to be
     # redone when the colorsChanged signal happens.
-    def set_colors(self):
+    def _set_colors(self):
         self.scanno_format = colors.get_scanno_format()
         self.spelling_format = colors.get_spelling_format()
         self.current_line_thing.format.setBackground(colors.get_current_line_brush())
@@ -154,7 +156,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
 
     # Set the fonts of all widgets. Done in a method because this
     # needs to be redone when the fontsChanged signal happens.
-    def set_fonts(self):
+    def _set_fonts(self):
         general = fonts.get_general() # default font size
         self.setFont(general) # set self, propogates to children
         mono = fonts.get_fixed(self.my_book.get_font_size())
@@ -162,7 +164,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
 
     # Slot to receive the modificationChanged signal from the document.
     # Change the color of the DocName to match.
-    def mod_change_signal(self,bool):
+    def _mod_change_signal(self,bool):
         self.DocName.setStyleSheet(self.mod_style if bool else self.norm_style)
 
     # This slot receives the ReturnPressed signal from the LineNumber field.
@@ -170,7 +172,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # textblock, and use that to position the document. There is no input
     # mask on the LineEdit (it made the cursor act weird) so test for int
     # value and clear the field if not. Make sure focus goes back to editor.
-    def line_number_request(self):
+    def _line_number_request(self):
         try:
             lnum = int(self.LineNumber.text())
             tb = self.document.findBlockByLineNumber(lnum-1) # text block is origin-0
@@ -179,7 +181,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             editview_logger.info('Request for invalid line number {0}'.format(self.LineNumber.text()))
             # TODO figure out how to beep
             self.last_line_number = None # force update if line # display
-            self.cursor_moved() # restore current line nbr the easy way
+            self._cursor_moved() # restore current line nbr the easy way
             self.Editor.setFocus(Qt.TabFocusReason)
             return
         # TODO make it self.center_this instead
@@ -188,7 +190,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # This slot receives the ReturnPresssed signal from ImageFilename.
     # Ask the page database for the index of the user-entered folio value
     # and if it knows one, get the position of it and set that.
-    def image_request(self):
+    def _image_request(self):
         fname = self.ImageFilename.text()
         pn = self.page_model.name_index(fname)
         if pn is not None :
@@ -197,7 +199,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
             # TODO figure out how to beep
             self.last_line_number = None # force update of image name
-            self.cursor_moved()
+            self._cursor_moved()
             self.Editor.setFocus(Qt.TabFocusReason)
 
     # This slot is connected to Editor's cursorPositionChanged signal, so is
@@ -206,7 +208,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # the cursor. Change the contents of the column number display. If the
     # cursor has moved to a different line, change also the line number, scan
     # image name, and folio displays to match the new position.
-    def cursor_moved(self):
+    def _cursor_moved(self):
         tc = QTextCursor(self.Editor.textCursor())
         self.ColNumber.setText(str(tc.positionInBlock()))
         tb = tc.block()
@@ -224,51 +226,9 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             else: # no image data, or positioned above page 1
                 self.ImageFilename.setText('')
 
-    # Center a position or text selection on in the middle of the window.
-    # If a selection is taller than 1/2 the window height, put the top of
-    # the selection higher, but in no case off the top of the window.
-
-    def center_position(self, pos):
-        tc = self.Editor.textCursor()
-        tc.setPosition(pos)
-        self.center_this(tc)
-
-    def center_this(self, tc):
-        #TODO Implement properly  blockBoundingGeometry
-        self.show_this(tc)
-
-    # Position the cursor at a given document character position or the top
-    # of a selection. Call our cursor_moved slot to update the widgets at the
-    # bottom of the window, because just setting our text cursor doesn't do
-    # that. Make sure the focus ends up in the editor.
-
-    def show_position(self, pos):
-        tc = self.Editor.textCursor()
-        tc.setPosition(pos)
-        self.show_this(tc)
-
-    def show_this(self, tc):
-        self.Editor.setTextCursor(tc)
-        self.cursor_moved()
-        self.Editor.setFocus(Qt.TabFocusReason)
-
-    # Position the cursor at the head of a given QTextBlock (line)
-    # and get the focus. Does not assume tb is a valid textblock.
-    def go_to_block(self, tb):
-        if not tb.isValid():
-            tb = self.document.end()
-        self.show_position(tb.position())
-
-    # Lots of other code needs a textcursor for the current document.
-    def get_cursor(self):
-        return QTextCursor(self.Editor.textCursor())
-    # Some other code likes to reposition the edit selection:
-    def set_cursor(self, tc):
-        self.Editor.setTextCursor(tc)
-
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress :
-            return self.editorKeyPressEvent(event)
+            return self._editorKeyPressEvent(event)
         return False
 
     # Re-implement keyPressEvent for the Editor widget to provide bookmarks,
@@ -292,7 +252,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # ctrl-f/F/g/G/t/T/= interact with the Find panel to begin or continue
     # search and replace operations.
 
-    def editorKeyPressEvent(self, event):
+    def _editorKeyPressEvent(self, event):
         retval = False # assume we don't handle this event
         kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key())
         #print('key {0:08X}'.format(kkey))
@@ -327,3 +287,48 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
                         self.Editor.setTextCursor(tc)
         # else:  not a key for the editor, return False
         return retval
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    #                 PUBLIC METHODS
+
+    # Center a position or text selection on in the middle of the window.
+    # If a selection is taller than 1/2 the window height, put the top of
+    # the selection higher, but in no case off the top of the window.
+
+    def center_position(self, pos):
+        tc = self.Editor.textCursor()
+        tc.setPosition(pos)
+        self.center_this(tc)
+
+    def center_this(self, tc):
+        #TODO Implement properly  blockBoundingGeometry
+        self.show_this(tc)
+
+    # Position the cursor at a given document character position or the top
+    # of a selection. Call our _cursor_moved slot to update the widgets at the
+    # bottom of the window, because just setting our text cursor doesn't do
+    # that. Make sure the focus ends up in the editor.
+
+    def show_position(self, pos):
+        tc = self.Editor.textCursor()
+        tc.setPosition(pos)
+        self.show_this(tc)
+
+    def show_this(self, tc):
+        self.Editor.setTextCursor(tc)
+        self._cursor_moved()
+        self.Editor.setFocus(Qt.TabFocusReason)
+
+    # Position the cursor at the head of a given QTextBlock (line)
+    # and get the focus. Does not assume tb is a valid textblock.
+    def go_to_block(self, tb):
+        if not tb.isValid():
+            tb = self.document.end()
+        self.show_position(tb.position())
+
+    # Lots of other code needs a textcursor for the current document.
+    def get_cursor(self):
+        return QTextCursor(self.Editor.textCursor())
+    # Some other code likes to reposition the edit selection:
+    def set_cursor(self, tc):
+        self.Editor.setTextCursor(tc)
