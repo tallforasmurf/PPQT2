@@ -32,7 +32,7 @@ This module is imported by mainwindow on startup, when it calls
 initialize(). The services offered are designed so that other widgets
 don't have to know about the QFont/QFontInfo API.
 
-    initialize() creates a font database and identifies the
+    initialize(settings) creates a font database and identifies the
         user's preferred monospaced and general fonts
         from saved settings if any.
 
@@ -52,7 +52,10 @@ don't have to know about the QFont/QFontInfo API.
     get_size() returns the integer size of a QFont (presumably,
         for saving in one's settings?)
 
-    shutdown() saves current font choices in the settings.
+    set_fixed(qf) set the user's choice of mono font, emit fontsChanged
+    set_general(qf) set the user's choice of UI font, emit fontsChanged
+
+    shutdown(settings) saves current font choices in the settings.
 '''
 import logging
 fonts_logger = logging.getLogger(name='fonts')
@@ -112,5 +115,11 @@ def choose_font(mono=True, parent=None):
     fonts_logger.error('Unimplemented:choose_font')
     return qf_mono if mono else qf_general
 
-def shutdown():
+def set_fixed(qfont):
+    fonts_logger.error('Unimplemented:set_fixed')
+
+def set_general(qfont):
+    fonts_logger.error('Unimplemented:set_general')
+
+def shutdown(settings):
     fonts_logger.error('Unimplemented:shutdown')
