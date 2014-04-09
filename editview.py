@@ -51,7 +51,7 @@ Offers these additional methods:
 
     show_position(pos)   Same a show_this but for an integer position.
 
-    go_to_tb(tb)         given a text block, put the edit cursor at its start
+    go_to_block(tb)      given a text block, put the edit cursor at its start
 
 '''
 xp_word = "(\\w*(\\[..\\])?\\w+)+"
@@ -180,7 +180,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             self.Editor.setFocus(Qt.TabFocusReason)
             return
         # TODO make it self.center_this instead
-        self.go_to_tb(tb)
+        self.go_to_block(tb)
 
     # This slot receives the ReturnPresssed signal from ImageFilename.
     # Ask the page database for the index of the user-entered folio value
@@ -251,7 +251,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
 
     # Position the cursor at the head of a given QTextBlock (line)
     # and get the focus. Does not assume tb is a valid textblock.
-    def go_to_tb(self, tb):
+    def go_to_block(self, tb):
         if not tb.isValid():
             tb = self.document.end()
         self.show_position(tb.position())
