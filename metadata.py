@@ -177,11 +177,11 @@ class MetaMgr(object):
         self.version_read = '0'
         # Initialize the important section_dict with our version
         # reader and writer pre-registered.
-        self.section_dict = {C.MD_V : [self.v_reader, self.v_writer]}
+        self.section_dict = {C.MD_V : [self._v_reader, self._v_writer]}
         # End of __init__
 
     # The reader and writer methods for the {{VERSION n}} section.
-    def v_reader(self, qts, section, vers, parm) :
+    def _v_reader(self, qts, section, vers, parm) :
         if len(parm) :
             # some nonempty parameter followed VERSION
             self.version_read = parm
@@ -190,7 +190,7 @@ class MetaMgr(object):
             metadata_logger.warn('{0} with no parameter: assuming 1'.format(section))
             self.version_read = '1'
 
-    def v_writer(self, qts, section) :
+    def _v_writer(self, qts, section) :
         qts << open_line(section, self.version_write)
 
     def version(self):
