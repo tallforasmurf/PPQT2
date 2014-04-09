@@ -128,7 +128,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.ImageFilename.returnPressed.connect(self.image_request)
         # TODO: get starting cursor position from metadata, set self.cursor
         #
-
+        self.last_line_number = None
         # Connect the Editor's cursorPositionChanged signal to our slot
         self.Editor.cursorPositionChanged.connect(self.cursor_moved)
         # Fill in the line and column number by faking that signal
@@ -175,6 +175,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         except ValueError:
             editview_logger.info('Request for invalid line number {0}'.format(self.LineNumber.text()))
             # TODO figure out how to beep
+            self.last_line_number = None # force update if line # display
             self.cursor_moved() # restore current line nbr the easy way
             self.Editor.setFocus(Qt.TabFocusReason)
             return
@@ -192,27 +193,33 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         else : # unknown image filename, restore current value
             editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
             # TODO figure out how to beep
+            self.last_line_number = None # force update of image name
             self.cursor_moved()
             self.Editor.setFocus(Qt.TabFocusReason)
 
-    # This slot is connected to Editor's cursorPositionChanged signal. It is
-    # also called directly when one of the internal methods below moves the
-    # cursor. Change the contents of the folio, line number and column number
-    # displays to match the new position.
+    # This slot is connected to Editor's cursorPositionChanged signal, so is
+    # called whenever the cursor moves for any reason, i.e. very very often!
+    # It is also called directly when one of the internal methods below moves
+    # the cursor. Change the contents of the column number display. If the
+    # cursor has moved to a different line, change also the line number, scan
+    # image name, and folio displays to match the new position.
     def cursor_moved(self):
         tc = QTextCursor(self.Editor.textCursor())
         self.ColNumber.setText(str(tc.positionInBlock()))
         tb = tc.block()
-        self.LineNumber.setText(str(tb.blockNumber()+1)) # block #s are origin-0
-        tc.movePosition(QTextCursor.EndOfBlock)
-        tc.movePosition(QTextCursor.StartOfBlock,QTextCursor.KeepAnchor)
-        self.current_line_thing.cursor = tc
-        self.Editor.setExtraSelections([self.current_line_thing])
-        pn = self.page_model.page_index(tc.position())
-        if pn is not None : # the page model has info on this position
-            self.ImageFilename.setText(self.page_model.filename(pn))
-        else: # no image data, or positioned above page 1
-            self.ImageFilename.setText('')
+        ln = tb.blockNumber()+1 # block #s are origin-0, line #s origin-1
+        if ln != self.last_line_number:
+            self.last_line_number = ln
+            self.LineNumber.setText(str(ln))
+            tc.movePosition(QTextCursor.EndOfBlock)
+            tc.movePosition(QTextCursor.StartOfBlock,QTextCursor.KeepAnchor)
+            self.current_line_thing.cursor = tc
+            self.Editor.setExtraSelections([self.current_line_thing])
+            pn = self.page_model.page_index(tc.position())
+            if pn is not None : # the page model has info on this position
+                self.ImageFilename.setText(self.page_model.filename(pn))
+            else: # no image data, or positioned above page 1
+                self.ImageFilename.setText('')
 
     # Center a position or text selection on in the middle of the window.
     # If a selection is taller than 1/2 the window height, put the top of
@@ -224,7 +231,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.center_this(tc)
 
     def center_this(self, tc):
-        #TODO Implement properly
+        #TODO Implement properly  blockBoundingGeometry
         self.show_this(tc)
 
     # Position the cursor at a given document character position or the top
