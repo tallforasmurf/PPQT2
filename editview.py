@@ -60,13 +60,13 @@ xp_hyap = "(" + xp_word + "[\\'\\-\u2019])*" + xp_word
 
 import regex
 from PyQt5.Qt import Qt, QEvent, QObject
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QTextEdit
 from PyQt5.QtGui import (
     QBrush,
     QTextBlock,
     QTextCursor,
     QTextCharFormat,
-    QTextBlockFormat
+    QTextBlockFormat,
     )
 
 import editview_uic
@@ -107,6 +107,10 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # it needs to be metadata!
         # Connect the editor to the document.
         self.Editor.setDocument(self.document)
+        # Set up a single QTextEdit.ExtraSelection thing to highlight
+        # the current line with. See set_colors and cursor_moved
+        self.current_line_thing = QTextEdit.ExtraSelection()
+        self.current_line_thing.format = QTextCharFormat()
         # Set the fonts of our widgets.
         self.set_fonts()
         # Get the current highlight colors.
@@ -122,8 +126,13 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.LineNumber.returnPressed.connect(self.line_number_request)
         # Connect returnPressed of the ImageFilename widget to our slot.
         self.ImageFilename.returnPressed.connect(self.image_request)
+        # TODO: get starting cursor position from metadata, set self.cursor
+        #
+
         # Connect the Editor's cursorPositionChanged signal to our slot
         self.Editor.cursorPositionChanged.connect(self.cursor_moved)
+        # Fill in the line and column number by faking that signal
+        self.cursor_moved()
         # Filter the Editor's key events. We have to do this because,
         # when the Editor widget is created by Qt Creator, we do not
         # get the option of inserting a keyPressEvent() slot in it.
@@ -136,7 +145,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     def set_colors(self):
         self.scanno_format = colors.get_scanno_format()
         self.spelling_format = colors.get_spelling_format()
-        self.current_line_format = colors.get_current_line_format()
+        self.current_line_thing.format.setBackground(colors.get_current_line_brush())
         self.norm_style = 'color:Black;font-weight:normal;'
         self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
 
@@ -180,21 +189,25 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         pn = self.page_model.name_index(fname)
         if pn is not None :
             self.center_position(self.page_model.position(pn))
-        else : # unknown image filename, restore current value the easy way
+        else : # unknown image filename, restore current value
             editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
             # TODO figure out how to beep
             self.cursor_moved()
             self.Editor.setFocus(Qt.TabFocusReason)
 
-    # This slot is connected to Editor's cursorPositionChanged signal. Change
-    # the contents of the folio, line number and column number displays to
-    # match the new position.
+    # This slot is connected to Editor's cursorPositionChanged signal. It is
+    # also called directly when one of the internal methods below moves the
+    # cursor. Change the contents of the folio, line number and column number
+    # displays to match the new position.
     def cursor_moved(self):
-        tc = self.Editor.textCursor()
-        bn = tc.blockNumber()
-        self.LineNumber.setText(str(bn+1)) # block #s are origin-0
-        cn = tc.positionInBlock()
-        self.ColNumber.setText(str(cn))
+        tc = QTextCursor(self.Editor.textCursor())
+        self.ColNumber.setText(str(tc.positionInBlock()))
+        tb = tc.block()
+        self.LineNumber.setText(str(tb.blockNumber()+1)) # block #s are origin-0
+        tc.movePosition(QTextCursor.EndOfBlock)
+        tc.movePosition(QTextCursor.StartOfBlock,QTextCursor.KeepAnchor)
+        self.current_line_thing.cursor = tc
+        self.Editor.setExtraSelections([self.current_line_thing])
         pn = self.page_model.page_index(tc.position())
         if pn is not None : # the page model has info on this position
             self.ImageFilename.setText(self.page_model.filename(pn))
