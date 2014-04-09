@@ -40,8 +40,8 @@ The following are interrogated by an editview:
     get_spelling_format() Return a QTextCharFormat with the chosen
                          style and color for spelling-error highlighting.
 
-    get_current_line_format() Return a QTextBlockFormat with the chosen
-                         style and color for highlighting the current line.
+    get_current_line_brush() Return a QBrush to use for the background
+                        color of the current line.
 
 The following are used by a TODO preferences dialog:
 
@@ -66,7 +66,7 @@ from PyQt5.QtGui import QBrush, QColor, QTextCharFormat, QTextBlockFormat
 MD_COLOR = QColor('red')
 SC_COLOR = QColor('thistle')
 SP_COLOR = QColor('lightpink')
-CL_COLOR = QColor('#E0E0E0') # very light gray
+CL_COLOR = QColor('#ECECEC') # very light gray
 
 # TODO temps
 def get_modified_color():
@@ -83,10 +83,8 @@ def get_spelling_format():
     qtcf.setUnderlineColor(SP_COLOR)
     return qtcf
 
-def get_current_line_format():
-    qtbf = QTextBlockFormat()
-    qtbf.setBackground(QBrush(CL_COLOR))
-    return qtbf
+def get_current_line_brush():
+    return QBrush(CL_COLOR)
 
 def set_scanno_format(qtcf):
     pass
