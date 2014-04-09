@@ -114,25 +114,25 @@ class Document(QTextDocument):
             yield tb.text()
             tb = tb.next()
     #
-    # 2. A range of lines from block #a to #z inclusive, guarding
+    # 2. A range of lines from LINE NUMBER a to z inclusive, guarding
     # against invalid ranges and a completely empty doc.
     #
     def a_to_z_lines(self, a, z):
-        tb = self.findBlockByNumber(a)
-        tbx = self.findBlockByNumber(z) # if invalid, self.end()
-        if a <= z and a >= 0 and tb != self.end() :
+        tb = self.findBlockByNumber(a - 1)
+        tbx = self.findBlockByNumber(z - 1) # if invalid, self.end()
+        if a <= z and a > 0 and tb != self.end() :
             while True:
                 yield tb.text()
                 if tb == tbx : break
                 tb = tb.next()
     #
-    # 3. A range of lines from block #z to #a inclusive in reverse
+    # 3. A range of lines from LINE NUMBER z to a inclusive in reverse
     # sequence.
     #
     def z_to_a_lines(self, a, z):
-        tb = self.findBlockByNumber(z)
-        tbx = self.findBlockByNumber(a)
-        if a <= z and a >= 0 and tb != self.end() :
+        tb = self.findBlockByNumber(z - 1)
+        tbx = self.findBlockByNumber(a - 1)
+        if a <= z and a > 0 and tb != self.end() :
             while True:
                 yield tb.text()
                 if tb == tbx : break
@@ -148,7 +148,7 @@ class Document(QTextDocument):
         cz = max(tc.position(), tc.anchor())
         a = self.findBlock(ca).blockNumber()
         z = self.findBlock(cz).blockNumber()
-        return self.a_to_z_lines(a,z)
+        return self.a_to_z_lines( a+1, z+1 )
 
     # The following functions return iterators over sequences of
     # QTextBlocks, returning the QTextBlocks themselves. These are
