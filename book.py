@@ -133,7 +133,7 @@ class Book(QObject):
     # Position editor to first line, in absence of metadata.
 
     def new_book(self, doc_stream, book_name, image_path) :
-        self.init_edit( doc_stream, book_name, True )
+        self._init_edit( doc_stream, book_name, True )
         self.pagem.scan_pages()
         # TODO init image panel
 
@@ -159,7 +159,7 @@ class Book(QObject):
 
     # After implementing one of the above operations, initialize the
     # edit document and edit view.
-    def init_edit(self, doc_stream, book_name, modified, cursor_pos = 0):
+    def _init_edit(self, doc_stream, book_name, modified, cursor_pos = 0):
         self.bookname = book_name
         if doc_stream: # that is, if not New
             self.editm.setPlainText(doc_stream.readAll())
