@@ -223,8 +223,10 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             pn = self.page_model.page_index(tc.position())
             if pn is not None : # the page model has info on this position
                 self.ImageFilename.setText(self.page_model.filename(pn))
+                self.Folio.setText(self.page_model.folio_string(pn))
             else: # no image data, or positioned above page 1
                 self.ImageFilename.setText('')
+                self.Folio.setText('')
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress :
