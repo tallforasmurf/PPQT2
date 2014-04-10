@@ -123,7 +123,7 @@ class Book(QObject):
     # save an empty new document.
 
     def new_empty(self,sequence):
-        self.init_edit(None, 'Untitled-{0}'.format(sequence), False)
+        self._init_edit(None, 'Untitled-{0}'.format(sequence), False)
 
     # FILE>OPEN an unknown document, one without metadata of any kind.
     #   doc_stream  a QTextStream with the document data
