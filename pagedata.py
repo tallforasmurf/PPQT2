@@ -112,9 +112,11 @@ and pageview displays all the data in the Pages panel.
 
     proofers(R) returns the proofer string list for row R.
 
-    folios(R)   returns the folio item list for row R.
+    folio_info(R)   returns the folio item list for row R.
 
-    set_folios(R, [rule,fmt,nbr]) update the folio values for row j.
+    folio_string(R) returns the formatted display of the folio for row R.
+
+    set_folios(R, rule, fmt, number) update the folio values for row R.
 
     Page Boundary Cursors
 
@@ -185,6 +187,8 @@ class PageData(object):
         # Last-returned position and row
         self.last_pos = None
         self.last_row = 0
+        # Set of rows having an explicit folio format, as opposed to "same"
+        self.explicit_formats = set()
         # Register to read and write metadata
         self.metamgr.register(C.MD_PT, self.read_pages, self.write_pages)
 
@@ -202,6 +206,7 @@ class PageData(object):
         rule = C.FolioRuleSet
         fmt = C.FolioFormatArabic
         nbr = 1
+        self.explicit_formats = {0}
         for qtb in self.document.all_blocks() :
             m = re_line_sep.match(qtb.text())
             if m :
@@ -242,24 +247,37 @@ class PageData(object):
     # meddling/editing of page data, except for guarding it in a try block.
     #
     def read_pages(self, stream, sentinel, vers, parm):
+        valid_rule = {C.FolioRuleAdd1,C.FolioRuleSet,C.FolioRuleSkip}
+        valid_fmt = {C.FolioFormatArabic,C.FolioFormatLCRom,C.FolioFormatUCRom,C.FolioFormatSame}
+        last_fmt = C.FolioFormatArabic
+        last_pos = -1 # ensure monotonically increasing positions
         for line in metadata.read_to(stream, sentinel):
             try:
                 # throws exception if not exactly 6 items
                 (P, fn, pfrs, rule, fmt, nbr) = line.split(' ')
+                P = int(P) # throws exception if not valid int string
                 tc = QTextCursor(self.document)
-                # throws exception if P not an int
-                tc.setPosition(int(P))
-                # check that P was valid document position
-                if int(P) != tc.position() : raise ValueError("Invalid document position")
+                tc.setPosition(P) # no effect if P negative or too big
+                if (tc.position() != P) or (P < last_pos) :
+                    raise ValueError("Invalid document position")
+                last_pos = P
+                rule = int(rule)
+                fmt = int(fmt)
+                nbr = int(nbr)
+                if not ( (rule in valid_rule) and (fmt in valid_fmt) and (nbr >= 0) ) :
+                    raise ValueError("Invalid folio info")
+                # All looks good, do permanent things
                 self.cursor_list.append(tc)
                 self.filename_list.append(fn)
-                self.folio_list.append( [int(rule), int(fmt), int(nbr)] )
+                self.folio_list.append( [rule, fmt, nbr] )
+                if fmt != C.FolioFormatSame :
+                    self.explicit_formats.add(len(self.folio_list)-1)
                 # get list of proofer strings, dropping opening null string
                 # due to leading backslash.
                 plist = pfrs.replace(C.UNICODE_EN_SPACE,' ').split('\\')[1:]
                 self.proofers_list.append(plist)
-            except Exception as who_cares:
-                pagedata_logger.error('invalid line of page metadata:')
+            except Exception as thing:
+                pagedata_logger.error('invalid line of page metadata: '+thing.args[0])
                 pagedata_logger.error('  "'+line+'"')
         if 0 < len(self.filename_list) :
             self._active = True
@@ -283,6 +301,12 @@ class PageData(object):
             stream << '{0} {1} {2} {3} {4} {5}\n'.format(
                      P,  fn, pfs, rule, fmt, nbr )
         stream << metadata.close_line(sentinel)
+
+    def active(self) :
+        return self._active
+    # Use filename_list as the official length; cursor_list has an extra row.
+    def page_count(self) :
+        return len(self.filename_list)
 
     # Return the row index R of the scan page matching a document offset.
     # Return None if the user is "off the top" in text preceding the first
@@ -331,12 +355,6 @@ class PageData(object):
         # else not active
         return None # no data
 
-    # Use filename_list as the official length; cursor_list has an extra row.
-    def active(self) :
-        return self._active
-    def page_count(self) :
-        return len(self.filename_list)
-
     # Return the index of a user-entered filename (in editview). This is
     # called only from the edit view when the user keys an image name and
     # hits return. There is NO constraint on image filenames. Although they
@@ -369,32 +387,110 @@ class PageData(object):
     def filename(self, R):
         try :
             return self.filename_list[R]
-        except IndexError as I:
+        except IndexError:
+            pagedata_logger.error('Invalid index {0} to filename'.format(R))
             return ''
 
     def position(self, R):
         try :
             return self.cursor_list[R].position()
-        except IndexError as I:
+        except IndexError:
+            pagedata_logger.error('Invalid index {0} to position'.format(R))
             return 0
 
     def proofers(self, R):
         try :
             return self.proofers_list[R]
-        except IndexError as I:
+        except IndexError:
+            pagedata_logger.error('Invalid index {0} to proofers'.format(R))
             return []
 
-    def folios(self, R):
+    # Return the raw folio items Rule, Format, and Number. Format is very
+    # probably folioFormatSame.
+
+    def folio_info(self, R):
         try :
             return self.folio_list[R]
-        except IndexError as I:
+        except IndexError:
+            pagedata_logger.error('Invalid index {0} to folio_info'.format(R))
             return []
 
-    def set_folios(self, R, rule = None, fmt = None, nbr = None ):
+    # Return the actual folio format, resolving the "same" to the next
+    # higher explicit format.
+
+    def folio_format(self, R):
+        try :
+            fmt = self.folio_list[R][1]
+            if fmt == C.FolioFormatSame :
+                nearest_explicit = 0
+                for an_index in self.explicit_formats:
+                    if (an_index >= nearest_explicit) and (an_index < R) :
+                        nearest_explicit = an_index
+                fmt = self.folio_list[nearest_explicit][1]
+            return fmt
+        except IndexError:
+            pagedata_logger.error('Invalid index {0} to folio_format'.format(R))
+            return C.FolioFormatArabic
+
+    # Return the display form of the folio number based on its value and
+    # explicit format.
+
+    def folio_string(self, R):
+        global toRoman
+        try :
+            [rule, fmt, number] = self.folio_list[R]
+            if rule == C.FolioRuleSkip :
+                return ''
+            if fmt == C.FolioFormatSame :
+                fmt = self.folio_format(R)
+            if fmt == C.FolioFormatArabic :
+                return str(number)
+            return toRoman(number, fmt == C.FolioFormatLCRom)
+        except IndexError:
+            pagedata_logger.error('Invalid index {0} to folio_string'.format(R))
+            return ''
+
+    def set_folios(self, R, rule = None, fmt = None, number = None ):
         try:
-            if rule : self.folio_list[R][0] = rule
-            if fmt : self.folio_list[R][1] = fmt
-            if nbr : self.folio_list[R][2] = nbr
+            if rule is not None :
+                self.folio_list[R][0] = rule
+            if fmt is not None :
+                self.folio_list[R][1] = fmt
+                if fmt == C.FolioFormatSame :
+                    self.explicit_formats.discard(R)
+                else :
+                    self.explicit_formats.add(R)
+            if number is not None : self.folio_list[R][2] = number
             self.my_book.metadata_modified()
-        except IndexError as I :
+        except IndexError:
+            pagedata_logger.error('Invalid index {0} to set_folios'.format(R))
             pass
+
+# The following is from Mark Pilgrim's "Dive Into Python" slightly
+# modified to return upper or lower-case.
+romanNumeralMap = (('M',  1000),
+                   ('CM', 900),
+                   ('D',  500),
+                   ('CD', 400),
+                   ('C',  100),
+                   ('XC', 90),
+                   ('L',  50),
+                   ('XL', 40),
+                   ('X',  10),
+                   ('IX', 9),
+                   ('V',  5),
+                   ('IV', 4),
+                   ('I',  1))
+def toRoman(n,lc):
+    """convert integer to Roman numeral"""
+    if  isinstance(n,int) and (0 < n < 5000) :
+        result = ""
+        for numeral, integer in romanNumeralMap:
+            while n >= integer:
+                result += numeral
+                n -= integer
+    else : # invalid number, don't raise an exception
+        result = "!!!!"
+    if lc :
+        return result.lower()
+    return result
