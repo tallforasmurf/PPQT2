@@ -67,7 +67,7 @@ import editdata
 import editview
 import worddata
 import pagedata
-import spellcheck
+import dictionaries
 import constants as C
 
 class Book(QObject):
@@ -85,7 +85,7 @@ class Book(QObject):
         # Create the metadata manager
         #
         self.metamgr = metadata.MetaMgr()
-        # TODO: register to save and load dictionary from metadata
+        # TODO: register to save and load dictionary tag from metadata
         # TODO: register to save and load spellcheck and scanno colors!
         # TODO: register to save and load editor font size
         # TODO: register to save and load editor position cursor
@@ -94,13 +94,13 @@ class Book(QObject):
         # Create a document, it will be initialized later.
         self.editm = editdata.Document(self)
         #
-        # Create the spellchecker
+        # Create the spellchecker using the default dictionary as it is now.
+        # It is recreated when (or if) we read a dictionary info in metadata.
         #
-        # Copy the default dictionary as it is now
         self.default_dic_tag = self.main_window.default_dic_tag
-        self._speller = spellcheck.Speller(
+        self._speller = dictionaries.Speller(
             self.default_dic_tag,
-            self.main_window.dictionary_paths )
+            dictionaries.get_dict_path() )
         #
         # Create the pagedata model and its clients
         #
@@ -133,7 +133,7 @@ class Book(QObject):
     # Position editor to first line, in absence of metadata.
 
     def new_book(self, doc_stream, book_name, image_path) :
-        self._init_edit( doc_stream, book_name, True )
+        self._init_edit( doc_stream, book_name, book_path='', modified=True )
         self.pagem.scan_pages()
         # TODO init image panel
 
@@ -159,25 +159,32 @@ class Book(QObject):
 
     # After implementing one of the above operations, initialize the
     # edit document and edit view.
-    def _init_edit(self, doc_stream, book_name, modified, cursor_pos = 0):
-        self.bookname = book_name
+    def _init_edit(self,
+                   doc_stream=None,
+                   book_name='',
+                   book_path='',
+                   modified=False,
+                   cursor_pos=0):
+        self.book_name = book_name
+        self.book_path = book_path
         if doc_stream: # that is, if not New
             self.editm.setPlainText(doc_stream.readAll())
         self.editm.setModified(modified)
         self.editv = editview.EditView(self)
         self.editv.show_position(cursor_pos)
-    # TODO: connect focus-in signal of editv to what?
+        # TODO: connect focus-in signal of editv to what?
 
-    # give access to the bookname
-    def get_bookname(self):
-        return self.bookname
-
+    # give access to the book name
+    def get_book_name(self):
+        return self.book_name
+    # give access to the book path
+    def get_book_path(self):
+        return self.book_path
     # give access to the last-set edit font size
     def get_font_size(self):
         return self.edit_point_size
     def save_font_size(self, size):
         self.edit_point_size = size
-
     # give access to the metadata manager
     def get_meta_manager(self):
         return self.metamgr
