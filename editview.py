@@ -24,15 +24,19 @@ __email__ = "tallforasmurf@yahoo.com"
 '''
                          editview.py
 
-Defines a class for the edit object, which implements the user
-access to a document for editing, based on QPlainTextEdit.
-
-Given a reference to its data (editdata.py) in creation by the Book object.
+Defines a class for the edit object, which implements the user access to a
+document for editing, based on QPlainTextEdit.
 
 Implements all keyboard actions (ctl-F, etc) in the editor.
 
 Implements the syntax highlighter that colors scannos and spelling errors.
 Calls on a WordData object to identify scannos and spelling errors.
+
+Provides a context menu with these user commands:
+    Mark Scannos
+    Mark Spelling
+    Choose Dictionary
+    Choose Scanno File
 
 Offers these additional methods:
 
@@ -57,27 +61,96 @@ Offers these additional methods:
     set_cursor(tc)       Set a new edit cursor.
 
 '''
-xp_word = "(\\w*(\\[..\\])?\\w+)+"
-xp_hyap = "(" + xp_word + "[\\'\\-\u2019])*" + xp_word
-#reWord = QRegExp(xp_hyap, Qt.CaseInsensitive)
 
 import regex
-from PyQt5.Qt import Qt, QEvent, QObject
-from PyQt5.QtWidgets import QWidget, QTextEdit
+from PyQt5.Qt import Qt, QEvent, QObject, QCoreApplication
+_TR = QCoreApplication.translate
+
+from PyQt5.QtWidgets import (
+    QAction,
+    QFileDialog,
+    QMenu,
+    QTextEdit,
+    QWidget
+    )
 from PyQt5.QtGui import (
     QBrush,
+    QSyntaxHighlighter,
     QTextBlock,
+    QTextBlockFormat,
     QTextCursor,
     QTextCharFormat,
-    QTextBlockFormat,
+    QTextDocument
     )
-
 import editview_uic
 import fonts
 import colors
 import logging
 editview_logger = logging.getLogger(name='editview')
 import constants as C
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Define a syntax highlighter object which is linked into our edit widget.
+# The EditView below instantiates one of this object.
+#
+# Commence with a regular expression that matches a word token including
+# a word that is hyphenated and/or has an apostrophe. First the word token
+# which may include pgdp-style special characters like [:u] or ['e].
+
+re_word = "(\\w*(\\[..\\])?\\w+)+"
+
+# Now use that in the context of internal (not terminal) apostrophe
+# or hyphen, allowing for both ascii and curly apostrophes.
+
+re_hyap = "(" + re_word + "[\\'\\-\u2019])*" + re_word
+
+re_word = regex.compile(re_hyap, regex.IGNORECASE)
+
+# The init argument is a reference to the EditView, from which we pull the
+# highlighting formats. We initialize our parent class with no text document.
+# Later we will be attached to the real document with a call to setDocument.
+
+class HighLighter(QSyntaxHighlighter):
+    def __init__(self, editv, book):
+        super().__init__(None)
+        # Save reference to our EditView for getting formats later
+        self.editv = editv
+        # Save references direct to the scanno and spelling checker
+        # methods of the worddata model.
+        self.scanno = book.get_word_model().scanno_test
+        self.speller = book.get_word_model().spelling_test
+
+    # When highlighting is first turned on (by calling the parent class's
+    # setDocument() method) the linked QTextDocument calls this function for
+    # every text line in the whole document, at least to judge by the
+    # hang-time. Later it only calls it to look at a line as it changes in
+    # editing. In either case it behooves us to be as quick as possible.
+    #
+    # Either one or both of editv.scanno_check or editv.spell_check are True
+    # because if they aren't, EditView would have set our document to null.
+    #
+    # We sample the highlight formats at the time we are called so we get
+    # the latest choice of color and style. We cache the scanno and spelling
+    # switches to save on python name-dict scans.
+    #
+    def highlightBlock(self, text):
+        global re_word
+        scanno_fmt = self.editv.scanno_format
+        spelling_fmt = self.editv.spelling_format
+        sc = self.editv.scanno_check
+        sp = self.editv.spelling_check
+        # iterate over all word tokens in the text.
+        for match in re_word.finditer(text):
+            t = match.group(0) # text of matched token
+            p = match.start() # index of start of token in text
+            l = len(t) # length of token
+            if sc : # we are checking for scannos:
+                if self.scanno(t) :
+                    self.setFormat(p,l,scanno_fmt)
+            if sp : # we are checking spelling:
+                if self.speller(t) :
+                    self.setFormat(p,l,spelling_fmt)
 
 class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     def __init__(self, my_book, parent=None):
@@ -90,6 +163,10 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # Save access to the word list and page data
         self.word_model = my_book.get_word_model()
         self.page_model = my_book.get_page_model()
+        # Initialize highlighting switches and create the highlighter.
+        self.highlighter = HighLighter(self,my_book)
+        self.scanno_check = False
+        self.spelling_check = False
         # invoke the UI setup defined by pyuic5, passing this
         # object as the parameter that setupUi refers to as "EditWidget".
         # It creates and initializes all the sub-widgets under the
@@ -110,16 +187,19 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # it needs to be metadata!
         # Connect the editor to the document.
         self.Editor.setDocument(self.document)
-        # Set up a single QTextEdit.ExtraSelection thing to highlight
-        # the current line with. See _set_colors and _cursor_moved
-        self.current_line_thing = QTextEdit.ExtraSelection()
-        self.current_line_thing.format = QTextCharFormat()
+        # Set up mechanism for a current-line highlight
+        self.current_line_fmt = QTextBlockFormat()
+        self.normal_line_fmt = QTextBlockFormat()
+        self.last_cursor = QTextCursor(self.Editor.textCursor())
+        self.last_text_block = None
         # Set the fonts of our widgets.
         self._set_fonts()
-        # Get the current highlight colors.
+        # Get the current highlight colors. This sets members scanno_format,
+        # spelling_format, current_line_thing, norm_style and mod_style.
+        # TODO: connect this slot to the colorChanged signal!
         self._set_colors()
         # Put the document name in our widget
-        self.DocName.setText(self.my_book.get_bookname())
+        self.DocName.setText(self.my_book.get_book_name())
         # Connect the Editor's modificationChanged signal to our slot.
         self.Editor.modificationChanged.connect(self._mod_change_signal)
         # Set the color of the DocName by faking that signal.
@@ -129,7 +209,6 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.LineNumber.returnPressed.connect(self._line_number_request)
         # Connect returnPressed of the ImageFilename widget to our slot.
         self.ImageFilename.returnPressed.connect(self._image_request)
-        # TODO: get starting cursor position from metadata, set self.cursor
         #
         self.last_line_number = None
         # Connect the Editor's cursorPositionChanged signal to our slot
@@ -140,6 +219,8 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # when the Editor widget is created by Qt Creator, we do not
         # get the option of inserting a keyPressEvent() slot in it.
         self.Editor.installEventFilter(self)
+        # Create and install our context menu
+        self.context_menu = self._make_context_menu()
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 INTERNAL METHODS
@@ -150,7 +231,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     def _set_colors(self):
         self.scanno_format = colors.get_scanno_format()
         self.spelling_format = colors.get_spelling_format()
-        self.current_line_thing.format.setBackground(colors.get_current_line_brush())
+        self.current_line_fmt.setBackground(colors.get_current_line_brush())
         self.norm_style = 'color:Black;font-weight:normal;'
         self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
 
@@ -212,21 +293,25 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         tc = QTextCursor(self.Editor.textCursor())
         self.ColNumber.setText(str(tc.positionInBlock()))
         tb = tc.block()
-        ln = tb.blockNumber()+1 # block #s are origin-0, line #s origin-1
-        if ln != self.last_line_number:
-            self.last_line_number = ln
-            self.LineNumber.setText(str(ln))
-            tc.movePosition(QTextCursor.EndOfBlock)
-            tc.movePosition(QTextCursor.StartOfBlock,QTextCursor.KeepAnchor)
-            self.current_line_thing.cursor = tc
-            self.Editor.setExtraSelections([self.current_line_thing])
-            pn = self.page_model.page_index(tc.position())
-            if pn is not None : # the page model has info on this position
-                self.ImageFilename.setText(self.page_model.filename(pn))
-                self.Folio.setText(self.page_model.folio_string(pn))
-            else: # no image data, or positioned above page 1
-                self.ImageFilename.setText('')
-                self.Folio.setText('')
+        if tb == self.last_text_block:
+            return # still on same line, nothing more to do
+        # Fill in line-number widget, line #s are origin-1
+        self.LineNumber.setText(str(tb.blockNumber()+1))
+        # Fill in the image name and folio widgets
+        pn = self.page_model.page_index(tc.position())
+        if pn is not None : # the page model has info on this position
+            self.ImageFilename.setText(self.page_model.filename(pn))
+            self.Folio.setText(self.page_model.folio_string(pn))
+        else: # no image data, or cursor is above page 1
+            self.ImageFilename.setText('')
+            self.Folio.setText('')
+        # clear any highlight on the previous current line
+        self.last_cursor.setBlockFormat(self.normal_line_fmt)
+        # remember this new current line
+        self.last_cursor = tc
+        self.last_text_block = tb
+        # and set its highlight
+        tc.setBlockFormat(self.current_line_fmt)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress :
@@ -289,6 +374,101 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
                         self.Editor.setTextCursor(tc)
         # else:  not a key for the editor, return False
         return retval
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    #                 CONTEXT MENU
+    #
+    # Define the four actions for our context menu, then make the menu.
+    #
+    # The mark-scannos and mark-spelling choices are checkable and their
+    # toggled signal is connected to these slots.
+    #
+    # The problem is that both types of highlights are done by the same
+    # highlighter, and it is only called when it is first started (and
+    # during editing of single lines later). Thus any change in highlighting
+    # requires stopping it which clears all highlights, then restarting it.
+
+    def _clear_highlights(self):
+        self.highlighter.setDocument(QTextDocument())
+
+    def _start_highlights(self):
+        self.highlighter.setDocument(self.document)
+
+    def _act_mark_scannos(self,toggle):
+        before = self.scanno_check or self.spelling_check
+        self.scanno_check = toggle
+        after = self.scanno_check or self.spelling_check
+        if before :
+            self._clear_highlights()
+        if after :
+            self._start_highlights()
+
+    def _act_mark_spelling(self, toggle):
+        before = self.scanno_check or self.spelling_check
+        self.spelling_check = toggle
+        after = self.scanno_check or self.spelling_check
+        if before :
+            self._clear_highlights()
+        if after :
+            self._start_highlights()
+    #
+    # The choose-scanno and choose-dictionary actions are passed along to the
+    # book. These are called by the triggered signal of the menu items.
+    #
+    def _act_choose_scanno(self) :
+        new = self.my_book.ask_scanno_file()
+        if self.scanno_check and new:
+            # Scanno highlighting is on and the file changed.
+            # Turn it off and on to reset the marks.
+            self._act_mark_scannos(False)
+            self._act_mark_scannos(True)
+
+    def _act_choose_dict(self) :
+        new = self.my_book.ask_dictionary()
+        if self.spelling_check and new:
+            # Spellcheck highlighting is on and the dictionary changed
+            # Turn it off and on again to reset the marks.
+            self._act_mark_spelling(False)
+            self._act_mark_spelling(True)
+
+    #
+    # Create the menu itself. This is part of initialization.
+    #
+    def _make_context_menu(self):
+        global _TR
+        m = QMenu(self)
+        act1 = QAction( _TR("EditViewWidget","Mark Scannos","context menu item"), m )
+        act1.setCheckable(True)
+        act1.setToolTip( _TR("EditViewWidget",
+                                "Turn on or off marking of words from the scanno file",
+                                "context menu tooltip") )
+        act1.toggled.connect(self._act_mark_scannos)
+        m.addAction(act1)
+        act2 = QAction( _TR("EditViewWidget","Mark Spelling","context menu item"), m )
+        act2.setCheckable(True)
+        act2.setToolTip( _TR("EditViewWidget",
+                                "Turn on or off marking words that fail spellcheck",
+                                "context menu tooltip") )
+        act2.toggled.connect(self._act_mark_spelling)
+        m.addAction(act2)
+        act3 = QAction( _TR("EditViewWidget","Scanno File...","context menu item"), m )
+        act3.setToolTip( _TR("EditViewWidget",
+                                "Choose a file of scanno (common OCR error) words",
+                                "context menu tooltip") )
+        act3.triggered.connect(self._act_choose_scanno)
+        m.addAction(act3)
+        act4 = QAction( _TR("EditViewWidget","Dictionary...","context menu item"), m )
+        act4.setToolTip( _TR("EditViewWidget",
+                                "Choose the primary spelling dictionary for this book",
+                                "context menu tooltip") )
+        act4.triggered.connect(self._act_choose_dict)
+        m.addAction(act4)
+        return m
+    #
+    # Override the parent's contextMenuEvent to display and execute the menu.
+    #
+    def contextMenuEvent(self, event):
+        self.context_menu.exec_(event.globalPos())
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 PUBLIC METHODS
