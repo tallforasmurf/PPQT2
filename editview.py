@@ -209,8 +209,6 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.LineNumber.returnPressed.connect(self._line_number_request)
         # Connect returnPressed of the ImageFilename widget to our slot.
         self.ImageFilename.returnPressed.connect(self._image_request)
-        #
-        self.last_line_number = None
         # Connect the Editor's cursorPositionChanged signal to our slot
         self.Editor.cursorPositionChanged.connect(self._cursor_moved)
         # Fill in the line and column number by faking that signal
@@ -261,7 +259,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         except ValueError:
             editview_logger.info('Request for invalid line number {0}'.format(self.LineNumber.text()))
             # TODO figure out how to beep
-            self.last_line_number = None # force update if line # display
+            self.last_text_block = None # force update of line # display
             self._cursor_moved() # restore current line nbr the easy way
             self.Editor.setFocus(Qt.TabFocusReason)
             return
@@ -279,7 +277,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         else : # unknown image filename, restore current value
             editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
             # TODO figure out how to beep
-            self.last_line_number = None # force update of image name
+            self.last_text_block = None # force update of image name
             self._cursor_moved()
             self.Editor.setFocus(Qt.TabFocusReason)
 
