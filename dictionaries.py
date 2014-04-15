@@ -33,6 +33,11 @@ The set_extras_path() and set_dict_path() methods are called during
 initialization by the main window, with values from saved settings. They can
 also be called from the preferences dialog.
 
+set_default_tag(tag)     Save the tag of the preferred dictionary
+                         from settings or preferences
+
+get_default_tag()        Return the saved preferred main dictionary
+
 set_extras_path(path)    Save the path to the user's choice of the
                          "extras" folder.
 
@@ -62,7 +67,13 @@ import hunspell
 
 _EXTRAS = ''
 _DICTS = ''
+_PREFERRED_TAG = ''
 
+def set_default_tag(tag):
+    global _PREFERRED_TAG
+    _PREFERRED_TAG = tag
+def get_default_tag():
+    return str(_PREFERRED_TAG)
 def set_extras_path(path):
     global _EXTRAS
     _EXTRAS = path
@@ -121,11 +132,6 @@ def get_tag_list(path):
 # message. All checks will return True, correct spelling. If it cannot make
 # an alt dict, the same: log message and True for any word on that alt dict.
 #
-# The Hunspell constructor takes its character encoding from the SET
-# statement in the affix file. The word to be spell-checked has to be encoded
-# to that encoding or it will not be found. No need to get anal about
-# encoding errors; if a word has a letter that can't be encoded to match the
-# dictionary, obviously the word cannot appear in the dictionary.
 
 class Speller(object):
     def __init__(self, primary_tag, dict_path ):
