@@ -60,7 +60,8 @@ provide metamanager ref
 provide spellcheck ref
 
 '''
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, QCoreApplication
+_TR = QCoreApplication.translate
 from PyQt5.QtCore import QTextStream
 import metadata
 import editdata
@@ -78,6 +79,7 @@ class Book(QObject):
         #
         self.edit_point_size = C.DEFAULT_FONT_SIZE
         self.bookname = '' # set during New or load
+        self.book_path = ''
         self.image_path = '' # set during load
         # Initialize bookmarks, loaded from metadata later
         self.bookmarks = [None, None, None, None, None, None, None, None, None]
@@ -97,9 +99,9 @@ class Book(QObject):
         # Create the spellchecker using the default dictionary as it is now.
         # It is recreated when (or if) we read a dictionary info in metadata.
         #
-        self.default_dic_tag = self.main_window.default_dic_tag
+        self.dict_tag = dictionaries.get_default_tag()
         self._speller = dictionaries.Speller(
-            self.default_dic_tag,
+            dictionaries.get_default_tag(),
             dictionaries.get_dict_path() )
         #
         # Create the pagedata model and its clients
@@ -117,23 +119,25 @@ class Book(QObject):
     # after it instantiates this object, to load it with data.
 
     # FILE>NEW: initialize for a new empty document. Pretty much everything
-    # is set up for New alread because all the models initialize to empty.
+    # is set up for New already because all the models initialize to empty.
     # Sequence argument is maintained by the main window to make a unique
     # "Untitled" value. Set status of un-modified, no point in making user
     # save an empty new document.
 
     def new_empty(self,sequence):
-        self._init_edit(None, 'Untitled-{0}'.format(sequence), False)
+        self._init_edit(doc_stream=None,
+                        book_name='Untitled-{0}'.format(sequence))
 
     # FILE>OPEN an unknown document, one without metadata of any kind.
     #   doc_stream  a QTextStream with the document data
     #   book_name   filename string
-    #   image_path  absolute path to a folder of pngs, or None.
-    # Set up as modified because the metadata needs saving.
-    # Position editor to first line, in absence of metadata.
+    #   book_path  absolute path to book, where there might
+    #       be a folder of pngs, or maybe not.
+    # Set up as modified because the new metadata needs saving.
+    # Default cursor position to zero, in absence of metadata.
 
-    def new_book(self, doc_stream, book_name, image_path) :
-        self._init_edit( doc_stream, book_name, book_path='', modified=True )
+    def new_book(self, doc_stream, book_name, book_path) :
+        self._init_edit( doc_stream, book_name, book_path, modified=True )
         self.pagem.scan_pages()
         # TODO init image panel
 
@@ -144,7 +148,7 @@ class Book(QObject):
     #   image_path  absolute path string to a folder of pngs, or None
     # Set modified status to False because we just loaded everything.
 
-    def old_book(self,doc_stream, meta_stream, book_name, image_path):
+    def old_book(self,doc_stream, meta_stream, book_name, book_path):
         pass #TODO
 
     # GG BOOK: called to load a book that has a Guiguts .bin file.
@@ -162,17 +166,61 @@ class Book(QObject):
     def _init_edit(self,
                    doc_stream=None,
                    book_name='',
-                   book_path='',
+                   book_path=None,
                    modified=False,
                    cursor_pos=0):
         self.book_name = book_name
         self.book_path = book_path
-        if doc_stream: # that is, if not New
+        if doc_stream: # that is, if not File>New
             self.editm.setPlainText(doc_stream.readAll())
         self.editm.setModified(modified)
         self.editv = editview.EditView(self)
         self.editv.show_position(cursor_pos)
         # TODO: connect focus-in signal of editv to what?
+        # TODO: create Images view using book-path
+        # TODO: create Notes view
+
+    # User requests change of scanno file: Present a file dialog
+    # to select one. The mechanics are in main_window. When that
+    # works, pass the stream to the word-model to store.
+    def ask_scanno_file(self):
+        global _TR
+        caption = _TR("EditViewWidget",
+                "Choose a file of OCR error words to mark",
+                "File dialog caption")
+        scanno_stream = self.main_window.ask_existing_file(
+            caption, self.editv, self.book_path, None )
+        if scanno_stream is not None :
+            self.wordm.scanno_read(scanno_stream,C.MD_SC,0,None)
+            return True
+        return False
+
+    # User requests change of dictionary: Get the list of available
+    # tags and present them in a dialog. Contrary to the name, tag_list
+    # is actually a dict, so pull out its keys for the dialog.
+    def ask_dictionary(self) :
+        global _TR
+        tag_list = dictionaries.get_tag_list(self.book_path)
+        item_list = sorted(list(tag_list.keys()))
+        current = 0
+        if self.dict_tag in item_list:
+            current = item_list.index(self.dict_tag)
+        title = _TR("EditViewWidget",
+                "Primary dictionary for this book",
+                "Dictionary pop-up list")
+        explanation = _TR("EditViewWidget",
+                "Select the best dictionary for spell-checking this book",
+                "Dictionary pop-up list")
+        new_tag = self.main_window.choose_from_list(
+            title, explanation,item_list, parent=self.editv, current=current)
+        if (new_tag is not None) and (new_tag != self.dict_tag) :
+            # a choice was made and it's different from before
+            self.dict_tag = new_tag
+            self._speller = dictionaries.Speller(
+                new_tag, tag_list[new_tag] )
+            self.wordm.recheck_spelling(self._speller)
+            return True
+        return False
 
     # give access to the book name
     def get_book_name(self):
