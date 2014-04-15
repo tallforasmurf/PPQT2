@@ -75,7 +75,7 @@ colors_logger = logging.getLogger(name='colors')
 
 MD_COLOR = QColor('red')
 SC_COLOR = QColor('thistle')
-SP_COLOR = QColor('lightpink')
+SP_COLOR = QColor('magenta')
 CL_COLOR = QColor('#FAFAE0') # very light yellow
 
 # TODO temps
@@ -114,9 +114,8 @@ def set_scanno_format(qtcf):
     colors_logger.error('Unimplemented:set scanno format')
 
 def get_spelling_format():
-    qtcf = QTextCharFormat()
-    qtcf.setUnderlineStyle(QTextCharFormat.SpellCheckUnderline)
-    qtcf.setUnderlineColor(SP_COLOR)
+    global SP_COLOR
+    qtcf = make_format(SP_COLOR,QTextCharFormat.WaveUnderline)
     return qtcf
 
 def set_spelling_format(qtcf):
