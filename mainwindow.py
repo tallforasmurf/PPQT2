@@ -27,21 +27,45 @@ __email__ = "tallforasmurf@yahoo.com"
 Create and manage the main window, menus, and toolbars.
 This code manages app-level global resources for example
   * the path(s) to user resources (the V1 "extras")
-  * tags and paths to available spellcheck dicts
+  * tags and paths to available spellcheck dicts (via dictionaries module)
   * fonts (by way of initializing the font module)
+  * highlighting styles and colors (by way of colors module)
   * the Help file and its display panel
+
+Also, all uses of QFile, QDir, QFileDialog and the like are isolated
+to this module even though that means some lengthy call indirections.
 
 Within the main window it creates the widgets that display the various
 "view" objects.
 
 Instantiates and manages multiple Book objects.
 
+Maintains a sequence of integers for successive "untitled-n" booknames.
+Kept & used by File > New action.
+
 Support the user action of dragging a panel out of the tab-set to be an
 independent window, or vice-versa.
 
 '''
 from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtCore import (QDir, QFile, QFileInfo, QIODevice, QTextStream)
+from PyQt5.QtWidgets import QFileDialog, QInputDialog
+
+# The following class is a work-around for the annoying problem that
+# QTextStream(QFile) depends on the existence of the QFile but does
+# not take ownership of it, so if the QFile goes out of scope, the
+# next use of the QTextStream will crash Python with a segfault.
+
+class FileBasedTextStream(QTextStream):
+    def __init__(self, qfile):
+        super().__init__(qfile)
+        self.save_the_goddam_file_from_garbage_collection = qfile
+
 import fonts
+import dictionaries
+import colors
+import logging
+mainwindow_logger=logging.getLogger(name='MainWindow')
 
 # TEMP TODO REMOVE vv
 import os
@@ -52,10 +76,82 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         # initialize our font db
-        fonts.initialize()
-
+        fonts.initialize(settings=None)
+        dictionaries.set_default_tag("en_US")
+        dictionaries.set_dict_path(temp_path)
         # TODO get default spell dict from settings
-        self.default_dic_tag = "en_US"
-        # TODO develop a dict of available dic-tags,
-        #       key is tag, value is path to containing folder
-        self.dictionary_paths = {'en_US':temp_path}
+        # TODO set extras path, dict_path from ??
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    #
+    #  File-related convenience functions for sub-modules
+    #
+    # This is where we enforce our rule on encodings: we support only UTF-8 and
+    # ISO8859-1 (a.k.a. Latin-1), and ASCII which is a proper subset of both.
+    # UTF-8 is the default, but before opening a file we check the filename
+    # string for "-l" or "-ltn" before the suffix, (as in scannos-ltn.txt) or a
+    # suffix of ".ltn", and default to Latin-1. Otherwise we open it UTF-8.
+    #
+    def check_encoding(self, file_path):
+        enc = 'UTF-8'
+        finfo = QFileInfo(file_path)
+        fname = finfo.fileName()
+        if '-l.' in fname \
+        or '-ltn.' in fname \
+        or fname.endswith('.ltn') :
+            enc = 'ISO-8859-1'
+        return enc
+
+    # The following is a wrapper on QFileDialog.getOpenFileName,
+    # plus, after getting a path, it is opened as a QTextStream. Arguments:
+    #   caption: explanatory caption for the dialog (must be TRanslated)
+    #   parent: optional QWidget over which to center the dialog
+    #   filter: optional filter string, see QFileDialog examples
+    #   starting_path: optional path to begin search, e.g. book path
+    # Return is either a QTextStream ready to read, or None
+    #
+    def ask_existing_file(self, caption, parent, starting_path, filter):
+        # Ask the user to select a file
+        (chosen_path, _) = QFileDialog.getOpenFileName(
+            (self if parent is None else parent),
+            caption,
+            ('' if starting_path is None else starting_path),
+            ('' if filter is None else filter)
+            )
+        if len(chosen_path) == 0 : # user pressed Cancel
+            return None
+        if not QFile.exists(chosen_path): # Can this happen?
+            mainwindow_logger.error('User chose nonexistent file {0}'.format(chosen_path))
+            return None
+        a_file = QFile(chosen_path)
+        # Open the file - the .Text mode ensures correct newline conversion
+        if not a_file.open(QIODevice.ReadOnly | QIODevice.Text) :
+            mainwindow_logger.error('Error {0} ({1}) opening file {2}'.format(
+                a_file.error(), a_file.errorString, chosen_path) )
+            return None
+        enc = self.check_encoding(chosen_path)
+        stream = FileBasedTextStream(a_file)
+        stream.setCodec(enc) # probably UTF-8, maybe ISO-8859-1
+        return stream
+
+    # Display a modal request for a selection from a list of options using
+    # QInputDialog.getItem. Return the chosen item. Arguments are:
+    #
+    #   title : the title of the dialog
+    #   explanation: explanatory text below the title
+    #        both title and explanation must be TRanslated!
+    #   item_list: a (python) list of (python) strings, the available items
+    #   current: optional index of the currently-chosen item
+    #   parent: optional QWidget over which to center the dialog
+    #
+    # QInputDialog returns a tuple of the actual text of the selected item or
+    # of the default item, and boolean True for OK or false for Cancel.
+
+    def choose_from_list(self, title, explanation, item_list, parent=None, current=0):
+        (item_text, ok) = QInputDialog.getItem(
+            (self if parent is None else parent),
+            title, explanation,
+            item_list, current,
+            editable=False)
+        if ok : return item_text
+        return None
