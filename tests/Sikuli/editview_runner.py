@@ -22,55 +22,43 @@ __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
 '''
-Unit test #1 for editview.py: simple tests with no visibility
+Unit test #2 for editview.py: run the window for Sikuli
 '''
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Unit test module boilerplate stuff
 #
-# set up logging to a stream
-import io
-log_stream = io.StringIO()
-import logging
-logging.basicConfig(stream=log_stream,level=logging.INFO)
-def check_log(text, level):
-    '''check that the log_stream contains the given text at the given level,
-       and rewind the log, then return T/F'''
-    global log_stream
-    level_dict = {logging.DEBUG:'DEBUG',
-                  logging.INFO:'INFO',
-                  logging.WARN:'WARN',
-                  logging.ERROR:'ERROR',
-                  logging.CRITICAL:'CRITICAL'}
-    log_data = log_stream.getvalue()
-    x = log_stream.seek(0)
-    x = log_stream.truncate()
-    return (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
-# add .. dir to sys.path so we can import ppqt modules which
-# are up one directory level
+# Assume we are nested somewhere within ppqt,
+# find that and set up paths to ppqt/Tests, ppqt/Tests/Files,
+# and ppqt/Tests/Sikuli
+#
 import sys
 import os
-my_path = os.path.realpath(__file__)
-test_path = os.path.dirname(my_path)
-ppqt_path = os.path.dirname(test_path)
-sys.path.append(ppqt_path)
+path = os.path.realpath(__file__)
+while 'ppqt' != os.path.basename(path):
+    path = os.path.dirname(path)
+sys.path.append(path) # allow imports of ppqt modules
+path_to_Tests = os.path.join(path,'Tests')
+path_to_Files = os.path.join(path_to_Tests,'Files')
+path_to_Sikuli = os.path.join(path_to_Tests,'Sikuli')
+
+# Create an app
 from PyQt5.QtWidgets import QApplication
 app = QApplication(sys.argv)
-
+# Make the main window, the book needs it
 import mainwindow
 mw = mainwindow.MainWindow()
-
+# Make a Book
 import book
 the_book = book.Book(mw)
-
-from PyQt5.QtCore import QTextStream, QIODevice, QFile, QFileInfo
-
-fx_path = test_path+'/Files/'
-sb_path = fx_path+'small_book.txt'
-qfile = QFile(sb_path)
+# Load the book with our test book
+from PyQt5.QtCore import QFile, QIODevice, QTextStream
+path_to_sb = os.path.join(path_to_Files,'small_book.txt')
+qfile = QFile(path_to_sb)
 qfile.open(QIODevice.ReadOnly)
 doc_stream = QTextStream(qfile)
-the_book.new_book(doc_stream, 'small_book-ltn.txt', None)
+the_book.new_book(doc_stream, 'small_book.txt', path_to_Files)
+# Load the words data with the vocabulary
+the_book.wordm.refresh()
+# put it on the screen
 the_book.editv.show()
-
-# stop execution leaving test on screen for interaction
 app.exec_()
