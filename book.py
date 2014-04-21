@@ -88,6 +88,7 @@ class Book(QObject):
         #
         self.metamgr = metadata.MetaMgr()
         # TODO: register to save and load dictionary tag from metadata
+        self.dict_tag = dictionaries.get_default_tag() # dict for File>New
         # TODO: register to save and load spellcheck and scanno colors!
         # TODO: register to save and load editor font size
         # TODO: register to save and load editor position cursor
@@ -97,7 +98,8 @@ class Book(QObject):
         self.editm = editdata.Document(self)
         #
         # Create the spellchecker using the default dictionary as it is now.
-        # It is recreated when (or if) we read a dictionary info in metadata.
+        # It is recreated _init_edit after we have a book path and have
+        # possibly read dictionary info from metadata.
         #
         self.dict_tag = dictionaries.get_default_tag()
         self._speller = dictionaries.Speller(
@@ -172,7 +174,12 @@ class Book(QObject):
         self.book_name = book_name
         self.book_path = book_path
         if doc_stream: # that is, if not File>New
+            # Load the document with the book contents
             self.editm.setPlainText(doc_stream.readAll())
+            # Initialize a speller from a tag (read from metadata?) and
+            # searching in the book-path first.
+            self._speller = dictionaries.Speller(
+                self.dict_tag, book_path)
         self.editm.setModified(modified)
         self.editv = editview.EditView(self)
         self.editv.show_position(cursor_pos)

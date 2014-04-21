@@ -271,8 +271,6 @@ class WordData(object):
     def __init__(self, my_book):
         # Save reference to the book
         self.my_book = my_book
-        # Save reference to the spell-check object
-        self.speller = my_book.get_speller()
         # Save reference to the metamanager
         self.metamgr = my_book.get_meta_manager()
         # Save reference to the edited document
@@ -485,9 +483,10 @@ class WordData(object):
     def refresh(self):
         global re_lang_attr, re_token
 
-        # clear the alt-dict dictionary.
+        # get a reference to the dictionary to use
+        self.speller = self.my_book.get_speller()
+        # clear the alt-dict list.
         self.alt_tags = blist.sorteddict()
-
         # zero out all counts that we have so far
         for j in range(len(self.vocab)) :
             self.vocab_vview[j][0] = 0
