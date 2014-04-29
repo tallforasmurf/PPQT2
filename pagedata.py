@@ -389,7 +389,7 @@ class PageData(object):
             return self.filename_list[R]
         except IndexError:
             pagedata_logger.error('Invalid index {0} to filename'.format(R))
-            return ''
+            return None
 
     def position(self, R):
         try :
