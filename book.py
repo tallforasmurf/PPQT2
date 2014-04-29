@@ -68,6 +68,7 @@ import editdata
 import editview
 import worddata
 import pagedata
+import imageview
 import dictionaries
 import constants as C
 
@@ -98,10 +99,9 @@ class Book(QObject):
         self.editm = editdata.Document(self)
         #
         # Create the spellchecker using the default dictionary as it is now.
-        # It is recreated _init_edit after we have a book path and have
+        # It is recreated in _init_edit after we have a book path and have
         # possibly read dictionary info from metadata.
         #
-        self.dict_tag = dictionaries.get_default_tag()
         self._speller = dictionaries.Speller(
             dictionaries.get_default_tag(),
             dictionaries.get_dict_path() )
@@ -115,7 +115,11 @@ class Book(QObject):
         #
         self.wordm = worddata.WordData(self)
         # self.wordv = wordview.WordPanel(self)
-        # TODO other init like images panel
+        #
+        # Create the imageview object which initializes to no image
+        #
+        self.imagev = imageview.ImageDisplay(self)
+        # TODO other init like find panel
 
     # The following four methods are called by the main window
     # after it instantiates this object, to load it with data.
@@ -136,12 +140,16 @@ class Book(QObject):
     #   book_path  absolute path to book, where there might
     #       be a folder of pngs, or maybe not.
     # Set up as modified because the new metadata needs saving.
+    # Create page metadata by scanning the text for page separators.
     # Default cursor position to zero, in absence of metadata.
 
     def new_book(self, doc_stream, book_name, book_path) :
         self._init_edit( doc_stream, book_name, book_path, modified=True )
         self.pagem.scan_pages()
-        # TODO init image panel
+        if 0 < self.pagem.page_count():
+            # we have a book with page info, wake up the image viewer
+            self.imagev.set_path(book_path)
+            self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
 
     # KNOWN BOOK: called to load a book that has a .meta file. Given:
     #   doc_stream  a QTextStream with the document text
@@ -163,8 +171,15 @@ class Book(QObject):
     def gg_book(self,doc_stream, bin_stream, book_name, image_path):
         pass #TODO
 
-    # After implementing one of the above operations, initialize the
-    # edit document and edit view.
+    # While implementing one of the above operations, initialize the
+    # edit document, and create and initialize the edit view.
+    # Parameters here are:
+    #  doc_stream : QTextStream of file contents, None if File>New
+    #  book_name: filename of existing file or Untitled-n for New
+    #  book_path: file path to existing file or None for New
+    #  modified: True if the document should be modified right now
+    #  cursor_pos: starting cursor position from metadata
+
     def _init_edit(self,
                    doc_stream=None,
                    book_name='',
@@ -182,9 +197,9 @@ class Book(QObject):
                 self.dict_tag, book_path)
         self.editm.setModified(modified)
         self.editv = editview.EditView(self)
+        # position the editor to a saved cursor position
         self.editv.show_position(cursor_pos)
         # TODO: connect focus-in signal of editv to what?
-        # TODO: create Images view using book-path
         # TODO: create Notes view
 
     # User requests change of scanno file: Present a file dialog
@@ -246,6 +261,9 @@ class Book(QObject):
     # give access to the Document object
     def get_edit_model(self):
         return self.editm
+    # give access to the Edit widget
+    def get_edit_view(self):
+        return self.editv
     # give access to the page data model
     def get_page_model(self):
         return self.pagem
