@@ -105,30 +105,43 @@ editm.setPlainText(doc)
 # Load page metadata corresponding to those lines
 # Note pf X contains \u2002
 pagemats = '''0 A \pf0\pf1\pf\u2002A\pf3\pf4 1 0 1
-10 B \pf0\pf1\pf\u2002B\pf3\pf4 0 0 2
-20 C \pf0\pf1\pf\u2002C\pf3\pf4 0 0 3
-30 D \pf0\pf1\pf\u2002D\pf3\pf4 0 0 4'''.split('\n')
+10 B \pf0\pf1\pf\u2002B\pf3\pf4 0 3 2
+20 C \pf0\pf1\pf\u2002C\pf3\pf4 0 3 3
+30 D \pf0\pf1\pf\u2002D\pf3\pf4 0 3 4'''.split('\n')
 load_section(mm, C.MD_PT, pagemats)
 assert pagem.active()
 assert pagem.page_count() == 4
 assert pagem.filename(0) == 'A'
 assert pagem.filename(3) == 'D'
 assert pagem.filename(4) == ''
+assert pagem.name_index('D') == 3
+assert pagem.name_index('E') is None
+assert pagem.position(3) == 30
+assert pagem.position(1) == 10
+assert pagem.position(5) == 0
 assert pagem.proofers(0)[2] == 'pf A'
 assert pagem.proofers(3)[2] == 'pf D'
 assert pagem.proofers(4) == []
-assert pagem.folios(0)[0] == C.FolioRuleSet
-assert pagem.folios(3)[0] == C.FolioRuleAdd1
-assert pagem.folios(3)[2] == 4
-pagem.set_folios(3,rule=C.FolioRuleSet,nbr=9)
-assert pagem.folios(3)[2] == 9
-assert pagem.folios(3)[0] == C.FolioRuleSet
+assert pagem.folio_info(0)[0] == C.FolioRuleSet
+assert pagem.folio_info(0)[1] == C.FolioFormatArabic
+assert pagem.folio_info(3)[1] == C.FolioFormatSame
+assert pagem.folio_info(3)[0] == C.FolioRuleAdd1
+assert pagem.folio_info(3)[2] == 4
+assert pagem.folio_format(3) == C.FolioFormatArabic
+assert pagem.folio_string(3) == '4'
+pagem.set_folios(3,rule=C.FolioRuleSet,number=9)
+assert pagem.folio_info(3)[0] == C.FolioRuleSet
+assert pagem.folio_string(3) == '9'
 pagem.set_folios(2,fmt=C.FolioFormatUCRom)
-assert pagem.folios(2) == [C.FolioRuleAdd1,C.FolioFormatUCRom,3]
+assert pagem.folio_format(3) == C.FolioFormatUCRom
+assert pagem.folio_string(3) == 'IX'
+assert pagem.folio_info(2) == [C.FolioRuleAdd1,C.FolioFormatUCRom,3]
+# The stored metadata should have "same" for lines 10 and 30,
+# UC roman for line 20 and value 9 for line 30.
 line_list = '''0 A \pf0\pf1\pf\u2002A\pf3\pf4 1 0 1
-10 B \pf0\pf1\pf\u2002B\pf3\pf4 0 0 2
+10 B \pf0\pf1\pf\u2002B\pf3\pf4 0 3 2
 20 C \pf0\pf1\pf\u2002C\pf3\pf4 0 1 3
-30 D \pf0\pf1\pf\u2002D\pf3\pf4 1 0 9'''.split('\n')
+30 D \pf0\pf1\pf\u2002D\pf3\pf4 1 3 9'''.split('\n')
 check_section(mm, C.MD_PT, line_list)
 # force various errors in read_pages and check logging
 # wrong number of items
@@ -141,7 +154,21 @@ load_section(mm, C.MD_PT, ['100000 A \pf0\pf1\pf\u2002A\pf3\pf4 0 0 0'])
 assert check_log('invalid line of page metadata:',logging.ERROR)
 load_section(mm, C.MD_PT, ['-1 A \pf0\pf1\pf\u2002A\pf3\pf4 0 0 0'])
 assert check_log('invalid line of page metadata:',logging.ERROR)
-# Load the document from an actual book and scan it.
+# non-integer folios
+load_section(mm, C.MD_PT, ['10 A \pf0\pf1\pf\u2002A\pf3\pf4 X 0 0'])
+assert check_log('invalid line of page metadata:',logging.ERROR)
+load_section(mm, C.MD_PT, ['10 A \pf0\pf1\pf\u2002A\pf3\pf4 0 X 0'])
+assert check_log('invalid line of page metadata:',logging.ERROR)
+load_section(mm, C.MD_PT, ['10 A \pf0\pf1\pf\u2002A\pf3\pf4 0 0 X'])
+assert check_log('invalid line of page metadata:',logging.ERROR)
+# invalid integer folios
+load_section(mm, C.MD_PT, ['10 A \pf0\pf1\pf\u2002A\pf3\pf4 5 0 0'])
+assert check_log('invalid line of page metadata:',logging.ERROR)
+load_section(mm, C.MD_PT, ['10 A \pf0\pf1\pf\u2002A\pf3\pf4 0 7 0'])
+assert check_log('invalid line of page metadata:',logging.ERROR)
+load_section(mm, C.MD_PT, ['10 A \pf0\pf1\pf\u2002A\pf3\pf4 0 0 -1'])
+assert check_log('invalid line of page metadata:',logging.ERROR)
+
 # Purely for test purposes, re-call the __init__ function to
 # clear the existing data.
 pagem.__init__(the_book)
