@@ -49,6 +49,8 @@ MD_V  = 'VERSION'
 MD_PT = 'PAGETABLE'
 MD_BM = 'BOOKMARKS'
 MD_DD = 'DEFAULTDICT'
+MD_IZ = 'IMAGEZOOM'
+MD_IX = 'IMAGELINKING'
 '''
 These values are used to encode folio controls for the
 Page/folio table.
