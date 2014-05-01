@@ -63,6 +63,7 @@ provide spellcheck ref
 from PyQt5.QtCore import QObject, QCoreApplication
 _TR = QCoreApplication.translate
 from PyQt5.QtCore import QTextStream
+import utilities
 import metadata
 import editdata
 import editview
@@ -210,7 +211,7 @@ class Book(QObject):
         caption = _TR("EditViewWidget",
                 "Choose a file of OCR error words to mark",
                 "File dialog caption")
-        scanno_stream = self.main_window.ask_existing_file(
+        scanno_stream = utilities.ask_existing_file(
             caption, self.editv, self.book_path, None )
         if scanno_stream is not None :
             self.wordm.scanno_read(scanno_stream,C.MD_SC,0,None)
@@ -233,7 +234,7 @@ class Book(QObject):
         explanation = _TR("EditViewWidget",
                 "Select the best dictionary for spell-checking this book",
                 "Dictionary pop-up list")
-        new_tag = self.main_window.choose_from_list(
+        new_tag = utilities.choose_from_list(
             title, explanation,item_list, parent=self.editv, current=current)
         if (new_tag is not None) and (new_tag != self.dict_tag) :
             # a choice was made and it's different from before
