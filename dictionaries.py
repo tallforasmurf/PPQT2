@@ -29,19 +29,22 @@ Global spelling dictionary resource for PPQT2.
 This module allows spell-check objects to be created for languages given only
 the "tag" or dictionary filename, for example "en_US".
 
-The set_extras_path() and set_dict_path() methods are called during
-initialization by the main window, with values from saved settings. They can
-also be called from the preferences dialog.
+The main window calls initialize() during startup, when we get the last-set
+dictionary path and preferred default tag from saved settings.
 
-set_default_tag(tag)     Save the tag of the preferred dictionary
-                         from settings or preferences
+The set_dict_path() and set_default_tag() methods are called from the
+preferences dialog.
 
-get_default_tag()        Return the saved preferred main dictionary
+initialize(settings)     Get dictionary defaults from settings if available.
 
-set_extras_path(path)    Save the path to the user's choice of the
-                         "extras" folder.
+shutdown(settings)       Save dictionary defaults in settings.
 
-set_dict_path(path)      Save the path to the user's choice of
+set_default_tag(tag)     Note the tag of the preferred dictionary
+                         from preferences
+
+get_default_tag()        Return the preferred main dictionary tag.
+
+set_dict_path(path)      Note the path to the user's choice of
                          a folder of dictionaries.
 
 get_tag_list(path)       Prepare and return a dict{tag:path} where each
@@ -62,27 +65,33 @@ class Speller.check(word, alt_tag=None) Check the spelling of word in the
 import os
 import logging
 dictionaries_logger = logging.getLogger(name='dictionaries')
-
+import mainwindow
 import hunspell
 
-_EXTRAS = ''
 _DICTS = ''
 _PREFERRED_TAG = ''
+
+def initialize(settings):
+    global _DICTS, _PREFERRED_TAG
+    dictionaries_logger.debug('Dictionaries initializing')
+    # TODO get stuff from settings
+    _PREFERRED_TAG = 'en_US'
+    _DICTS = mainwindow.get_extras_path()
+
+def shutdown(settings):
+    global _DICTS, _PREFERRED_TAG
+    dictionaries_logger.debug('Dictionaries saving to settings')
+    # TODO save stuff
+    pass
 
 def set_default_tag(tag):
     global _PREFERRED_TAG
     _PREFERRED_TAG = tag
 def get_default_tag():
     return str(_PREFERRED_TAG)
-def set_extras_path(path):
-    global _EXTRAS
-    _EXTRAS = path
 def set_dict_path(path):
     global _DICTS
     _DICTS = path
-def get_extras_path():
-    global _EXTRAS
-    return str(_EXTRAS)
 def get_dict_path():
     global _DICTS
     return str(_DICTS)
@@ -110,8 +119,9 @@ def _find_tags(path, tag_dict):
                 dictionaries_logger.error("Found {0}.aff but not {0}.dic".format(lang))
                 continue
             if lang not in tag_dict :
-                dictionaries_logger.info("Skipping {0} in {1}".format(lang,path))
                 tag_dict[lang] = path
+            else:
+                dictionaries_logger.info("Skipping {0} in {1}".format(lang,path))
 
 # Make a dict with all available language tags, giving priority to the
 # ones on the path argument, then the dict_path, then extras_path.
@@ -120,7 +130,7 @@ def get_tag_list(path):
     tag_dict = {}
     _find_tags(path, tag_dict)
     _find_tags(_DICTS, tag_dict)
-    _find_tags(_EXTRAS, tag_dict)
+    _find_tags(mainwindow.get_extras_path(), tag_dict)
     return tag_dict
 
 # Make a spell-check object given a language tag and a path. The language tag
