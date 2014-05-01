@@ -1,0 +1,119 @@
+__license__ = '''
+ License (GPL-3.0) :
+    This file is part of PPQT Version 2.
+    PPQT is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You can find a copy of the GNU General Public License in the file
+    extras/COPYING.TXT included in the distribution of this program, or see:
+    <http://www.gnu.org/licenses/>.
+'''
+__version__ = "2.0.0"
+__author__  = "David Cortesi"
+__copyright__ = "Copyright 2013, 2014 David Cortesi"
+__maintainer__ = "David Cortesi"
+__email__ = "tallforasmurf@yahoo.com"
+'''
+                          utilities.py
+A collection of file- and dialog-related functions for use by
+other modules.
+
+All uses of QFile, QDir, QFileDialog and the like are isolated to this module
+even though that means some lengthy call indirections.
+
+'''
+from PyQt5.QtCore import (QDir, QFile, QFileInfo, QIODevice, QTextStream)
+from PyQt5.QtWidgets import QFileDialog, QInputDialog
+import logging
+utilities_logger = logging.getLogger(name='utilities')
+
+# The following class is a work-around for the annoying problem that
+# QTextStream(QFile) depends on the existence of the QFile but does
+# not take ownership of it, so if the QFile goes out of scope, the
+# next use of the QTextStream will crash Python with a segfault.
+
+class FileBasedTextStream(QTextStream):
+    def __init__(self, qfile):
+        super().__init__(qfile)
+        self.save_the_goddam_file_from_garbage_collection = qfile
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+#  File-related convenience functions for sub-modules
+#
+# This is where we enforce our rule on encodings: we support only UTF-8 and
+# ISO8859-1 (a.k.a. Latin-1), and ASCII which is a proper subset of both.
+# UTF-8 is the default, but before opening a file we check the filename
+# string for "-l" or "-ltn" before the suffix, (as in scannos-ltn.txt) or a
+# suffix of ".ltn", and default to Latin-1. Otherwise we open it UTF-8.
+#
+def check_encoding(self, file_path):
+    enc = 'UTF-8'
+    finfo = QFileInfo(file_path)
+    fname = finfo.fileName()
+    if '-l.' in fname \
+    or '-ltn.' in fname \
+    or fname.endswith('.ltn') :
+        enc = 'ISO-8859-1'
+    return enc
+
+# The following is a wrapper on QFileDialog.getOpenFileName,
+# plus, after getting a path, it is opened as a QTextStream. Arguments:
+#   caption: explanatory caption for the dialog (must be TRanslated)
+#   parent: optional QWidget over which to center the dialog
+#   filter: optional filter string, see QFileDialog examples
+#   starting_path: optional path to begin search, e.g. book path
+# Return is either a QTextStream ready to read, or None
+#
+def ask_existing_file(self, caption, parent, starting_path, filter):
+    # Ask the user to select a file
+    (chosen_path, _) = QFileDialog.getOpenFileName(
+        (self if parent is None else parent),
+        caption,
+        ('' if starting_path is None else starting_path),
+        ('' if filter is None else filter)
+        )
+    if len(chosen_path) == 0 : # user pressed Cancel
+        return None
+    if not QFile.exists(chosen_path): # Can this happen?
+        utilities_logger.error('User chose nonexistent file {0}'.format(chosen_path))
+        return None
+    a_file = QFile(chosen_path)
+    # Open the file - the .Text mode ensures correct newline conversion
+    if not a_file.open(QIODevice.ReadOnly | QIODevice.Text) :
+        utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
+            a_file.error(), a_file.errorString, chosen_path) )
+        return None
+    enc = self.check_encoding(chosen_path)
+    stream = FileBasedTextStream(a_file)
+    stream.setCodec(enc) # probably UTF-8, maybe ISO-8859-1
+    return stream
+
+# Display a modal request for a selection from a list of options using
+# QInputDialog.getItem. Return the chosen item. Arguments are:
+#
+#   title : the title of the dialog
+#   explanation: explanatory text below the title
+#        both title and explanation must be TRanslated!
+#   item_list: a (python) list of (python) strings, the available items
+#   current: optional index of the currently-chosen item
+#   parent: optional QWidget over which to center the dialog
+#
+# QInputDialog returns a tuple of the actual text of the selected item or
+# of the default item, and boolean True for OK or false for Cancel.
+
+def choose_from_list(self, title, explanation, item_list, parent=None, current=0):
+    (item_text, ok) = QInputDialog.getItem(
+        (self if parent is None else parent),
+        title, explanation,
+        item_list, current,
+        editable=False)
+    if ok : return item_text
+    return None
