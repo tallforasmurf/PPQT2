@@ -184,7 +184,7 @@ class Book(QObject):
     def _init_edit(self,
                    doc_stream=None,
                    book_name='',
-                   book_path=None,
+                   book_path='',
                    modified=False,
                    cursor_pos=0):
         self.book_name = book_name
@@ -224,25 +224,38 @@ class Book(QObject):
     def ask_dictionary(self) :
         global _TR
         tag_list = dictionaries.get_tag_list(self.book_path)
-        item_list = sorted(list(tag_list.keys()))
-        current = 0
-        if self.dict_tag in item_list:
-            current = item_list.index(self.dict_tag)
-        title = _TR("EditViewWidget",
-                "Primary dictionary for this book",
-                "Dictionary pop-up list")
-        explanation = _TR("EditViewWidget",
-                "Select the best dictionary for spell-checking this book",
-                "Dictionary pop-up list")
-        new_tag = utilities.choose_from_list(
-            title, explanation,item_list, parent=self.editv, current=current)
-        if (new_tag is not None) and (new_tag != self.dict_tag) :
-            # a choice was made and it's different from before
-            self.dict_tag = new_tag
-            self._speller = dictionaries.Speller(
-                new_tag, tag_list[new_tag] )
-            self.wordm.recheck_spelling(self._speller)
-            return True
+        if 0<len(tag_list):
+            # dictionaries knows about at least one tag, display it/them
+            item_list = sorted(list(tag_list.keys()))
+            current = 0
+            if self.dict_tag in item_list:
+                current = item_list.index(self.dict_tag)
+            title = _TR("EditViewWidget",
+                    "Primary dictionary for this book",
+                    "Dictionary pop-up list title")
+            explanation = _TR("EditViewWidget",
+                    "Select the best dictionary for spell-checking this book",
+                    "Dictionary pop-up list info")
+            new_tag = utilities.choose_from_list(
+                title, explanation,item_list, parent=self.editv, current=current)
+            if (new_tag is not None) and (new_tag != self.dict_tag) :
+                # a choice was made and it's different from before
+                self.dict_tag = new_tag
+                self._speller = dictionaries.Speller(
+                    new_tag, tag_list[new_tag] )
+                self.wordm.recheck_spelling(self._speller)
+                return True
+        else:
+            # no known dictionaries, probably the Extras have not been
+            # configured -- tell user.
+            utilities.warning_msg(
+                text= _TR("EditViewWidget",
+                          "No dictionaries found",
+                          "Dictionary request warning"),
+                info= _TR("EditViewWidget",
+                          "Perhaps the 'extras' folder is not defined?'",
+                          "Dictionary request info")
+                )
         return False
 
     # give access to the book name
