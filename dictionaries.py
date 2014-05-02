@@ -68,21 +68,13 @@ dictionaries_logger = logging.getLogger(name='dictionaries')
 import mainwindow
 import hunspell
 
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Static functions to manage the system default dictionary path and default
+# language tag.
+
 _DICTS = ''
 _PREFERRED_TAG = ''
-
-def initialize(settings):
-    global _DICTS, _PREFERRED_TAG
-    dictionaries_logger.debug('Dictionaries initializing')
-    # TODO get stuff from settings
-    _PREFERRED_TAG = 'en_US'
-    _DICTS = mainwindow.get_extras_path()
-
-def shutdown(settings):
-    global _DICTS, _PREFERRED_TAG
-    dictionaries_logger.debug('Dictionaries saving to settings')
-    # TODO save stuff
-    pass
 
 def set_default_tag(tag):
     global _PREFERRED_TAG
@@ -96,8 +88,34 @@ def get_dict_path():
     global _DICTS
     return str(_DICTS)
 
-# Search one path for all matching pairs of files lang.dic, lang.aff. For
-# each, add it to the dict as lang:path, unless it is already known.
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Static functions called from mainwindow to fetch and store system
+# default values in the settings.
+
+def initialize(settings):
+    global _DICTS, _PREFERRED_TAG
+    dictionaries_logger.debug('Dictionaries initializing')
+    set_dict_path(
+        settings.value("dictionaries/path",
+                       mainwindow.get_extras_path())
+        )
+    set_default_tag(
+        settings.value("dictionaries/default_tag","en_US")
+        )
+
+def shutdown(settings):
+    global _DICTS, _PREFERRED_TAG
+    dictionaries_logger.debug('Dictionaries saving to settings')
+    settings.setValue("dictionaries/path",get_dict_path())
+    settings.setValue("dictionaries/default_tag",get_default_tag())
+
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Internal function to search one path for all matching file-pairs lang.dic,
+# lang.aff. For each pair, if that lang is not in the dict already (from a
+# prior call to a higher-priority path), add it to the dict as lang:path.
 
 def _find_tags(path, tag_dict):
     # Get a list of all files in this path.
@@ -123,8 +141,11 @@ def _find_tags(path, tag_dict):
             else:
                 dictionaries_logger.info("Skipping {0} in {1}".format(lang,path))
 
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
 # Make a dict with all available language tags, giving priority to the
-# ones on the path argument, then the dict_path, then extras_path.
+# ones on the path argument, then the dict_path, then the extras_path.
 
 def get_tag_list(path):
     tag_dict = {}
@@ -133,14 +154,18 @@ def get_tag_list(path):
     _find_tags(mainwindow.get_extras_path(), tag_dict)
     return tag_dict
 
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
 # Make a spell-check object given a language tag and a path. The language tag
 # names the primary or default dictionary. The path is used to find its
 # .dic/.aff files. However a spell-check object can be called with an alt-tag
 # in which case it uses get_tag_list to find the files for the alt-tag.
 #
 # If the Speller cannot make a primary dictionary it fails with only a log
-# message. All checks will return True, correct spelling. If it cannot make
-# an alt dict, the same: log message and True for any word on that alt dict.
+# message. All subsequent spelling checks will return True, meaning correct
+# spelling. If it cannot make an alt dict, the same: log message and True for
+# any word in that alt dict.
 #
 
 class Speller(object):
@@ -158,7 +183,9 @@ class Speller(object):
             dic_path = os.path.join(path, tag + '.dic')
             dic = hunspell.HunSpell(dic_path, aff_path)
         except :
-            dictionaries_logger.error("Unexpected error making a dictionary")
+            dictionaries_logger.error(
+                "Unexpected error opening dictionary {0} on {1}".format(tag,path)
+                )
             dic = None
         return dic
 
