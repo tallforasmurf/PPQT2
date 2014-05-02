@@ -30,10 +30,13 @@ even though that means some lengthy call indirections.
 
 '''
 from PyQt5.QtCore import (QDir, QFile, QFileInfo, QIODevice, QTextStream)
-from PyQt5.QtWidgets import QFileDialog, QInputDialog
+from PyQt5.QtWidgets import QFileDialog, QInputDialog, QMessageBox
+
 import logging
 utilities_logger = logging.getLogger(name='utilities')
 
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
 # The following class is a work-around for the annoying problem that
 # QTextStream(QFile) depends on the existence of the QFile but does
 # not take ownership of it, so if the QFile goes out of scope, the
@@ -66,19 +69,19 @@ def check_encoding(self, file_path):
 
 # The following is a wrapper on QFileDialog.getOpenFileName,
 # plus, after getting a path, it is opened as a QTextStream. Arguments:
-#   caption: explanatory caption for the dialog (must be TRanslated)
+#   caption: explanatory caption for the dialog (caller must TRanslate)
 #   parent: optional QWidget over which to center the dialog
 #   filter: optional filter string, see QFileDialog examples
 #   starting_path: optional path to begin search, e.g. book path
-# Return is either a QTextStream ready to read, or None
-#
-def ask_existing_file(self, caption, parent, starting_path, filter):
+# Return is either a QTextStream (FileBasedTextStream) ready to read, or None.
+
+def ask_existing_file(caption, parent=None, starting_path=None, filter=None):
     # Ask the user to select a file
     (chosen_path, _) = QFileDialog.getOpenFileName(
-        (self if parent is None else parent),
-        caption,
-        ('' if starting_path is None else starting_path),
-        ('' if filter is None else filter)
+            parent,
+            caption,
+            ('' if starting_path is None else starting_path),
+            ('' if filter is None else filter)
         )
     if len(chosen_path) == 0 : # user pressed Cancel
         return None
@@ -101,7 +104,7 @@ def ask_existing_file(self, caption, parent, starting_path, filter):
 #
 #   title : the title of the dialog
 #   explanation: explanatory text below the title
-#        both title and explanation must be TRanslated!
+#        both title and explanation must be TRanslated by caller!
 #   item_list: a (python) list of (python) strings, the available items
 #   current: optional index of the currently-chosen item
 #   parent: optional QWidget over which to center the dialog
@@ -109,11 +112,48 @@ def ask_existing_file(self, caption, parent, starting_path, filter):
 # QInputDialog returns a tuple of the actual text of the selected item or
 # of the default item, and boolean True for OK or false for Cancel.
 
-def choose_from_list(self, title, explanation, item_list, parent=None, current=0):
+def choose_from_list(title, explanation, item_list, parent=None, current=0):
     (item_text, ok) = QInputDialog.getItem(
-        (self if parent is None else parent),
+        parent,
         title, explanation,
         item_list, current,
         editable=False)
     if ok : return item_text
     return None
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# General message routines.
+#
+#Internal function to initialize a Qt message-box object with an icon,
+# a main message line, and an optional second message line.
+
+def _make_message ( text, icon, info = ''):
+    mb = QMessageBox( )
+    mb.setText( text )
+    mb.setIcon( icon )
+    if info:
+        mb.setInformativeText( info )
+    return mb
+
+# Display a modal info message, blocking until the user clicks OK.
+# No return value.
+
+def info_msg ( text, info = '' ):
+    mb = _make_message(text, QMessageBox.Information, info)
+    mb.exec_()
+
+# Display a modal warning message, blocking until the user clicks OK.
+# No return value.
+
+def warning_msg ( text, info = None ):
+    mb = _make_message(text, QMessageBox.Warning, info)
+    mb.exec_()
+
+# Display a modal query message, blocking until the user clicks OK/Cancel
+# Return True for OK, False for Cancel.
+
+def ok_cancel_msg ( text, info = None ):
+    mb = _make_message ( text, QMessageBox.Question, info)
+    mb.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+    return QMessageBox.Ok == mb.exec_()
