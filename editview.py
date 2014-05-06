@@ -194,14 +194,12 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         fonts.notify_me(self._font_change)
         # Get the current highlight colors. This sets members scanno_format,
         # spelling_format, current_line_thing, norm_style and mod_style.
-        # TODO: connect this slot to the colorChanged signal!
         self._set_colors()
+        colors.notify_me(self._set_colors)
         # Put the document name in our widget
         self.DocName.setText(self.my_book.get_book_name())
         # Connect the Editor's modificationChanged signal to our slot.
         self.Editor.modificationChanged.connect(self._mod_change_signal)
-        # Set the color of the DocName by faking that signal.
-        self._mod_change_signal(self.document.isModified())
         # Connect the returnPressed signal of the LineNumber widget
         # to our go to line method.
         self.LineNumber.returnPressed.connect(self._line_number_request)
@@ -230,6 +228,8 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.current_line_fmt.setBackground(colors.get_current_line_brush())
         self.norm_style = 'color:Black;font-weight:normal;'
         self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
+        # Fake the mod-change signal to update the document name color
+        self._mod_change_signal(self.document.isModified())
 
     # Slot to receive the fontsChanged signal. If it is the UI font, set
     # that, which propogates to all children including Editor, so set the
