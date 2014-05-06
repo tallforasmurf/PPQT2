@@ -181,10 +181,6 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # Those names are the only dependencies between this code
         # and the QDesigner/pyuic5 output.
         self.setupUi(self)
-        # TODO: How is the initial font size set? It can't be in settings
-        # because the user should be able to set it independently in
-        # different edit windows, so which one wins at shutdown? In fact
-        # it needs to be metadata!
         # Connect the editor to the document.
         self.Editor.setDocument(self.document)
         # Set up mechanism for a current-line highlight
@@ -193,7 +189,9 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.last_cursor = QTextCursor(self.Editor.textCursor())
         self.last_text_block = None
         # Set the fonts of our widgets.
-        self._set_fonts()
+        self._font_change(False) # fake a fontChange signal
+        # hook up to be notified of a change in font choice
+        fonts.notify_me(self._font_change)
         # Get the current highlight colors. This sets members scanno_format,
         # spelling_format, current_line_thing, norm_style and mod_style.
         # TODO: connect this slot to the colorChanged signal!
@@ -233,13 +231,13 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.norm_style = 'color:Black;font-weight:normal;'
         self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
 
-    # Set the fonts of all widgets. Done in a method because this
-    # needs to be redone when the fontsChanged signal happens.
-    def _set_fonts(self):
-        general = fonts.get_general() # default font size
-        self.setFont(general) # set self, propogates to children
-        mono = fonts.get_fixed(self.my_book.get_font_size())
-        self.Editor.setFont(mono) # the editor is monospaced
+    # Slot to receive the fontsChanged signal. If it is the UI font, set
+    # that, which propogates to all children including Editor, so set the
+    # editor's mono font in any case, but using our current point size.
+    def _font_change(self,is_mono):
+        if not is_mono :
+            self.setFont(fonts.get_general())
+        self.Editor.setFont(fonts.get_fixed(self.my_book.get_font_size()))
 
     # Slot to receive the modificationChanged signal from the document.
     # Change the color of the DocName to match.
