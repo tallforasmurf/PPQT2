@@ -49,7 +49,7 @@ set_dict_path(path)      Note the path to the user's choice of
 
 get_tag_list(path)       Prepare and return a dict{tag:path} where each
                          tag is an available language tag and path is
-                         where the tag.dic/.aff files can be found.
+                         where the tag.dic/tag.aff files can be found.
                          The list is developed searching first in path
                          (presumably a book path), then in the dict_path
                          then the extras_path.
