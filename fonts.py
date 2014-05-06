@@ -59,14 +59,13 @@ don't have to know about the QFont/QFontInfo API.
     scale() scales the size of a font up or down 1 point and returns the
         modified QFont.
 
-Signal generation: in the new PyQt5 signal/slot API, a signal is an
-attribute of a class. This module is mostly "static global" methods, but
-it needs to emit the fontChanged(bool) signal. In order to do that, it
-needs a class and an object of that class. So we define a class FontDB
-to encapsulate access to the QFontDatabase, and use that class also as
-our signal-emitter. We don't make the class available but rather provide
-the static global method notify_me(slot) and connect slot
-to the signal.
+Signal generation: in the new PyQt5 signal/slot API, a signal is an attribute
+of a class. This module is mostly "static global" methods, but it needs to
+emit the fontChanged(bool) signal. In order to do that, it needs a class and
+an object of that class. So we define a class FontSignaller, make one
+instance of that class, and use it as our signal-emitter. We don't make the
+class available but rather provide the static global method notify_me(slot)
+to connect a slot (any executable) to the signal.
 
 '''
 import logging
@@ -80,14 +79,14 @@ from PyQt5.QtWidgets import QFontDialog
 
 import resources # for the mono ttf
 
-class Signaller(QObject):
+class FontSignaller(QObject):
     fontChange = pyqtSignal(bool)
     def connect(self, slot):
         self.fontChange.connect(slot)
     def send(self,boola):
         self.fontChange.emit(boola)
 
-_SIGNALLER = Signaller()
+_SIGNALLER = FontSignaller()
 
 def notify_me(slot):
     _SIGNALLER.connect(slot)
