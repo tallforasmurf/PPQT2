@@ -162,10 +162,11 @@ def get_tag_list(path):
 # .dic/.aff files. However a spell-check object can be called with an alt-tag
 # in which case it uses get_tag_list to find the files for the alt-tag.
 #
-# If the Speller cannot make a primary dictionary it fails with only a log
-# message. All subsequent spelling checks will return True, meaning correct
-# spelling. If it cannot make an alt dict, the same: log message and True for
-# any word in that alt dict.
+# If the Speller cannot make a primary dictionary it fails with a log
+# message. Its validity can be checked by calling is_valid(). If it is used
+# when not valid, all spelling checks return True, meaning correct spelling.
+# If it cannot make an alt dict, the same: log message and True for any word
+# in that alt dict.
 #
 
 class Speller(object):
@@ -188,6 +189,9 @@ class Speller(object):
                 )
             dic = None
         return dic
+
+    def is_valid(self):
+        return self.primary_dictionary is not None
 
     def check(self, word, alt_tag = None):
         if alt_tag is None:
