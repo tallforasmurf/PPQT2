@@ -41,16 +41,22 @@ DEFAULT_FONT_SIZE = 13
 '''
 Names for sections of the metadata file.
 '''
-MD_GW = 'GOODWORDS'
 MD_BW = 'BADWORDS'
-MD_SC = 'SCANNOLIST'
-MD_VL = 'WORDCENSUS'
-MD_V  = 'VERSION'
-MD_PT = 'PAGETABLE'
 MD_BM = 'BOOKMARKS'
-MD_DD = 'DEFAULTDICT'
+MD_CC = 'CHARCENSUS'
+MD_CU = 'CURSOR'
+MD_DH = 'DOCHASH'
+MD_ES = 'EDITSIZE'
+MD_GW = 'GOODWORDS'
 MD_IZ = 'IMAGEZOOM'
 MD_IX = 'IMAGELINKING'
+MD_MD = 'MAINDICT'
+MD_NO = 'NOTES'
+MD_PT = 'PAGETABLE'
+MD_SC = 'SCANNOLIST'
+MD_V  = 'VERSION'
+MD_VL = 'WORDCENSUS'
+
 '''
 These values are used to encode folio controls for the
 Page/folio table.
