@@ -58,7 +58,10 @@ Offers these additional methods:
     go_to_block(tb)      given a text block, put the edit cursor at its start
 
     get_cursor()         Return a COPY of the current edit cursor.
+    get_cursor_val()     Return a tuple of (pos, anchor)
     set_cursor(tc)       Set a new edit cursor.
+    make_cursor(pos,anchor) Return a QTextCursor with that position and anchor
+
 
 '''
 
@@ -153,11 +156,12 @@ class HighLighter(QSyntaxHighlighter):
                     self.setFormat(p,l,spelling_fmt)
 
 class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
-    def __init__(self, my_book, parent=None):
+    def __init__(self, my_book, focusser, parent=None):
         # Initialize our superclass(es)
         super().__init__(parent)
-        # Save the link to our book
+        # Save the link to our book and the focus function
         self.my_book = my_book
+        self.focusser = focusser # function to call on focus-in
         # Save access to the document itself
         self.document = my_book.get_edit_model()
         # Save access to the word list and page data
@@ -189,9 +193,9 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.last_cursor = QTextCursor(self.Editor.textCursor())
         self.last_text_block = None
         # Set the fonts of our widgets.
-        self._font_change(False) # fake a fontChange signal
+        self.font_change(False) # fake a fontChange signal
         # hook up to be notified of a change in font choice
-        fonts.notify_me(self._font_change)
+        fonts.notify_me(self.font_change)
         # Get the current highlight colors. This sets members scanno_format,
         # spelling_format, current_line_thing, norm_style and mod_style.
         self._set_colors()
@@ -230,14 +234,6 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
         # Fake the mod-change signal to update the document name color
         self._mod_change_signal(self.document.isModified())
-
-    # Slot to receive the fontsChanged signal. If it is the UI font, set
-    # that, which propogates to all children including Editor, so set the
-    # editor's mono font in any case, but using our current point size.
-    def _font_change(self,is_mono):
-        if not is_mono :
-            self.setFont(fonts.get_general())
-        self.Editor.setFont(fonts.get_fixed(self.my_book.get_font_size()))
 
     # Slot to receive the modificationChanged signal from the document.
     # Change the color of the DocName to match.
@@ -310,9 +306,10 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         tc.setBlockFormat(self.current_line_fmt)
 
     def eventFilter(self, obj, event):
-        #printEvent(event) # TODO DBG
         if event.type() == QEvent.KeyPress :
             return self._editorKeyPressEvent(event)
+        if event.type() == QEvent.FocusIn :
+            self.focusser()
         return False
 
     # Re-implement keyPressEvent for the Editor widget to provide bookmarks,
@@ -473,6 +470,16 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # If a selection is taller than 1/2 the window height, put the top of
     # the selection higher, but in no case off the top of the window.
 
+    # Slot to receive the fontsChanged signal. If it is the UI font, set
+    # that, which propogates to all children including Editor, so set the
+    # editor's mono font in any case, but using our current point size.
+    # Also called from the book when reading metadata.
+
+    def font_change(self,is_mono):
+        if not is_mono :
+            self.setFont(fonts.get_general())
+        self.Editor.setFont(fonts.get_fixed(self.my_book.get_font_size()))
+
     def center_position(self, pos):
         tc = self.Editor.textCursor()
         tc.setPosition(pos)
@@ -507,112 +514,20 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # Lots of other code needs a textcursor for the current document.
     def get_cursor(self):
         return QTextCursor(self.Editor.textCursor())
+    # Return the essence of the cursor as a tuple (pos,anc)
+    def get_cursor_val(self):
+        return (self.Editor.textCursor().position(), self.Editor.textCursor.anchor())
+
     # Some other code likes to reposition the edit selection:
     def set_cursor(self, tc):
         self.Editor.setTextCursor(tc)
-
-# TODO remove dbg
-from PyQt5.QtCore import QEvent, Qt
-from PyQt5.QtGui import QMouseEvent, QKeyEvent
-def printEventMods(mods):
-    '''
-    Return a string containing names of the modifier bits in mods.
-    mods is from event.modifiers.
-    '''
-    imods = int(mods)
-    cmods = u''
-    if imods & Qt.ControlModifier : cmods += u'Ctl '
-    if imods & Qt.AltModifier: cmods += u'Alt '
-    if imods & Qt.ShiftModifier : cmods += u'Shft '
-    if imods & Qt.KeypadModifier : cmods += u'Kpd '
-    if imods & Qt.MetaModifier : cmods += u'Meta '
-    return cmods
-def printKeyEvent(event):
-    key = int(event.key())
-    mods = int(event.modifiers())
-    if key & 0x01000000 : # special/standard key
-        print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
-    else:
-        cmods = printEventMods(mods)
-        cmods += "'{0:c}'".format(key)
-        print('data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
-
-_Mevs = [2,3,4,5]
-_Mnm = {QEvent.MouseButtonPress:'Down',
-        QEvent.MouseButtonRelease:'Up',
-        QEvent.MouseButtonDblClick:'Dblclick',
-        QEvent.MouseMove:'Move'}
-_Mbs = {Qt.LeftButton:'Left',
-        Qt.RightButton:'Right',
-        Qt.MidButton:'Middle'}
-
-def printMouseEvent(event):
-    name = _Mnm[event.type()]
-    cmods = printEventMods(event.modifiers())
-    mbu = _Mbs[event.button()]
-    print('{0} {1} button {2} at x{3} y{4}'.format(cmods,mbu,name,event.x(),event.y()))
-_Evs = {24:'WindowActivate',
-        6:'KeyPress',
-        8:'FocusIn',
-        9:'FocusOut',
-        110:'Tooltip',
-        207:'InpMethQuery',
-        12:'Paint',
-        10:'Enter',
-        68:'ChildAdded',
-        69:'ChildPolished',
-        71:'ChildRemoved',
-        23:'FocusAboutToChange',
-        25:'WindowDeactivate',
-        75:'Polish',
-        11:'Leave',
-        13:'Move',
-        14:'Resize',
-        17:'Show',
-        26:'ShowToParent',
-        74:'PolishRequest',
-        43:'MetaCall',
-        78:'UpdateLater',
-        76:'LayoutRequest',
-        31:'Wheel',
-        82:'ContextMenu',
-        51:'ShortcutOverride',
-        18:'Hide'
-    }
-_IQs = {
-    Qt.ImEnabled:'ImEnable',
-    Qt.ImMicroFocus:'ImMicroFocus',
-    Qt.ImCursorRectangle:'CursorRectangle',
-    Qt.ImFont:'ImFont',
-    Qt.ImCursorPosition:'CursorPosition',
-    Qt.ImSurroundingText:'SurroundingText',
-    Qt.ImCurrentSelection:'CurrentSelection',
-    Qt.ImMaximumTextLength:'MaxTextLen',
-    Qt.ImAnchorPosition:'AnchorPosn',
-    Qt.ImHints:'Hints',
-    Qt.ImPreferredLanguage:'PreferredLang',
-    Qt.ImPlatformData:'PlatformData'
-    }
-
-def printIMQ(event):
-    '''print input method query'''
-    qc = ''
-    qs = event.queries()
-    for q in _IQs.keys():
-        if q & qs :
-            qc += _IQs[q]
-            qc += ' '
-    print('InputMethodQuery for ',qc)
-
-def printEvent(event):
-    t = int(event.type())
-    if t == 7 : # Key Release (don't print key press)
-        printKeyEvent(event)
-    elif t in _Mevs :
-        printMouseEvent(event)
-    elif t == 207:
-        printIMQ(event)
-    else:
-        n = str(t)
-        if t in _Evs : n = _Evs[t]
-        print('event type ',n)
+    # Make a valid cursor based on position and anchor values possibly
+    # input by the user.
+    def make_cursor(self, position, anchor):
+        mx = self.document.characterCount()
+        tc = QTextCursor(self.Editor.textCursor())
+        anchor = min( max(0,anchor), mx )
+        position = min ( max(0,position), mx )
+        tc.setPosition(anchor)
+        tc.setPosition(position,QTextCursor.KeepAnchor)
+        return tc
