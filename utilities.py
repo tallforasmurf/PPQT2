@@ -47,12 +47,19 @@ class FileBasedTextStream(QTextStream):
     def __init__(self, qfile):
         super().__init__(qfile)
         self.saved_file = qfile
+        self.qfi = None # may never need this
+    def basename(self):
+        if self.qfi is None:
+            self.qfi = QFileInfo(self.saved_file)
+        return self.qfi.baseName()
     def filename(self):
-        qfi = QFileInfo(self.saved_file)
-        return qfi.fileName()
+        if self.qfi is None:
+            self.qfi = QFileInfo(self.saved_file)
+        return self.qfi.fileName()
     def filepath(self):
-        qfi = QFileInfo(self.saved_file)
-        return qfi.absolutePath()
+        if self.qfi is None:
+            self.qfi = QFileInfo(self.saved_file)
+        return self.qfi.absolutePath()
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
