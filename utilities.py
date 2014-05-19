@@ -37,23 +37,30 @@ utilities_logger = logging.getLogger(name='utilities')
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
-# The following class is a work-around for the annoying problem that
-# QTextStream(QFile) depends on the existence of the QFile but does
-# not take ownership of it, so if the QFile goes out of scope, the
-# next use of the QTextStream will crash Python with a segfault.
+# The following class is in part a work-around for the annoying problem that
+# QTextStream(QFile) depends on the existence of the QFile but does not take
+# ownership of it, so if the QFile goes out of scope, the next use of the
+# QTextStream will crash Python with a segfault. It also provides for getting
+# the file name and path separately from a stream after it is open.
 
 class FileBasedTextStream(QTextStream):
     def __init__(self, qfile):
         super().__init__(qfile)
-        self.save_the_goddam_file_from_garbage_collection = qfile
+        self.saved_file = qfile
+    def filename(self):
+        qfi = QFileInfo(self.saved_file)
+        return qfi.fileName()
+    def filepath(self):
+        qfi = QFileInfo(self.saved_file)
+        return qfi.absolutePath()
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 #  File-related convenience functions for sub-modules
 #
 # This is where we enforce our rule on encodings: we support only UTF-8 and
-# ISO8859-1 (a.k.a. Latin-1), and ASCII which is a proper subset of both.
-# UTF-8 is the default, but before opening a file we check the filename
+# ISO8859-1 (a.k.a. Latin-1), and of course ASCII which is a proper subset of
+# both. UTF-8 is the default, but before opening a file we check the filename
 # string for "-l" or "-ltn" before the suffix, (as in scannos-ltn.txt) or a
 # suffix of ".ltn", and default to Latin-1. Otherwise we open it UTF-8.
 #
@@ -73,7 +80,7 @@ def check_encoding(self, file_path):
 #   parent: optional QWidget over which to center the dialog
 #   filter: optional filter string, see QFileDialog examples
 #   starting_path: optional path to begin search, e.g. book path
-# Return is either a QTextStream (FileBasedTextStream) ready to read, or None.
+# Return is either a FileBasedTextStream ready to read, or None.
 
 def ask_existing_file(caption, parent=None, starting_path=None, filter=None):
     # Ask the user to select a file
@@ -146,14 +153,121 @@ def info_msg ( text, info = '' ):
 # Display a modal warning message, blocking until the user clicks OK.
 # No return value.
 
-def warning_msg ( text, info = None ):
+def warning_msg ( text, info = '' ):
     mb = _make_message(text, QMessageBox.Warning, info)
     mb.exec_()
 
 # Display a modal query message, blocking until the user clicks OK/Cancel
 # Return True for OK, False for Cancel.
 
-def ok_cancel_msg ( text, info = None ):
+def ok_cancel_msg ( text, info = '' ):
     mb = _make_message ( text, QMessageBox.Question, info)
     mb.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
     return QMessageBox.Ok == mb.exec_()
+
+
+# TODO remove dbg
+from PyQt5.QtCore import QEvent, Qt
+from PyQt5.QtGui import QMouseEvent, QKeyEvent
+def printEventMods(mods):
+    '''
+    Return a string containing names of the modifier bits in mods.
+    mods is from event.modifiers.
+    '''
+    imods = int(mods)
+    cmods = u''
+    if imods & Qt.ControlModifier : cmods += u'Ctl '
+    if imods & Qt.AltModifier: cmods += u'Alt '
+    if imods & Qt.ShiftModifier : cmods += u'Shft '
+    if imods & Qt.KeypadModifier : cmods += u'Kpd '
+    if imods & Qt.MetaModifier : cmods += u'Meta '
+    return cmods
+def printKeyEvent(event):
+    key = int(event.key())
+    mods = int(event.modifiers())
+    if key & 0x01000000 : # special/standard key
+        print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
+    else:
+        cmods = printEventMods(mods)
+        cmods += "'{0:c}'".format(key)
+        print('data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
+
+_Mevs = [2,3,4,5]
+_Mnm = {QEvent.MouseButtonPress:'Down',
+        QEvent.MouseButtonRelease:'Up',
+        QEvent.MouseButtonDblClick:'Dblclick',
+        QEvent.MouseMove:'Move'}
+_Mbs = {Qt.LeftButton:'Left',
+        Qt.RightButton:'Right',
+        Qt.MidButton:'Middle'}
+
+def printMouseEvent(event):
+    name = _Mnm[event.type()]
+    cmods = printEventMods(event.modifiers())
+    mbu = _Mbs[event.button()]
+    print('{0} {1} button {2} at x{3} y{4}'.format(cmods,mbu,name,event.x(),event.y()))
+_Evs = {24:'WindowActivate',
+        6:'KeyPress',
+        8:'FocusIn',
+        9:'FocusOut',
+        110:'Tooltip',
+        207:'InpMethQuery',
+        12:'Paint',
+        10:'Enter',
+        68:'ChildAdded',
+        69:'ChildPolished',
+        71:'ChildRemoved',
+        23:'FocusAboutToChange',
+        25:'WindowDeactivate',
+        75:'Polish',
+        11:'Leave',
+        13:'Move',
+        14:'Resize',
+        17:'Show',
+        26:'ShowToParent',
+        74:'PolishRequest',
+        43:'MetaCall',
+        78:'UpdateLater',
+        76:'LayoutRequest',
+        31:'Wheel',
+        82:'ContextMenu',
+        51:'ShortcutOverride',
+        18:'Hide'
+    }
+_IQs = {
+    Qt.ImEnabled:'ImEnable',
+    Qt.ImMicroFocus:'ImMicroFocus',
+    Qt.ImCursorRectangle:'CursorRectangle',
+    Qt.ImFont:'ImFont',
+    Qt.ImCursorPosition:'CursorPosition',
+    Qt.ImSurroundingText:'SurroundingText',
+    Qt.ImCurrentSelection:'CurrentSelection',
+    Qt.ImMaximumTextLength:'MaxTextLen',
+    Qt.ImAnchorPosition:'AnchorPosn',
+    Qt.ImHints:'Hints',
+    Qt.ImPreferredLanguage:'PreferredLang',
+    Qt.ImPlatformData:'PlatformData'
+    }
+
+def printIMQ(event):
+    '''print input method query'''
+    qc = ''
+    qs = event.queries()
+    for q in _IQs.keys():
+        if q & qs :
+            qc += _IQs[q]
+            qc += ' '
+    print('InputMethodQuery for ',qc)
+
+def printEvent(event):
+    t = int(event.type())
+    if t == 7 : # Key Release (don't print key press)
+        printKeyEvent(event)
+    elif t in _Mevs :
+        printMouseEvent(event)
+    elif t == 207:
+        printIMQ(event)
+    else:
+        n = str(t)
+        if t in _Evs : n = _Evs[t]
+        print('event type ',n)
