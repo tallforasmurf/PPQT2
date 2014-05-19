@@ -82,13 +82,12 @@ def check_encoding(self, file_path):
 #   starting_path: optional path to begin search, e.g. book path
 # Return is either a FileBasedTextStream ready to read, or None.
 
-def ask_existing_file(caption, parent=None, starting_path=None, filter=None):
+def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
     # Ask the user to select a file
     (chosen_path, _) = QFileDialog.getOpenFileName(
             parent,
             caption,
-            ('' if starting_path is None else starting_path),
-            ('' if filter is None else filter)
+            starting_path, filter_string
         )
     if len(chosen_path) == 0 : # user pressed Cancel
         return None
