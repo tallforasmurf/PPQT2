@@ -92,25 +92,8 @@ The class MemoryStream implements a QTextStream with an in-memory buffer.
 This is used by unit tests and when calling translate_bin() below.
 '''
 
-from PyQt5.QtCore import QTextStream, QTextCodec, QByteArray
-
-class MemoryStream(QTextStream):
-    def __init__(self):
-        # Create a byte array that stays in scope as long as we do
-        self.buffer = QByteArray()
-        # Initialize the "real" QTextStream with a ByteArray buffer.
-        super().__init__(self.buffer)
-        # The default codec is codecForLocale, which might vary with
-        # the platform, so set a codec here for consistency. UTF-16
-        # should entail minimal or no conversion on input or output.
-        self.setCodec( QTextCodec.codecForName('UTF-16') )
-    def rewind(self):
-        self.seek(0)
-    def writeLine(self, str):
-        self << str
-        self << '\n'
-
 import constants as C
+import utilities # for MemoryStream
 import regex
 import logging
 import types # for FunctionType validation in register
@@ -252,13 +235,13 @@ class MetaMgr(object):
 # book_stream, the book file described by bin_stream (we need to read
 #    through it to get the character offset to each line, in order to
 #    translate GG line numbers into PPQT char offsets
-# meta_stream, a new QTextStream to write metadata into.
 
 import ast # for literal_eval
 import collections # for defaultdict
 
-def translate_bin(bin_stream, book_stream, meta_stream) :
+def translate_bin(bin_stream, book_stream) :
 
+    meta_stream = utilities.MemoryStream()
     # Regex to recognize the GG page info string, which is a perl dict:
     #    'Pg001' => {'offset' => 'ppp.0', 'label' => 'Pg 1', 'style' => 'Arabic', 'action' => 'Start @', 'base' => '001'},
     #cap(1) ^^^     ^ ------ cap(2) ------->

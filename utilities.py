@@ -29,13 +29,20 @@ All uses of QFile, QDir, QFileDialog and the like are isolated to this module
 even though that means some lengthy call indirections.
 
 '''
-from PyQt5.QtCore import (QDir, QFile, QFileInfo, QIODevice, QTextStream)
+from PyQt5.QtCore import (
+    QDir,
+    QFile,
+    QFileInfo,
+    QIODevice,
+    QTextStream,
+    QTextCodec,
+    QByteArray)
 from PyQt5.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 import logging
 utilities_logger = logging.getLogger(name='utilities')
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # The following class is in part a work-around for the annoying problem that
 # QTextStream(QFile) depends on the existence of the QFile but does not take
@@ -48,6 +55,11 @@ class FileBasedTextStream(QTextStream):
         super().__init__(qfile)
         self.saved_file = qfile
         self.qfi = None # may never need this
+    def rewind(self):
+        self.seek(0)
+    def writeLine(self, str):
+        self << str
+        self << '\n'
     def basename(self):
         if self.qfi is None:
             self.qfi = QFileInfo(self.saved_file)
@@ -61,6 +73,26 @@ class FileBasedTextStream(QTextStream):
             self.qfi = QFileInfo(self.saved_file)
         return self.qfi.absolutePath()
 
+# Class MemoryStream provides a QTextStream based on an in-memory buffer
+# which also will not go out of scope causing a crash. It also provides
+# the convenient methods rewind() and writeLine()
+
+class MemoryStream(QTextStream):
+    def __init__(self):
+        # Create a byte array that stays in scope as long as we do
+        self.buffer = QByteArray()
+        # Initialize the "real" QTextStream with a ByteArray buffer.
+        super().__init__(self.buffer)
+        # The default codec is codecForLocale, which might vary with
+        # the platform, so set a codec here for consistency. UTF-16
+        # should entail minimal or no conversion on input or output.
+        self.setCodec( QTextCodec.codecForName('UTF-16') )
+    def rewind(self):
+        self.seek(0)
+    def writeLine(self, str):
+        self << str
+        self << '\n'
+
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 #  File-related convenience functions for sub-modules
@@ -71,10 +103,8 @@ class FileBasedTextStream(QTextStream):
 # string for "-l" or "-ltn" before the suffix, (as in scannos-ltn.txt) or a
 # suffix of ".ltn", and default to Latin-1. Otherwise we open it UTF-8.
 #
-def check_encoding(self, file_path):
+def check_encoding(self, fname):
     enc = 'UTF-8'
-    finfo = QFileInfo(file_path)
-    fname = finfo.fileName()
     if '-l.' in fname \
     or '-ltn.' in fname \
     or fname.endswith('.ltn') :
@@ -107,7 +137,7 @@ def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
         utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
             a_file.error(), a_file.errorString, chosen_path) )
         return None
-    enc = self.check_encoding(chosen_path)
+    enc = self.check_encoding(a_file.fileName())
     stream = FileBasedTextStream(a_file)
     stream.setCodec(enc) # probably UTF-8, maybe ISO-8859-1
     return stream
