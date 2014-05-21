@@ -103,7 +103,7 @@ class MemoryStream(QTextStream):
 # string for "-l" or "-ltn" before the suffix, (as in scannos-ltn.txt) or a
 # suffix of ".ltn", and default to Latin-1. Otherwise we open it UTF-8.
 #
-def check_encoding(self, fname):
+def check_encoding(fname):
     enc = 'UTF-8'
     if '-l.' in fname \
     or '-ltn.' in fname \
