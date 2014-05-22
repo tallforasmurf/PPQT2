@@ -190,10 +190,9 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # Set up mechanism for a current-line highlight
         self.current_line_fmt = QTextBlockFormat()
         self.normal_line_fmt = QTextBlockFormat()
-        self.last_cursor = QTextCursor(self.Editor.textCursor())
-        self.last_text_block = None
+        self.last_text_block = self.Editor.textCursor().block()
         # Set the fonts of our widgets.
-        self.font_change(False) # fake a fontChange signal
+        self.font_change(False) # update all fonts to default
         # hook up to be notified of a change in font choice
         fonts.notify_me(self.font_change)
         # Get the current highlight colors. This sets members scanno_format,
@@ -253,8 +252,8 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         except ValueError:
             editview_logger.info('Request for invalid line number {0}'.format(self.LineNumber.text()))
             # TODO figure out how to beep
-            self.last_text_block = None # force update of line # display
-            self._cursor_moved() # restore current line nbr the easy way
+            # force update of line # display
+            self._cursor_moved(force=True) # restore current line nbr the easy way
             self.Editor.setFocus(Qt.TabFocusReason)
             return
         # TODO make it self.center_this instead
@@ -271,8 +270,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         else : # unknown image filename, restore current value
             editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
             # TODO figure out how to beep
-            self.last_text_block = None # force update of image name
-            self._cursor_moved()
+            self._cursor_moved(force=True)
             self.Editor.setFocus(Qt.TabFocusReason)
 
     # This slot is connected to Editor's cursorPositionChanged signal, so is
@@ -281,14 +279,14 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # the cursor. Change the contents of the column number display. If the
     # cursor has moved to a different line, change also the line number, scan
     # image name, and folio displays to match the new position.
-    def _cursor_moved(self):
+    def _cursor_moved(self, force=False):
         tc = QTextCursor(self.Editor.textCursor())
-        self.ColNumber.setText(str(tc.positionInBlock()))
+        self.ColNumber.setText( str( tc.positionInBlock() ) )
         tb = tc.block()
-        if tb == self.last_text_block:
+        if tb == self.last_text_block and not force :
             return # still on same line, nothing more to do
         # Fill in line-number widget, line #s are origin-1
-        self.LineNumber.setText(str(tb.blockNumber()+1))
+        self.LineNumber.setText( str( tb.blockNumber()+1 ) )
         # Fill in the image name and folio widgets
         pn = self.page_model.page_index(tc.position())
         if pn is not None : # the page model has info on this position
@@ -298,9 +296,9 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             self.ImageFilename.setText('')
             self.Folio.setText('')
         # clear any highlight on the previous current line
-        self.last_cursor.setBlockFormat(self.normal_line_fmt)
+        bc = QTextCursor(self.last_text_block)
+        bc.setBlockFormat(self.normal_line_fmt)
         # remember this new current line
-        self.last_cursor = tc
         self.last_text_block = tb
         # and set its highlight
         tc.setBlockFormat(self.current_line_fmt)
