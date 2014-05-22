@@ -51,18 +51,26 @@ import sys
 import os
 my_path = os.path.realpath(__file__)
 test_path = os.path.dirname(my_path)
+files_path = os.path.join(test_path,'Files')
 ppqt_path = os.path.dirname(test_path)
 sys.path.append(ppqt_path)
 from PyQt5.QtWidgets import QApplication
 app = QApplication(sys.argv)
+app.setOrganizationName("PGDP")
+app.setOrganizationDomain("pgdp.net")
+app.setApplicationName("PPQT2")
+from PyQt5.QtCore import QSettings
+settings = QSettings()
+import fonts
+fonts.initialize(settings)
 
-import mainwindow
-mw = mainwindow.MainWindow()
+def focussed(n):
+    print('focusser call with ',n)
 
 import book
-the_book = book.Book(mw)
+the_book = book.Book( 1, lambda:focussed(1) )
 # Do a File>New, this creates the edit model and view.
-the_book.new_empty(2)
+the_book.new_empty()
 # grab the editview, no api defined or needed
 ev = the_book.editv
 em = the_book.get_edit_model()
@@ -76,6 +84,7 @@ em.setPlainText(text)
 
 ev.show()
 #app.exec_()
+#exit
 
 # now to the testing
 
@@ -151,6 +160,7 @@ key_into(Qt.Key_X)
 key_into(Qt.Key_Enter)
 # focus should now be back to editor with "3." still selected
 check_sel('3.')
+dbg=test_target.text()
 assert test_target.text() == ''
 assert check_log('invalid image name',logging.INFO)
 # check zoom keys
@@ -172,3 +182,5 @@ while ptz > fonts.POINT_SIZE_MINIMUM:
 key_into(Qt.Key_Minus, 'ctl') # to min
 key_into(Qt.Key_Minus, 'ctl') # past min
 assert check_log('rejecting zoom',logging.ERROR)
+# stay up?
+#app.exec_()
