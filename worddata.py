@@ -297,7 +297,7 @@ class WordData(object):
     # End of __init__
 
     #
-    # Methods used when loading an existing file:
+    # Methods used when loading a new or existing file:
     #
     # 1. Load a good_words metadata section. Called with a stream positioned
     # just after {{GOODWORDS}}. For each reader, the sentinel is the section
@@ -307,6 +307,10 @@ class WordData(object):
     # We do not know whether good- and bad-words will be loaded before
     # or after the vocabulary. So we allow for either sequence. If there are
     # multiples of these sections, they are additive.
+    #
+    # The good_read() and bad_read() methods can also be called for a new
+    # file, one without metadata but with good_words/bad_words files.
+    # The metadata.read_to() method is cool with that.
     #
     def good_read(self, stream, sentinel, v, parm) :
         for line in metadata.read_to(stream, sentinel):
