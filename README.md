@@ -2,6 +2,8 @@
 
 This is a major rewrite of PPQT to achieve certain goals.
 
+(May 2014) This project is currently in early stages of development. If you are interested in the details of programming with Qt, PyQt and Python 3, you may enjoy following my blog at thispageintentionally.blogspot.com where I write about what I'm learning as I code. 
+
 ## What Is PPQT?
 
 See github.com/tallforasmurf/PPQT, where PPQT Version 1 (V1) is described:
