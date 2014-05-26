@@ -101,7 +101,6 @@ and pageview displays all the data in the Pages panel.
 
     page_index(P)  returns the row index for the page that contains
                 document offset P, or None if P precedes the first page.
-                This is called every time the edit cursor moves.
 
     name_index(fname) returns the row index R of the page with filename
                 fname, if it exists.
@@ -110,11 +109,11 @@ and pageview displays all the data in the Pages panel.
 
     filename(R) returns the filename string for row R.
 
+    folio_string(R) returns the formatted display of the folio for row R.
+
     proofers(R) returns the proofer string list for row R.
 
     folio_info(R)   returns the folio item list for row R.
-
-    folio_string(R) returns the formatted display of the folio for row R.
 
     set_folios(R, rule, fmt, number) update the folio values for row R.
 
@@ -391,6 +390,26 @@ class PageData(object):
             pagedata_logger.error('Invalid index {0} to filename'.format(R))
             return None
 
+    # Return the display form of the folio number based on its value and
+    # explicit format. Note we are computing folio strings from numeric
+    # on demand. If this is a performance problem, they could be precomputed
+    # and kept in the database -- with some extra trouble.
+
+    def folio_string(self, R):
+        global toRoman
+        try :
+            [rule, fmt, number] = self.folio_list[R]
+            if rule == C.FolioRuleSkip :
+                return ''
+            if fmt == C.FolioFormatSame :
+                fmt = self.folio_format(R)
+            if fmt == C.FolioFormatArabic :
+                return str(number)
+            return toRoman(number, fmt == C.FolioFormatLCRom)
+        except IndexError:
+            pagedata_logger.error('Invalid index {0} to folio_string'.format(R))
+            return ''
+
     def position(self, R):
         try :
             return self.cursor_list[R].position()
@@ -431,24 +450,6 @@ class PageData(object):
         except IndexError:
             pagedata_logger.error('Invalid index {0} to folio_format'.format(R))
             return C.FolioFormatArabic
-
-    # Return the display form of the folio number based on its value and
-    # explicit format.
-
-    def folio_string(self, R):
-        global toRoman
-        try :
-            [rule, fmt, number] = self.folio_list[R]
-            if rule == C.FolioRuleSkip :
-                return ''
-            if fmt == C.FolioFormatSame :
-                fmt = self.folio_format(R)
-            if fmt == C.FolioFormatArabic :
-                return str(number)
-            return toRoman(number, fmt == C.FolioFormatLCRom)
-        except IndexError:
-            pagedata_logger.error('Invalid index {0} to folio_string'.format(R))
-            return ''
 
     def set_folios(self, R, rule = None, fmt = None, number = None ):
         try:
