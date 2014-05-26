@@ -190,6 +190,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # Set up mechanism for a current-line highlight
         self.current_line_fmt = QTextBlockFormat()
         self.normal_line_fmt = QTextBlockFormat()
+        self.normal_line_fmt.setBackground(QBrush(Qt.white))
         self.last_text_block = self.Editor.textCursor().block()
         # Set the fonts of our widgets.
         self.font_change(False) # update all fonts to default
@@ -280,7 +281,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # cursor has moved to a different line, change also the line number, scan
     # image name, and folio displays to match the new position.
     def _cursor_moved(self, force=False):
-        tc = QTextCursor(self.Editor.textCursor())
+        tc = self.Editor.textCursor()
         self.ColNumber.setText( str( tc.positionInBlock() ) )
         tb = tc.block()
         if tb == self.last_text_block and not force :
@@ -296,12 +297,13 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             self.ImageFilename.setText('')
             self.Folio.setText('')
         # clear any highlight on the previous current line
-        bc = QTextCursor(self.last_text_block)
-        bc.setBlockFormat(self.normal_line_fmt)
+        temp_cursor = QTextCursor(self.last_text_block)
+        temp_cursor.setBlockFormat(self.normal_line_fmt)
         # remember this new current line
         self.last_text_block = tb
         # and set its highlight
-        tc.setBlockFormat(self.current_line_fmt)
+        temp_cursor = QTextCursor(tb)
+        temp_cursor.setBlockFormat(self.current_line_fmt)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress :
