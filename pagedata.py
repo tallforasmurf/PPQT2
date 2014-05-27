@@ -159,14 +159,21 @@ import metadata
 import editdata
 from PyQt5.QtGui import QTextBlock, QTextCursor
 
-# This regex recognizes a page separator line and captures:
-#   1: image filename -- usually but not always numeric
-#   2: string of proofer names divided by backslashes
-# The compiled regex can be a global because in use, it
-# creates a match object that is private to the caller.
+# This regex recognizes page separator lines. In a typical book a page
+# separator line looks like:
+# -----File: 001.png---\Johannes\marialice\Clog\Johannes\Adair\--------------
+# where each \something is the handle of a proofer who worked on that page.
+# It seems that in some recent books, proofers are absent:
+# -----File: 001.png---------------------------------------------------------
+# This defeats the regex used in V1, which expected at least one proofer
+# name. The regex below handles either alternative and captures:
+#   group(1) : the image filename -- usually but not always numeric
+#   group(3) : string of proofer names divided by backslashes, or None.
+# The compiled regex can be a global because in use, it creates a match
+# object that is private to the caller.
 
 re_line_sep = regex.compile(
-    '''-----File: ([^\\.]+)\\.png---((\\\\[^\\\\]*)+)\\\\-*'''
+    '^-+File: ([^\\.]+)\\.png-(-*((\\\\[^\\\\]*)+)\\\\-*|-+)$'
     ,regex.IGNORECASE)
 
 class PageData(object):
@@ -192,12 +199,12 @@ class PageData(object):
         self.metamgr.register(C.MD_PT, self.read_pages, self.write_pages)
 
     #
-    # Scan all lines of a new document and create page sep info.
-    # We fetch QTextBlocks, not just content strings, because we
-    # need to get the .position() of the matching lines.
+    # Scan all lines of a new document and create page sep info. We fetch
+    # QTextBlocks, not just content strings, because we need to get the
+    # .position() of the matching lines.
     #
-    # Set all folios to Arabic, Add 1, and the sequence number.
-    # This operation creates new data, so we set metadata_modified.
+    # Set all folios to Arabic, Add 1, and the sequence number. This
+    # operation creates new data, so we set metadata_modified.
     #
     def scan_pages(self):
         global re_line_sep
@@ -211,9 +218,13 @@ class PageData(object):
             if m :
                 # capture the image filename
                 fname = m.group(1)
-                # secure the proofers as a list, omitting the
-                # null element caused by the leading '\'
-                plist = m.group(2).split('\\')[1:]
+                if m.group(3) is not None :
+                    # record proofers as a list, omitting the
+                    # null element caused by the leading '\'
+                    plist = m.group(3).split('\\')[1:]
+                else :
+                    # sep. line with no proofers, minimal list
+                    plist = ['']
                 qtc = QTextCursor(self.document)
                 qtc.setPosition(qtb.position())
                 self.cursor_list.append(qtc)
@@ -241,7 +252,8 @@ class PageData(object):
     # metadata file has multiple PAGETABLEs, they will accumulate. The data
     # format is the same between V1 and V2, 6 space-delimited items, e.g.
     #     35460 027 \\fmmarshall\\fsmwalb\Scribe 0 0 22
-    #
+    # or, when there were no proofer names in the separator lines,
+    #     34560 027 \\ 0 0 22
     # Note that unlike worddata we make no allowances here for user
     # meddling/editing of page data, except for guarding it in a try block.
     #
@@ -272,7 +284,8 @@ class PageData(object):
                 if fmt != C.FolioFormatSame :
                     self.explicit_formats.add(len(self.folio_list)-1)
                 # get list of proofer strings, dropping opening null string
-                # due to leading backslash.
+                # due to leading backslash. If it is only '\\' the result
+                # is the list [''].
                 plist = pfrs.replace(C.UNICODE_EN_SPACE,' ').split('\\')[1:]
                 self.proofers_list.append(plist)
             except Exception as thing:

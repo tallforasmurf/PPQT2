@@ -32,6 +32,16 @@ import io
 log_stream = io.StringIO()
 import logging
 logging.basicConfig(stream=log_stream,level=logging.INFO)
+
+# add .. dir to sys.path so we can import ppqt modules which
+# are up one directory level
+import sys
+import os
+my_path = os.path.realpath(__file__)
+test_path = os.path.dirname(my_path)
+ppqt_path = os.path.dirname(test_path)
+sys.path.append(ppqt_path)
+
 def check_log(text, level):
     '''check that the log_stream contains the given text at the given level,
        and rewind the log, then return T/F'''
@@ -47,7 +57,7 @@ def check_log(text, level):
     return (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
 # load a list of one or more lines as a metadata section
 def load_section(mgr, section, line_list, vers=None):
-    stream = metadata.MemoryStream()
+    stream = utilities.MemoryStream()
     if vers :
         stream << '{{VERSION '+vers+'}}\n'
     stream << metadata.open_line(section)
@@ -58,8 +68,9 @@ def load_section(mgr, section, line_list, vers=None):
     mm.load_meta(stream)
 # dump all metadata and look at a specified section to see
 # that it contains ALL but ONLY the lines in a list.
+import utilities
 def check_section(mgr, section, line_list):
-    stream = metadata.MemoryStream()
+    stream = utilities.MemoryStream()
     mm.write_meta(stream)
     stream.rewind()
     while True:
@@ -72,27 +83,19 @@ def check_section(mgr, section, line_list):
         saved.add(line)
     assert saved == set(line_list)
 
-# add .. dir to sys.path so we can import ppqt modules which
-# are up one directory level
-import sys
-import os
-my_path = os.path.realpath(__file__)
-test_path = os.path.dirname(my_path)
-ppqt_path = os.path.dirname(test_path)
-sys.path.append(ppqt_path)
 from PyQt5.QtWidgets import QApplication
 app = QApplication(sys.argv)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, QSettings
 import mainwindow
 import metadata
 import constants as C
 import book
 import pagedata
 
-mw = mainwindow.MainWindow()
-the_book = book.Book(mw)
+mw = mainwindow.MainWindow(QSettings())
+the_book = book.Book(mw,None)
 pagem = the_book.get_page_model()
 mm = the_book.metamgr
 # Load the document with known text
@@ -103,24 +106,25 @@ C12345678
 D12345678'''
 editm.setPlainText(doc)
 # Load page metadata corresponding to those lines
-# Note pf X contains \u2002
+# Note some proofers contain \u2002 and one is null
 pagemats = '''0 A \pf0\pf1\pf\u2002A\pf3\pf4 1 0 1
 10 B \pf0\pf1\pf\u2002B\pf3\pf4 0 3 2
 20 C \pf0\pf1\pf\u2002C\pf3\pf4 0 3 3
-30 D \pf0\pf1\pf\u2002D\pf3\pf4 0 3 4'''.split('\n')
+30 D \ 0 3 4'''.split('\n')
 load_section(mm, C.MD_PT, pagemats)
 assert pagem.active()
 assert pagem.page_count() == 4
 assert pagem.filename(0) == 'A'
 assert pagem.filename(3) == 'D'
-assert pagem.filename(4) == ''
+assert pagem.filename(4) is None
 assert pagem.name_index('D') == 3
 assert pagem.name_index('E') is None
 assert pagem.position(3) == 30
 assert pagem.position(1) == 10
 assert pagem.position(5) == 0
 assert pagem.proofers(0)[2] == 'pf A'
-assert pagem.proofers(3)[2] == 'pf D'
+assert pagem.proofers(2)[2] == 'pf C'
+assert pagem.proofers(3) == ['']
 assert pagem.proofers(4) == []
 assert pagem.folio_info(0)[0] == C.FolioRuleSet
 assert pagem.folio_info(0)[1] == C.FolioFormatArabic
@@ -141,7 +145,7 @@ assert pagem.folio_info(2) == [C.FolioRuleAdd1,C.FolioFormatUCRom,3]
 line_list = '''0 A \pf0\pf1\pf\u2002A\pf3\pf4 1 0 1
 10 B \pf0\pf1\pf\u2002B\pf3\pf4 0 3 2
 20 C \pf0\pf1\pf\u2002C\pf3\pf4 0 1 3
-30 D \pf0\pf1\pf\u2002D\pf3\pf4 1 3 9'''.split('\n')
+30 D \ 1 3 9'''.split('\n')
 check_section(mm, C.MD_PT, line_list)
 # force various errors in read_pages and check logging
 # wrong number of items
