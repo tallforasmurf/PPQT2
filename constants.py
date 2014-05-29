@@ -28,6 +28,13 @@ Define global values that are used in multiple modules. These values are
 read-only. Stylistically they should be ALL-CAP.
 
 '''
+# Make available values for our platform levels:
+from PyQt5.Qt import PYQT_VERSION_STR
+from PyQt5.Qt import QT_VERSION_STR
+import os
+PLATFORM_NAME_STR = os.uname().sysname # e.g 'Darwin', 'Windows'
+
+
 # constant value for the line-delimiter used by QPlainTextEdit
 UNICODE_LINE_DELIM = '\u2029'
 # constant for the en-space used instead of spaces when
