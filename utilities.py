@@ -137,7 +137,7 @@ def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
         utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
             a_file.error(), a_file.errorString, chosen_path) )
         return None
-    enc = self.check_encoding(a_file.fileName())
+    enc = check_encoding(a_file.fileName())
     stream = FileBasedTextStream(a_file)
     stream.setCodec(enc) # probably UTF-8, maybe ISO-8859-1
     return stream
