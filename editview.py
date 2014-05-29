@@ -219,6 +219,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.Editor.installEventFilter(self)
         # Create and install our context menu
         self.context_menu = self._make_context_menu()
+        self.setContextMenuPolicy(Qt.DefaultContextMenu)
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 INTERNAL METHODS
