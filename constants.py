@@ -33,6 +33,7 @@ from PyQt5.Qt import PYQT_VERSION_STR
 from PyQt5.Qt import QT_VERSION_STR
 import os
 PLATFORM_NAME_STR = os.uname().sysname # e.g 'Darwin', 'Windows'
+PLATFORM_IS_MAC = PLATFORM_NAME_STR.startswith('Darw')
 
 
 # constant value for the line-delimiter used by QPlainTextEdit
