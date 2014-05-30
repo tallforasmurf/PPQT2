@@ -107,6 +107,11 @@ so a keyEvent method begins with
 from PyQt5.QtCore import Qt # Qt namespace including keys
 
 KEYPAD_MOD_CLEAR = int(0xffffffff ^ Qt.KeypadModifier)
+# File menu keys
+CTL_N = int(Qt.ControlModifier) | Qt.Key_N
+CTL_S = int(Qt.ControlModifier) | Qt.Key_S
+CTL_SHFT_S = int(Qt.ShiftModifier) | CTL_S
+# Editor key actions
 CTL_F = int(Qt.ControlModifier) | Qt.Key_F
 CTL_SHFT_F = int(Qt.ShiftModifier) | CTL_F
 CTL_G = int(Qt.ControlModifier) | Qt.Key_G
@@ -325,7 +330,7 @@ u'\u03BB' : u'lambda', # Greek small letter lambda
 u'\u03BC' : u'mu', # Greek small letter mu
 u'\u03BD' : u'nu', # Greek small letter nu
 u'\u03BE' : u'xi', # Greek small letter xi
-u'\u03BF' : u'omicron', # HTMLsymbol	NEW	Greek small letter omicron
+u'\u03BF' : u'omicron', # Greek small letter omicron
 u'\u03C0' : u'pi', # Greek small letter pi
 u'\u03C1' : u'rho', # Greek small letter rho
 u'\u03C2' : u'sigmaf', # Greek small letter final sigma
@@ -336,24 +341,24 @@ u'\u03C6' : u'phi', # Greek small letter phi
 u'\u03C7' : u'chi', # Greek small letter chi
 u'\u03C8' : u'psi', # Greek small letter psi
 u'\u03C9' : u'omega', # Greek small letter omega
-u'\u03D1' : u'thetasym', # NEW	Greek theta symbol
-u'\u03D2' : u'upsih', # NEW	Greek Upsilon with hook symbol
+u'\u03D1' : u'thetasym', #  Greek theta symbol
+u'\u03D2' : u'upsih', #  Greek Upsilon with hook symbol
 u'\u03D6' : u'piv', # Greek pi symbol
 u'\u2002' : u'ensp', # en space[d]
 u'\u2003' : u'emsp', # em space[d]
 u'\u2009' : u'thinsp', # thin space[d]
 u'\u200C' : u'zwnj', # zero-width non-joiner
 u'\u200D' : u'zwj', # zero-width joiner
-u'\u200E' : u'lrm', # NEW RFC 2070	left-to-right mark
-u'\u200F' : u'rlm', # NEW RFC 2070	right-to-left mark
+u'\u200E' : u'lrm', #  RFC 2070 left-to-right mark
+u'\u200F' : u'rlm', #  RFC 2070 right-to-left mark
 u'\u2013' : u'ndash', # en dash
 u'\u2014' : u'mdash', # em dash
 u'\u2018' : u'lsquo', # left single quotation mark
 u'\u2019' : u'rsquo', # right single quotation mark
-u'\u201A' : u'sbquo', # HTMLspecial	NEW	single low-9 quotation mark
+u'\u201A' : u'sbquo', # HTML  single low-9 quotation mark
 u'\u201C' : u'ldquo', # left double quotation mark
 u'\u201D' : u'rdquo', # right double quotation mark
-u'\u201E' : u'bdquo', # HTMLspecial	NEW	double low-9 quotation mark
+u'\u201E' : u'bdquo', # HTML  double low-9 quotation mark
 u'\u2020' : u'dagger', # dagger, obelisk
 u'\u2021' : u'Dagger', # double dagger, double obelisk
 u'\u2022' : u'bull', # bullet (= black small circle)[f]
@@ -361,22 +366,22 @@ u'\u2026' : u'hellip', # horizontal ellipsis (= three dot leader)
 u'\u2030' : u'permil', # per mille sign
 u'\u2032' : u'prime', # prime (= minutes = feet)
 u'\u2033' : u'Prime', # double prime (= seconds = inches)
-u'\u2039' : u'lsaquo', # proposed	single left-pointing angle quotation mark[g]
-u'\u203A' : u'rsaquo', # proposed	single right-pointing angle quotation mark[g]
-u'\u203E' : u'oline', # NEW	overline (= spacing overscore)
-u'\u2044' : u'frasl', # NEW	fraction slash (= solidus)
-u'\u20AC' : u'euro', # HTMLspecial	NEW	euro sign
+u'\u2039' : u'lsaquo', # proposed single left-pointing angle quotation mark[g]
+u'\u203A' : u'rsaquo', # proposed single right-pointing angle quotation mark[g]
+u'\u203E' : u'oline', #  overline (= spacing overscore)
+u'\u2044' : u'frasl', #  fraction slash (= solidus)
+u'\u20AC' : u'euro', # HTML  euro sign
 u'\u2111' : u'image', # black-letter capital I (= imaginary part)
 u'\u2118' : u'weierp', # script capital P (= power set = Weierstrass p)
 u'\u211C' : u'real', # black-letter capital R (= real part symbol)
 u'\u2122' : u'trade', # trademark symbol
-u'\u2135' : u'alefsym', # NEW	alef symbol (= first transfinite cardinal)[h]
+u'\u2135' : u'alefsym', #  alef symbol (= first transfinite cardinal)[h]
 u'\u2190' : u'larr', # leftwards arrow
 u'\u2191' : u'uarr', # upwards arrow
 u'\u2192' : u'rarr', # rightwards arrow
 u'\u2193' : u'darr', # downwards arrow
 u'\u2194' : u'harr', # left right arrow
-u'\u21B5' : u'crarr', # NEW	downwards arrow with corner leftwards (= carriage return)
+u'\u21B5' : u'crarr', #  downwards arrow with corner leftwards (= carriage return)
 u'\u21D0' : u'lArr', # leftwards double arrow[i]
 u'\u21D1' : u'uArr', # upwards double arrow
 u'\u21D2' : u'rArr', # rightwards double arrow[j]
