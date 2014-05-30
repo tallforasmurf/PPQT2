@@ -111,6 +111,8 @@ KEYPAD_MOD_CLEAR = int(0xffffffff ^ Qt.KeypadModifier)
 CTL_N = int(Qt.ControlModifier) | Qt.Key_N
 CTL_S = int(Qt.ControlModifier) | Qt.Key_S
 CTL_SHFT_S = int(Qt.ShiftModifier) | CTL_S
+CTL_O = int(Qt.ControlModifier) | Qt.Key_O
+CTL_W = int(Qt.ControlModifier) | Qt.Key_W
 # Editor key actions
 CTL_F = int(Qt.ControlModifier) | Qt.Key_F
 CTL_SHFT_F = int(Qt.ShiftModifier) | CTL_F
