@@ -55,11 +55,12 @@ test_path = os.path.dirname(my_path)
 file_path = os.path.join(test_path,'Files')
 ppqt_path = os.path.dirname(test_path)
 sys.path.append(ppqt_path)
+import utilities
 import metadata
 import constants as C
 # load a single-line metadata section - depends on mm
 def load_header(mgr, section, parm, vers=None):
-    stream = metadata.MemoryStream()
+    stream = utilities.MemoryStream()
     if vers :
         stream << metadata.open_line('VERSION', vers)
     stream << metadata.open_line(section, parm)
@@ -68,7 +69,7 @@ def load_header(mgr, section, parm, vers=None):
 # dump all metadata and look at a specified one-line section to see
 # that it matches.
 def check_header(mgr, section, expected):
-    stream = metadata.MemoryStream()
+    stream = utilities.MemoryStream()
     mgr.write_meta(stream)
     stream.rewind()
     while True:
@@ -77,14 +78,34 @@ def check_header(mgr, section, expected):
         if line.startswith('{{'+section) : break
     assert line == expected
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication,QWidget
 app = QApplication(sys.argv)
 
 import mainwindow
-mw = mainwindow.MainWindow()
+
+class miniMW(QWidget):
+    PANEL_DICT = {
+        'Images':None,
+        'Notes':None,
+        'Find' :None,
+        'Pages':None,
+        'Chars':None,
+        'Words':None,
+        'Fnote':None,
+        'Loupe':None,
+        'default' : ['Images','Notes','Find','Words','Chars','Pages','Fnote','Loupe'],
+        'tab_list' : None, # supplied in Book, updated in focus_me
+        'current' : 0
+        }
+    
+    def __init__(self):
+        super().__init__(None)
+    def focus_me(self,index):
+        print('focus call from ',str(index))
+mmw = miniMW()
 
 import book
-the_book = book.Book(mw)
+the_book = book.Book(5,mmw)
 
 # get a ref to the imageviewer, make it big
 iv = the_book.imagev
@@ -122,7 +143,7 @@ path_to_sb = os.path.join(file_path,'small_book.txt')
 qfile = QFile(path_to_sb)
 qfile.open(QIODevice.ReadOnly)
 doc_stream = QTextStream(qfile)
-the_book.new_book(doc_stream, 'small_book.txt', file_path)
+the_book.new_book(doc_stream, None, None, None, 'small_book.txt', file_path)
 
 
 ed = the_book.get_edit_view().Editor
