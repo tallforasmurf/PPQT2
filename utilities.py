@@ -162,7 +162,7 @@ def check_encoding(fname):
 
 # Convert a QFile for a file known to exist, into a FileBasedTextStream.
 # Refactored out of the following functions.
-def _qfile_to_stream(a_file, encoding=None):
+def qfile_to_stream(a_file, encoding=None):
     if not a_file.open(QIODevice.ReadOnly | QIODevice.Text) :
         utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
             a_file.error(), a_file.errorString, chosen_path) )
@@ -170,6 +170,15 @@ def _qfile_to_stream(a_file, encoding=None):
     fbts = FileBasedTextStream(a_file)
     stream.setCodec(check_encoding(fbts.filename) if encoding is None else encoding)
     return stream
+
+# Convert a canonical file path to a FileBasedTextStream, allowing
+# for the case that it might not exist.
+def path_to_stream(requested_path, encoding=None):
+    a_file = QFile(requested_path)
+    if not a_file.exists():
+        utilities_logger.error('Request for nonexistent file {0}'.format(chosen_path))
+        return None
+    return qfile_to_stream(a_file, encoding)
 
 # The following is a wrapper on QFileDialog.getOpenFileName, the Qt dialog
 # for getting a path to an existing readable file.
@@ -192,12 +201,7 @@ def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
         )
     if len(chosen_path) == 0 : # user pressed Cancel
         return None
-    a_file = QFile(chosen_path)
-    if not a_file.exists(chosen_path): # Can this happen?
-        utilities_logger.error('User chose nonexistent file {0}'.format(chosen_path))
-        return None
-    return _qfile_to_stream(a_file)
-
+    return path_to_stream(a_file)
 
 # Given a FileBasedTextStream (probably a document opened by the preceding
 # function), look for a related file in the same folder and if found, return
@@ -208,7 +212,7 @@ def related_file(FBTS, filename, encoding=None):
     if qd.exists(filename) :
         # basename.suffix exists in the same folder as FBTS
         a_file = QFile(qd.absoluteFilePath(filename))
-        return _qfile_to_stream(a_file, encoding)
+        return qfile_to_stream(a_file, encoding)
     return None
 
 # Given a FileBasedTextStream, look for a file with the same basename but a
