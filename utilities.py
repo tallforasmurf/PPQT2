@@ -38,17 +38,86 @@ from PyQt5.QtCore import (
     QTextCodec,
     QByteArray)
 from PyQt5.QtWidgets import QFileDialog, QInputDialog, QMessageBox
-
+import constants as C # for encoding names
 import logging
 utilities_logger = logging.getLogger(name='utilities')
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
-# The following class is in part a work-around for the annoying problem that
+# Path-string utilities. Mainwindow stores file paths as complete path
+# strings but often needs to extract the filename, as when building the
+# recent-files list. We could do that using Python's os.path, or we can use
+# Qt's QFileInfo. This version uses QFileInfo but, because it is expected it
+# may be called with the same paths repeatedly, and building a QFileInfo
+# object is expensive, we cache them using a default dict.
+#
+# The basic defaultdict class uses a "default factory" that takes no
+# arguments. We want a default dict where the default value for member x is
+# f(x), or specifically, QFileInfo(x). This can be done with a subclass.
+#
+# Currently not putting any limit on the size of _FI_DICT. It will presumably
+# end up with the sum of all "recent" paths at app startup (max 10) plus all
+# files opened during a session (unlikely to be more than 10). It would be
+# possible to add a length-limit to this class if needed.
+
+from collections import defaultdict
+class key_dependent_default(defaultdict):
+    def __init__(self,f_of_x):
+        super().__init__(None) # base class doesn't get a factory
+        self.f_of_x = f_of_x # save f(x)
+    def __missing__(self, key): # called when a default needed
+        return self.f_of_x(key)
+_FI_DICT = key_dependent_default( QFileInfo )
+
+# Check if a file is accessible: is a file, exists, and is readable. Check
+# goes quickly after the first call.
+
+def file_is_accessible(path):
+    global _FI_DICT
+    qfi = _FI_DICT[path]
+    return qfi.exists() and qfi.isFile() and qfi.isReadable()
+
+# Split a full path into a tuple (filename, folderpath)
+def file_split(path):
+    global _FI_DICT
+    qfi = _FI_DICT[path]
+    return ( qfi.filename(), qfi.canonicalPath() )
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Class MemoryStream provides a QTextStream based on an in-memory buffer
+# which will not go out of scope causing a crash. It also provides the
+# convenient methods rewind() and writeLine()
+
+class MemoryStream(QTextStream):
+    def __init__(self):
+        # Create a byte array that stays in scope as long as we do
+        self.buffer = QByteArray()
+        # Initialize the "real" QTextStream with a ByteArray buffer.
+        super().__init__(self.buffer)
+        # The default codec is codecForLocale, which might vary with
+        # the platform, so set a codec here for consistency. UTF-16
+        # should entail minimal or no conversion on input or output.
+        self.setCodec( QTextCodec.codecForName('UTF-16') )
+    def rewind(self):
+        self.seek(0)
+    def writeLine(self, str):
+        self << str
+        self << '\n'
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# The following class began as a work-around for the annoying problem that
 # QTextStream(QFile) depends on the existence of the QFile but does not take
 # ownership of it, so if the QFile goes out of scope, the next use of the
-# QTextStream will crash Python with a segfault. It also provides for getting
-# the file name and path separately from a stream after it is open.
+# QTextStream will crash Python with a segfault.
+#
+# It then began to sprout useful methods:
+#   rewind() to prepare for a second reading
+#   writeline(str) to write a string with return
+#   basename() to return the filename without its suffix
+#   filename() to return the filename with suffix(es)
+#   folderpath() to return the canonical path to the containing folder
 
 class FileBasedTextStream(QTextStream):
     def __init__(self, qfile):
@@ -68,35 +137,15 @@ class FileBasedTextStream(QTextStream):
         if self.qfi is None:
             self.qfi = QFileInfo(self.saved_file)
         return self.qfi.fileName()
-    def filepath(self):
+    def folderpath(self):
         if self.qfi is None:
             self.qfi = QFileInfo(self.saved_file)
-        return self.qfi.absolutePath()
+        return self.qfi.canonicalPath()
+    def fullpath(self):
+        if self.qfi is None:
+            self.qfi = QFileInfo(self.saved_file)
+        return self.qfi.canonicalFilePath()
 
-# Class MemoryStream provides a QTextStream based on an in-memory buffer
-# which also will not go out of scope causing a crash. It also provides
-# the convenient methods rewind() and writeLine()
-
-class MemoryStream(QTextStream):
-    def __init__(self):
-        # Create a byte array that stays in scope as long as we do
-        self.buffer = QByteArray()
-        # Initialize the "real" QTextStream with a ByteArray buffer.
-        super().__init__(self.buffer)
-        # The default codec is codecForLocale, which might vary with
-        # the platform, so set a codec here for consistency. UTF-16
-        # should entail minimal or no conversion on input or output.
-        self.setCodec( QTextCodec.codecForName('UTF-16') )
-    def rewind(self):
-        self.seek(0)
-    def writeLine(self, str):
-        self << str
-        self << '\n'
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-#  File-related convenience functions for sub-modules
-#
 # This is where we enforce our rule on encodings: we support only UTF-8 and
 # ISO8859-1 (a.k.a. Latin-1), and of course ASCII which is a proper subset of
 # both. UTF-8 is the default, but before opening a file we check the filename
@@ -104,20 +153,35 @@ class MemoryStream(QTextStream):
 # suffix of ".ltn", and default to Latin-1. Otherwise we open it UTF-8.
 #
 def check_encoding(fname):
-    enc = 'UTF-8'
+    enc = C.ENCODING_UTF
     if '-l.' in fname \
     or '-ltn.' in fname \
     or fname.endswith('.ltn') :
-        enc = 'ISO-8859-1'
+        enc = C.ENCODING_LATIN
     return enc
 
-# The following is a wrapper on QFileDialog.getOpenFileName,
-# plus, after getting a path, it is opened as a QTextStream. Arguments:
+# Convert a QFile for a file known to exist, into a FileBasedTextStream.
+# Refactored out of the following functions.
+def _qfile_to_stream(a_file, encoding=None):
+    if not a_file.open(QIODevice.ReadOnly | QIODevice.Text) :
+        utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
+            a_file.error(), a_file.errorString, chosen_path) )
+        return None
+    fbts = FileBasedTextStream(a_file)
+    stream.setCodec(check_encoding(fbts.filename) if encoding is None else encoding)
+    return stream
+
+# The following is a wrapper on QFileDialog.getOpenFileName, the Qt dialog
+# for getting a path to an existing readable file.
+#
+# If the user does select a path, it is opened as a FileBasedTextStream.
+# Return is either a FileBasedTextStream ready to read, or None.
+#
+# Arguments:
 #   caption: explanatory caption for the dialog (caller must TRanslate)
 #   parent: optional QWidget over which to center the dialog
 #   filter: optional filter string, see QFileDialog examples
 #   starting_path: optional path to begin search, e.g. book path
-# Return is either a FileBasedTextStream ready to read, or None.
 
 def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
     # Ask the user to select a file
@@ -128,20 +192,36 @@ def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
         )
     if len(chosen_path) == 0 : # user pressed Cancel
         return None
-    if not QFile.exists(chosen_path): # Can this happen?
+    a_file = QFile(chosen_path)
+    if not a_file.exists(chosen_path): # Can this happen?
         utilities_logger.error('User chose nonexistent file {0}'.format(chosen_path))
         return None
-    a_file = QFile(chosen_path)
-    # Open the file - the .Text mode ensures correct newline conversion
-    if not a_file.open(QIODevice.ReadOnly | QIODevice.Text) :
-        utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
-            a_file.error(), a_file.errorString, chosen_path) )
-        return None
-    enc = check_encoding(a_file.fileName())
-    stream = FileBasedTextStream(a_file)
-    stream.setCodec(enc) # probably UTF-8, maybe ISO-8859-1
-    return stream
+    return _qfile_to_stream(a_file)
 
+
+# Given a FileBasedTextStream (probably a document opened by the preceding
+# function), look for a related file in the same folder and if found, return
+# a new stream for it.
+
+def related_file(FBTS, filename, encoding=None):
+    qd = QDir(FBTS.folderpath)
+    if qd.exists(filename) :
+        # basename.suffix exists in the same folder as FBTS
+        a_file = QFile(qd.absoluteFilePath(filename))
+        return _qfile_to_stream(a_file, encoding)
+    return None
+
+# Given a FileBasedTextStream, look for a file with the same basename but a
+# different suffix, and if found, return a new stream for it.
+
+def related_suffix(FBTS, suffix, encoding=None):
+    target = FBTS.basename() + '.' + suffix
+    return related_file(FBTS, target, encoding)
+
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#  General Message routines
+#
 # Display a modal request for a selection from a list of options using
 # QInputDialog.getItem. Return the chosen item. Arguments are:
 #
@@ -202,7 +282,9 @@ def ok_cancel_msg ( text, info = '' ):
     return QMessageBox.Ok == mb.exec_()
 
 
-# TODO remove dbg
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Diagnostic routines for evaluating events
+# TODO REMOVE
 from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtGui import QMouseEvent, QKeyEvent
 def printEventMods(mods):
