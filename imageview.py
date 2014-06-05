@@ -259,9 +259,11 @@ class ImageDisplay(QWidget):
             elif (event.key() == Qt.Key_PageUp) or (event.key() == Qt.Key_PageDown) :
                 event.accept()
                 pgix = self.last_index + (1 if (event.key() == Qt.Key_PageDown) else -1)
-                self._show_page(pgix)
-                if self.image_to_cursor.isChecked():
-                    self.edit_view.show_position(self.page_data.position(pgix))
+                # If not paging off either end, show that page
+                if pgix >= 0 and pgix < self.page_data.page_count() :
+                    self._show_page(pgix)
+                    if self.image_to_cursor.isChecked():
+                        self.edit_view.show_position(self.page_data.position(pgix))
 
     # Zoom to width and zoom to height are basically the same thing:
     # 1. Using the QImage of the current page in self.image,
