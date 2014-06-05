@@ -60,10 +60,12 @@ provide metamanager ref
 provide spellcheck ref
 
 '''
-from PyQt5.QtCore import QObject, QCoreApplication
+from PyQt5.QtCore import QObject, QCoreApplication,QCryptographicHash
 _TR = QCoreApplication.translate
-from PyQt5.QtCore import QTextStream
+from PyQt5.QtWidgets import QLabel # TODO eliminate when not needed
+
 import utilities
+import mainwindow
 import metadata
 import editdata
 import editview
@@ -72,147 +74,310 @@ import pagedata
 import imageview
 import dictionaries
 import constants as C
+import logging
+import fonts
 
 class Book(QObject):
-    def __init__(self, main_window): #TODO: API?
-        super().__init__(main_window)
-        #
-        self.main_window = main_window
-        #
+    def __init__(self, sequence, the_main ):
+        super().__init__(None)
+        # Save our mainwindow ref and our unique sequence number
+        self.mainwindow = the_main
+        self.sequence = sequence
+        # Create our dict of activity panel objects, used by the main
+        # window when giving us the focus.
+        self.panel_dict = mainwindow.PANEL_DICT.copy()
+        # Set up a book-unique logging channel
+        self.logger = logging.getLogger(name='book_'+str(self.sequence))
+        # Create the spellchecker using the global default dictionary.
+        # It may be recreated in _init_edit after we have a book path and
+        # have possibly read dictionary info from metadata.
+        self.dict_tag = dictionaries.get_default_tag()
+        self._speller = dictionaries.Speller(self.dict_tag,
+            dictionaries.get_dict_path() )
         self.edit_point_size = C.DEFAULT_FONT_SIZE
-        self.bookname = '' # set during New or load
-        self.book_path = ''
-        self.image_path = '' # set during load
-        # Initialize bookmarks, loaded from metadata later
-        self.bookmarks = [None, None, None, None, None, None, None, None, None]
+        self.edit_cursor = (0,0)
+        self.bookname = ''
+        self.book_folder = ''
+        self.book_full_path = ''
+        self.md_modified = False # see metadata_modified()
+        # Initialize bookmarks, loaded from metadata later. The bookmarks
+        # are indexed 1-9 (from control-1 to control-9 keys) but the list
+        # has ten entries, entry 0 not being used.
+        self.bookmarks = [None, None, None, None, None, None, None, None, None, None]
         #
-        # Create the metadata manager
+        # Create the metadata manager and register to read and write the
+        # items that are stored at this level: the last-set main dictionary
+        # the cursor position at save, the point size at save, the bookmarks,
+        # and the hash value of the saved document.
         #
         self.metamgr = metadata.MetaMgr()
-        # TODO: register to save and load dictionary tag from metadata
-        self.dict_tag = dictionaries.get_default_tag() # dict for File>New
-        # TODO: register to save and load spellcheck and scanno colors!
-        # TODO: register to save and load editor font size
-        # TODO: register to save and load editor position cursor
-        # TODO: register to save and load bookmarks
+        self.metamgr.register(C.MD_MD, self._read_dict, self._save_dict)
+        self.metamgr.register(C.MD_CU, self._read_cursor, self._save_cursor)
+        self.metamgr.register(C.MD_ES, self._read_size, self._save_size)
+        self.metamgr.register(C.MD_BM, self._read_bookmarks, self._save_bookmarks)
+        self.metamgr.register(C.MD_DH, self._read_hash, self._save_hash)
         #
-        # Create a document, it will be initialized later.
-        self.editm = editdata.Document(self)
+        # Create the data model objects. These are private to the book.
+        self.editm = editdata.Document(self) # document, to be initialized later
+        self.pagem = pagedata.PageData(self) # page data
+        self.wordm = worddata.WordData(self) # vocabulary data
+        # TODO: notes, footnotes, bookloupe data
         #
-        # Create the spellchecker using the default dictionary as it is now.
-        # It is recreated in _init_edit after we have a book path and have
-        # possibly read dictionary info from metadata.
+        # Create the view objects that display and interact with the data models.
+        # These need to be accessible to the main window so are stored in the
+        # panel_dict. The edit view is created in _init_edit() after we have
+        # loaded a document.
         #
-        self._speller = dictionaries.Speller(
-            dictionaries.get_default_tag(),
-            dictionaries.get_dict_path() )
-        #
-        # Create the pagedata model and its clients
-        #
-        self.pagem = pagedata.PageData(self)
-        # self.pagev = pageview.PagePanel(self) TODO
-        #
-        # Create the objects that hold and display words data
-        #
-        self.wordm = worddata.WordData(self)
-        # self.wordv = wordview.WordPanel(self)
-        #
-        # Create the imageview object which initializes to no image
-        #
-        self.imagev = imageview.ImageDisplay(self)
-        # TODO other init like find panel
+        self.imagev = imageview.ImageDisplay(self) # keep a short reference
+        self.panel_dict['Images'] = self.imagev
+        # TODO other view objects, labels for placeholders
+        self.panel_dict['Notes'] = QLabel(str(sequence)+'Notes') # notesview.NotesPanel(self)
+        self.panel_dict['Find' ] = QLabel(str(sequence)+'Find') # findeview.FindPanel(self)
+        self.panel_dict['Pages'] = QLabel(str(sequence)+'Pages') # pageview.PagePanel(self)
+        self.panel_dict['Words'] = QLabel(str(sequence)+'Words') # wordview.WordPanel(self)
+        self.panel_dict['Chars'] = QLabel(str(sequence)+'Chars') # charview.CharPanel(self)
+        self.panel_dict['Fnote'] = QLabel(str(sequence)+'Fnote') # fnoteview.FnotePanel(self)
+        self.panel_dict['Loupe'] = QLabel(str(sequence)+'Loupe') # loupeview.LoupePanel(self)
+        self.panel_dict['tab_list'] = [
+        (tabname, self.panel_dict[tabname]) for tabname in self.panel_dict['default']
+            ]
 
-    # The following four methods are called by the main window
-    # after it instantiates this object, to load it with data.
+        # End of __init__ however initialization continues here:
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # One of the following four methods is called by the main window after it
+    # instantiates this object, to load it with data. Here is where Book
+    # initialization is completed.
 
     # FILE>NEW: initialize for a new empty document. Pretty much everything
     # is set up for New already because all the models initialize to empty.
-    # Sequence argument is maintained by the main window to make a unique
-    # "Untitled" value. Set status of un-modified, no point in making user
-    # save an empty new document.
+    # Sequence value is assigned by the main window when the Book is created,
+    # use it here to make a unique "Untitled" value. Document status of
+    # not-modified, because there's point in making user save an empty new
+    # document.
 
-    def new_empty(self,sequence):
-        self._init_edit(doc_stream=None,
-                        book_name='Untitled-{0}'.format(sequence))
-
-    # FILE>OPEN an unknown document, one without metadata of any kind.
-    #   doc_stream  a QTextStream with the document data
-    #   book_name   filename string
-    #   book_path  absolute path to book, where there might
-    #       be a folder of pngs, or maybe not.
-    # Set up as modified because the new metadata needs saving.
-    # Create page metadata by scanning the text for page separators.
-    # Default cursor position to zero, in absence of metadata.
-
-    def new_book(self, doc_stream, book_name, book_path) :
-        self._init_edit( doc_stream, book_name, book_path, modified=True )
-        self.pagem.scan_pages()
-        if 0 < self.pagem.page_count():
-            # we have a book with page info, wake up the image viewer
-            self.imagev.set_path(book_path)
-            self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
+    def new_empty(self):
+        self.book_name = 'Untitled-{0}'.format(self.sequence)
+        self.book_folder = ''
+        self.book_full_path = ''
+        self.editm.setModified(False)
+        self.editv = editview.EditView(self, self.mainwindow.focus_me)
 
     # KNOWN BOOK: called to load a book that has a .meta file. Given:
-    #   doc_stream  a QTextStream with the document text
-    #   meta_stream a QTextStream with the metadata
-    #   book_name   filename string
-    #   image_path  absolute path string to a folder of pngs, or None
+    #   doc_stream  a FileBasedTextStream with the document text
+    #   meta_stream a text stream (file or memory-based) with the metadata
     # Set modified status to False because we just loaded everything.
 
-    def old_book(self,doc_stream, meta_stream, book_name, book_path):
-        pass #TODO
+    def old_book(self, doc_stream, meta_stream):
+        self.book_name = doc_stream.basename()
+        self.book_folder = doc_stream.folderpath()
+        self.book_full_path = doc_stream.fullpath()
+        self.editm.setPlainText(doc_stream.readAll())
+        self.metamgr.load_meta(meta_stream)
+        self.editm.setModified(False)
+        self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
+        self.editv.set_cursor(self.editv.make_cursor(self.edit_cursor[0],self.edit_cursor[1]))
+        if 0 < self.pagem.page_count():
+            # we have a book with page info, wake up the image viewer
+            self.imagev.set_path(book_folder)
+            self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
 
-    # GG BOOK: called to load a book that has a Guiguts .bin file.
-    #   doc_stream  a QTextStream of the document text
-    #   bin_stream  a QTextStream of the Guiguts .bin file
-    #   book_name   filename string
-    #   image_path  absolute path string to a folder of pngs, or None
-    # Set modified status to True because all the metadata is new.
+    # FILE>OPEN a document that lacks an accompanying .meta file.
+    #
+    #   doc_stream  a FileBasedTextStream with the document data
+    #   meta_stream None, or a memory stream derived from a Guiguts .bin file
+    #   good_stream None, or a text stream of a good_words file
+    #   bad_stream  None, or a text stream of a bad_words file
+    # Set up as modified because the new metadata needs saving.
+    # Create page metadata by scanning the text for page separators.
+    # Default the cursor position to zero, in absence of metadata.
 
-    def gg_book(self,doc_stream, bin_stream, book_name, image_path):
-        pass #TODO
+    def new_book(self, doc_stream, meta_stream, good_stream, bad_stream) :
+        self.book_name = doc_stream.basename()
+        self.book_folder = doc_stream.folderpath()
+        self.book_full_path = doc_stream.fullpath()
+        self.editm.setPlainText(doc_stream.readAll())
+        self.editm.setModified(True)
+        if meta_stream :
+            # Process the Guiguts metadata for page info            
+            self.metamgr.load_meta(meta_stream)
+        else :
+            # develop page info from separator lines in text
+            self.pagem.scan_pages()
+        # If there are good_words and bad_words streams, use the worddata
+        # metadata readers to accept them.
+        if good_stream:
+            self.wordm.good_read(good_stream,C.MD_GW,'0','')
+        if bad_stream :
+            self.wordm.bad_read(bad_stream,C.MD_BW,'0','')
+        # Create the visible editor, leaving cursor at 0.
+        self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
+        if 0 < self.pagem.page_count():
+            # we have a book with page info, wake up the image viewer
+            self.imagev.set_path(self.book_folder)
+            self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
 
-    # While implementing one of the above operations, initialize the
-    # edit document, and create and initialize the edit view.
-    # Parameters here are:
-    #  doc_stream : QTextStream of file contents, None if File>New
-    #  book_name: filename of existing file or Untitled-n for New
-    #  book_path: file path to existing file or None for New
-    #  modified: True if the document should be modified right now
-    #  cursor_pos: starting cursor position from metadata
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # The only save function: called from main window with two streams
+    # to be written. Note that we ASSUME any save will include a .meta
+    # file. This is not a general purpose editor, if you use it for some
+    # scratch file, you will get scratch.meta as well.
+    def save_book(self, doc_stream, meta_stream):
+        doc_stream << self.editm.toPlainText()
+        self.metamgr.write_meta(meta_stream)
 
-    def _init_edit(self,
-                   doc_stream=None,
-                   book_name='',
-                   book_path='',
-                   modified=False,
-                   cursor_pos=0):
-        self.book_name = book_name
-        self.book_path = book_path
-        if doc_stream: # that is, if not File>New
-            # Load the document with the book contents
-            self.editm.setPlainText(doc_stream.readAll())
-            # Initialize a speller from a tag (read from metadata?) and
-            # searching in the book-path first.
-            self._speller = dictionaries.Speller(
-                self.dict_tag, book_path)
-        self.editm.setModified(modified)
-        self.editv = editview.EditView(self)
-        # position the editor to a saved cursor position
-        self.editv.show_position(cursor_pos)
-        # TODO: connect focus-in signal of editv to what?
-        # TODO: create Notes view
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # The following functions are registered to the metatdata manager to read
+    # and write metadata items that are kept at the Book level. We load the
+    # book data into the editor before reading the metadata. This makes it
+    # possible to establish the cursor value and bookmarks. (If the document
+    # had not been read, the editor would not be able to set a cursor
+    # position above zero.)
+    #
+    # This means that the v.1 {{ENCODING enc}} section was pointless; the
+    # encoding of the file cannot be learned from that. So that old section is
+    # ignored on input and not written on output.
 
-    # User requests change of scanno file: Present a file dialog
-    # to select one. The mechanics are in main_window. When that
-    # works, pass the stream to the word-model to store.
+    # Process the {{BOOKMARKS}} section. Each line is "x p a" where x is the
+    # index in 1-9, and p/a are the cursor position and anchor. Note the
+    # earliest versions of PPQT didn't save the anchor value, so watch for
+    # that and duplicate the position.
+
+    # refactor testing acceptable cursor position, for cpos an int
+    def _test_cpos(self, cpos):
+        return cpos >= 0 and cpos < self.editm.characterCount()
+
+    def _read_bookmarks(self, stream, sentinel, v, parm):
+        for line in metadata.read_to(stream,sentinel) :
+            try:
+                parts = line.split()
+                if len(parts) == 2 : # old metadata file
+                    parts.append(parts[1]) # duplicate pos as anchor
+                [i,p,a] = parts # exception if not 3 items
+                ix = int(i) # exception if not int
+                if ix < 1 or ix > 9 :
+                    raise ValueError
+                cpos = int(p)
+                canc = int(a)
+                if self._test_cpos(cpos) and self._test_cpos(canc) :
+                    self.bookmarks[ix] = self.editv.make_cursor(cpos,canc)
+                else :
+                    raise ValueError
+            except:
+                self.logger.error('Ignoring invalid bookmark position "'+line+'"')
+    def _save_bookmarks(self, stream, section):
+        stream << metadata.open_line(section)
+        for ix in range(1,10):
+            if self.bookmarks[ix] is not None:
+                stream << '{0} {1} {2}\n'.format(
+                    ix, self.bookmarks[ix].position(), self.bookmarks[ix].anchor() )
+        stream << metadata.close_line(section)
+
+    # Process {{CURSOR position anchor}}. Be suspicious of the coding as the
+    # user might have (mis)edited it.
+
+    def _read_cursor(self, stream, sentinel, v, parm):
+        try:
+            [p,a] = parm.split() # exception if wrong number of values
+            cpos = int(p) # exception if not integer
+            canc = int(a)
+            if self._test_cpos(cpos) and self._test_cpos(canc) :
+                self.edit_cursor = (cpos, canc)
+            else :
+                raise ValueError
+        except:
+            self.logger.error('Ignoring invalid cursor position "'+parm+'"')
+    def _save_cursor(self, stream, section):
+        parm = '{0} {1}'.format(self.edit_cursor[0],self.edit_cursor[1])
+        stream << metadata.open_line(section,parm)
+
+    # Process {{MAINDICT <dictag>}}. Look for dictag in the available tags
+    # starting with the book path (if we are reading metadata, a book path
+    # exists). If the tag exists at some level, make a new speller using it.
+
+    def _read_dict(self, stream, sentinel, v, parm) :
+        tag_dict = dictionaries.get_tag_list(self.book_folder)
+        if parm in tag_dict :
+            self.dict_tag = parm
+            self._speller = dictionaries.Speller(parm,tag_dict[parm])
+        else:
+            self.logger.error(
+                'Unable to open dictionary {0}, using default {1}'.format(parm,self.dict_tag))
+    def _save_dict(self, stream, section):
+        stream << metadata.open_line(section, self.dict_tag)
+
+    # Process {{EDITSIZE int}}, new in v.2.
+    def _read_size(self, stream, sentinel, v, parm) :
+        try:
+            s = int(parm)
+            if s >= fonts.POINT_SIZE_MINIMUM and s <= fonts.POINT_SIZE_MAXIMUM :
+                self.edit_point_size = s
+                self.editv.font_change(True) # fake a font-change signal
+            else :
+                raise ValueError
+        except:
+            self.logger.error(
+                'Ignoring invalid edit point size {0}'.format(parm) )
+    def _save_size(self, stream, section) :
+        stream << metadata.open_line(section, str(self.edit_point_size))
+
+    # Process {{DOCHASH hashstring}}. The purpose of this is to detect when
+    # by some error, the metadata file is not the same level as the text file,
+    # for example if one was restored from backup and the other not.
+    def _signature(self):
+        # Calculate a hash signature of the current document and return
+        # it as a string like "b'\\xde\\xad\\xbe\\xef...'"
+        cuisineart = QCryptographicHash(QCryptographicHash.Sha1)
+        cuisineart.reset()
+        cuisineart.addData( self.editm.full_text() )
+        return bytes(cuisineart.result()).__repr__()
+    # Note in v.1 and Python 2.7, the result of __repr__ on a byte array was
+    # a char string like '\xde\xad\xbe\xef...' but in v.2 and Python 3, the
+    # result is b'\\xde\\xad\\xbe\\xef...' which does not compare equal
+    # despite having the same bytes. So if reading a v.1 meta file, coerce it
+    # to bytes. Since the user could have mucked with it, allow for errors.
+    def _read_hash(self, stream, sentinel, v, parm) :
+        if v < '2' :
+            try:
+                parm = bytes(parm,'Latin-1','ignore').__repr__()
+            except :
+                self.logger.error(
+                'Could not convert dochash to bytes, ignoring dochash' )
+                return
+        # If the saved and current hashes now disagree, it is because the metadata
+        # was saved along with a different book or version. Warn the user.
+        if self._signature() != parm :
+            utilities.warning_msg(
+                text= _TR(
+                    'Book object',
+                    'Document and .meta files do not match!',
+                    'Warning during File:Open'
+                    ),
+                info= _TR(
+                    'Book object',
+                    'Page breaks and other metadata will be wrong! Strongly recommend you not edit or save this book.',
+                    'Warning during File:Open'
+                    )
+            )
+
+    def _save_hash(self, stream, section) :
+        # Calculate an SHA-1 hash over the current document and write it.
+        stream << metadata.open_line(section, self._signature())
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # The following methods assist the editview to implement its context menu.
+    #
+    # User requests change of scanno file: Present a file dialog to select
+    # one. The mechanics are in the utilities module. When that works, pass
+    # the stream to the word-model to store.
+
     def ask_scanno_file(self):
         global _TR
         caption = _TR("EditViewWidget",
                 "Choose a file of OCR error words to mark",
                 "File dialog caption")
         scanno_stream = utilities.ask_existing_file(
-            caption, self.editv, self.book_path, None )
+            caption, self.editv, self.book_folder, None )
         if scanno_stream is not None :
             self.wordm.scanno_read(scanno_stream,C.MD_SC,0,None)
             return True
@@ -223,7 +388,7 @@ class Book(QObject):
     # is actually a dict, so pull out its keys for the dialog.
     def ask_dictionary(self) :
         global _TR
-        tag_list = dictionaries.get_tag_list(self.book_path)
+        tag_list = dictionaries.get_tag_list(self.book_folder)
         if 0<len(tag_list):
             # dictionaries knows about at least one tag, display it/them
             item_list = sorted(list(tag_list.keys()))
@@ -258,12 +423,21 @@ class Book(QObject):
                 )
         return False
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # The following methods provide access to book info for other modules.
+
     # give access to the book name
     def get_book_name(self):
         return self.book_name
-    # give access to the book path
-    def get_book_path(self):
-        return self.book_path
+    # give access to the book folder path
+    def get_book_folder(self):
+        return self.book_folder
+    # give access to the book canonical path
+    def get_book_full_path(self):
+        return self.book_full_path
+    # give access to the panel dict
+    def get_panel_dict(self):
+        return self.panel_dict
     # give access to the last-set edit font size
     def get_font_size(self):
         return self.edit_point_size
@@ -287,8 +461,9 @@ class Book(QObject):
     # give access to the word data model
     def get_word_model(self):
         return self.wordm
-
-    # Note when metadata changes and needs save
-    # TODO implement
+    # Note when metadata changes.
     def metadata_modified(self):
-        pass
+        self.md_modified = True
+    # Answer the question, is a save needed?
+    def get_save_needed(self):
+        return self.md_modified or self.editm.isModified()
