@@ -227,6 +227,15 @@ class Book(QObject):
         self.metamgr.write_meta(meta_stream)
         self.editm.setModified(False)
         self.md_modified = False
+    
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Give the book a new name and/or file path, and set book modified.
+    # Input is a FileBasedTextStream. This implements File:Save As.
+    def rename_book(self, doc_stream):
+        self.book_name = doc_stream.basename()
+        self.book_folder = doc_stream.folderpath()
+        self.book_full_path = doc_stream.fullpath()
+        self.md_modified = True
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # The following functions are registered to the metatdata manager to read
