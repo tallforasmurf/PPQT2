@@ -152,7 +152,7 @@ class FileBasedTextStream(QTextStream):
 # string for "-l" or "-ltn" before the suffix, (as in scannos-ltn.txt) or a
 # suffix of ".ltn", and default to Latin-1. Otherwise we open it UTF-8.
 #
-def check_encoding(fname):
+def _check_encoding(fname):
     enc = C.ENCODING_UTF
     if '-l.' in fname \
     or '-ltn.' in fname \
@@ -162,23 +162,29 @@ def check_encoding(fname):
 
 # Convert a QFile for a file known to exist, into a FileBasedTextStream.
 # Refactored out of the following functions.
-def qfile_to_stream(a_file, encoding=None):
-    if not a_file.open(QIODevice.ReadOnly | QIODevice.Text) :
+def _qfile_to_stream(a_file, I_or_O, encoding=None):
+    if not a_file.open(I_or_O | QIODevice.Text) :
         utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
-            a_file.error(), a_file.errorString, chosen_path) )
+            a_file.error(), a_file.errorString, a_file.filename() ) )
         return None
     fbts = FileBasedTextStream(a_file)
-    fbts.setCodec(check_encoding(fbts.filename()) if encoding is None else encoding)
+    fbts.setCodec(_check_encoding(fbts.filename()) if encoding is None else encoding)
     return fbts
 
-# Convert a canonical file path to a FileBasedTextStream, allowing
-# for the case that it might not exist.
+# Convert a canonical file path to an input FileBasedTextStream, allowing for
+# the case that it might not exist.
 def path_to_stream(requested_path, encoding=None):
     a_file = QFile(requested_path)
     if not a_file.exists():
-        utilities_logger.error('Request for nonexistent file {0}'.format(requested_path))
+        utilities_logger.error('Request for nonexistent input file {0}'.format(requested_path))
         return None
-    return qfile_to_stream(a_file, encoding)
+    return _qfile_to_stream(a_file, QIODevice.ReadOnly, encoding)
+
+# Convert a canonical file path to an output FileBasedTextStream, or return
+# None if that isn't possible.
+def path_to_output(requested_path, encoding=None):
+    a_file = QFile(requested_path)
+    return _qfile_to_stream(a_file, QIODevice.WriteOnly, encoding)
 
 # The following is a wrapper on QFileDialog.getOpenFileName, the Qt dialog
 # for getting a path to an existing readable file.
@@ -216,7 +222,7 @@ def related_file(FBTS, filename, encoding=None):
     names = qd.entryList()
     if names : # list is not empty, open the first
         a_file = QFile( qd.absoluteFilePath(names[0]) )
-        return qfile_to_stream(a_file, encoding)
+        return _qfile_to_stream(a_file, QIODevice.ReadOnly, encoding)
     return None
 
 # Given a FileBasedTextStream, look for a file with the same basename but a
@@ -226,6 +232,14 @@ def related_suffix(FBTS, suffix, encoding=None):
     target = FBTS.basename() + '.' + suffix
     return related_file(FBTS, target, encoding)
 
+# Given a FileBasedTextStream, try to open an output file of the same
+# basename but different suffix. Using the rather circuitous Qt
+# equivalent of os.path.join.
+def related_output(FBTS, suffix, encoding=None):
+    qd = QDir( FBTS.folderpath() )
+    target = FBTS.basename() + '.' + suffix
+    a_file = QFile( qd.absoluteFilePath(target) )
+    return _qfile_to_stream(a_file, QIODevice.WriteOnly, encoding)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #  General Message routines
