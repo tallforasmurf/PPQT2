@@ -201,7 +201,7 @@ def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
         )
     if len(chosen_path) == 0 : # user pressed Cancel
         return None
-    return path_to_stream(a_file)
+    return path_to_stream(chosen_path)
 
 # Given a FileBasedTextStream (probably a document opened by the preceding
 # function), look for a related file in the same folder and if found, return
