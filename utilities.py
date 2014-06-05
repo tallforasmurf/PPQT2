@@ -176,7 +176,7 @@ def qfile_to_stream(a_file, encoding=None):
 def path_to_stream(requested_path, encoding=None):
     a_file = QFile(requested_path)
     if not a_file.exists():
-        utilities_logger.error('Request for nonexistent file {0}'.format(chosen_path))
+        utilities_logger.error('Request for nonexistent file {0}'.format(requested_path))
         return None
     return qfile_to_stream(a_file, encoding)
 
