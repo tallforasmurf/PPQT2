@@ -209,7 +209,7 @@ def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
 # pattern like 'foo*.*'.
 
 def related_file(FBTS, filename, encoding=None):
-    qd = QDir(FBTS.folderpath)
+    qd = QDir( FBTS.folderpath() )
     qd.setFilter(QDir.Files | QDir.Readable)
     qd.setSorting(QDir.Type | QDir.Reversed)
     qd.setNameFilters( [filename] ) # literal name or 'foo*.*'
