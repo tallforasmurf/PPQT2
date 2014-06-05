@@ -180,23 +180,18 @@ def path_to_stream(requested_path, encoding=None):
         return None
     return _qfile_to_stream(a_file, QIODevice.ReadOnly, encoding)
 
-# Convert a canonical file path to an output FileBasedTextStream, or return
-# None if that isn't possible.
-def path_to_output(requested_path, encoding=None):
-    a_file = QFile(requested_path)
-    return _qfile_to_stream(a_file, QIODevice.WriteOnly, encoding)
-
 # The following is a wrapper on QFileDialog.getOpenFileName, the Qt dialog
 # for getting a path to an existing readable file.
 #
-# If the user does select a path, it is opened as a FileBasedTextStream.
-# Return is either a FileBasedTextStream ready to read, or None.
+# If the user selects a file it is opened as an input FileBasedTextStream.
+# Return is a FileBasedTextStream ready to read, or None.
 #
 # Arguments:
 #   caption: explanatory caption for the dialog (caller must TRanslate)
 #   parent: optional QWidget over which to center the dialog
 #   filter: optional filter string, see QFileDialog examples
 #   starting_path: optional path to begin search, e.g. book path
+# Encoding is not passed, so encoding depends on the filename or suffix.
 
 def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
     # Ask the user to select a file
@@ -231,6 +226,35 @@ def related_file(FBTS, filename, encoding=None):
 def related_suffix(FBTS, suffix, encoding=None):
     target = FBTS.basename() + '.' + suffix
     return related_file(FBTS, target, encoding)
+
+# The following is a wrapper on QFileDialog.getSaveFileName, the Qt dialog
+# for getting a path to a writeable file path.
+#
+# If the user selects a path, it is opened as an output FileBasedTextStream.
+# Return is either that stream or None.
+#
+# Arguments:
+#   caption: explanatory caption for the dialog (caller must TRanslate)
+#   parent: optional QWidget over which to center the dialog
+#   filter: optional filter string, see QFileDialog examples
+#   starting_path: optional path to begin search, e.g. book path
+# Encoding is not passed, so encoding depends on the filename or suffix.
+
+def ask_saving_file(caption, parent=None, starting_path='', filter_string=''):
+    (chosen_path, _) = QFileDialog.getSaveFileName(
+            parent,
+            caption,
+            starting_path, filter_string
+        )
+    if len(chosen_path) == 0 : # user pressed Cancel
+        return None
+    return path_to_output(chosen_path)
+
+# Convert a canonical file path to an output FileBasedTextStream, or return
+# None if that isn't possible.
+def path_to_output(requested_path, encoding=None):
+    a_file = QFile(requested_path)
+    return _qfile_to_stream(a_file, QIODevice.WriteOnly, encoding)
 
 # Given a FileBasedTextStream, try to open an output file of the same
 # basename but different suffix. Using the rather circuitous Qt
