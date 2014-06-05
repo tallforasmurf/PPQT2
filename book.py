@@ -225,6 +225,8 @@ class Book(QObject):
     def save_book(self, doc_stream, meta_stream):
         doc_stream << self.editm.toPlainText()
         self.metamgr.write_meta(meta_stream)
+        self.editm.setModified(False)
+        self.md_modified = False
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # The following functions are registered to the metatdata manager to read
