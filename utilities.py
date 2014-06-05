@@ -205,13 +205,17 @@ def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
 
 # Given a FileBasedTextStream (probably a document opened by the preceding
 # function), look for a related file in the same folder and if found, return
-# a new stream for it.
+# a new stream for it. The filename may be literal 'foo.typ' or a glob
+# pattern like 'foo*.*'.
 
 def related_file(FBTS, filename, encoding=None):
     qd = QDir(FBTS.folderpath)
-    if qd.exists(filename) :
-        # basename.suffix exists in the same folder as FBTS
-        a_file = QFile(qd.absoluteFilePath(filename))
+    qd.setFilter(QDir.Files | QDir.Readable)
+    qd.setSorting(QDir.Type | QDir.Reversed)
+    qd.setNameFilters( [filename] ) # literal name or 'foo*.*'
+    names = qd.entryList()
+    if names : # list is not empty, open the first
+        a_file = QFile( qd.absoluteFilePath(names[0]) )
         return qfile_to_stream(a_file, encoding)
     return None
 
