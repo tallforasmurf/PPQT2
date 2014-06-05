@@ -168,7 +168,7 @@ def qfile_to_stream(a_file, encoding=None):
             a_file.error(), a_file.errorString, chosen_path) )
         return None
     fbts = FileBasedTextStream(a_file)
-    stream.setCodec(check_encoding(fbts.filename) if encoding is None else encoding)
+    ftbs.setCodec(check_encoding(fbts.filename) if encoding is None else encoding)
     return stream
 
 # Convert a canonical file path to a FileBasedTextStream, allowing
