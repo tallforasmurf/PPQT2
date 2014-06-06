@@ -81,7 +81,7 @@ def file_is_accessible(path):
 def file_split(path):
     global _FI_DICT
     qfi = _FI_DICT[path]
-    return ( qfi.filename(), qfi.canonicalPath() )
+    return ( qfi.fileName(), qfi.canonicalPath() )
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
@@ -328,8 +328,8 @@ def ok_cancel_msg ( text, info = '' ):
     return QMessageBox.Ok == mb.exec_()
 
 # Display a Save/Discard/Cancel choice and return True/False/None
-# respectively. This is only used by mainwindow when shutting down
-# but it is here to isolate uses of QMessageBox.
+# respectively. This is used by mainwindow when shutting down
+# or when closing a modified file.
 
 def save_discard_cancel_msg( text, info = '' ):
     mb = _make_message( text, QMessageBox.Warning, info)
