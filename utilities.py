@@ -327,6 +327,17 @@ def ok_cancel_msg ( text, info = '' ):
     mb.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
     return QMessageBox.Ok == mb.exec_()
 
+# Display a Save/Discard/Cancel choice and return True/False/None
+# respectively. This is only used by mainwindow when shutting down
+# but it is here to isolate uses of QMessageBox.
+
+def save_discard_cancel_msg( text, info = '' ):
+    mb = _make_message( text, QMessageBox.Warning, info)
+    mb.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+    mb.setDefaultButton(QMessageBox.Save)
+    ret = mb.exec_()
+    if ret == QMessageBox.Cancel : return None
+    return ret == QMessageBox.Save
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Diagnostic routines for evaluating events
