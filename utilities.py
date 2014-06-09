@@ -163,12 +163,13 @@ def _check_encoding(fname):
         enc = C.ENCODING_LATIN
     return enc
 
-# Convert a QFile for a file known to exist, into a FileBasedTextStream.
+# Convert a QFile for a valid path, into a FileBasedTextStream.
 # Refactored out of the following functions.
 def _qfile_to_stream(a_file, I_or_O, encoding=None):
     if not a_file.open(I_or_O | QIODevice.Text) :
-        utilities_logger.error('Error {0} ({1}) opening file'.format(
-            a_file.error(), a_file.errorString ) )
+        f_info = QFileInfo(a_file) # for the name
+        utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
+            a_file.error(), a_file.errorString(), f_info.fileName() ) )
         return None
     fbts = FileBasedTextStream(a_file)
     fbts.setCodec(_check_encoding(fbts.filename()) if encoding is None else encoding)
