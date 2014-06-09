@@ -65,8 +65,11 @@ class key_dependent_default(defaultdict):
     def __init__(self,f_of_x):
         super().__init__(None) # base class doesn't get a factory
         self.f_of_x = f_of_x # save f(x)
-    def __missing__(self, key): # called when a default needed
-        return self.f_of_x(key)
+    def __missing__(self, key): # called key is not in dict
+        ret = self.f_of_x(key)  # calculate default value f(key)
+        self[key] = ret         # save it in the dict for later
+        return ret              # return it now
+
 _FI_DICT = key_dependent_default( QFileInfo )
 
 # Check if a file is accessible: is a file, exists, and is readable. Check
