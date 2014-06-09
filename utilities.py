@@ -164,8 +164,8 @@ def _check_encoding(fname):
 # Refactored out of the following functions.
 def _qfile_to_stream(a_file, I_or_O, encoding=None):
     if not a_file.open(I_or_O | QIODevice.Text) :
-        utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
-            a_file.error(), a_file.errorString, a_file.filename() ) )
+        utilities_logger.error('Error {0} ({1}) opening file'.format(
+            a_file.error(), a_file.errorString ) )
         return None
     fbts = FileBasedTextStream(a_file)
     fbts.setCodec(_check_encoding(fbts.filename()) if encoding is None else encoding)
