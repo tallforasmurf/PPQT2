@@ -122,10 +122,10 @@ assert settings.value('colors/modified_name') == '#101010' # == 'red'
 
 settings.clear() # don't leave junk for next time...
 
-## manual - check color dialog
-## first time hit cancel
-#uqc = colors.choose_color("Initial s.b. BLUE hit CANCEL",QColor('#000080'))
-#assert uqc is None
-## second time pick #800080
-#uqc = colors.choose_color("Initial s.b. GREEN pick #800080",QColor('#008000'))
-#assert uqc.name() == '#800080'
+# manual - check color dialog
+# first time hit cancel
+uqc = colors.choose_color("Initial s.b. BLUE hit CANCEL",QColor('#000080'))
+assert uqc is None
+# second time pick #800080
+uqc = colors.choose_color("Initial s.b. GREEN pick #800080",QColor('#008000'))
+assert uqc.name() == '#800080'
