@@ -54,7 +54,7 @@ test_path = os.path.dirname(my_path)
 files_path = os.path.join(test_path,'Files')
 ppqt_path = os.path.dirname(test_path)
 sys.path.append(ppqt_path)
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QWidget
 app = QApplication(sys.argv)
 app.setOrganizationName("PGDP")
 app.setOrganizationDomain("pgdp.net")
@@ -64,11 +64,30 @@ settings = QSettings()
 import fonts
 fonts.initialize(settings)
 
-def focussed(n):
-    print('focusser call with ',n)
+class miniMW(QWidget):
+    PANEL_DICT = {
+        'Images':None,
+        'Notes':None,
+        'Find' :None,
+        'Pages':None,
+        'Chars':None,
+        'Words':None,
+        'Fnote':None,
+        'Loupe':None,
+        'default' : ['Images','Notes','Find','Words','Chars','Pages','Fnote','Loupe'],
+        'tab_list' : None, # supplied in Book, updated in focus_me
+        'current' : 0
+        }
+
+    def __init__(self):
+        super().__init__(None)
+    def focus_me(self,index):
+        print('focus call from ',str(index))
+mmw = miniMW()
+import utilities
 
 import book
-the_book = book.Book( 1, lambda:focussed(1) )
+the_book = book.Book( 1, mmw )
 # Do a File>New, this creates the edit model and view.
 the_book.new_empty()
 # grab the editview, no api defined or needed
@@ -79,17 +98,22 @@ text = '''1. Now is the time
 2. For all good bits
 3. To come to the aid
 4. Of their byte.
-'''
+'''*40
 em.setPlainText(text)
-
-ev.show()
-#app.exec_()
-#exit
-
-# now to the testing
 
 from PyQt5.QtTest import QTest
 from PyQt5.QtCore import Qt # namespace for keys etc.
+
+ev.show()
+while utilities.ok_cancel_msg('Make a selection','it will be centered'):
+    QTest.qWait(4000)
+    ev.center_this(ev.Editor.textCursor())
+
+app.exec_()
+exit()
+
+
+# now to the testing
 
 key_names = {
     'up':Qt.Key_Up,'dn':Qt.Key_Down,'lf':Qt.Key_Left,'rt':Qt.Key_Right
