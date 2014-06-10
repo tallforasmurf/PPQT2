@@ -147,6 +147,14 @@ assert fbbar.filename() == f_bar
 fbbar.writeLine('some data')
 assert os.path.isfile(bar_path)
 
+# Message routines
+utilities.info_msg('About to beep', 'When you dismiss this message')
+utilities.beep()
+assert utilities.ok_cancel_msg('Did you hear a beep?', 'OK for yes, Cancel for no')
+utilities.warning_msg('This is a warning','the very last warning')
+assert utilities.save_discard_cancel_msg('Click SAVE','save')
+assert not utilities.save_discard_cancel_msg('Click DISCARD','discard')
+assert utilities.save_discard_cancel_msg('Click CANCEL','cancel') is None
 
 mw.close()
 app.quit()
