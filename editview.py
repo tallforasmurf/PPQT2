@@ -56,6 +56,7 @@ Offers these additional methods:
     show_position(pos)   Same a show_this but for an integer position.
 
     go_to_block(tb)      given a text block, put the edit cursor at its start
+                         and show it via show_this.
 
     get_cursor()         Return a COPY of the current edit cursor.
     get_cursor_val()     Return a tuple of (pos, anchor)
@@ -91,6 +92,7 @@ import colors
 import logging
 editview_logger = logging.getLogger(name='editview')
 import constants as C
+import utilities
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
@@ -252,13 +254,12 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             tb = self.document.findBlockByLineNumber(lnum-1) # text block is origin-0
             if not tb.isValid() : raise ValueError
         except ValueError:
+            utilities.beep()
             editview_logger.info('Request for invalid line number {0}'.format(self.LineNumber.text()))
-            # TODO figure out how to beep
             # force update of line # display
             self._cursor_moved(force=True) # restore current line nbr the easy way
             self.Editor.setFocus(Qt.TabFocusReason)
             return
-        # TODO make it self.center_this instead
         self.go_to_block(tb)
 
     # This slot receives the ReturnPresssed signal from ImageFilename.
@@ -270,8 +271,8 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         if pn is not None :
             self.center_position(self.page_model.position(pn))
         else : # unknown image filename, restore current value
+            utilities.beep()
             editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
-            # TODO figure out how to beep
             self._cursor_moved(force=True)
             self.Editor.setFocus(Qt.TabFocusReason)
 
@@ -481,9 +482,47 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
             self.setFont(fonts.get_general())
         self.Editor.setFont(fonts.get_fixed(self.my_book.get_font_size()))
 
-    # Center a position or text selection on in the middle of the window.
-    # If a selection is taller than 1/2 the window height, put the top of
-    # the selection higher, but in no case off the top of the window.
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    #                 Cursor positioning
+    #
+    # Position the cursor at the head of a given QTextBlock (line)
+    # and get the focus. Does not assume tb is a valid textblock.
+
+    def go_to_block(self, tb):
+        if not tb.isValid():
+            tb = self.document.end()
+        self.show_position(tb.position())
+
+    # Position the document to show a given character position.
+    # Breaks the current selection if any. Does not necessarily
+    # center the new position.
+
+    def show_position(self, pos):
+        tc = QTextCursor(self.Editor.textCursor())
+        tc.setPosition(pos)
+        self.show_this(tc)
+
+    # Make a selection visible. Breaks the current selection if any.
+    # Does not necessarily center the new selection.
+
+    def show_this(self, tc):
+        self.Editor.setTextCursor(tc)
+        self._cursor_moved()
+        self.Editor.setFocus(Qt.TabFocusReason)
+
+    # Center a position or text selection in the middle of the window. Called
+    # e.g. from Find to display the found selection. If a selection is taller
+    # than 1/2 the window height, put the top of the selection higher, but in
+    # no case off the top of the window.
+    #
+    # Two problems arise: One, cursorRect gives only the height of the actual
+    # cursor, not of the selected text. To find out the height of the full
+    # selection we have to get a cursorRect for the start of the selection,
+    # and another for the end of it. Two, the rectangles returned by
+    # .cursorRect() and by .viewport().geometry() are in pixel units, while
+    # the vertical scrollbar is sized in logical text lines. So we work out
+    # the adjustment as a fraction of the viewport, times the scrollbar's
+    # pageStep value to get lines.
 
     def center_position(self, pos):
         tc = self.Editor.textCursor()
@@ -491,30 +530,50 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.center_this(tc)
 
     def center_this(self, tc):
-        #TODO Implement properly  blockBoundingGeometry
-        self.show_this(tc)
-
-    # Position the cursor at a given document character position or the top
-    # of a selection. Call our _cursor_moved slot to update the widgets at the
-    # bottom of the window, because just setting our text cursor doesn't do
-    # that. Make sure the focus ends up in the editor.
-
-    def show_position(self, pos):
-        tc = self.Editor.textCursor()
-        tc.setPosition(pos)
-        self.show_this(tc)
-
-    def show_this(self, tc):
+        # Establish the selection so we can play with the cursor
         self.Editor.setTextCursor(tc)
+        # Get the ends of the selection in character position units.
+        top_point = tc.selectionStart()
+        bot_point = tc.selectionEnd()
+        # Get the topmost pixel of the topmost character.
+        tc.setPosition(top_point)
+        selection_top = self.Editor.cursorRect(tc).top()
+        # Save the height in pixels of one line
+        line_height = self.Editor.cursorRect(tc).height()
+        # Get the bottom-most pixel of the bottom-most character
+        tc.setPosition(bot_point)
+        selection_bot = self.Editor.cursorRect(tc).bottom()
+        # Height of the selection in pixels, versus 1/2 the viewport height
+        selection_height = selection_bot - selection_top + 1
+        view_height = self.Editor.viewport().geometry().height()
+        view_half = int(view_height/2)
+        pixel_adjustment = 0
+        if selection_height < view_half :
+            # Selected text is less than half the window height. Center the
+            # top of the selection by making cursor_top equal view_half.
+            pixel_adjustment = selection_top - view_half # may be negative
+        else :
+            # selected text is taller than half the window.
+            if selection_height < (view_height - line_height) :
+                # All selected text fits in the viewport (with a little
+                # free): center the selection in the viewport.
+                pixel_adjustment = (selection_top + (selection_height/2)) - view_half
+            else :
+                # Selection is bigger than the viewport. Put the top of the
+                # text near the top of the viewport.
+                pixel_adjustment = selection_top - line_height
+        # Convert the pixel adjustment to a line-adjustment, based on the
+        # assumption that one scrollbar pageStep is the height of the viewport
+        # in lines.
+        adjust_fraction = pixel_adjustment / view_height
+        vscroller = self.Editor.verticalScrollBar()
+        page_step = vscroller.pageStep()
+        adjust_lines = int(page_step * adjust_fraction)
+        target = vscroller.value() + adjust_lines
+        if (target >= 0) and (target <= vscroller.maximum()) :
+            vscroller.setValue(target)
         self._cursor_moved()
         self.Editor.setFocus(Qt.TabFocusReason)
-
-    # Position the cursor at the head of a given QTextBlock (line)
-    # and get the focus. Does not assume tb is a valid textblock.
-    def go_to_block(self, tb):
-        if not tb.isValid():
-            tb = self.document.end()
-        self.show_position(tb.position())
 
     # Lots of other code needs a textcursor for the current document.
     def get_cursor(self):
