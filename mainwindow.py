@@ -120,6 +120,8 @@ import metadata
 import book
 mainwindow_logger = logging.getLogger(name='main_window')
 
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
 # Dicts copied from the following are used to keep track of the several
 # view-panel objects owned by each Book. A new Book gets a copy and fills
 # it in with references to its view objects. The main window keeps a copy
@@ -176,15 +178,13 @@ class MainWindow(QMainWindow):
         # Initialize the set of files actually open when we shut down.
         last_session = self._read_flist('mainwindow/open_files')
         if len(last_session) : # there were some files open
-            if utilities.ok_cancel_msg(
-                text= _TR("MainWindow",
-                          "Re-open files from last session?",
-                          "OK/Cancel message") ,
-                info= _TR("MainWindow",
-                          "%n file(s) were open. Click OK to re-open all",
-                          "OK/Cancel message",
+            if len(last_session) == 1 :
+                msg = _TR('Start-up', 'One book was open at the end of the last session.')
+            else:
+                msg = _TR('Start-up', '%n books were open at the end of the last session.',
                           n=len(last_session) )
-                ) :
+            info = _TR("Start-up", "Click OK to re-open all")
+            if utilities.ok_cancel_msg( msg, info) :
                 for file_path in last_session :
                     ftbs = utilities.path_to_stream(file_path)
                     if ftbs :
@@ -194,19 +194,20 @@ class MainWindow(QMainWindow):
             # none, or the user said No, or perhaps they were not found.
             self._new() # open one, new, book.
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Make a selected book the focus of all panels. This happens when a file
     # is first opened, and when a Book's editview widget gets focus-in.
     # Display that Book's various "-view" objects in panels, in the order
-    # that the user left them and with the same active panel as before.
-    # Note that a book (editview) can get a focus-in event when it was already
-    # the focus in this sense, for example if this app was hidden and then
+    # that the user left them and with the same active panel as before. Note
+    # that a book (editview) can get a focus-in event when it was already the
+    # focus in this sense, for example if this app was hidden and then
     # brought to the front. So be prepared for redundant calls.
     def focus_me(self, book_index):
         outgoing = self.focus_book
         if book_index == outgoing : return
         # Record the user's arrangement of panels for the outgoing book,
         # as a list of tuples ('tabname', widget) in correct sequence.
-        if outgoing is not None : # false only first time
+        if outgoing is not None : # false first time and after File>Close
             out_panel_dict = self.open_books[outgoing].panel_dict
             widg_list = []
             for ix in range( self.panel_tabset.count() ):
@@ -228,6 +229,7 @@ class MainWindow(QMainWindow):
                 self.open_books[book_index].get_edit_view() ) )
         self.focus_book = book_index
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Implement File>New:
     #    Create a Book object
     #    Call its new_empty() method,
@@ -244,6 +246,18 @@ class MainWindow(QMainWindow):
             new_book.get_edit_view(), new_book.get_book_name() )
         self.focus_me(seq)
 
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Quick check to see if a file path is already open. Called from _open
+    # and from _build_recent (menu). Returned value is the sequence number
+    # of the open book, or None.
+    def _is_already_open(self, path):
+        for (seq, book_object) in self.open_books.items():
+            if path == book_object.get_book_full_path() :
+                return seq
+        return None
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Implement File>Open. Dialog with the user (file dialog starts with
     # last-used book path). Result is None or a FileBasedTextStream that we
     # pass to _open().
@@ -251,14 +265,20 @@ class MainWindow(QMainWindow):
         fbts = utilities.ask_existing_file(
             _TR( 'File:Open dialog','Select a book file to open'),
             parent=self, starting_path=self.last_open_path)
-        if fbts :
-            self._open( fbts )
+        if fbts : # yes a readable file was chosen.
+            seq = self._is_already_open(fbts.fullpath())
+            if seq is None :
+                self._open( fbts )
+            else :
+                self.focus_me(seq)
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Open a file, given the document as a FileBasedTextStream
     # * determine if there is a .meta file, a .bin file, or neither
     # * create a metadata input stream if possible
     # * if no .meta, look for good_words and bad_words
-    # * if the only open book is an unmodified "Untitled-0", delete it
+    # * if the only open book is the "Untitled-0" made at startup and
+    #     it is unmodified, delete it.
     # * call Book.old_book() or .new_book() as appropriate
     # * add this book's editview to the edit tabset
     # * give this book the focus.
@@ -272,7 +292,7 @@ class MainWindow(QMainWindow):
         meta_stream = utilities.related_suffix(fbts, 'meta', encoding=C.ENCODING_UTF)
         if meta_stream is None :
             # opening book without .meta; look for .bin which is always LTN1
-            bin_stream = utilities.related_suffix(fbts,'.bin',encoding=C.ENCODING_LATIN)
+            bin_stream = utilities.related_suffix(fbts,'bin',encoding=C.ENCODING_LATIN)
             if bin_stream :
                 gg_stream = metadata.translate_bin(bin_stream,fbts)
             # Look for good_words.txt, bad_words.txt.
@@ -301,13 +321,151 @@ class MainWindow(QMainWindow):
         self.editview_tabset.addTab(a_book.get_edit_view(), a_book.get_book_name())
         self.focus_me(seq)
         self.last_open_path = fbts.folderpath() # start for next open or save
+        self._add_to_recent(fbts.fullpath())
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Save the book that is currently in focus under its present name, if it
+    # is modified. Return True if the save completed, else False.
+    # If the active book is a New one, force a Save-As action instead.
+    def _save(self):
+        active_book = self.open_books[self.focus_book]
+        if active_book.get_save_needed() :
+            if active_book.get_book_name().startswith('Untitled-'):
+                return self._save_as()
+            doc_stream = utilities.path_to_output( active_book.get_book_full_path() )
+            if doc_stream : # successfully opened for output
+                meta_stream = utilities.related_output(doc_stream,'meta')
+                if not meta_stream:
+                    utilities.warning_msg(
+                        _TR('File:Save', 'Unable to create metadata file.'),
+                        _TR('File:Save', 'Use loglevel=error for details.') )
+                    return False
+            else:
+                utilities.warning_msg(
+                    _TR('File:Save', 'Unable to open file for writing.'),
+                    _TR('File:Save', 'Use loglevel=error for details.') )
+                return False
+            return active_book.save_book(doc_stream, meta_stream)
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Implement Save As. Query the user for a file path and get that as an
+    # output FileBasedTextStream. Call the book to rename itself, which makes
+    # it modified. Change the text in the edit tab to match. Discard the FBTS
+    # and call _save which will make another one.
+    def _save_as(self):
+        active_book = self.open_books[self.focus_book]
+        fbts = utilities.ask_saving_file(
+            _TR('File:Save As dialog',
+                'Choose a new location and filename for this book' ),
+            self, active_book.get_book_folder() )
+        if fbts :
+            active_book.rename_book(fbts)
+            self.editview_tabset.setTabText(
+                self.editview_tabset.currentIndex(),
+                fbts.filename() )
+            self._add_to_recent(fbts.fullpath())
+            fbts = None # discard that object
+            return self._save()
+        else:
+            return False
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Implement Close. If the active book is modified, ask if it should
+    # be saved. If it is 'Untitled-' that will turn into Save As.
+    def _close(self):
+        active_book = self.open_books[self.focus_book]
+        if active_book.get_save_needed() :
+            # Compose message of translated parts because _TR does not
+            # allow for incorporating strings, only numbers.
+            msg = _TR('File Close', 'Book file ', 'start of message')
+            msg += active_book.get_book_name()
+            msg += _TR('File Close', ' has been modified!', 'end of message')
+            ret = utilities.save_discard_cancel_msg(
+                msg,
+                info = _TR('File Close',
+                           'Save it, Discard changes, or Cancel Closing?')
+                )
+            if ret is None : # Cancel
+                return
+            if ret : # True==Save
+                self._save()
+        # Now, get rid of the active book in 3 steps,
+        # 1, close the book's tab in the editview tabset. We don't know which
+        # tab it is, because the user can drag tabs around.
+        for i in range(self.editview_tabset.count()):
+            if active_book.get_book_name() == self.editview_tabset.tabText(i):
+                break
+        self.editview_tabset.removeTab(i)
+        # 2, remove the book from out dict of open books. Set focus_book, the
+        # index of the active book, to None, so that focus_me will not try to
+        # save its view panels.
+        del self.open_books[self.focus_book]
+        self.focus_book = None
+        # 3, focus on some other book, the rightmost one if there are any,
+        # or else create a new book.
+        if len(self.open_books) :
+            # There is at least one book still open. Get the book name
+            # from the rightmost tab and then find that book in our dict.
+            bookname = self.editview_tabset.tabText(self.editview_tabset.count()-1)
+            for (seq, book_object) in self.open_books.items():
+                if bookname == book_object.get_book_name() : break
+            self.focus_me(seq)
+        else:
+            self._new()
+        # the focus_me removed all references to active_book's view panels
+        # except those in its PANEL_DICT. So the following should schedule
+        # the book and its associated objects for garbage collect.
+        active_book = None
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Maintain the list of "recent" file paths. The list is kept in usage
+    # order, so if a path is in the list now, delete it and then add it to
+    # the front. Keep it at a max of 9 items by deleting the oldest if
+    # necessary.
+    def _add_to_recent(self, path):
+        if path in self.recent_files :
+            del self.recent_files[self.recent_files.index(path)]
+        if len(self.recent_files) > 8 :
+            del self.recent_files[8]
+        self.recent_files.insert(0,path)
+
+    # Upon the aboutToShow signal from the File menu, populate the Recent
+    # submenu with a list of files, but only the ones that are currently
+    # accessible. If one is on a volume (e.g. USB stick) and you unmount the
+    # volume, the path should not appear in the menu until the volume is
+    # mounted again.
+    def _open_recent(self, path):
+        fbts = utilities.path_to_stream(path)
+        if fbts :
+            self._open(fbts)
+
+    def _build_recent(self):
+        active_files = []
+        for path in self.recent_files:
+            seq = self._is_already_open(path)
+            if (seq is None) and utilities.file_is_accessible(path) :
+                active_files.append( (utilities.file_split(path),path) )
+        if 0 == len(active_files):
+            self.recent_menu.setEnabled(False)
+            return
+        self.recent_menu.setEnabled(True)
+        self.recent_menu.clear()
+        i = 1
+        for ((fname, folder), path) in active_files:
+            act = self.recent_menu.addAction(
+                '{0} {1} {2}'.format(i,fname,folder)
+                )
+            act.triggered.connect( lambda: self._open_recent(path) )
+            i += 1
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # User has chosen a different font; if it is the general font, set
     # that here so it will propogate to our children.
     def _font_change(self, is_mono):
         if not is_mono:
             self.setFont(fonts.get_general())
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Create the UI contained within this QMainWindow object. This is a lean
     # main window indeed. We have no toolbar, no status bar, no dock,
     # nothing. Just a splitter with, on the left, a tabset for editviews, and
@@ -340,10 +498,10 @@ class MainWindow(QMainWindow):
             self.panel_tabset.addTab(widj,key)
             self.panel_dict[key] = widj
         # Size and position ourself based on saved settings.
-        self.resize(self.settings.value("mainwindow/size", QSize(900, 600)))
         self.move(self.settings.value("mainwindow/position", QPoint(50,50)))
+        self.resize(self.settings.value("mainwindow/size", C.STARTUP_DEFAULT_SIZE))
         self.splitter.restoreState(
-           self.settings.value("mainwindow/splitter",QByteArray()))
+           self.settings.value("mainwindow/splitter",C.STARTUP_DEFAULT_SPLITTER) )
         # Store a reference to the application menubar. In Mac OS this
         # is a parentless menubar; other platforms it is the default.
         if C.PLATFORM_IS_MAC :
@@ -353,20 +511,37 @@ class MainWindow(QMainWindow):
         # Create the File menu, located in our menu_bar.
         self.file_menu = self.menu_bar.addMenu(_TR('Menu name', '&File'))
         # Populate the File menu with actions.
-        #  New -> _new()
+        #  File:New -> _new()
         work = self.file_menu.addAction( _TR('File menu command','&New') )
         work.setShortcut(QKeySequence.New)
         work.setToolTip( _TR('File:New tooltip','Create a new, empty document') )
         work.triggered.connect(self._new)
-        #  Open -> _file_open()
+        #  File:Open -> _file_open()
         work = self.file_menu.addAction( _TR('File menu command','&Open') )
         work.setShortcut(QKeySequence.Open)
         work.setToolTip( _TR('File:Open tooltip','Open an existing book') )
         work.triggered.connect(self._file_open)
-        #  Save -> _file_save()
+        #  File:Save -> _file_save()
+        work = self.file_menu.addAction( _TR('File menu command', '&Save') )
+        work.setShortcut(QKeySequence.Save)
+        work.setToolTip( _TR('File:Save tooltip','Save the active book') )
+        work.triggered.connect(self._save)
         #  Save As -> _file_save_as()
+        work = self.file_menu.addAction( _TR('File menu command', 'Save &As') )
+        work.setShortcut(QKeySequence.SaveAs)
+        work.setToolTip( _TR('File:Save As tooltip','Save the active book under a new name') )
+        work.triggered.connect(self._save_as)
         #  Close -> _close()
-        #  Recent... gets a sub-menu
+        work = self.file_menu.addAction( _TR('File menu command', 'Close') )
+        work.setShortcut(QKeySequence.Close)
+        work.setToolTip( _TR('File:Close tooltip', 'Close the active book') )
+        work.triggered.connect(self._close)
+        # Open Recent gets a submenu that is added to the File menu.
+        # The aboutToShow signal is connected to our _build_recent slot.
+        self.recent_menu = QMenu( _TR('Sub-menu name', '&Recent Files') )
+        work = self.file_menu.addMenu( self.recent_menu )
+        work.setToolTip( _TR('File:Recent tooltip', 'List of recently-used files to open') )
+        self.file_menu.aboutToShow.connect(self._build_recent)
         #  divider if not Mac
         if not C.PLATFORM_IS_MAC:
             self.file_menu.addSeparator()
@@ -384,6 +559,9 @@ class MainWindow(QMainWindow):
         self.recent_files = self._read_flist('mainwindow/recent_files')
 
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Functions related to shutdown and management of settings.
+    #
     # Factor out the job of reading/writing a list of files in the settings.
     # Input is a settings array key string like 'mainwindow/recent_files'
     # Output is a possibly empty list of canonical-file-path strings.
@@ -407,10 +585,32 @@ class MainWindow(QMainWindow):
     # Reimplement QWidget.closeEvent in order to save any open files
     # and update the settings.
     def closeEvent(self, event):
-        # Go through the list of currently open books, and for each one that
-        # is modified, focus it and ask if the user wants to save it. Saving
-        # a New document changes its name from Untitled-# to something else.
-        # TODO
+        # If there are any unsaved books, ask the user if they should be
+        # saved. If the answer is yes, try to do so.
+        unsaved = []
+        for (seq, book_object) in self.open_books.items() :
+            if book_object.get_save_needed() :
+                unsaved.append(seq)
+        if len(unsaved):
+            if len(unsaved) == 1 :
+                msg = _TR('Shutdown', 'There is one unsaved file')
+            else :
+                msg = _TR('Shutdown', 'There are %n unsaved files', n=len(unsaved))
+            ret = utilities.save_discard_cancel_msg(
+                msg, _TR('Shutdown', 'Save, Discard changes, or Cancel Quit?') )
+            if ret is None :
+                # user wants to cancel shutdown
+                event.ignore()
+                return
+            if ret :
+                # User want to save. Focus each unsaved file and call _save.
+                # For all but "Untitled-n" documents this will be silent. For
+                # those, it will open a save-as dialog. We ignore the return
+                # from this because we cannot distinguish between a cancelled
+                # file-open dialog and a file write error.
+                for seq in unsaved :
+                    self.focus_me(seq)
+                    self._save()
         # Clear the settings so that old values don't hang around
         self.settings.clear()
         # Tell the submodules to save their current global values.
@@ -419,7 +619,7 @@ class MainWindow(QMainWindow):
         dictionaries.shutdown(self.settings)
         # Save the list of currently-open files in the settings, but do not
         # save any whose filename matches "Untitled-#" because that is an
-        # unsaved New file.
+        # unsaved New file (which the user chose not to save, above).
         open_paths = []
         for (index, book_obj) in self.open_books.items() :
             if not book_obj.get_book_name().startswith('Untitled-'):
@@ -434,3 +634,4 @@ class MainWindow(QMainWindow):
         # Save user's choice of extras path
         self.settings.setValue("mainwindow/extras_path",get_extras_path())
         # and that's it, we are done finished, over & out.
+        event.accept()
