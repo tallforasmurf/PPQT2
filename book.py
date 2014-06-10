@@ -169,7 +169,7 @@ class Book(QObject):
     # Set modified status to False because we just loaded everything.
 
     def old_book(self, doc_stream, meta_stream):
-        self.book_name = doc_stream.basename()
+        self.book_name = doc_stream.filename()
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
@@ -193,7 +193,7 @@ class Book(QObject):
     # Default the cursor position to zero, in absence of metadata.
 
     def new_book(self, doc_stream, meta_stream, good_stream, bad_stream) :
-        self.book_name = doc_stream.basename()
+        self.book_name = doc_stream.filename()
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
@@ -232,7 +232,7 @@ class Book(QObject):
     # Give the book a new name and/or file path, and set book modified.
     # Input is a FileBasedTextStream. This implements File:Save As.
     def rename_book(self, doc_stream):
-        self.book_name = doc_stream.basename()
+        self.book_name = doc_stream.filename()
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
         self.editv.book_renamed(self.book_name)
