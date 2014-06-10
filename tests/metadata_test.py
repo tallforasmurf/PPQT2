@@ -30,7 +30,8 @@ path = os.path.dirname(path)
 sys.path.append(path)
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-import metadata # things to test and incidentally, MemoryStream
+import metadata # things to test
+import utilities # MetaStream
 #test utilities
 assert u'{{FOO}}' == metadata.open_string(u'FOO',None)
 assert u'{{FOO BAR}}' == metadata.open_string(u'FOO',u'BAR')
@@ -53,7 +54,7 @@ MGR = metadata.MetaMgr()
 # test reading, writing of VERSION, incidentally ignoring blank lines
 # garbage and leading and trailing spaces.
 
-mstream = metadata.MemoryStream()
+mstream = utilities.MemoryStream()
 mstream << '''
   garbage
 
@@ -71,13 +72,13 @@ x = log_stream.getvalue()
 assert len(x) == 0
 
 # Test writing metadata, which will be only VERSION
-mstream = metadata.MemoryStream()
+mstream = utilities.MemoryStream()
 MGR.write_meta(mstream)
 mstream.rewind()
 line = mstream.readLine()
 assert line == u'{{VERSION 2}}'
 # Test reading bad VERSION w/ log output
-mstream = metadata.MemoryStream()
+mstream = utilities.MemoryStream()
 mstream << '{{VERSION   }}'
 mstream.rewind()
 MGR.load_meta(mstream)
@@ -85,7 +86,7 @@ assert check_log('no parameter: assuming 1',logging.WARN)
 
 # Force execution of unknown_rdr and unknown_wtr
 # expecting warning log msgs
-mstream = metadata.MemoryStream()
+mstream = utilities.MemoryStream()
 mstream << '''
 {{NOTDEFINED}}
 ignored line
@@ -98,7 +99,7 @@ MGR.load_meta(mstream)
 assert check_log('No reader registered for',logging.ERROR)
 
 # When we read it back we should get nothing but version 2
-mstream = metadata.MemoryStream()
+mstream = utilities.MemoryStream()
 MGR.write_meta(mstream)
 mstream.rewind()
 line = mstream.readLine()
@@ -129,14 +130,14 @@ def t_wtr(qts,section):
 
 MGR.register(sentinel, t_rdr, t_wtr)
 
-mstream = metadata.MemoryStream()
+mstream = utilities.MemoryStream()
 expected = '{{'+sentinel+'}}\n'+data+'\n{{/'+sentinel+'}}\n'
 mstream << expected
 mstream.rewind()
 
 MGR.load_meta(mstream)
 assert called == 1
-mstream = metadata.MemoryStream()
+mstream = utilities.MemoryStream()
 MGR.write_meta(mstream)
 assert called == 2
 mstream.rewind()
