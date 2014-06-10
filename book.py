@@ -161,7 +161,7 @@ class Book(QObject):
         self.book_folder = ''
         self.book_full_path = ''
         self.editm.setModified(False)
-        self.editv = editview.EditView(self, self.mainwindow.focus_me)
+        self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence))
 
     # KNOWN BOOK: called to load a book that has a .meta file. Given:
     #   doc_stream  a FileBasedTextStream with the document text
@@ -179,7 +179,7 @@ class Book(QObject):
         self.editv.set_cursor(self.editv.make_cursor(self.edit_cursor[0],self.edit_cursor[1]))
         if 0 < self.pagem.page_count():
             # we have a book with page info, wake up the image viewer
-            self.imagev.set_path(book_folder)
+            self.imagev.set_path(self.book_folder)
             self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
 
     # FILE>OPEN a document that lacks an accompanying .meta file.
@@ -199,7 +199,7 @@ class Book(QObject):
         self.editm.setPlainText(doc_stream.readAll())
         self.editm.setModified(True)
         if meta_stream :
-            # Process the Guiguts metadata for page info            
+            # Process the Guiguts metadata for page info
             self.metamgr.load_meta(meta_stream)
         else :
             # develop page info from separator lines in text
@@ -227,7 +227,7 @@ class Book(QObject):
         self.metamgr.write_meta(meta_stream)
         self.editm.setModified(False)
         self.md_modified = False
-    
+
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Give the book a new name and/or file path, and set book modified.
     # Input is a FileBasedTextStream. This implements File:Save As.
@@ -235,6 +235,7 @@ class Book(QObject):
         self.book_name = doc_stream.basename()
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
+        self.editv.book_renamed(self.book_name)
         self.md_modified = True
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
