@@ -37,7 +37,7 @@ from PyQt5.QtCore import (
     QTextStream,
     QTextCodec,
     QByteArray)
-from PyQt5.QtWidgets import QFileDialog, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox
 import constants as C # for encoding names
 import logging
 utilities_logger = logging.getLogger(name='utilities')
@@ -294,10 +294,11 @@ def choose_from_list(title, explanation, item_list, parent=None, current=0):
     if ok : return item_text
     return None
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# General message routines.
-#
+# Make an annoying noise of some kind.
+
+def beep():
+    QApplication.beep()
+
 #Internal function to initialize a Qt message-box object with an icon,
 # a main message line, and an optional second message line.
 
