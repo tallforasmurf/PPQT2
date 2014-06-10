@@ -38,7 +38,7 @@ PLATFORM_IS_MAC = PLATFORM_NAME_STR.startswith('Darw')
 # default values for the rare startup where the settings are empty
 from PyQt5.QtCore import QSize
 STARTUP_DEFAULT_SPLITTER = b'\x00\x00\x00\xff\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x02"\x00\x00\x01\xec\x00\x00\x00\x00\x07\x01\x00\x00\x00\x01\x00'
-STARTUP_DEFAULT_SIZE = QSize(1024, 800)
+STARTUP_DEFAULT_SIZE = QSize(1024,600)
 
 # constant values for file encodings, just cause I was trained
 # not to go writing literal string constants everywhere
