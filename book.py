@@ -166,6 +166,9 @@ class Book(QObject):
     # KNOWN BOOK: called to load a book that has a .meta file. Given:
     #   doc_stream  a FileBasedTextStream with the document text
     #   meta_stream a text stream (file or memory-based) with the metadata
+    # Note the various file name items. Load the edit model from the stream.
+    # Create the edit view before reading the metadata, because if it has
+    # a point-size, we need somewhere to set it.
     # Set modified status to False because we just loaded everything.
 
     def old_book(self, doc_stream, meta_stream):
@@ -173,9 +176,9 @@ class Book(QObject):
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
-        self.metamgr.load_meta(meta_stream)
         self.editm.setModified(False)
         self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
+        self.metamgr.load_meta(meta_stream)
         self.editv.set_cursor(self.editv.make_cursor(self.edit_cursor[0],self.edit_cursor[1]))
         if 0 < self.pagem.page_count():
             # we have a book with page info, wake up the image viewer
