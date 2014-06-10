@@ -124,22 +124,32 @@ def _find_tags(path, tag_dict):
             path = os.getcwd()
         file_names = os.listdir(path)
     except OSError as E:
-        dictionaries_logger.error("OS error on path",path)
+        dictionaries_logger.error("OS error listing files in {0}".format(path))
         file_names = []
     except Exception:
-        dictionaries_logger.error("Unexpected error")
+        dictionaries_logger.error("Unexpected error listing files in {0}".format(path))
         file_names = []
+    aff_set = set()
+    dic_set = set()
     for one_name in file_names:
-        if one_name[-4:] == '.aff' :
-            # this is a lang.aff file, look for a matching lang.dic
-            lang = one_name[:-4]
-            if (lang + '.dic') not in file_names:
-                dictionaries_logger.error("Found {0}.aff but not {0}.dic".format(lang))
-                continue
-            if lang not in tag_dict :
-                tag_dict[lang] = path
-            else:
-                dictionaries_logger.info("Skipping {0} in {1}".format(lang,path))
+        if one_name[-4:] == '.aff':
+            aff_set.add(one_name[:-4])
+        if one_name[-4:] == '.dic':
+            dic_set.add(one_name[:-4])
+    pair_set = aff_set & dic_set # names with both .dic and .aff
+    for lang in pair_set:
+        if lang not in tag_dict :
+            tag_dict[lang] = path
+        else:
+            dictionaries_logger.info("Skipping {0} in {1}".format(lang,path))
+    no_dic = aff_set - pair_set # should be empty set
+    for lang in no_dic:
+        dictionaries_logger.error(
+            "Found {0}.aff but not {0}.dic in {1}".format(lang,path) )
+    no_aff = dic_set - pair_set # also s.b. empty set
+    for lang in no_aff:
+        dictionaries_logger.error(
+        "Found {0}.dic but not {0}.aff in {1}".format(lang,path) )
 
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
