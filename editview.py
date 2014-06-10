@@ -467,9 +467,9 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 PUBLIC METHODS
 
-    # Center a position or text selection on in the middle of the window.
-    # If a selection is taller than 1/2 the window height, put the top of
-    # the selection higher, but in no case off the top of the window.
+    # Called by the parent Book prior to a Save-As renaming the book.
+    def book_renamed(self,name):
+        self.DocName.setText(name)
 
     # Slot to receive the fontsChanged signal. If it is the UI font, set
     # that, which propogates to all children including Editor, so set the
@@ -480,6 +480,10 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         if not is_mono :
             self.setFont(fonts.get_general())
         self.Editor.setFont(fonts.get_fixed(self.my_book.get_font_size()))
+
+    # Center a position or text selection on in the middle of the window.
+    # If a selection is taller than 1/2 the window height, put the top of
+    # the selection higher, but in no case off the top of the window.
 
     def center_position(self, pos):
         tc = self.Editor.textCursor()
