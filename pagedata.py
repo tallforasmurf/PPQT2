@@ -399,8 +399,8 @@ class PageData(object):
     def filename(self, R):
         try :
             return self.filename_list[R]
-        except IndexError:
-            pagedata_logger.error('Invalid index {0} to filename'.format(R))
+        except:
+            pagedata_logger.info('Invalid index {0} to filename'.format(R))
             return None
 
     # Return the display form of the folio number based on its value and
