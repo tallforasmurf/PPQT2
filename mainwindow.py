@@ -195,16 +195,20 @@ class MainWindow(QMainWindow):
             self._new() # open one, new, book.
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    # Make a selected book the focus of all panels. This happens when a file
-    # is first opened, and when a Book's editview widget gets focus-in.
+    # Make a selected book the focus of all panels. This is called explicitly
+    # when a book is first created, and when the editview tabset changes the
+    # current selection. It is called also when an editview gets a focus-in
+    # event.
     # Display that Book's various "-view" objects in panels, in the order
     # that the user left them and with the same active panel as before. Note
     # that a book (editview) can get a focus-in event when it was already the
     # focus in this sense, for example if this app was hidden and then
     # brought to the front. So be prepared for redundant calls.
+
     def focus_me(self, book_index):
         outgoing = self.focus_book
         if book_index == outgoing : return
+        self.focus_book = book_index
         # Record the user's arrangement of panels for the outgoing book,
         # as a list of tuples ('tabname', widget) in correct sequence.
         if outgoing is not None : # false first time and after File>Close
@@ -227,7 +231,6 @@ class MainWindow(QMainWindow):
         self.editview_tabset.setCurrentIndex(
             self.editview_tabset.indexOf(
                 self.open_books[book_index].get_edit_view() ) )
-        self.focus_book = book_index
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Implement File>New:
@@ -392,9 +395,7 @@ class MainWindow(QMainWindow):
         # Now, get rid of the active book in 3 steps,
         # 1, close the book's tab in the editview tabset. We don't know which
         # tab it is, because the user can drag tabs around.
-        for i in range(self.editview_tabset.count()):
-            if active_book.get_book_name() == self.editview_tabset.tabText(i):
-                break
+        i = self.editview_tabset.indexOf(active_book.get_edit_view())
         self.editview_tabset.removeTab(i)
         # 2, remove the book from out dict of open books. Set focus_book, the
         # index of the active book, to None, so that focus_me will not try to
