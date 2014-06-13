@@ -179,11 +179,11 @@ class Book(QObject):
         self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
         self.editm.setModified(False)
         self.metamgr.load_meta(meta_stream)
-        self.editv.set_cursor(self.editv.make_cursor(self.edit_cursor[0],self.edit_cursor[1]))
         if 0 < self.pagem.page_count():
             # we have a book with page info, wake up the image viewer
             self.imagev.set_path(self.book_folder)
             self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
+        self.editv.set_cursor(self.editv.make_cursor(self.edit_cursor[0],self.edit_cursor[1]))
 
     # FILE>OPEN a document that lacks an accompanying .meta file.
     #
@@ -219,6 +219,7 @@ class Book(QObject):
             # we have a book with page info, wake up the image viewer
             self.imagev.set_path(self.book_folder)
             self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
+        self.editv.set_cursor(self.editv.make_cursor(0,0))
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # The only save function: called from main window with two streams
