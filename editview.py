@@ -214,7 +214,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # Connect the Editor's cursorPositionChanged signal to our slot
         self.Editor.cursorPositionChanged.connect(self._cursor_moved)
         # Fill in the line and column number by faking that signal
-        self._cursor_moved()
+        self._cursor_moved(force=True)
         # Filter the Editor's key events. We have to do this because,
         # when the Editor widget is created by Qt Creator, we do not
         # get the option of inserting a keyPressEvent() slot in it.
@@ -222,6 +222,8 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # Create and install our context menu
         self.context_menu = self._make_context_menu()
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
+        # Push the focus into the editor
+        self.Editor.setFocus(Qt.TabFocusReason)
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 INTERNAL METHODS

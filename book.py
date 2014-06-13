@@ -160,8 +160,8 @@ class Book(QObject):
         self.book_name = 'Untitled-{0}'.format(self.sequence)
         self.book_folder = ''
         self.book_full_path = ''
-        self.editm.setModified(False)
         self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence))
+        self.editm.setModified(False)
 
     # KNOWN BOOK: called to load a book that has a .meta file. Given:
     #   doc_stream  a FileBasedTextStream with the document text
@@ -176,8 +176,8 @@ class Book(QObject):
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
-        self.editm.setModified(False)
         self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
+        self.editm.setModified(False)
         self.metamgr.load_meta(meta_stream)
         self.editv.set_cursor(self.editv.make_cursor(self.edit_cursor[0],self.edit_cursor[1]))
         if 0 < self.pagem.page_count():
