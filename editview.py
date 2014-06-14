@@ -223,7 +223,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.context_menu = self._make_context_menu()
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
         # Push the focus into the editor
-        self.Editor.setFocus(Qt.TabFocusReason)
+        self.Editor.setFocus(Qt.MouseFocusReason)
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 INTERNAL METHODS
@@ -312,7 +312,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress :
             return self._editorKeyPressEvent(event)
-        if event.type() == QEvent.FocusIn :
+        if event.type() == QEvent.Show :
             self.focusser()
         return False
 
