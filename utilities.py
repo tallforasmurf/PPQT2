@@ -412,7 +412,9 @@ _Evs = {24:'WindowActivate',
         31:'Wheel',
         82:'ContextMenu',
         51:'ShortcutOverride',
-        18:'Hide'
+        18:'Hide',
+        103:'WindowBlocked',
+        104:'WindowUnblocked'
     }
 _IQs = {
     Qt.ImEnabled:'ImEnable',
@@ -441,13 +443,13 @@ def printIMQ(event):
 
 def printEvent(event):
     t = int(event.type())
-    if t == 7 : # Key Release (don't print key press)
+    if t == 7 : # Key Release gets special details
         printKeyEvent(event)
     elif t in _Mevs :
         printMouseEvent(event)
     elif t == 207:
-        printIMQ(event)
+        printIMQ(event) # whatever that is
     else:
-        n = str(t)
-        if t in _Evs : n = _Evs[t]
-        print('event type ',n)
+        s = 'spontaneous' if (t != 12 and event.spontaneous()) else ''
+        n = _Evs[t] if t in _Evs else str(t)
+        print('event type ',n,s)
