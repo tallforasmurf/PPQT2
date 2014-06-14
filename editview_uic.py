@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'editview.ui'
 #
-# Created: Tue Apr  1 13:00:12 2014
+# Created: Sat Jun 14 08:18:58 2014
 #      by: PyQt5 UI code generator 5.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -19,6 +19,7 @@ class Ui_EditViewWidget(object):
         sizePolicy.setHeightForWidth(EditViewWidget.sizePolicy().hasHeightForWidth())
         EditViewWidget.setSizePolicy(sizePolicy)
         EditViewWidget.setMinimumSize(QtCore.QSize(250, 250))
+        EditViewWidget.setFocusPolicy(QtCore.Qt.StrongFocus)
         EditViewWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         EditViewWidget.setWindowTitle("Form")
         EditViewWidget.setToolTip("")
@@ -40,7 +41,7 @@ class Ui_EditViewWidget(object):
         font = QtGui.QFont()
         font.setKerning(False)
         self.Editor.setFont(font)
-        self.Editor.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.Editor.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.Editor.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         self.Editor.setAcceptDrops(False)
         self.Editor.setStatusTip("")
@@ -81,7 +82,7 @@ class Ui_EditViewWidget(object):
         self.DocName.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.DocName.setObjectName("DocName")
         self.horizontalLayout.addWidget(self.DocName)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
         self.FolioLabel = QtWidgets.QLabel(self.frame)
         self.FolioLabel.setToolTip("")
@@ -103,7 +104,7 @@ class Ui_EditViewWidget(object):
         self.Folio.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.Folio.setObjectName("Folio")
         self.horizontalLayout.addWidget(self.Folio)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem1)
         self.ImageFilenameLabel = QtWidgets.QLabel(self.frame)
         self.ImageFilenameLabel.setToolTip("")
@@ -130,7 +131,7 @@ class Ui_EditViewWidget(object):
         self.ImageFilename.setPlaceholderText("")
         self.ImageFilename.setObjectName("ImageFilename")
         self.horizontalLayout.addWidget(self.ImageFilename)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem2 = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem2)
         self.LineNumberLabel = QtWidgets.QLabel(self.frame)
         self.LineNumberLabel.setToolTip("")
@@ -158,7 +159,7 @@ class Ui_EditViewWidget(object):
         self.LineNumber.setCursorMoveStyle(QtCore.Qt.LogicalMoveStyle)
         self.LineNumber.setObjectName("LineNumber")
         self.horizontalLayout.addWidget(self.LineNumber)
-        spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem3 = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem3)
         self.ColNumberLabel = QtWidgets.QLabel(self.frame)
         self.ColNumberLabel.setToolTip("")
