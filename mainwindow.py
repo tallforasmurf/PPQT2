@@ -48,14 +48,12 @@ from PyQt5.QtCore import (
     Qt,
     QByteArray,
     QCoreApplication,
-    QDir, QFile, QFileInfo,QIODevice,
     QPoint,
     QSize
     )
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
     QAction,
-    QFileDialog,
     QLabel,
     QMainWindow,
     QMenu,
@@ -277,6 +275,9 @@ class MainWindow(QMainWindow):
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Open a file, given the document as a FileBasedTextStream
+    # * if file opened is fname.meta, look for a file named fname; if it
+    #   exists open it instead, e.g. given foo.txt.meta, open foo.txt.
+    #   If it doesn't exist, tell the user and exit.
     # * determine if there is a .meta file, a .bin file, or neither
     # * create a metadata input stream if possible
     # * if no .meta, look for good_words and bad_words
@@ -287,7 +288,16 @@ class MainWindow(QMainWindow):
     # * give this book the focus.
 
     def _open(self, fbts):
-        base_name = fbts.basename()
+        if 'meta' == fbts.suffix():
+            fb2 = utilities.file_less_suffix(fbts)
+            if fb2 is None :
+                m1 = _TR('File:Open','Cannot open a .meta file alone')
+                m2 = _TR('File:Open','There is no book file matching ',
+                         'filename follows this sentence') + fbts.filename()
+                utilities.warning_msg(m1, m2)
+                return
+            # we see foo.txt with foo.txt.meta, silently open it
+            fbts = fb2
         gw_stream = None
         bw_stream = None
         gg_stream = None
