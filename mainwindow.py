@@ -280,7 +280,7 @@ class MainWindow(QMainWindow):
     # * determine if there is a .meta file, a .bin file, or neither
     # * create a metadata input stream if possible
     # * if no .meta, look for good_words and bad_words
-    # * if the only open book is the "Untitled-0" made at startup and
+    # * if the only open book is an "Untitled-n" and
     #     it is unmodified, delete it.
     # * call Book.old_book() or .new_book() as appropriate
     # * add this book's editview to the edit tabset
@@ -302,10 +302,12 @@ class MainWindow(QMainWindow):
             gw_stream = utilities.related_file( fbts, 'good_words*.*' )
             bw_stream = utilities.related_file( fbts, 'bad_words*.*' )
         seq = self.book_number
-        # If opening a book, and the only open book is the default new one
-        # created at startup, and it has not been modified, get rid of it.
-        if seq == 1 \
-        and self.open_books[0].get_book_name() == 'Untitled-0' \
+        # If the only open book is the new one created at startup or when all
+        # books are closed (which will have key 0), and it has not been
+        # modified, get rid of it.
+        if len(self.open_books) == 1 \
+        and 0 == list(self.open_books.keys())[0] \
+        and self.open_books[0].get_book_name().startswith('Untitled-') \
         and not self.open_books[0].get_save_needed() :
             self.editview_tabset.clear()
             self.panel_tabset.clear()
@@ -412,6 +414,7 @@ class MainWindow(QMainWindow):
                 if bookname == book_object.get_book_name() : break
             self.focus_me(seq)
         else:
+            self.book_number = 0 # restart the sequence
             self._new()
         # the focus_me removed all references to active_book's view panels
         # except those in its PANEL_DICT. So the following should schedule
