@@ -118,7 +118,7 @@ class MemoryStream(QTextStream):
 # It then began to sprout useful methods:
 #   rewind() to prepare for a second reading
 #   writeline(str) to write a string with return
-#   basename() to return the filename without its suffix
+#   basename() to return the filename without its *final* suffix
 #   filename() to return the filename with suffix(es)
 #   folderpath() to return the canonical path to the containing folder
 
@@ -135,7 +135,7 @@ class FileBasedTextStream(QTextStream):
     def basename(self):
         if self.qfi is None:
             self.qfi = QFileInfo(self.saved_file)
-        return self.qfi.baseName()
+        return self.qfi.completeBaseName()
     def filename(self):
         if self.qfi is None:
             self.qfi = QFileInfo(self.saved_file)
