@@ -133,6 +133,8 @@ class FileBasedTextStream(QTextStream):
     def writeLine(self, str):
         self << str
         self << '\n'
+    def open_mode(self):
+        return self.saved_file.openMode()
     def basename(self):
         if self.qfi is None:
             self.qfi = QFileInfo(self.saved_file)
@@ -229,12 +231,25 @@ def related_file(FBTS, filename, encoding=None):
         return _qfile_to_stream(a_file, QIODevice.ReadOnly, encoding)
     return None
 
-# Given a FileBasedTextStream, look for a file with the same basename but a
-# different suffix, and if found, return a new stream for it.
+# Given a FileBasedTextStream, look for a file with the same filename plus an
+# additional suffix (e.g. foo.html.meta or foo.txt.bin) and if found, return
+# a new stream for it.
 
 def related_suffix(FBTS, suffix, encoding=None):
-    target = FBTS.basename() + '.' + suffix
+    target = FBTS.filename() + '.' + suffix
     return related_file(FBTS, target, encoding)
+
+# Given a FileBasedTextStream, look for a file with the same basename
+# (e.g. given foo.html.meta, look for foo.html) and if there is just
+# one such, return a new stream for it.
+
+def file_less_suffix(FBTS):
+    qd = QDir( FBTS.folderpath() )
+    qd.setFilter(QDir.Files | QDir.Readable)
+    if qd.exists(FBTS.basename()):
+        a_file = QFile( qd.absoluteFilePath(FBTS.basename()) )
+        return _qfile_to_stream(a_file, FBTS.open_mode())
+    return None
 
 # The following is a wrapper on QFileDialog.getSaveFileName, the Qt dialog
 # for getting a path to a writeable file path.
