@@ -204,6 +204,8 @@ class MainWindow(QMainWindow):
     # brought to the front. So be prepared for redundant calls.
 
     def focus_me(self, book_index):
+        print('focusing {0} = {1}'.format(book_index,
+                                          self.open_books[book_index].get_book_name()))
         outgoing = self.focus_book
         if book_index == outgoing : return
         self.focus_book = book_index
@@ -388,13 +390,14 @@ class MainWindow(QMainWindow):
     # Implement Close. If the active book is modified, ask if it should
     # be saved. If it is 'Untitled-' that will turn into Save As.
     def _close(self):
-        active_book = self.open_books[self.focus_book]
-        if active_book.get_save_needed() :
+        target_index = self.focus_book # active edit tab is to close
+        target_book = self.open_books[target_index]
+        if target_book.get_save_needed() :
             # Compose message of translated parts because _TR does not
             # allow for incorporating strings, only numbers.
-            msg = _TR('File Close', 'Book file ', 'start of message')
-            msg += active_book.get_book_name()
-            msg += _TR('File Close', ' has been modified!', 'end of message')
+            msg = _TR('File Close', 'Book file ', 'filename inserted next')
+            msg += target_book.get_book_name()
+            msg += _TR('File Close', ' has been modified!', 'follows filename')
             ret = utilities.save_discard_cancel_msg(
                 msg,
                 info = _TR('File Close',
@@ -407,29 +410,26 @@ class MainWindow(QMainWindow):
         # Now, get rid of the active book in 3 steps,
         # 1, close the book's tab in the editview tabset. We don't know which
         # tab it is, because the user can drag tabs around.
-        i = self.editview_tabset.indexOf(active_book.get_edit_view())
+        i = self.editview_tabset.indexOf(target_book.get_edit_view())
+        # The following causes another tab to be focussed, changing self.focus_book
+        # and saving target_books tabs in target_book, not that we care.
         self.editview_tabset.removeTab(i)
-        # 2, remove the book from out dict of open books. Set focus_book, the
-        # index of the active book, to None, so that focus_me will not try to
-        # save its view panels.
-        del self.open_books[self.focus_book]
-        self.focus_book = None
-        # 3, focus on some other book, the rightmost one if there are any,
-        # or else create a new book.
-        if len(self.open_books) :
-            # There is at least one book still open. Get the book name
-            # from the rightmost tab and then find that book in our dict.
-            bookname = self.editview_tabset.tabText(self.editview_tabset.count()-1)
-            for (seq, book_object) in self.open_books.items():
-                if bookname == book_object.get_book_name() : break
-            self.focus_me(seq)
-        else:
+        # 2, remove the book from our dict of open books.
+        del self.open_books[target_index]
+        # 3, if there are any open books remaining, the tab widget has
+        # activated one of them by its rules, which caused a show signal and
+        # entry to _focus_me already. However if there are no remaining books
+        # there was no show signal or focus_me and the closed book's panels
+        # are still in the tabset.
+        if 0 == len(self.open_books) :
             self.book_number = 0 # restart the sequence
+            self.focus_book = None
             self._new()
-        # the focus_me removed all references to active_book's view panels
-        # except those in its PANEL_DICT. So the following should schedule
-        # the book and its associated objects for garbage collect.
-        active_book = None
+        # One way or the other, a focus_me has removed all references to
+        # active_book's view panels except those in its PANEL_DICT. So the
+        # following assignment should remove the last reference to the book,
+        # and schedule the book and associated objects for garbage collect.
+        target_book = None
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Maintain the list of "recent" file paths. The list is kept in usage
