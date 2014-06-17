@@ -285,7 +285,7 @@ def path_to_output(requested_path, encoding=None):
 # equivalent of os.path.join.
 def related_output(FBTS, suffix, encoding=None):
     qd = QDir( FBTS.folderpath() )
-    target = FBTS.basename() + '.' + suffix
+    target = FBTS.filename() + '.' + suffix
     a_file = QFile( qd.absoluteFilePath(target) )
     return _qfile_to_stream(a_file, QIODevice.WriteOnly, encoding)
 
