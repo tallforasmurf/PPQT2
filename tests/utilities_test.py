@@ -122,14 +122,22 @@ assert fbts is None
 fbts = utilities.ask_existing_file('SELECT en-common-ltn.txt',parent=mw,starting_path=files_path)
 assert fbts.basename() == 'en-common-ltn'
 assert b'ISO-8859-1' == fbts.codec().name()
-# This should get the alphabetically last hit, en_US.dic
+# This should get the alphabetically last, en_US.dic
 fb2 = utilities.related_file(fbts,'en_US.*',encoding='KOI8-R')
 assert fb2.filename() == 'en_US.dic'
 assert fb2.codec().name() == 'KOI8-R'
-fb3 = utilities.related_suffix(fb2,'aff')
-assert fb3.filename() == 'en_US.aff'
+fb3 = utilities.path_to_stream(os.path.join(files_path,'z-ut-test.suffix'))
+assert fb3 is not None
+fb4 = utilities.related_suffix(fb3,'meta','KOI8-R')
+assert fb4 is not None
+assert fb4.filename() == 'z-ut-test.suffix.meta'
+assert fb4.codec().name() == 'KOI8-R'
+fb5 = utilities.file_less_suffix(fb4)
+assert fb5 is not None
+assert fb5.filename() == fb3.filename()
+
 f_foo = 'test_junk.foo'
-f_bar = 'test_junk.bar'
+f_bar = 'test_junk.foo.bar'
 foo_path = os.path.join(files_path,f_foo)
 if os.path.isfile(foo_path):
     os.remove(foo_path)
@@ -141,8 +149,6 @@ assert fbfoo.filename() == f_foo
 fbfoo.writeLine('some data')
 assert os.path.isfile(foo_path)
 fbbar = utilities.related_output(fbfoo,'bar')
-assert fbbar.basename() == fbfoo.basename()
-print(fbbar.filename())
 assert fbbar.filename() == f_bar
 fbbar.writeLine('some data')
 assert os.path.isfile(bar_path)
