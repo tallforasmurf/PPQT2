@@ -322,8 +322,8 @@ def beep():
 #Internal function to initialize a Qt message-box object with an icon,
 # a main message line, and an optional second message line.
 
-def _make_message ( text, icon, info = ''):
-    mb = QMessageBox( )
+def _make_message ( text, icon, info = '', parent=None):
+    mb = QMessageBox( parent )
     mb.setText( text )
     mb.setIcon( icon )
     if info:
@@ -333,22 +333,22 @@ def _make_message ( text, icon, info = ''):
 # Display a modal info message, blocking until the user clicks OK.
 # No return value.
 
-def info_msg ( text, info = '' ):
-    mb = _make_message(text, QMessageBox.Information, info)
+def info_msg ( text, info = '', parent=None ):
+    mb = _make_message(text, QMessageBox.Information, info, parent)
     mb.exec_()
 
 # Display a modal warning message, blocking until the user clicks OK.
 # No return value.
 
-def warning_msg ( text, info = '' ):
-    mb = _make_message(text, QMessageBox.Warning, info)
+def warning_msg ( text, info = '', parent=None ):
+    mb = _make_message(text, QMessageBox.Warning, info, parent)
     mb.exec_()
 
 # Display a modal query message, blocking until the user clicks OK/Cancel
 # Return True for OK, False for Cancel.
 
-def ok_cancel_msg ( text, info = '' ):
-    mb = _make_message ( text, QMessageBox.Question, info)
+def ok_cancel_msg ( text, info = '', parent=None ):
+    mb = _make_message ( text, QMessageBox.Question, info, parent)
     mb.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
     return QMessageBox.Ok == mb.exec_()
 
@@ -356,8 +356,8 @@ def ok_cancel_msg ( text, info = '' ):
 # respectively. This is used by mainwindow when shutting down
 # or when closing a modified file.
 
-def save_discard_cancel_msg( text, info = '' ):
-    mb = _make_message( text, QMessageBox.Warning, info)
+def save_discard_cancel_msg( text, info = '', parent=None ):
+    mb = _make_message( text, QMessageBox.Warning, info, parent)
     mb.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
     mb.setDefaultButton(QMessageBox.Save)
     ret = mb.exec_()
