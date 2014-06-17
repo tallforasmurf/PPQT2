@@ -156,11 +156,11 @@ assert os.path.isfile(bar_path)
 # Message routines
 utilities.info_msg('About to beep', 'When you dismiss this message')
 utilities.beep()
-assert utilities.ok_cancel_msg('Did you hear a beep?', 'OK for yes, Cancel for no')
-utilities.warning_msg('This is a warning','the very last warning')
-assert utilities.save_discard_cancel_msg('Click SAVE','save')
-assert not utilities.save_discard_cancel_msg('Click DISCARD','discard')
-assert utilities.save_discard_cancel_msg('Click CANCEL','cancel') is None
+assert utilities.ok_cancel_msg('Did you hear a beep?', 'OK for yes, Cancel for no',parent=mw)
+utilities.warning_msg('This is a warning','the very last warning',parent=mw)
+assert utilities.save_discard_cancel_msg('Click SAVE','no parent argument')
+assert not utilities.save_discard_cancel_msg('Click DISCARD (dont save?)','does have parent',parent=mw)
+assert utilities.save_discard_cancel_msg('Click CANCEL','no parent') is None
 
 mw.close()
 app.quit()
