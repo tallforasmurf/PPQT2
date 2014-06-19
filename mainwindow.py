@@ -269,37 +269,42 @@ class MainWindow(QMainWindow):
             _TR( 'File:Open dialog','Select a book file to open'),
             parent=self, starting_path=self.last_open_path)
         if fbts : # yes a readable file was chosen.
-            seq = self._is_already_open(fbts.fullpath())
-            if seq is None :
-                self._open( fbts )
-            else :
-                self.focus_me(seq)
+            self._open( fbts )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Open a file, given the document as a FileBasedTextStream
-    # * if file opened is fname.meta, look for a file named fname; if it
+    # * If file opened is fname.meta, look for a file named fname; if it
     #   exists open it instead, e.g. given foo.txt.meta, open foo.txt.
     #   If it doesn't exist, tell the user and exit.
-    # * determine if there is a .meta file, a .bin file, or neither
-    # * create a metadata input stream if possible
-    # * if no .meta, look for good_words and bad_words
-    # * if the only open book is an "Untitled-n" and
+    # * If a file of the same name and path is already open, just focus
+    #   it and exit.
+    # * Determine if there is a .meta file, a .bin file, or neither
+    # * Create a metadata input stream if possible
+    # * If no .meta, look for good_words and bad_words
+    # * If the only open book is an "Untitled-n" and
     #     it is unmodified, delete it.
-    # * call Book.old_book() or .new_book() as appropriate
-    # * add this book's editview to the edit tabset
-    # * give this book the focus.
+    # * Call Book.old_book() or .new_book() as appropriate
+    # * Add this book's editview to the edit tabset
+    # * Give this book the focus.
 
     def _open(self, fbts):
+        # look for opening a .meta file
         if 'meta' == fbts.suffix():
             fb2 = utilities.file_less_suffix(fbts)
             if fb2 is None :
                 m1 = _TR('File:Open','Cannot open a .meta file alone')
                 m2 = _TR('File:Open','There is no book file matching ',
-                         'filename follows this sentence') + fbts.filename()
+                         'filename follows this') + fbts.filename()
                 utilities.warning_msg(m1, m2)
                 return
             # we see foo.txt with foo.txt.meta, silently open it
             fbts = fb2
+        # look for already-open file
+        seq = self._is_already_open(fbts.fullpath())
+        if seq is not None :
+            self.focus_me(seq)
+            return
+        # start collecting auxiliary streams
         gw_stream = None
         bw_stream = None
         gg_stream = None
