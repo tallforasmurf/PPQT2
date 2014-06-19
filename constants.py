@@ -51,7 +51,10 @@ UNICODE_LINE_DELIM = '\u2029'
 # writing a proofer string to metadata
 UNICODE_EN_SPACE = '\u2002'
 # constant value for the zero-width-non-joiner used as a marker in reflow
-UNICODE_ZWNJ = '\200C'
+UNICODE_ZWNJ = '\u200C'
+# constant value for the Unicode Replacement character that is
+# stuck into Notes metadata that looks like a metadata section mark.
+UNICODE_REPL = '\uFFFD'
 # default size for fonts, used only in totally clean installation
 DEFAULT_FONT_SIZE = 13
 
