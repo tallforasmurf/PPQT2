@@ -204,8 +204,7 @@ class MainWindow(QMainWindow):
     # brought to the front. So be prepared for redundant calls.
 
     def focus_me(self, book_index):
-        print('focusing {0} = {1}'.format(book_index,
-                                          self.open_books[book_index].get_book_name()))
+        #print('focusing {0} = {1}'.format(book_index,self.open_books[book_index].get_book_name()))
         outgoing = self.focus_book
         if book_index == outgoing : return
         self.focus_book = book_index
