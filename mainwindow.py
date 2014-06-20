@@ -80,6 +80,16 @@ def get_extras_path():
     return _EXTRAS
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# The menu bar is created by the singleton MainWindow object, but
+# access to it is needed by other modules so a reference is stored
+# here and accessed by a static query function.
+_MENUBAR = None
+def get_menu_bar():
+    return _MENUBAR
+def set_menu_bar(mb):
+    _MENUBAR = mb
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # Class of the single main window instance. One instance is created by
 # ppqt.py at startup, and the open QSettings object is passed.
@@ -526,6 +536,7 @@ class MainWindow(QMainWindow):
             self.menu_bar = QMenuBar() # parentless menu bar for Mac OS
         else :
             self.menu_bar = self.menuBar # refer to the default one
+        set_menu_bar(self.menu_bar)
         # Create the File menu, located in our menu_bar.
         self.file_menu = self.menu_bar.addMenu(_TR('Menu name', '&File'))
         # Populate the File menu with actions.
