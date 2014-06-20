@@ -72,6 +72,7 @@ import editview
 import worddata
 import pagedata
 import imageview
+import noteview
 import dictionaries
 import constants as C
 import logging
@@ -131,7 +132,7 @@ class Book(QObject):
         self.imagev = imageview.ImageDisplay(self) # keep a short reference
         self.panel_dict['Images'] = self.imagev
         # TODO other view objects, labels for placeholders
-        self.panel_dict['Notes'] = QLabel(str(sequence)+'Notes') # notesview.NotesPanel(self)
+        self.panel_dict['Notes'] = noteview.NotesPanel(self)
         self.panel_dict['Find' ] = QLabel(str(sequence)+'Find') # findeview.FindPanel(self)
         self.panel_dict['Pages'] = QLabel(str(sequence)+'Pages') # pageview.PagePanel(self)
         self.panel_dict['Words'] = QLabel(str(sequence)+'Words') # wordview.WordPanel(self)
@@ -477,13 +478,16 @@ class Book(QObject):
     # give access to the word data model
     def get_word_model(self):
         return self.wordm
-    # Note when metadata changes its modified state. Each
-    # module that stows metadata has its own bit-flag, so that
-    # each can change in both directions, unmodified->modified
-    # and (on ^z) modified->unmodified. See constants MD_MOD_*.
+    # Note when metadata changes its modified state. Each module that stows
+    # metadata may have its own bit-flag, so that each can change in both
+    # directions, unmodified->modified and (on ^z) modified->unmodified. See
+    # constants MD_MOD_*.
     def metadata_modified(self, state, flag):
+        previous = self.md_modified
         self.md_modified |= (state * flag)
         self.md_modified &= 255 - (flag * (not state))
+        if previous != self.md_modified:
+            self.editv.mod_change_signal(True)
     # Answer the question, is a save needed?
     def get_save_needed(self):
         return (0 != self.md_modified) or self.editm.isModified()

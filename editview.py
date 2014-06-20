@@ -205,7 +205,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # Put the document name in our widget
         self.DocName.setText(self.my_book.get_book_name())
         # Connect the Editor's modificationChanged signal to our slot.
-        self.Editor.modificationChanged.connect(self._mod_change_signal)
+        self.Editor.modificationChanged.connect(self.mod_change_signal)
         # Connect the returnPressed signal of the LineNumber widget
         # to our go to line method.
         self.LineNumber.returnPressed.connect(self._line_number_request)
@@ -238,12 +238,13 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.norm_style = 'color:Black;font-weight:normal;'
         self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
         # Fake the mod-change signal to update the document name color
-        self._mod_change_signal(self.document.isModified())
+        self.mod_change_signal(self.document.isModified())
 
     # Slot to receive the modificationChanged signal from the document.
+    # Also called from the book when metadata changes state.
     # Change the color of the DocName to match.
-    def _mod_change_signal(self,bool):
-        self.DocName.setStyleSheet(self.mod_style if bool else self.norm_style)
+    def mod_change_signal(self,bool):
+        self.DocName.setStyleSheet(self.mod_style if self.my_book.get_save_needed() else self.norm_style)
 
     # This slot receives the ReturnPressed signal from the LineNumber field.
     # Get the specified textblock by number, or if it doesn't exist, the end
