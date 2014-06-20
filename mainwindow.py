@@ -87,6 +87,7 @@ _MENUBAR = None
 def get_menu_bar():
     return _MENUBAR
 def set_menu_bar(mb):
+    global _MENUBAR
     _MENUBAR = mb
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
