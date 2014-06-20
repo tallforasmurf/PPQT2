@@ -31,12 +31,14 @@ read-only. Stylistically they should be ALL-CAP.
 # Make available values for our platform levels:
 from PyQt5.QtCore import PYQT_VERSION_STR
 from PyQt5.QtCore import QT_VERSION_STR
+from PyQt5.QtCore import QSize, QCoreApplication
+_TR = QCoreApplication.translate
 import os
 PLATFORM_NAME_STR = os.uname().sysname # e.g 'Darwin', 'Windows'
 PLATFORM_IS_MAC = PLATFORM_NAME_STR.startswith('Darw')
 
 # default values for the rare startup where the settings are empty
-from PyQt5.QtCore import QSize
+
 STARTUP_DEFAULT_SPLITTER = b'\x00\x00\x00\xff\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x02"\x00\x00\x01\xec\x00\x00\x00\x00\x07\x01\x00\x00\x00\x01\x00'
 STARTUP_DEFAULT_SIZE = QSize(1024,600)
 
@@ -77,6 +79,13 @@ MD_SC = 'SCANNOLIST'
 MD_V  = 'VERSION'
 MD_VL = 'WORDCENSUS'
 
+# Flag bits for the metadata_modified value in a Book.
+# Each type of metadata that can be modified and then
+# not-modified (as by ^z undo) has its own flag. Those
+# that can only go one way, become modified, use Misc.
+MD_MOD_NO = 0x02 # notes
+MD_MOD_FLAG = 0x80 # some metadata or other
+
 '''
 These values are used to encode folio controls for the
 Page/folio table.
@@ -89,6 +98,21 @@ FolioFormatSame = 0x03 # the "ditto" format
 FolioRuleAdd1 = 0x00
 FolioRuleSet = 0x01
 FolioRuleSkip = 0x02
+
+'''
+These words are used in multiple Edit menus in different modules
+so we translate them here once and use them in all.
+'''
+ED_MENU_EDIT = _TR('Edit Menu','Edit','Menu title')
+ED_MENU_UNDO = _TR('Edit Menu','Undo','Edit menu action')
+ED_MENU_REDO = _TR('Edit Menu','Redo','Edit menu action')
+ED_MENU_CUT =  _TR('Edit Menu','Cut','Edit menu action')
+ED_MENU_COPY = _TR('Edit Menu','Copy','Edit menu action')
+ED_MENU_PASTE = _TR('Edit Menu','Paste','Edit menu action')
+ED_MENU_FIND = _TR('Edit Menu','Find','Edit menu action')
+ED_MENU_NEXT = _TR('Edit Menu','Find Next','Edit menu action')
+ED_MENU_PRIOR = _TR('Edit Menu','Find Previous','Edit menu action')
+
 
 '''
 Keystrokes checked by editor and other panels that monitor KeyEvent signals.
