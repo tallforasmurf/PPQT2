@@ -358,7 +358,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
                 if kkey in C.KEYS_MARK_SET :
                     # Set a bookmark to the current edit selection
                     mark_list[mark_number] = QTextCursor(self.Editor.textCursor)
-                    self.my_book.metadata_modified()
+                    self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
                 else : # kkey in C.KEYS_MARK or MARK_SHIFT :
                     # move to saved location, if that bookmark is set,
                     # extending the selection if the shift modifier is on.

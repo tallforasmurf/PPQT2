@@ -275,6 +275,9 @@ class WordData(object):
         self.metamgr = my_book.get_meta_manager()
         # Save reference to the edited document
         self.document = my_book.get_edit_model()
+        # Save reference to a speller, which will be the default
+        # at this point.
+        self.speller = my_book.get_speller()
         # The vocabulary list, as a sorted dict with a default so that new
         # keys have zero count and empty property set
         self.vocab = blist.sorteddict()
@@ -362,9 +365,11 @@ class WordData(object):
     #
     # Before adding a word make sure to unicode-flatten it. (It should be
     # flat in the file, but we didn't do that in V1, and anyway the user can
-    # add words to the file.)
+    # add words to the file.
     #
     def word_read(self, stream, sentinel, v, parm) :
+        # get a new speller in case the Book read a different dict already
+        self.speller = self.my_book.get_speller()
         line_num = 0
         for line in metadata.read_to(stream, sentinel):
             line_num += 1
@@ -579,7 +584,7 @@ class WordData(object):
             self.vocab[word][0] += 1 # increment its count
             return # and done.
         # word was not in the list (but is now): count is 0, prop_set is empty
-        self.my_book.metadata_modified()
+        self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
         work = word[:] # copy the word, we may modify it next.
         # If word has apostrophes, note that and delete for following tests.
         if -1 < work.find("'") : # look for ascii apostrophe

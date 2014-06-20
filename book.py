@@ -99,7 +99,7 @@ class Book(QObject):
         self.bookname = ''
         self.book_folder = ''
         self.book_full_path = ''
-        self.md_modified = False # see metadata_modified()
+        self.md_modified = 0 # see metadata_modified()
         # Initialize bookmarks, loaded from metadata later. The bookmarks
         # are indexed 1-9 (from control-1 to control-9 keys) but the list
         # has ten entries, entry 0 not being used.
@@ -477,9 +477,13 @@ class Book(QObject):
     # give access to the word data model
     def get_word_model(self):
         return self.wordm
-    # Note when metadata changes.
-    def metadata_modified(self):
-        self.md_modified = True
+    # Note when metadata changes its modified state. Each
+    # module that stows metadata has its own bit-flag, so that
+    # each can change in both directions, unmodified->modified
+    # and (on ^z) modified->unmodified. See constants MD_MOD_*.
+    def metadata_modified(self, state, flag):
+        self.md_modified |= (state * flag)
+        self.md_modified &= 255 - (flag * (not state))
     # Answer the question, is a save needed?
     def get_save_needed(self):
-        return self.md_modified or self.editm.isModified()
+        return (0 != self.md_modified) or self.editm.isModified()

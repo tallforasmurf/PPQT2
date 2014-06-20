@@ -236,7 +236,7 @@ class PageData(object):
                 fmt = C.FolioFormatSame
                 nbr += 1
         if 0 < len(self.cursor_list) : # we found at least 1
-            self.my_book.metadata_modified()
+            self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
             self._active = True
             self._add_stopper()
 
@@ -475,7 +475,7 @@ class PageData(object):
                 else :
                     self.explicit_formats.add(R)
             if number is not None : self.folio_list[R][2] = number
-            self.my_book.metadata_modified()
+            self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
         except IndexError:
             pagedata_logger.error('Invalid index {0} to set_folios'.format(R))
             pass
