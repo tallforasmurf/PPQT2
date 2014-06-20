@@ -54,19 +54,31 @@ my_path = os.path.realpath(__file__)
 test_path = os.path.dirname(my_path)
 ppqt_path = os.path.dirname(test_path)
 sys.path.append(ppqt_path)
+files_path = os.path.join(test_path, 'Files')
 from PyQt5.QtWidgets import QApplication
 app = QApplication(sys.argv)
+app.setOrganizationName("PGDP")
+app.setOrganizationDomain("pgdp.net")
+app.setApplicationName("PPQT2")
+from PyQt5.QtCore import QSettings
+settings = QSettings()
+settings.clear()
+settings.setValue("dictionaries/path",files_path)
+settings.setValue("dictionaries/default_tag","en_GB")
+import dictionaries
+dictionaries.initialize(settings)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, QSettings
 import mainwindow
 import metadata
+import utilities
 import constants as C
 import worddata
 import book
 # load a list of one or more words as a metadata section
 def load_section(mgr, section, wordlist, vers=None):
-    stream = metadata.MemoryStream()
+    stream = utilities.MemoryStream()
     if vers :
         stream << '{{VERSION '+vers+'}}\n'
     stream << metadata.open_line(section)
@@ -78,7 +90,7 @@ def load_section(mgr, section, wordlist, vers=None):
 # save metadata and verify that a section has ALL and ONLY
 # the words in a list
 def check_section(mgr, section, wordlist):
-    stream = metadata.MemoryStream()
+    stream = utilities.MemoryStream()
     mm.write_meta(stream)
     stream.rewind()
     while True:
@@ -93,8 +105,11 @@ def check_section(mgr, section, wordlist):
         saved.add(line)
     assert saved == set(wordlist)
 
-mw = mainwindow.MainWindow()
-the_book = book.Book(mw)
+# Create a main window, which creates an untitled book
+mw = mainwindow.MainWindow(settings)
+# cheat and reach into the mainwindow and get that book
+the_book = mw.open_books[0]
+# access its word data manager and meta manager
 wd = the_book.wordm
 mm = the_book.metamgr
 # -------- Test scanno read, test, and save
@@ -163,7 +178,7 @@ assert count == 23
 assert wd.word_count_at(1) == count
 assert wd.word_props_at(1) == prop_set2
 # check save format, can't use check_section
-stream = metadata.MemoryStream()
+stream = utilities.MemoryStream()
 mm.write_meta(stream)
 stream.rewind()
 while True:
@@ -184,20 +199,20 @@ def test_props(word,props):
     load_section(mm, C.MD_VL, [word], '2')
     return check_props(word,props)
 def check_props(word,props):
-    j = wd.word_index(word)
+    w = word.split('/')[0] # drop alt tag if any
+    j = wd.word_index(w)
     assert j >= 0
     ps = wd.word_props_at(j)
     return ps == props
 assert test_props('lower',{worddata.LC})
 assert test_props('UPPER',{worddata.UC})
 assert test_props('Mixed',{worddata.MC})
-assert test_props("lower's",{worddata.LC,worddata.AP})
-assert test_props("lower\u02bcs",{worddata.LC,worddata.AP})
-assert test_props("1920s",{worddata.LC,worddata.ND})
+assert test_props("man's",{worddata.LC,worddata.AP})
+assert test_props("man\u02bcs",{worddata.LC,worddata.AP,worddata.XX})
+assert test_props("1920s",{worddata.LC,worddata.ND,worddata.XX})
 assert test_props("1920-29",{worddata.HY,worddata.ND})
-# TODO for spellcheck
-#assert test_props('xyxyx',{worddata.LC,worddata.XX})
-#assert test_props('bonjour/fr_FR',{worddata.LC})
+assert test_props('xyxyx',{worddata.LC,worddata.XX})
+assert test_props('bonjour/fr_FR',{worddata.LC,worddata.AD})
 assert test_props('horrid',{worddata.LC,worddata.XX}) # badword
 assert test_props('spellfail',{worddata.LC}) # goodword
 # get into hyphenations now
@@ -234,10 +249,10 @@ editm.setPlainText(doc)
 wd.refresh()
 check_section(mm,C.MD_VL,vocab)
 # testing refresh with a small and big document
-import timeit
-fx_path = test_path+'/Files/'
-sb_path = fx_path+'small_book.txt'
-sb = open(sb_path,'r',encoding='Latin-1')
-editm.setPlainText(sb.read())
-sb_time = timeit.timeit(wd.refresh, number=1)
-print(sb_time)
+#import timeit
+#fx_path = test_path+'/Files/'
+#sb_path = fx_path+'small_book.txt'
+#sb = open(sb_path,'r',encoding='Latin-1')
+#editm.setPlainText(sb.read())
+#sb_time = timeit.timeit(wd.refresh, number=1)
+#print(sb_time)
