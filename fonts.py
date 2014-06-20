@@ -25,9 +25,6 @@ __email__ = "tallforasmurf@yahoo.com"
             fonts.py
 Font resource for PPQT2.
 
-TODO: figure out how to package liberation mono as a resource,
-and install it in the font db if it isn't there.
-
 This module is imported by mainwindow on startup, when it calls
 initialize(). The services offered are designed so that other widgets
 don't have to know about the QFont/QFontInfo API.
