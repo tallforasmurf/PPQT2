@@ -63,31 +63,12 @@ from PyQt5.QtCore import QSettings
 settings = QSettings()
 import fonts
 fonts.initialize(settings)
-
-class miniMW(QWidget):
-    PANEL_DICT = {
-        'Images':None,
-        'Notes':None,
-        'Find' :None,
-        'Pages':None,
-        'Chars':None,
-        'Words':None,
-        'Fnote':None,
-        'Loupe':None,
-        'default' : ['Images','Notes','Find','Words','Chars','Pages','Fnote','Loupe'],
-        'tab_list' : None, # supplied in Book, updated in focus_me
-        'current' : 0
-        }
-
-    def __init__(self):
-        super().__init__(None)
-    def focus_me(self,index):
-        print('focus call from ',str(index))
-mmw = miniMW()
+import mainwindow
+mw = mainwindow.MainWindow(settings)
 import utilities
 
 import book
-the_book = book.Book( 1, mmw )
+the_book = book.Book( 0, mw )
 # Do a File>New, this creates the edit model and view.
 the_book.new_empty()
 # grab the editview, no api defined or needed

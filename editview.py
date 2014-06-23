@@ -208,7 +208,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.Editor.modificationChanged.connect(self.mod_change_signal)
         # Connect the returnPressed signal of the LineNumber widget
         # to our go to line method.
-        self.LineNumber.returnPressed.connect(self._line_number_request)
+        self.LineNumber.returnPressed.connect(self._line_number_enter)
         # Connect returnPressed of the ImageFilename widget to our slot.
         self.ImageFilename.returnPressed.connect(self._image_request)
         # Connect the Editor's cursorPositionChanged signal to our slot
@@ -247,22 +247,25 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.DocName.setStyleSheet(self.mod_style if self.my_book.get_save_needed() else self.norm_style)
 
     # This slot receives the ReturnPressed signal from the LineNumber field.
-    # Get the specified textblock by number, or if it doesn't exist, the end
-    # textblock, and use that to position the document. There is no input
-    # mask on the LineEdit (it made the cursor act weird) so test for int
-    # value and clear the field if not. Make sure focus goes back to editor.
-    def _line_number_request(self):
+    def _line_number_enter(self):
+        self.go_to_line_number(self.LineNumber.text())
+
+    # Go to line number string: called from the _line_number_enter slot and
+    # also from the Notes panel. Given a supposed line number as a string
+    # 'nnn', get the corresponding textblock, or if it doesn't exist, the end
+    # textblock, and use that to position the document. Do not assume an
+    # integer string value or a valid line numbr. Finally, make sure focus
+    # goes back to editor.
+    def go_to_line_number(self, lnum_string):
         try:
-            lnum = int(self.LineNumber.text())
-            tb = self.document.findBlockByLineNumber(lnum-1) # text block is origin-0
+            lnum = int(lnum_string) - 1 # text block is origin-0
+            tb = self.document.findBlockByLineNumber(lnum)
             if not tb.isValid() : raise ValueError
-        except ValueError:
+        except ValueError: # from int() or explicit
             utilities.beep()
-            editview_logger.info('Request for invalid line number {0}'.format(self.LineNumber.text()))
-            # force update of line # display
-            self._cursor_moved(force=True) # restore current line nbr the easy way
-            self.Editor.setFocus(Qt.TabFocusReason)
-            return
+            editview_logger.info('Request for invalid line number {0}'.format(lnum_string))
+            tb = self.document.lastBlock()
+        self.Editor.setFocus(Qt.TabFocusReason)
         self.go_to_block(tb)
 
     # This slot receives the ReturnPresssed signal from ImageFilename.
