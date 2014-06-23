@@ -161,7 +161,11 @@ utilities.warning_msg('This is a warning','the very last warning',parent=mw)
 assert utilities.save_discard_cancel_msg('Click SAVE','no parent argument')
 assert not utilities.save_discard_cancel_msg('Click DISCARD (dont save?)','does have parent',parent=mw)
 assert utilities.save_discard_cancel_msg('Click CANCEL','no parent') is None
-
+(tf, str) = utilities.get_find_string('Press CANCEL','preptext',mw)
+assert not tf
+(tf, str) = utilities.get_find_string('Press Find','REPLACE-WITH-FOO',mw)
+assert tf
+assert str == 'FOO'
 mw.close()
 app.quit()
 os.remove(foo_path)

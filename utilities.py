@@ -37,7 +37,12 @@ from PyQt5.QtCore import (
     QTextStream,
     QTextCodec,
     QByteArray)
-from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import (
+    QApplication,
+    QDialog,
+    QFileDialog,
+    QInputDialog,
+    QMessageBox)
 import constants as C # for encoding names
 import logging
 utilities_logger = logging.getLogger(name='utilities')
@@ -363,6 +368,28 @@ def save_discard_cancel_msg( text, info = '', parent=None ):
     ret = mb.exec_()
     if ret == QMessageBox.Cancel : return None
     return ret == QMessageBox.Save
+
+# A simple find dialog, used by the Notes and other panels. Inputs:
+#     parent widget over which to center the dialog
+#     initial text for the dialog, typically a current selection
+#     caption string for top of dialog
+# We use the property-based api to QInputDialog so we can prime the input
+# field with the provided text. We truncate the input text at 40 characters
+# to avoid the case where the user has highlighted a long paragraph and
+# then thoughtlessly keyed ^F.
+
+def get_find_string(caption, prep_text = '', parent = None ):
+    qd = QInputDialog(parent)
+    qd.setInputMode(QInputDialog.TextInput)
+    qd.setOkButtonText('Find')
+    qd.setLabelText(caption)
+    if prep_text is not None :
+        qd.setTextValue(prep_text[:40])
+    b = ( QDialog.Accepted == qd.exec_() )
+    if b :
+        return (True, qd.textValue())
+    else:
+        return (False, '' )
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Diagnostic routines for evaluating events
