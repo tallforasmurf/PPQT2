@@ -210,7 +210,7 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # to our go to line method.
         self.LineNumber.returnPressed.connect(self._line_number_enter)
         # Connect returnPressed of the ImageFilename widget to our slot.
-        self.ImageFilename.returnPressed.connect(self._image_request)
+        self.ImageFilename.returnPressed.connect(self._image_enter)
         # Connect the Editor's cursorPositionChanged signal to our slot
         self.Editor.cursorPositionChanged.connect(self._cursor_moved)
         # Fill in the line and column number by faking that signal
@@ -269,18 +269,23 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.go_to_block(tb)
 
     # This slot receives the ReturnPresssed signal from ImageFilename.
-    # Ask the page database for the index of the user-entered folio value
-    # and if it knows one, get the position of it and set that.
-    def _image_request(self):
-        fname = self.ImageFilename.text()
-        pn = self.page_model.name_index(fname)
+    #
+    def _image_enter(self):
+        self.go_to_image_name(self.ImageFilename.text())
+
+    # Go to page image by name: Ask the page database for the index of the
+    # user-entered filename value and if it recognizes it, get the position
+    # of it and set that. This is called from the slot above and also from
+    # the Notes panel.
+    def go_to_image_name(self, name_string):
+        pn = self.page_model.name_index(name_string)
         if pn is not None :
             self.center_position(self.page_model.position(pn))
         else : # unknown image filename, restore current value
             utilities.beep()
             editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
             self._cursor_moved(force=True)
-            self.Editor.setFocus(Qt.TabFocusReason)
+        self.Editor.setFocus(Qt.TabFocusReason)
 
     # This slot is connected to Editor's cursorPositionChanged signal, so is
     # called whenever the cursor moves for any reason, i.e. very very often!
