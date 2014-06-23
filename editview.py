@@ -250,6 +250,10 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     def _line_number_enter(self):
         self.go_to_line_number(self.LineNumber.text())
 
+    # Public method to retrieve the current line number string.
+    def get_line_number(self):
+        return self.LineNumber.text()
+
     # Go to line number string: called from the _line_number_enter slot and
     # also from the Notes panel. Given a supposed line number as a string
     # 'nnn', get the corresponding textblock, or if it doesn't exist, the end
