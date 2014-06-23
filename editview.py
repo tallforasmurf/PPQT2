@@ -277,6 +277,9 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     def _image_enter(self):
         self.go_to_image_name(self.ImageFilename.text())
 
+    # Public method to retrieve the current image filename.
+    def get_image_name(self):
+        return self.ImageFilename.text()
     # Go to page image by name: Ask the page database for the index of the
     # user-entered filename value and if it recognizes it, get the position
     # of it and set that. This is called from the slot above and also from
