@@ -189,9 +189,9 @@ CTL_PLUS = int(Qt.ControlModifier) | Qt.Key_Plus
 CTL_SHFT_EQUAL = int(Qt.ShiftModifier) | CTL_EQUAL
 CTL_SHFT_PLUS = int(Qt.ShiftModifier) | CTL_PLUS
 CTL_M = int(Qt.ControlModifier) | Qt.Key_M
-CTL_ALT_M = int(Qt.AltModifier) | CTL_M
+CTL_SHFT_M = int(Qt.ShiftModifier) | CTL_M
 CTL_P = int(Qt.ControlModifier) | Qt.Key_P
-CTL_ALT_P = int(Qt.AltModifier) | CTL_P
+CTL_SHFT_P = int(Qt.ShiftModifier) | CTL_P
 CTL_LEFT = int(Qt.ControlModifier) | Qt.Key_Left
 CTL_LEFT_PAD = CTL_LEFT | int(Qt.KeypadModifier)
 CTL_LEFT_BRACKET = int(Qt.ControlModifier) | Qt.Key_BracketLeft
@@ -210,7 +210,7 @@ KEYS_ZOOM = {CTL_MINUS, CTL_PLUS, CTL_SHFT_EQUAL, CTL_SHFT_PLUS}
 # Keys acted on by the edit view
 KEYS_EDITOR = KEYS_FIND | KEYS_BOOKMARKS | KEYS_ZOOM
 # Keys acted on by the Notes panel
-KEYS_NOTES = {CTL_M, CTL_ALT_M, CTL_P, CTL_ALT_P} | KEYS_ZOOM
+KEYS_NOTES = {CTL_M, CTL_SHFT_M, CTL_P, CTL_SHFT_P} | KEYS_ZOOM
 # TODO keys acted on by html panel, others?
 
 '''
