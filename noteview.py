@@ -68,8 +68,21 @@ import fonts
 import mainwindow
 import utilities
 import regex
-from PyQt5.QtWidgets import QPlainTextEdit, QTextEdit, QMenu, QMenuBar,QFrame
-from PyQt5.QtGui import QTextBlock, QTextCursor, QKeySequence
+from PyQt5.QtWidgets import (
+    QAbstractScrollArea,
+    QPlainTextDocumentLayout,
+    QPlainTextEdit,
+    QTextEdit,
+    QMenu,
+    QMenuBar
+    )
+from PyQt5.QtGui import (
+    QTextDocument,
+    QTextBlock,
+    QTextCursor,
+    QKeySequence
+    )
+from PyQt5.QtGui import QPalette,QBrush
 from PyQt5.QtCore import Qt, QCoreApplication
 _TR = QCoreApplication.translate
 
@@ -87,11 +100,26 @@ class NotesPanel(QPlainTextEdit):
         self.setFont(fonts.get_fixed(my_book.get_font_size()))
         # hook up to be notified of a change in font choice
         fonts.notify_me(self.font_change)
+        # Set up our document not using the default one
+        a_document = QTextDocument()
+        a_document.setDocumentLayout(QPlainTextDocumentLayout(a_document))
+        self.setDocument(a_document)
+        # Turn off linewrap mode
+        self.setLineWrapMode(QPlainTextEdit.NoWrap)
+        # The following kludge allows us to get the correct highlight
+        # color on focus-in. For unknown reasons Qt makes us use the
+        # "Inactive" color group even after focus-in. See focusInEvent()
+        # and focusOutEvent() below.
+        self.palette_active = QPalette(self.palette())
+        self.palette_inactive = QPalette(self.palette())
+        b = self.palette().brush(QPalette.Active,QPalette.Highlight)
+        self.palette_active.setBrush(QPalette.Inactive,QPalette.Highlight,b)
+        # Set the cursor shape to IBeam -- no idea why this supposed default
+        # inherited from QTextEdit, doesn't happen. But it doesn't.
+        self.viewport().setCursor(Qt.IBeamCursor)
         # Hook up a slot to notice that the document has changed its
         # modification state.
         self.document().modificationChanged.connect(self.yikes)
-        # Turn off linewrap mode
-        self.setLineWrapMode(QPlainTextEdit.NoWrap)
         # Create our edit menu and stow it in the menu bar. Disable it.
         ed_menu = QMenu(C.ED_MENU_EDIT,self)
         ed_menu.addAction(C.ED_MENU_UNDO,self.undo,QKeySequence.Undo)
@@ -151,8 +179,11 @@ class NotesPanel(QPlainTextEdit):
     # and hide our edit menu.
     def focusInEvent(self, event):
         self.edit_menu.setVisible(True)
+        self.setPalette(self.palette_active)
+
     def focusOutEvent(self, event):
         self.edit_menu.setVisible(False)
+        self.setPalette(self.palette_inactive)
 
     # Get notified of a change in the user's choice of font
     def font_change(self,is_mono):
