@@ -204,6 +204,9 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         colors.notify_me(self._set_colors)
         # Put the document name in our widget
         self.DocName.setText(self.my_book.get_book_name())
+        # Set the cursor shape to IBeam -- no idea why this supposed default
+        # inherited from QTextEdit, doesn't happen. But it doesn't.
+        self.Editor.viewport().setCursor(Qt.IBeamCursor)
         # Connect the Editor's modificationChanged signal to our slot.
         self.Editor.modificationChanged.connect(self.mod_change_signal)
         # Connect the returnPressed signal of the LineNumber widget
@@ -273,13 +276,13 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.go_to_block(tb)
 
     # This slot receives the ReturnPresssed signal from ImageFilename.
-    #
     def _image_enter(self):
         self.go_to_image_name(self.ImageFilename.text())
 
     # Public method to retrieve the current image filename.
     def get_image_name(self):
         return self.ImageFilename.text()
+
     # Go to page image by name: Ask the page database for the index of the
     # user-entered filename value and if it recognizes it, get the position
     # of it and set that. This is called from the slot above and also from
