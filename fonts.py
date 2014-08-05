@@ -222,7 +222,7 @@ def set_fixed(qfont):
     fonts_logger.debug('fonts:set_fixed')
     if qfont.family() != _MONO_FAMILY or qfont.pointSize() != _MONO_SIZE :
         # mono font is changing family a/o size
-        _MONO_QFONT = qfont
+        _MONO_QFONT = QFont(qfont) # copy the argument
         _MONO_FAMILY = qfont.family()
         _MONO_SIZE = qfont.pointSize()
         _emit_signal(True)
@@ -232,7 +232,7 @@ def set_general(qfont):
     fonts_logger.debug('fonts:set_general')
     if qfont.family() != _GENL_FAMILY or qfont.pointSize() != _GENL_SIZE :
         # general font is changing
+        _GENL_QFONT = QFont(qfont)
         _GENL_FAMILY = qfont.family()
         _GENL_SIZE = qfont.pointSize()
-        _GENL_QFONT = qfont
         _emit_signal(False)
