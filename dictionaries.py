@@ -29,8 +29,8 @@ Global spelling dictionary resource for PPQT2.
 This module allows spell-check objects to be created for languages given only
 the "tag" or dictionary filename, for example "en_US".
 
-The main window calls initialize() during startup, when we get the last-set
-dictionary path and preferred default tag from saved settings.
+The main window calls initialize() during startup, when we get the user's
+preferred default tag from saved settings.
 
 The set_dict_path() and set_default_tag() methods are called from the
 preferences dialog.
@@ -43,9 +43,6 @@ set_default_tag(tag)     Note the tag of the preferred dictionary
                          from preferences
 
 get_default_tag()        Return the preferred main dictionary tag.
-
-set_dict_path(path)      Note the path to the user's choice of
-                         a folder of dictionaries.
 
 get_tag_list(path)       Prepare and return a dict{tag:path} where each
                          tag is an available language tag and path is
@@ -65,28 +62,21 @@ class Speller.check(word, alt_tag=None) Check the spelling of word in the
 import os
 import logging
 dictionaries_logger = logging.getLogger(name='dictionaries')
-import mainwindow
+import paths
 import hunspell
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
-# Static functions to manage the system default dictionary path and default
-# language tag.
+# Static functions to manage the default language tag.
 
-_DICTS = ''
 _PREFERRED_TAG = ''
 
 def set_default_tag(tag):
     global _PREFERRED_TAG
-    _PREFERRED_TAG = tag
+    _PREFERRED_TAG = str(tag)
 def get_default_tag():
     return str(_PREFERRED_TAG)
-def set_dict_path(path):
-    global _DICTS
-    _DICTS = path
-def get_dict_path():
-    global _DICTS
-    return str(_DICTS)
+
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
@@ -94,12 +84,8 @@ def get_dict_path():
 # default values in the settings.
 
 def initialize(settings):
-    global _DICTS, _PREFERRED_TAG
+    global _PREFERRED_TAG
     dictionaries_logger.debug('Dictionaries initializing')
-    set_dict_path(
-        settings.value("dictionaries/path",
-                       mainwindow.get_extras_path())
-        )
     set_default_tag(
         settings.value("dictionaries/default_tag","en_US")
         )
@@ -107,21 +93,23 @@ def initialize(settings):
 def shutdown(settings):
     global _DICTS, _PREFERRED_TAG
     dictionaries_logger.debug('Dictionaries saving to settings')
-    settings.setValue("dictionaries/path",get_dict_path())
     settings.setValue("dictionaries/default_tag",get_default_tag())
 
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
-# Internal function to search one path for all matching file-pairs lang.dic,
-# lang.aff. For each pair, if that lang is not in the dict already (from a
-# prior call to a higher-priority path), add it to the dict as lang:path.
+# Internal function to search one folder path for all matching dictionary
+# file-pairs lang.dic/lang.aff.
+#
+# For each pair, if that lang is not in the tag_dict already (from a prior
+# call to a higher-priority path), add it to the dict as lang:path.
 
 def _find_tags(path, tag_dict):
+    if not paths.check_path(path) :
+        return # path does not exist or is not readable
+    
     # Get a list of all files in this path.
     try:
-        if 0 == len(path) :
-            path = os.getcwd()
         file_names = os.listdir(path)
     except OSError as E:
         dictionaries_logger.error("OS error listing files in {0}".format(path))
@@ -129,6 +117,7 @@ def _find_tags(path, tag_dict):
     except Exception:
         dictionaries_logger.error("Unexpected error listing files in {0}".format(path))
         file_names = []
+    # Collect the set of matching pairs lang.dic/lang.aff
     aff_set = set()
     dic_set = set()
     for one_name in file_names:
@@ -137,16 +126,18 @@ def _find_tags(path, tag_dict):
         if one_name[-4:] == '.dic':
             dic_set.add(one_name[:-4])
     pair_set = aff_set & dic_set # names with both .dic and .aff
+    # Process the paired files by name
     for lang in pair_set:
         if lang not in tag_dict :
             tag_dict[lang] = path
         else:
             dictionaries_logger.info("Skipping {0} in {1}".format(lang,path))
+    # Log any mismatched dic/aff names
     no_dic = aff_set - pair_set # should be empty set
     for lang in no_dic:
         dictionaries_logger.error(
             "Found {0}.aff but not {0}.dic in {1}".format(lang,path) )
-    no_aff = dic_set - pair_set # also s.b. empty set
+    no_aff = dic_set - pair_set # also should be empty set
     for lang in no_aff:
         dictionaries_logger.error(
         "Found {0}.dic but not {0}.aff in {1}".format(lang,path) )
@@ -154,14 +145,15 @@ def _find_tags(path, tag_dict):
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
-# Make a dict with all available language tags, giving priority to the
-# ones on the path argument, then the dict_path, then the extras_path.
+# Make a (python) dict with all available language tags with their paths.
+# Give priority to the ones on the path argument (which may be the null
+# string), then the dict_path, then the extras_path.
 
-def get_tag_list(path):
+def get_tag_list(path = ''):
     tag_dict = {}
     _find_tags(path, tag_dict)
-    _find_tags(_DICTS, tag_dict)
-    _find_tags(mainwindow.get_extras_path(), tag_dict)
+    _find_tags(paths.get_dicts_path(), tag_dict)
+    _find_tags(paths.get_extras_path(), tag_dict)
     return tag_dict
 
 
@@ -172,9 +164,16 @@ def get_tag_list(path):
 # .dic/.aff files. However a spell-check object can be called with an alt-tag
 # in which case it uses get_tag_list to find the files for the alt-tag.
 #
-# If the Speller cannot make a primary dictionary it fails with a log
-# message. Its validity can be checked by calling is_valid(). If it is used
-# when not valid, all spelling checks return True, meaning correct spelling.
+# If the Speller cannot make a primary dictionary it writes a log message and
+# sets itself "invalid". Its validity can be checked by calling is_valid().
+# Normally an object of this type should not be created except with a
+# path and tag that were returned by get_tag_list above. However we put
+# in checks to make sure.
+#
+# If it is used when not valid, all spelling checks return True, meaning
+# correct spelling (this avoids marking every word in a book misspelled when
+# a dictionary is temporarily missing).
+#
 # If it cannot make an alt dict, the same: log message and True for any word
 # in that alt dict.
 #
@@ -187,16 +186,20 @@ class Speller(object):
         self.alt_tag = None
         self.alt_dictionary = None
 
-    # We are assured that tag.dic and tag.aff exist on path.
+    # Defensive programming, path and tag are probably just fine, but...
     def _make_a_dict(self, tag, path):
-        try:
-            aff_path = os.path.join(path, tag + '.aff')
-            dic_path = os.path.join(path, tag + '.dic')
-            dic = hunspell.HunSpell(dic_path, aff_path)
-        except :
-            dictionaries_logger.error(
+        aff_path = os.path.join(path, tag + '.aff')
+        dic_path = os.path.join(path, tag + '.dic')
+        if paths.check_path(aff_path) and paths.check_path(dic_path) :
+            try:
+                dic = hunspell.HunSpell(dic_path, aff_path)
+            except :
+                dictionaries_logger.error(
                 "Unexpected error opening dictionary {0} on {1}".format(tag,path)
                 )
+                dic = None
+        else:
+            dictionaries_logger.error('bad dictionary path to Speller: '+path)
             dic = None
         return dic
 
