@@ -203,7 +203,7 @@ def set_defaults(signal=True):
 def set_modified_color(qc):
     global _MFD_COLOR
     colors_logger.debug('Set modified color to {0}'.format(qc.name()))
-    _MFD_COLOR = qc
+    _MFD_COLOR = QColor(qc)
     _emit_signal()
 
 def set_current_line_color(qc):
