@@ -26,10 +26,10 @@ __email__ = "tallforasmurf@yahoo.com"
 
 Create and manage the main window, menus, and toolbars.
 This code manages app-level global resources, for example
-  * the path(s) to user resources (the V1 "extras")
-  * tags and paths to available spellcheck dicts (via dictionaries module)
-  * fonts (by way of initializing the font module)
-  * highlighting styles and colors (by way of colors module)
+  * the path(s) to user resources "extras" and spellcheck dicts (via paths module)
+  * default spellcheck dictionary tags (via dictionaries module)
+  * fonts (via the font module)
+  * highlighting styles and colors (via colors module)
   * the Help file and its display panel
 
 Within the main window it creates the widgets that display the various
@@ -65,19 +65,6 @@ from PyQt5.QtWidgets import (
     )
 _TR = QCoreApplication.translate
 import os# TODO remove
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# The 'extras' folder is needed by several modules, e.g. it is
-# the default place to look for dictionaries and find macros.
-# It is stored as a global resource in this module and accessed
-# by global methods.
-_EXTRAS = ''
-def set_extras_path(path):
-    global _EXTRAS
-    _EXTRAS = path
-def get_extras_path():
-    global _EXTRAS
-    return _EXTRAS
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # The menu bar is created by the singleton MainWindow object, but
@@ -119,6 +106,7 @@ def set_menu_bar(mb):
 # path, and other info can be interrogated from the Book-object.
 #
 
+import paths
 import fonts
 import dictionaries
 import colors
@@ -157,13 +145,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         # Save the settings object for now and shutdown time.
         self.settings = settings
-        # Initialize the sequence number for opened files
-        self.book_number = 0
-        # Initialize user's choice of extras path if known
-        set_extras_path(settings.value("mainwindow/extras_path",''))
-        # Initialize the path to the last-opened file, used to
-        # start file-open dialogs.
-        self.last_open_path = '.'
+        # Initialize extras and dicts paths first, as other modules use them
+        paths.initialize(settings)
         # Initialize our font db
         fonts.initialize(settings)
         # Set our font, which will propogate to our child widgets.
@@ -173,6 +156,11 @@ class MainWindow(QMainWindow):
         dictionaries.initialize(settings)
         # Initialize the color choices
         colors.initialize(settings)
+        # Initialize the sequence number for opened files
+        self.book_number = 0
+        # Initialize the path to the last-opened file, used to
+        # start file-open dialogs.
+        self.last_open_path = '.'
         # Initialize our dict of active panels
         self.panel_dict = PANEL_DICT.copy()
         # Initialize our dict of open documents {seqno:Book}
@@ -647,6 +635,7 @@ class MainWindow(QMainWindow):
         colors.shutdown(self.settings)
         fonts.shutdown(self.settings)
         dictionaries.shutdown(self.settings)
+        paths.shutdown(self.settings)
         # Save the list of currently-open files in the settings, but do not
         # save any whose filename matches "Untitled-#" because that is an
         # unsaved New file (which the user chose not to save, above).
@@ -661,7 +650,5 @@ class MainWindow(QMainWindow):
         self.settings.setValue("mainwindow/size",self.size())
         self.settings.setValue("mainwindow/position",self.pos())
         self.settings.setValue("mainwindow/splitter",self.splitter.saveState())
-        # Save user's choice of extras path
-        self.settings.setValue("mainwindow/extras_path",get_extras_path())
         # and that's it, we are done finished, over & out.
         event.accept()

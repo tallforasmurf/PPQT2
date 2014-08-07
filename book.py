@@ -69,10 +69,12 @@ import mainwindow
 import metadata
 import editdata
 import editview
+import findview
 import worddata
 import pagedata
 import imageview
 import noteview
+import paths
 import dictionaries
 import constants as C
 import logging
@@ -94,7 +96,7 @@ class Book(QObject):
         # have possibly read dictionary info from metadata.
         self.dict_tag = dictionaries.get_default_tag()
         self._speller = dictionaries.Speller(self.dict_tag,
-            dictionaries.get_dict_path() )
+            paths.get_dicts_path() )
         self.edit_point_size = C.DEFAULT_FONT_SIZE
         self.edit_cursor = (0,0)
         self.bookname = ''
@@ -133,7 +135,7 @@ class Book(QObject):
         self.panel_dict['Images'] = self.imagev
         # TODO other view objects, labels for placeholders
         self.panel_dict['Notes'] = noteview.NotesPanel(self)
-        self.panel_dict['Find' ] = QLabel(str(sequence)+'Find') # findeview.FindPanel(self)
+        self.panel_dict['Find' ] = findview.FindPanel(self)
         self.panel_dict['Pages'] = QLabel(str(sequence)+'Pages') # pageview.PagePanel(self)
         self.panel_dict['Words'] = QLabel(str(sequence)+'Words') # wordview.WordPanel(self)
         self.panel_dict['Chars'] = QLabel(str(sequence)+'Chars') # charview.CharPanel(self)
@@ -202,6 +204,8 @@ class Book(QObject):
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
         self.editm.setModified(True)
+        # Create the visible editor, leaving cursor at 0.
+        self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
         if meta_stream :
             # Process the Guiguts metadata for page info
             self.metamgr.load_meta(meta_stream)
@@ -214,8 +218,6 @@ class Book(QObject):
             self.wordm.good_read(good_stream,C.MD_GW,'0','')
         if bad_stream :
             self.wordm.bad_read(bad_stream,C.MD_BW,'0','')
-        # Create the visible editor, leaving cursor at 0.
-        self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
         if 0 < self.pagem.page_count():
             # we have a book with page info, wake up the image viewer
             self.imagev.set_path(self.book_folder)
