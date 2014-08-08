@@ -95,19 +95,28 @@ def file_split(path):
 #
 # Class MemoryStream provides a QTextStream based on an in-memory buffer
 # which will not go out of scope causing a crash. It also provides the
-# convenient methods rewind() and writeLine()
+# convenient methods rewind() and writeLine(). QTextStream.pos() is 
+# overridden to do a flush() before returning the position, otherwise
+# it is never accurate. Note that pos() returns a count of bytes, while
+# the units being written are 16-bit Unicode chars. Hence the sequence
+# mst = MemoryStream(); mst.writeLine('FOO'); mst.pos() --> 8
+#
 
 class MemoryStream(QTextStream):
     def __init__(self):
         # Create a byte array that stays in scope as long as we do
         self.buffer = QByteArray()
         # Initialize the "real" QTextStream with a ByteArray buffer.
-        super().__init__(self.buffer)
+        super().__init__(self.buffer, QIODevice.ReadWrite)
         # The default codec is codecForLocale, which might vary with
         # the platform, so set a codec here for consistency. UTF-16
         # should entail minimal or no conversion on input or output.
         self.setCodec( QTextCodec.codecForName('UTF-16') )
+    def pos(self):
+        self.flush()
+        return super().pos()
     def rewind(self):
+        self.flush()
         self.seek(0)
     def writeLine(self, str):
         self << str
