@@ -236,6 +236,15 @@ class MetaMgr(object):
                 metadata_logger.debug('writing {0} metadata'.format(section) )
                 wtr(qts, section)
 
+    # Write the contents of a single metadata section.
+    
+    def write_section(self, qts, section) :
+        if section in self.section_dict :
+            metadata_logger.debug('writing section ' + section)
+            self.section_dict[section][1]( qts, section )
+        else :
+            metadata_logger.error('no writer for section ' + section)
+        
 # Utility to translate the contents of a Guiguts .bin file to our .meta
 # format and return it in a QTextStream. Arguments are:
 # bin_stream, an open QTextStream representing a GG .bin file
