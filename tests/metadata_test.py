@@ -135,6 +135,7 @@ expected = '{{'+sentinel+'}}\n'+data+'\n{{/'+sentinel+'}}\n'
 mstream << expected
 mstream.rewind()
 
+# test write_meta which writes VERSION and all defined sections
 MGR.load_meta(mstream)
 assert called == 1
 mstream = utilities.MemoryStream()
@@ -143,6 +144,13 @@ assert called == 2
 mstream.rewind()
 line = mstream.readLine()
 assert line == u'{{VERSION 2}}'
+line = mstream.readAll()
+assert line == expected
+
+# test write_section which does not write VERSION
+mstream = utilities.MemoryStream()
+MGR.write_section(mstream, sentinel)
+mstream.rewind()
 line = mstream.readAll()
 assert line == expected
 
