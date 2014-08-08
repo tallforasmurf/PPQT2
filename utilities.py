@@ -131,7 +131,7 @@ class MemoryStream(QTextStream):
 #
 # It then began to sprout useful methods:
 #   rewind() to prepare for a second reading
-#   writeline(str) to write a string with return
+#   writeLine(str) to write a string with return
 #   basename() to return the filename without its *final* suffix
 #   suffix() to return the *final* suffix of the filename
 #   filename() to return the filename with suffix(es)
@@ -143,12 +143,25 @@ class FileBasedTextStream(QTextStream):
         self.saved_file = qfile
         self.qfi = None # may never need this
     def rewind(self):
+        self.flush()
         self.seek(0)
     def writeLine(self, str):
         self << str
         self << '\n'
     def open_mode(self):
         return self.saved_file.openMode()
+    def fullpath(self):
+        if self.qfi is None:
+            self.qfi = QFileInfo(self.saved_file)
+        return self.qfi.canonicalFilePath()
+    def folderpath(self):
+        if self.qfi is None:
+            self.qfi = QFileInfo(self.saved_file)
+        return self.qfi.canonicalPath()
+    def filename(self):
+        if self.qfi is None:
+            self.qfi = QFileInfo(self.saved_file)
+        return self.qfi.fileName()
     def basename(self):
         if self.qfi is None:
             self.qfi = QFileInfo(self.saved_file)
@@ -157,18 +170,6 @@ class FileBasedTextStream(QTextStream):
         if self.qfi is None:
             self.qfi = QFileInfo(self.saved_file)
         return self.qfi.suffix()
-    def filename(self):
-        if self.qfi is None:
-            self.qfi = QFileInfo(self.saved_file)
-        return self.qfi.fileName()
-    def folderpath(self):
-        if self.qfi is None:
-            self.qfi = QFileInfo(self.saved_file)
-        return self.qfi.canonicalPath()
-    def fullpath(self):
-        if self.qfi is None:
-            self.qfi = QFileInfo(self.saved_file)
-        return self.qfi.canonicalFilePath()
 
 # This is where we enforce our rule on encodings: we support only UTF-8 and
 # ISO8859-1 (a.k.a. Latin-1), and of course ASCII which is a proper subset of
