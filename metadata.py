@@ -27,10 +27,11 @@ __email__ = "tallforasmurf@yahoo.com"
                           METADATA.PY
 
 The class defined here supervises the loading and saving of metadata, and
-provides a level of indirection (symbolic binding) between file management and
-data management. One object of this class is created by a Book to handle the
-metadata for that book. Also included: a method to translate a Guiguts .bin file
-into our metadata format.
+provides a level of indirection (symbolic binding) between file management
+and data management. One object of class MetaMgr is created by each Book to
+handle the metadata for that book. Also included: a method to translate a
+Guiguts .bin file into our metadata format and some utilities useful for
+reading and writing a metadata stream.
 
 The .meta data file comprises a number of sections that are marked
 off by boundary lines similar to:
@@ -43,53 +44,58 @@ It also contains one-line items of the form:
 
     {{SECTIONNAME single-value}}
 
-We want to encapsulate knowledge of the content and format of metadata in the
-classes that create and use it. We do not want that knowledge to leak into
-the load/save logic as it did in version 1. So we set up a level of
-indirection in the form of a dict that relates SECTIONNAME strings to the
-functions that read and write the data in those sections.
+The names of the sections are defined in constants.py with names MD_xx.
 
 Because we expect some users will sometimes edit .meta files we assume,
 first, the file must be editable UTF-8 (no binary data, or binary data must
-be converted to hex characters) and second, we cannot restrict:
+be converted to hex characters) and second, we have to permit:
     * blank lines within sections,
     * blank lines between sections,
     * leading and trailing spaces on section header/footer lines or data lines
     * undefined nonblank data between sections e.g. commentary
-    * order of data lines (the user might stick in vocabulary words out of order)
-    * sections occuring multiple times (the reader function determines if later
-      sections should add or replace earlier ones)
+    * sequence of data lines (the user might add vocabulary words out of order)
+    * sections occuring multiple times - Each reader function determines if a
+      later section will extend or replace an earlier one
 
-The key to self.section_dict is a SECTIONNAME and its value is [reader, writer]
-where those are functions. The Register(section,reader,writer) method is
+We want to encapsulate knowledge of the content and format of of each type of
+metadata in the classes that create and use that type of metadata. We do not
+want that knowledge to leak into the load/save logic as it did in version 1.
+So we set up a level of indirection in the form of a dict that relates
+SECTIONNAME strings to methods that read and write the data in those
+sections. Objects instantiated by the Book register their reader and writer
+methods here by section.
+
+The key to MetaMgr.section_dict is a SECTIONNAME and its value is [reader,
+writer] where those are methods. MetaMgr.register(section,reader,writer) is
 called to register the reader and a writer for a given section.
 
-During load_meta(), the code scans a file for "{{SECTIONNAME...}}", looks up
-that section in self.section_dict, and calls the reader. During save_meta(), we go
-through the keys of self.section_dict, calling each writer in turn.
+In MetaMgr.load_meta(), we scan a stream for "{{SECTIONNAME...}}", look up
+that section in section_dict, and call the reader. In MetaMgr.save_meta() we go
+through the keys of section_dict, calling each writer in turn. Also 
+available is MetaMgr.save_section() to write the metadata of a single section
+by name (used when duplicating a Book).
 
-The signature of a reader is rdr(qts, section, vers, parm), where
+The signature of a reader is:  rdr(qts, section, vers, parm), where
     * qts is a QTextStream positioned at the line after the {{SECTIONNAME line,
     * vers is the value "n" of a {{VERSION n}} line if one has been seen,
     * section is the SECTIONNAME string,
     * parm is whatever text was found between SECTIONNAME and }}.
 
-The reader is expected to consume the stream through the {{/SECTIONNAME}}
-line if any. The utility read_to() is provided as a generator that returns
+The reader is trusted to know if this SECTIONNAME has one line or multiple
+lines, and is expected to consume the data through the {{/SECTIONNAME}} line
+if any. The utility metadata.read_to() is provided as a generator that returns
 lines up to a section boundary or end of file. A single-line section of
 course needs no input; the value is in parm and the stream is already
 positioned after it. It is possible to register the same reader function for
 multiple SECTIONNAME values, and it can use the section parameter to tell
 which it is decoding.
 
-The signature of a writer is wtr(qts, section). The writer is expected to write
-the entire section including {{SECTIONNAME}} and {{/SECTIONNAME}}, or the single
-line of a one-line section. The utilities open_line() and close_line() return
-strings ready to be output. A given writer function could be registered for
-multiple sections, distinguishing which to do from the section parameter.
-
-The class MemoryStream implements a QTextStream with an in-memory buffer.
-This is used by unit tests and when calling translate_bin() below.
+The signature of a writer is wtr(qts, section). The writer is expected to
+write the single line of a one-line section, or the entire section including
+{{SECTIONNAME}} and {{/SECTIONNAME}}. The utilities metadata.open_line() and
+metadata.close_line() return strings ready to be output. A given writer
+function could be registered for multiple sections, distinguishing which to
+do from the section parameter.
 '''
 
 import constants as C
@@ -128,9 +134,10 @@ def close_string(section) :
 def close_line(section) :
     return close_string(section) + '\n'
 #
-# 3. Provide a generator that reads a stream to a given end-sentinel,
-# or to any end-sentinel (preventing runaway if the opening sentinel
-# is mis-typed) or to end of file, whichever comes first.
+# 3. Provide a generator that reads a stream to a given end-sentinel, or to
+# any end-sentinel (preventing runaway if an opening sentinel is mis-typed)
+# or to end of file, whichever comes first. Skips over empty lines.
+#
 # This makes for simple coding of a loop to process the lines of a section or
 # a whole file.
 #
@@ -150,7 +157,7 @@ def read_to(qts, sentinel):
 # all of its components register for their sections through it.
 
 class MetaMgr(object):
-    # class constant for validating readers and writers
+    # class constant for validating reader and writer parameters
     _rdr_wtr_types = (types.FunctionType, types.MethodType, types.LambdaType)
 
     def __init__(self):
@@ -159,7 +166,7 @@ class MetaMgr(object):
         self.version_write = '2'
         self.version_read = '0'
         # Initialize the important section_dict with our version
-        # reader and writer pre-registered.
+        # reader and writer pre-registered in it.
         self.section_dict = {C.MD_V : [self._v_reader, self._v_writer]}
         # End of __init__
 
