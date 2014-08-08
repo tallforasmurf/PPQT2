@@ -43,7 +43,10 @@ def check_log(text, level):
     log_data = log_stream.getvalue()
     x = log_stream.seek(0)
     x = log_stream.truncate()
-    return (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
+    if (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level])):
+        return True
+    print(log_data)
+    return False
 # add .. dir to sys.path so we can import ppqt modules which
 # are up one directory level
 import sys
@@ -73,6 +76,7 @@ memstream = utilities.MemoryStream()
 THETA = 'Θ'
 STRING = THETA+'foobar!'
 memstream.writeLine(STRING)
+assert (len(STRING)+1)*2 == memstream.pos()
 memstream.rewind()
 assert memstream.readLine() == STRING
 # n.b. it does no good to check .pos() now, it is a bytes offset
@@ -108,7 +112,7 @@ assert fbts is None
 assert check_log('Request for nonexistent input file',logging.ERROR)
 fbts = utilities.path_to_stream(file_unreadable)
 assert fbts is None
-assert check_log('Error 5 (Permission denied) opening file unreadable.txt',logging.ERROR)
+assert check_log('Error 5 (Permission denied) opening file unreadable',logging.ERROR)
 # Existing file dialog - file dialogs require an App and a parent window
 # or python will crash
 from PyQt5.QtWidgets import QApplication, QMainWindow
