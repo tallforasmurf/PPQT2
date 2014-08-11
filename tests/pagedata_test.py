@@ -94,8 +94,10 @@ import constants as C
 import book
 import pagedata
 
+# Create a main window, which creates an untitled book, which creates a page model
 mw = mainwindow.MainWindow(QSettings())
-the_book = book.Book(mw,None)
+# cheat and reach into the mainwindow and get that book
+the_book = mw.open_books[0]
 pagem = the_book.get_page_model()
 mm = the_book.metamgr
 # Load the document with known text
