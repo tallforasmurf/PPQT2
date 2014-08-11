@@ -63,7 +63,7 @@ app.setApplicationName("PPQT2")
 from PyQt5.QtCore import QSettings
 settings = QSettings()
 settings.clear()
-settings.setValue("dictionaries/path",files_path)
+settings.setValue("paths/dicts_path",files_path)
 settings.setValue("dictionaries/default_tag","en_GB")
 import dictionaries
 dictionaries.initialize(settings)
