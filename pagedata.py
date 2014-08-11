@@ -34,24 +34,26 @@ One of these objects is created by each Book object. It:
   * is called by the Book to scan page separators for a new book.
   * is called by the Book during save, to write metadata.
   * acts as data model to the the Pages view panel
-  * also is data model to the Images view panel
+  * also is data model to the Images view panel (for page boundaries and filenames)
   * also is data model to the Edit view panel (for folio number display)
 
     Load Process
 
 When the Book is created it creates a PageData object which registers a
-reader and writer for the PAGETABLE metadata section. The main window tells
-the Book to load either a known file (one with matching .meta file) or a new
-file (without). In the first case the metadata manager calls the registered
-read_pages method to store the page info from the metadata file.
+reader and writer for the PAGETABLE metadata section.
 
-In the second case the Book calls the scan_pages() method, which uses the
-editdata's all_blocks iterator to scan the document and extract the key info
-from all page separator lines. At either time QTextCursors are created to mark
-the start of each page in the book.
+If the main window tells the Book to load a known file (one with matching
+.meta file), the metadata manager calls the registered read_pages method to
+store the page info from the metadata file.
 
-scan_pages() is only called the first time a document is loaded. From
-then on we save and load page info in the metadata file.
+If the main window tells the Book to load a new file, one with no metadata,
+the Book calls the scan_pages() method. It uses the editdata module
+all_blocks iterator to scan the document and extract the key info from any
+page separator lines. When the book is later saved, these data are saved
+in the .meta file for next time, so page boundary lines are checked only the
+first time a file is opened.
+
+In either case QTextCursors are created to mark the start of each page.
 
     Save Process
 
@@ -69,16 +71,18 @@ This "data model" has 6 items to store about each scan page:
   * The scan image filename string, usually a number like "002" or "0075" but
   sometimes alphanumeric.
 
-  * Three ints related to the Folio value:
+  * Three ints related to the Folio value, defined in constants.py:
        - the folio rule, e.g. C.FolioRuleAdd1
        - the folio format, e.g. C.FolioFormatArabic
        - the folio number, e.g. 17
 
   * A string of proofer names separated by backslashes, e.g.
-        \\Frau Sma\\fsmwalb\Scribe
-    When writing the metadata file, spaces within this string are replaced
-    with C.UNICODE_EN_SPACE so the string will remain a unit under split().
-    Note also some names may be null, as the 1st and 3rd in the example.
+  \\Frau Sma\\fsmwalb\Scribe
+
+  Spaces are permitted in proofer names ("Frau Sma"), but when writing the
+  metadata file, spaces within this string are replaced with
+  C.UNICODE_EN_SPACE so the string will remain a unit under split(). Some
+  names may be null, as the 1st and 3rd in the example.
 
 In effect this is a 6-column table indexed by row number. However
 in memory, data is in lists indexed by row number:
@@ -86,21 +90,22 @@ in memory, data is in lists indexed by row number:
   * cursor_list is a list of QTextCursor objects
   * filename_list is a list of filename strings
   * folio_list is a list of three-item lists [rule,format,number]
-    -- a list not a tuple because it needs to be mutable
+    -- not a list of tuples because the items are mutable
   * proofer_list is a list of lists containing proofer names, e.g.
     [ "", "Frau Sma", "", "fsmwalb", "Scribe" ] with u2002's converted.
 
     Public Methods
 
-pagedata has two clients: imageview displays the scan images using the filenames;
-and pageview displays all the data in the Pages panel.
+pagedata has three clients: imageview needs the scan image filename for the
+current edit cursor location; editview needs the same to display in its
+status line; and pageview displays all the data in the Pages panel.
 
     active()    returns True when pagedata is available, False else.
 
     page_count()returns the count of pages (for sizing the page table).
 
-    page_index(P)  returns the row index for the page that contains
-                document offset P, or None if P precedes the first page.
+    page_index(P)  returns the row index R for the page that contains
+                document position P, or None if P precedes the first page.
 
     name_index(fname) returns the row index R of the page with filename
                 fname, if it exists.
@@ -111,13 +116,14 @@ and pageview displays all the data in the Pages panel.
 
     folio_string(R) returns the formatted display of the folio for row R.
 
-    proofers(R) returns the proofer string list for row R.
+    proofers(R) returns the list of proofer name strings for row R.
 
     folio_info(R)   returns the folio item list for row R.
 
     set_folios(R, rule, fmt, number) update the folio values for row R.
 
-    Page Boundary Cursors
+
+    Page Boundary Cursor Maintenance
 
 We rely on Qt to keep the page-start cursors accurate under editing. This
 does not always happen. Under some types of edit, the start-offset of a
@@ -137,17 +143,13 @@ Quick, control-z!" -- the cursors are NOT restored to their former positions
 but remain pointing to the end of the now-restored section of text. So Undo
 fails to restore the page boundary positions once they are moved.
 
-Note that in the Reflow process, which often replaces spans of text that
-overlap page boundaries, there is special code to preserve these markers.
-However if you reflow and then Undo, bug 32689 bites you.
-
-One possible approach would be to give the user a "Refresh" button on the
-Pages panel, asking us to re-scan the page separator lines, if they still
-exist. (If they have been deleted, nothing could be done.) This refresh would
-look for psep lines and update only the start offsets and cursors, preserving
-any folio work that had been done. This could also be coded as a standalone
-utility. (This wouldn't help reflow, which is done after page sep lines are
-deleted.)
+This can occur but is rarely an issue under normal post-processing. In
+Version 1, the Reflow process often replaced spans of text that overlapped
+page boundaries but it took pains to preserve the markers in the reflowed
+text. However the user was encouraged to reflow and then Undo, and on Undo,
+bug 32689 would bite. In version 2, we do not support inline Reflow (only a
+translation to a new file with new page boundaries). So page boundary cursors
+will be less often misplaced.
 
 '''
 import logging
@@ -159,18 +161,27 @@ import metadata
 import editdata
 from PyQt5.QtGui import QTextBlock, QTextCursor
 
-# This regex recognizes page separator lines. In a typical book a page
-# separator line looks like:
-# -----File: 001.png---\Johannes\marialice\Clog\Johannes\Adair\--------------
-# where each \something is the handle of a proofer who worked on that page.
-# It seems that in some recent books, proofers are absent:
-# -----File: 001.png---------------------------------------------------------
-# This defeats the regex used in V1, which expected at least one proofer
-# name. The regex below handles either alternative and captures:
-#   group(1) : the image filename -- usually but not always numeric
-#   group(3) : string of proofer names divided by backslashes, or None.
-# The compiled regex can be a global because in use, it creates a match
-# object that is private to the caller.
+'''
+This regex recognizes page separator lines. In a typical book a page
+separator line looks like:
+
+ -----File: 001.png---\Johannes\marialice\Clog\Johannes\Adair\--------------
+
+where each \something is the handle of a proofer who worked on that page.
+It seemed that in some books, proofers are absent:
+
+ -----File: 001.png---------------------------------------------------------
+
+This defeats the regex used in V1, which expected at least one proofer name.
+(However this turned out to be user error operating on an incomplete file.)
+Regardless, the regex below handles either alternative and captures:
+
+    group(1) : the image filename -- usually but not always numeric
+    group(3) : string of proofer names divided by backslashes, or None.
+
+The compiled regex can be a global because in use, it creates a match
+object that is private to the caller.
+'''
 
 re_line_sep = regex.compile(
     '^-+File: ([^\\.]+)\\.png-(-*((\\\\[^\\\\]*)+)\\\\-*|-+)$'
@@ -181,8 +192,6 @@ class PageData(object):
         self.my_book = my_book
         # Save reference to the metamanager
         self.metamgr = my_book.get_meta_manager()
-        # Save reference to the edited document
-        self.document = my_book.get_edit_model()
         # Set up lists
         self.cursor_list = []
         self.filename_list = []
@@ -208,6 +217,8 @@ class PageData(object):
     #
     def scan_pages(self):
         global re_line_sep
+        # Get a reference to the edited document which exists now
+        self.document = self.my_book.get_edit_model()
         # first page is Arabic starting at 1
         rule = C.FolioRuleSet
         fmt = C.FolioFormatArabic
@@ -241,7 +252,7 @@ class PageData(object):
             self._add_stopper()
 
     # common to scan_pages and read_pages, add a search-stopper
-    # to the list of cursors - see page_at() below.
+    # to the list of cursors - see page_at() below for use.
     def _add_stopper(self) :
         qtc = QTextCursor(self.document)
         qtc.setPosition( self.document.characterCount()-1 )
@@ -249,15 +260,22 @@ class PageData(object):
 
     # Read the metadata lines and store in our lists. This should be called
     # only once per book. The lists are not cleared at the start so if the
-    # metadata file has multiple PAGETABLEs, they will accumulate. The data
-    # format is the same between V1 and V2, 6 space-delimited items, e.g.
+    # metadata file has multiple PAGETABLE sections, they will accumulate.
+    # The data format is the same in V1 and V2, 6 space-delimited items, e.g.
+    #
     #     35460 027 \\fmmarshall\\fsmwalb\Scribe 0 0 22
+    #
     # or, when there were no proofer names in the separator lines,
+    #
     #     34560 027 \\ 0 0 22
+    #
     # Note that unlike worddata we make no allowances here for user
     # meddling/editing of page data, except for guarding it in a try block.
     #
     def read_pages(self, stream, sentinel, vers, parm):
+        # Get a reference to the edited document which exists now
+        self.document = self.my_book.get_edit_model()
+
         valid_rule = {C.FolioRuleAdd1,C.FolioRuleSet,C.FolioRuleSkip}
         valid_fmt = {C.FolioFormatArabic,C.FolioFormatLCRom,C.FolioFormatUCRom,C.FolioFormatSame}
         last_fmt = C.FolioFormatArabic
@@ -290,15 +308,15 @@ class PageData(object):
                 self.proofers_list.append(plist)
             except Exception as thing:
                 pagedata_logger.error('invalid line of page metadata: '+thing.args[0])
-                pagedata_logger.error('  "'+line+'"')
+                pagedata_logger.error('  ignoring "'+line+'"')
         if 0 < len(self.filename_list) :
             self._active = True
             self._add_stopper()
 
     # Write our data as metadata lines. In the page separator lines
     # the proofers begin with backslash and are delimited with backslash.
-    # For now-inscrutable reasons I kept that (instead of simple join)
-    # format for the metadata file.
+    # For now-inscrutable reasons I kept that format (instead of simple join)
+    # in the V1 the metadata file.
 
     def write_pages(self, stream, sentinel):
         if not self._active : return # don't write an empty section
@@ -374,11 +392,8 @@ class PageData(object):
     # requirement that they be numeric or ascending: frontispiece.png,
     # indexA.png, all ok. Here we are just doing a linear search of the list.
     #
-    # If linear search should become a performance problem, two alternatives.
-    # One, we could look at the fname and if it is numeric or starts with
-    # digits, we could start the linear search just below the numeric index,
-    # eg start the search for "100a" at row 99. Or, with more trouble, during
-    # reading or scanning of the page metadata we could store a separate dict
+    # If linear search should become a performance problem, then during
+    # reading or scanning of the page metadata we could store an inverse dict
     # of {name:row#} so we could do a quick hash lookup of any fname.
 
     def name_index(self, fname):
@@ -415,7 +430,7 @@ class PageData(object):
             if rule == C.FolioRuleSkip :
                 return ''
             if fmt == C.FolioFormatSame :
-                fmt = self.folio_format(R)
+                fmt = self.folio_format(R) # calculate actual, see below
             if fmt == C.FolioFormatArabic :
                 return str(number)
             return toRoman(number, fmt == C.FolioFormatLCRom)
