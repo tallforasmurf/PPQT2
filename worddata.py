@@ -84,7 +84,7 @@ called. This method gets the Document (see editdata.py) from the Book and
 from it gets an iterator to fetch the lines of the document.
 
 We zero out the counts on all known tokens. We also empty our dictionary of
-words that use alt-dict tags, as the user might have edited in or out, some
+words that use alt-dict tags, as the user might have added or removed some
 lang= properties. Then we parse each line into tokens using a regex, adding
 tokens to the dictionary only as necessary, and incrementing the counts.
 
@@ -131,29 +131,30 @@ dictionary, else the current default dictionary.
 
 If a token contains hyphens, it is split at the hyphens and the members are
 entered individually. Then the complete hyphenated token is entered with
-properties that are the set-union of the member tokens. Thus
-"Mother-in-law's" will have MC from "Mother", AP from "law's", probably XX
-from "law's", and HY for itself. "1985-89" will have ND from its parts and HY
-for itself.
+properties that are the set-union of the member tokens, less XX. Thus
+"Mother-in-law's" will have MC from "Mother", AP from "law's", and HY for
+itself. ("law's" might have XX, but that is not propogated to the parent
+phrase.) "1985-89" will have ND from its parts and HY for itself.
 
     Interrogation Methods
 
 The Words panel calls word_count() to get the count of words for table
 sizing. It calls word_at(n) to get the text of the n'th word (by way of a
 sorteddict KeysView) and word_props_at(n) to get a list [count, propset] for
-the n'th word (by way of a sorteddict ValuesView). Use of the special "views"
-methods of the sorteddict supposedly get us O(1) retrieval time.
+the n'th word (by way of a sorteddict ValuesView). Use KeysView and
+ValuesView of the sorteddict supposedly get us O(1) retrieval time.
 
 The Edit syntax highlighter, when misspelled highlights are requested, calls
-spelling_test(token_string) and gets back "XX in" that token's properties. If
-the token is not in the table, for example the user typed in a new word since
-the last refresh, we return False. So newly entered words are not highlighted
-as misspellings until after a refresh.
+spelling_test(token_string) and gets back "XX in" that token's properties
+(that is, False means correctly spelled). If the token is not in the table,
+for example the user typed in a new word since the last refresh, we return
+False. So newly entered words are not highlighted as misspellings until after
+a refresh.
 
-When scanno highlighting is on, the syntax highlighter also calls
-scanno_test() to see if a token is in the scanno set. The return is True when
-the given token is in the scanno list. Thus when no scannos have been loaded,
-none will be found.
+When scanno highlighting is on, the syntax highlighter calls scanno_test() to
+see if a token is in the scanno set. The return is True when the given token
+is in the scanno list. Thus when no scannos have been loaded, none will be
+found.
 
 '''
 import constants as C
@@ -191,7 +192,8 @@ prop_decode = {
     }
 # set to test spell-check-ability
 prop_bgh = set([BW,GW,HY])
-# set to clear XX -- set.remove(XX) raises an exception if no XX
+# set used to clear XX from a set of properties -- set.remove(XX) raises an
+# exception if no XX but set & prop_nox ensures it is gone.
 prop_nox = set([UC,LC,MC,HY,AP,ND,BW,GW,AD])
 
 # ====================================================================
@@ -208,7 +210,8 @@ xp_word = "(\\w*(\\[..\\])?\\w+)+"
 # two-digit footnote anchor.
 
 # Next: the above with embedded hyphens or apostrophes (incl. u2019's):
-# She's my mother-in-law's 100-year-old ph[oe]nix by [OE]dipus.
+# She's my mother-in-law's 100-year-old ph[oe]nix by [OE]dipus. This
+# will not recognize a singleton ligature preceding or following an apostrophe.
 
 xp_hyap = "(" + xp_word + "[\\'\\-\u2019])*" + xp_word
 
@@ -251,20 +254,22 @@ re_token = regex.compile(xp_any, regex.IGNORECASE)
 # for lang='value' allowing for single, double, or no quotes on the value.
 
 xp_lang = '''lang=[\\'\\"]*([\\w\\-]+)[\\'\\"]*'''
-re_lang_attr = regex.compile(xp_lang, regex.IGNORECASE)\
+re_lang_attr = regex.compile(xp_lang, regex.IGNORECASE)
 
 # The value string matched by re_lang_attr.group(0) is a language designation
 # but we require it to be a dictionary tag such as 'en_US' or 'fr_FR'. It is
-# not clear from the W3C docs whether all (or any) of our dic tags are
-# language designations. Nevertheless, during the refresh() we save the dict
-# tag as an alternate dictionary for all words until the matching close tag
-# is seen.
+# not clear from the W3C docs whether all (or any) of our dic tags really
+# qualify as language designations. Nevertheless, during the refresh() we
+# save the dict tag as an alternate dictionary for all words until the
+# matching close tag is seen.
 
 
-# ====================================================================
-# Class to implement saving all the census data related to one book.
-# speller is a spellcheck object. metamgr is the MetaMgr object for
-# the controlling book.
+# ==========================================================================
+#
+# Class to implement saving all the census data related to one book. Created
+# by a Book object, which passes itself as my_book so that this object can
+# call back to the Book to get the meta manager, the current spellcheck
+# object, and the edit data model.
 
 class WordData(object):
 
@@ -278,8 +283,7 @@ class WordData(object):
         # Save reference to a speller, which will be the default
         # at this point.
         self.speller = my_book.get_speller()
-        # The vocabulary list, as a sorted dict with a default so that new
-        # keys have zero count and empty property set
+        # The vocabulary list as a blist sorted dict.
         self.vocab = blist.sorteddict()
         # Key and Values views on the vocab list for indexing by table row.
         self.vocab_kview = self.vocab.keys()
@@ -288,9 +292,8 @@ class WordData(object):
         self.good_words = set()
         self.bad_words = set()
         self.scannos = set()
-        # A dict of words that use an alt-dict tag. Word is the key, alt-dict
-        # tag the value. Any word that needs an alt dict is entered here as
-        # a key with the alt-tag as its value.
+        # A dict of words that use an alt-dict tag. The key is a word and the
+        # value is the alt-dict tag string.
         self.alt_tags = blist.sorteddict()
         # Register metadata readers and writers.
         self.metamgr.register(C.MD_GW, self.good_read, self.good_save)
@@ -303,24 +306,25 @@ class WordData(object):
     # Methods used when loading a new or existing file:
     #
     # 1. Load a good_words metadata section. Called with a stream positioned
-    # just after {{GOODWORDS}}. For each reader, the sentinel is the section
-    # name that marks the end of the metadata, e.g. "{{/GOODWORDS}}". The
-    # metamanager utility read_to() facilitates reading lines to the end.
+    # just after the starting sentinel line e.g. {{GOODWORDS}}. For each reader,
+    # end of section is the sentinel again, e.g. "{{/GOODWORDS}}". The
+    # metamanager utility read_to() facilitates reading all lines of a section.
     #
     # We do not know whether good- and bad-words will be loaded before
     # or after the vocabulary. So we allow for either sequence. If there are
     # multiples of these sections, they are additive.
     #
     # The good_read() and bad_read() methods can also be called for a new
-    # file, one without metadata but with good_words/bad_words files.
-    # The metadata.read_to() method is cool with that.
-    #
+    # file, one without proper metadata but with good_words/bad_words files.
+    # The input is the good/bad_words text file. The metadata.read_to()
+    # method is cool with that.
+
     def good_read(self, stream, sentinel, v, parm) :
         for line in metadata.read_to(stream, sentinel):
             # note depending on read_to to strip whitespace
             if line in self.bad_words :
                 worddata_logger.warn(
-                    '"{0}" is in both good and bad words - ignored'.format(line)
+                    '"{0}" is in both good and bad words - use in good ignored'.format(line)
                     )
             else :
                 self.good_words.add(line)
@@ -335,7 +339,7 @@ class WordData(object):
         for line in metadata.read_to(stream, sentinel):
             if line in self.good_words :
                 worddata_logger.warn(
-                    '"{0}" is in both good and bad words - ignored'.format(line)
+                    '"{0}" is in both good and bad words - use in bad ignored'.format(line)
                     )
             else :
                 self.bad_words.add(line)
@@ -365,7 +369,7 @@ class WordData(object):
     #
     # Before adding a word make sure to unicode-flatten it. (It should be
     # flat in the file, but we didn't do that in V1, and anyway the user can
-    # add words to the file.
+    # add words to the file.)
     #
     def word_read(self, stream, sentinel, v, parm) :
         # get a new speller in case the Book read a different dict already
@@ -384,15 +388,15 @@ class WordData(object):
                     (word, alt_tag) = word.split('/')
                 word = unicodedata.normalize('NFKC',word)
                 if 3 > len(parts) :
-                    # just the word (and count?), so: user addition to meta
-                    # file. Just add it to the vocabulary with count 1,
+                    # just word, or word and count, so a user addition to
+                    # meta file. Just add it to the vocabulary with count 1,
                     # handling hyphens and all.
                     self._add_token(word, alt_tag)
                     continue # that's that, on to next line
                 # line had 3 (or more?) parts: assume proper metadata.
                 count = int(parts[1]) # ValueError if not an int str
                 count = max(1,count) # convert 0, negative to 1
-                if v < '2' :
+                if v < '2' : # test metadata file version
                     # In V.1 the third item is an integer representing a set of bits
                     # decoded as follows.
                     bits = int(parts[2]) # ValueError if not an int
@@ -405,11 +409,11 @@ class WordData(object):
                     if 0x10 & bits : prop_set.add(AP)
                     if 0x80 & bits : prop_set.add(XX)
                 else :
-                    # in V.2 the third item is e.g "{1,4}" -- the string form
+                    # in V.2 the third item is e.g "{1,4}" -- the __repr__()
                     # of a set of ints with spaces compressed out so it
                     # splits as one token. Convert back to a set and
                     # cautiously add its members to prop_set. literal_eval
-                    # will throw SyntaxError on bad syntax.
+                    # will throw SyntaxError or ValueError on bad syntax.
                     input_set = ast.literal_eval(parts[2])
                     if type(input_set) == type(prop_set) :
                         for i in input_set :
@@ -419,7 +423,7 @@ class WordData(object):
                         raise ValueError('bad property set')
             except (IndexError, ValueError, SyntaxError):
                 worddata_logger.warn('line {0} of word census list invalid'.format(line_num))
-                worddata_logger.warn('  "'+line+'"')
+                worddata_logger.warn('  ignoring "'+line+'"')
                 continue # on to next line.
             # note we are not checking for duplicates
             if word in self.bad_words : prop_set.add(BW)
@@ -451,7 +455,7 @@ class WordData(object):
             stream << word + '\n'
         stream << metadata.close_line(sentinel)
     #
-    # 4. Save the vocabulary, each as WORD count {set}
+    # 4. Save the vocabulary, each as WORD[/alt_tag] count {set}
     #
     def word_save(self, stream, sentinel) :
         stream << metadata.open_line(sentinel)
@@ -523,7 +527,8 @@ class WordData(object):
                 m = re_token.search(line,j)
 
         # look for zero counts and delete those items. In order not to
-        # confuse the value and keys views, make a list and then execute it.
+        # confuse the value and keys views, make a list of the actual word
+        # tokens to be deleted, then use del.
         togo = []
         for j in range(len(self.vocab)) :
             if self.vocab_vview[j][0] == 0 :
@@ -536,7 +541,7 @@ class WordData(object):
     # can be called from word_read to process a user-added word.
     # Arguments:
     #    tok_str: a normalized word-like token; may be hyphenated a/o apostrophized
-    #    dic_tag: an alternate dictionary tag
+    #    dic_tag: an alternate dictionary tag or None
     #
     # If the token has no hyphens, this is just a cover on _count. When the
     # token is hyphenated, we enter each part of it alone, then add the
@@ -583,7 +588,8 @@ class WordData(object):
         if count : # it was in the list: a new word would have count=0
             self.vocab[word][0] += 1 # increment its count
             return # and done.
-        # word was not in the list (but is now): count is 0, prop_set is empty
+        # Word was not in the list (but is now): count is 0, prop_set is empty.
+        # The following is only done once per unique word.
         self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
         work = word[:] # copy the word, we may modify it next.
         # If word has apostrophes, note that and delete for following tests.
