@@ -192,6 +192,8 @@ class PageData(object):
         self.my_book = my_book
         # Save reference to the metamanager
         self.metamgr = my_book.get_meta_manager()
+        # Get a reference to the edited document
+        self.document = my_book.get_edit_model()
         # Set up lists
         self.cursor_list = []
         self.filename_list = []
@@ -217,8 +219,6 @@ class PageData(object):
     #
     def scan_pages(self):
         global re_line_sep
-        # Get a reference to the edited document which exists now
-        self.document = self.my_book.get_edit_model()
         # first page is Arabic starting at 1
         rule = C.FolioRuleSet
         fmt = C.FolioFormatArabic
@@ -273,9 +273,6 @@ class PageData(object):
     # meddling/editing of page data, except for guarding it in a try block.
     #
     def read_pages(self, stream, sentinel, vers, parm):
-        # Get a reference to the edited document which exists now
-        self.document = self.my_book.get_edit_model()
-
         valid_rule = {C.FolioRuleAdd1,C.FolioRuleSet,C.FolioRuleSkip}
         valid_fmt = {C.FolioFormatArabic,C.FolioFormatLCRom,C.FolioFormatUCRom,C.FolioFormatSame}
         last_fmt = C.FolioFormatArabic
