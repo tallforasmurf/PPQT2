@@ -431,7 +431,7 @@ class ImageDisplay(QWidget):
     def _uic(self):
 
         # Function to return the actual width of the label text
-        # of a widget. Get the fontMetrics and ask it for the widt.
+        # of a widget. Get the fontMetrics and ask it for the width.
         def _label_width(widget):
             fm = widget.fontMetrics()
             return fm.width(widget.text())
@@ -500,7 +500,7 @@ class ImageDisplay(QWidget):
             )
         self.zoom_to_height.clicked.connect(self._zoom_to_height)
 
-        w = 30 + max(_label_width(self.zoom_to_height),_label_width(self.zoom_to_width))
+        w = 20 + max(_label_width(self.zoom_to_height),_label_width(self.zoom_to_width))
         self.zoom_to_height.setMinimumWidth(w)
         self.zoom_to_width.setMinimumWidth(w)
 
