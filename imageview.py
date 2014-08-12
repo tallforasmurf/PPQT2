@@ -47,14 +47,14 @@ If the cursor_to_image button is checked (default true), whenever the edit
 cursor moves we check to see if the page has changed, and if so, change the
 display.
 
+If the image_to_cursor button is checked (default false), when we do a page
+up or down, we force the edit cursor to move to the top of the new page.
+
 We intercept keystrokes and process them as follows:
   ctrl-plus zooms up by 1.25
   ctrl-minus zooms down by 0.8
   page up goes to the next-lower page index
   page down goes to the next-higher page index
-
-If the image_to_cursor button is checked (default false), when we do a page
-up or down, we force the edit cursor to move to the top of the new page.
 
 '''
 import constants as C
@@ -62,14 +62,33 @@ import metadata
 import pagedata
 import math # for isnan() only
 
-from PyQt5.QtCore import Qt, QDir, QFileInfo, QCoreApplication, QSize
+from PyQt5.QtCore import (
+    Qt,
+    QDir,
+    QFileInfo,
+    QCoreApplication,
+    QSize
+)
 _TR = QCoreApplication.translate
+
 from PyQt5.QtWidgets import (
-    QFrame, QHBoxLayout, QLabel, QPushButton, QAbstractScrollArea, QScrollArea,
-    QSizePolicy, QSpinBox, QToolButton, QVBoxLayout, QWidget
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QAbstractScrollArea, QScrollArea,
+    QSizePolicy,
+    QSpinBox,
+    QToolButton,
+    QVBoxLayout,
+    QWidget
 )
 from PyQt5.QtGui import (
-    QColor, QImage, QKeyEvent, QPixmap, QPalette
+    QColor,
+    QImage,
+    QKeyEvent,
+    QPixmap,
+    QPalette
 )
 import logging
 imageview_logger = logging.getLogger(name='imageview')
@@ -82,20 +101,22 @@ ZOOM_FACTOR_MAX = 2.0
 class ImageDisplay(QWidget):
     def __init__(self, my_book, parent=None):
         super().__init__(parent)
-        self.the_book = my_book
+        self.my_book = my_book
         # register metadata readers and writers
         md = my_book.get_meta_manager()
         md.register(C.MD_IZ,self._zoom_read,self._zoom_write)
         md.register(C.MD_IX,self._link_read,self._link_write)
         # Create our widgets including cursor_to_image and
-        # image_to_cursor pushbuttons. Then disable them all.
+        # image_to_cursor pushbuttons.
         self._uic()
         # set defaults in case no metadata
         self.cursor_to_image.setChecked(True)
         self.image_to_cursor.setChecked(False)
         self.zoom_factor = 0.25
         self.png_path = None
+        # disable all widgetry until we get some metadata
         self._disable()
+        # end of __init__()
 
     # Disable our widgets because we have no image to show.
     def _disable(self):
@@ -117,9 +138,9 @@ class ImageDisplay(QWidget):
     # Enable our widgets, we have images to show. At this time the Book
     # has definitely created an edit view and a page model.
     def _enable(self):
-        self.edit_view = self.the_book.get_edit_view()
+        self.edit_view = self.my_book.get_edit_view()
         self.editor = self.edit_view.Editor # access to actual QTextEdit
-        self.page_data = self.the_book.get_page_model()
+        self.page_data = self.my_book.get_page_model()
         self.cursor_to_image.setEnabled(True)
         self.image_to_cursor.setEnabled(True)
         self.zoom_to_width.setEnabled(True)
@@ -138,7 +159,7 @@ class ImageDisplay(QWidget):
     # but we do not depend on text the user could edit.
     def _zoom_read(self, qts, section, vers, parm):
         try:
-            z = float(parm) # exception on a bad literal
+            z = float(parm) # throws exception on a bad literal
             if math.isnan(z) or (z < 0.15) or (z > 2.0) :
                 raise ValueError
             self.zoom_factor = z
@@ -211,7 +232,8 @@ class ImageDisplay(QWidget):
         self.image_display.resize( self.zoom_factor * self.pix_map.size() )
 
     # Slot to receive the cursorMoved signal from the editview widget. If we
-    # are in no_image state, do nothing. Else get the character position of
+    # are in no_image state, do nothing. If the cursor_to_image switch is
+    # not checked, do nothing. Else get the character position of
     # the high-end of the current edit selection, and use that to get the
     # current page index from pagedata, and pass that to _show_page.
     def cursor_move(self):
@@ -249,21 +271,22 @@ class ImageDisplay(QWidget):
     def keyPressEvent(self, event):
         # assume we will not handle this key and clear its accepted flag
         event.ignore()
-        # If we have images to show, check the key value.
-        if not self.no_image :
-            modkey = int( int(event.key() | (int(event.modifiers()) & C.KEYPAD_MOD_CLEAR)) )
-            if modkey in C.KEYS_ZOOM :
-                event.accept()
-                fac = (0.8) if (modkey == C.CTL_MINUS) else (1.25)
-                self._set_zoom_real( fac *self.zoom_factor)
-            elif (event.key() == Qt.Key_PageUp) or (event.key() == Qt.Key_PageDown) :
-                event.accept()
-                pgix = self.last_index + (1 if (event.key() == Qt.Key_PageDown) else -1)
-                # If not paging off either end, show that page
-                if pgix >= 0 and pgix < self.page_data.page_count() :
-                    self._show_page(pgix)
-                    if self.image_to_cursor.isChecked():
-                        self.edit_view.show_position(self.page_data.position(pgix))
+        if self.no_image or (self.last_index is None) :
+            return # ignore keys until we are showing some image
+        # We have images to show, check the key value.
+        modkey = int( int(event.key() | (int(event.modifiers()) & C.KEYPAD_MOD_CLEAR)) )
+        if modkey in C.KEYS_ZOOM :
+            event.accept()
+            fac = (0.8) if (modkey == C.CTL_MINUS) else (1.25)
+            self._set_zoom_real( fac * self.zoom_factor)
+        elif (event.key() == Qt.Key_PageUp) or (event.key() == Qt.Key_PageDown) :
+            event.accept()
+            pgix = self.last_index + (1 if (event.key() == Qt.Key_PageDown) else -1)
+            # If not paging off either end, show that page
+            if pgix >= 0 and pgix < self.page_data.page_count() :
+                self._show_page(pgix)
+                if self.image_to_cursor.isChecked():
+                    self.edit_view.show_position(self.page_data.position(pgix))
 
     # Zoom to width and zoom to height are basically the same thing:
     # 1. Using the QImage of the current page in self.image,
@@ -276,6 +299,8 @@ class ImageDisplay(QWidget):
     # "sip.voidptr" object that we can index to get byte values.
     def _zoom_to_width(self):
 
+        # Generic loop to scan inward from the left or right edge of one
+        # column inward until a dark pixel is seen, returning that margin.
         def inner_loop(row_range, col_start, margin, col_step):
             pa, pb = 255, 255 # virtual white outside column
             for row in row_range:
@@ -312,8 +337,8 @@ class ImageDisplay(QWidget):
 
         # Scan in from left and from right to find the outermost dark spots.
         # Pages tend to start with many lines of white pixels so in hopes of
-        # establishing a narrow margin quickly scan from the middle to the end,
-        # then do the top half.
+        # establishing a narrow margin quickly, scan from the middle to the
+        # end, then do the top half.
         left_margin = inner_loop(
                         range(int(rows/2)*stride, (rows-1)*stride, stride*2),
                         0, int(cols/2), 1
@@ -397,12 +422,20 @@ class ImageDisplay(QWidget):
         self._set_zoom_real(port_height/text_height)
         self.scroll_area.verticalScrollBar().setValue(
                          int( top_row * self.zoom_factor ) )
+        # and that completes zoom-to-height
 
     # Build the widgetary contents. The widget consists mostly of a vertical
     # layout with two items: A scrollArea containing a QLabel used to display
     # an image, and a horizontal layout containing the zoom controls.
     # TODO: figure out design and location of two cursor-link tool buttons.
     def _uic(self):
+
+        # Function to return the actual width of the label text
+        # of a widget. Get the fontMetrics and ask it for the widt.
+        def _label_width(widget):
+            fm = widget.fontMetrics()
+            return fm.width(widget.text())
+
         # Create a gray field to use when no image is available
         self.gray_image = QPixmap(700,900)
         self.gray_image.fill(QColor("gray"))
@@ -451,7 +484,7 @@ class ImageDisplay(QWidget):
         # Create the to-width and to-height zoom buttons. Make
         # sure their widths are equal after translation.
         self.zoom_to_width = QPushButton(
-            _TR('Imageview zoom control','to Width')
+            _TR('Imageview zoom control button name','to Width')
             )
         self.zoom_to_width.setToolTip(
             _TR('Imageview zoom control tooltip',
@@ -459,16 +492,17 @@ class ImageDisplay(QWidget):
             )
         self.zoom_to_width.clicked.connect(self._zoom_to_width)
         self.zoom_to_height = QPushButton(
-            _TR('Imageview zoom control','to Height')
+            _TR('Imageview zoom control button name','to Height')
             )
         self.zoom_to_height.setToolTip(
             _TR('Imageview zoom control tooltip',
                 'Adjust the image to fill the window top to bottom.')
             )
         self.zoom_to_height.clicked.connect(self._zoom_to_height)
-        #w = max(self.zoom_to_height.width(),self.zoom_to_width.width())
-        #self.zoom_to_height.setMinimumWidth(w)
-        #self.zoom_to_width.setMinimumWidth(w)
+
+        w = 30 + max(_label_width(self.zoom_to_height),_label_width(self.zoom_to_width))
+        self.zoom_to_height.setMinimumWidth(w)
+        self.zoom_to_width.setMinimumWidth(w)
 
         # Create an HBox layout to contain the above controls, using
         # spacers left and right to center them and a spacers between
@@ -485,7 +519,7 @@ class ImageDisplay(QWidget):
         zhbox.addWidget(self.zoom_to_width,0)
         zhbox.addStretch(2) # right side spacer
 
-        # TODO: figure out layout with these buttons
+        # TODO: figure out layout with these buttons which are now invisible
         self.cursor_to_image = QToolButton()
         self.cursor_to_image.setCheckable(True)
         self.image_to_cursor = QToolButton()
