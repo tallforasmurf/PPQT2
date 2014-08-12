@@ -79,39 +79,20 @@ def check_header(mgr, section, expected):
     assert line == expected
 
 from PyQt5.QtWidgets import QApplication,QWidget
+from PyQt5.QtCore import QSettings
 app = QApplication(sys.argv)
 
 import mainwindow
-
-class miniMW(QWidget):
-    PANEL_DICT = {
-        'Images':None,
-        'Notes':None,
-        'Find' :None,
-        'Pages':None,
-        'Chars':None,
-        'Words':None,
-        'Fnote':None,
-        'Loupe':None,
-        'default' : ['Images','Notes','Find','Words','Chars','Pages','Fnote','Loupe'],
-        'tab_list' : None, # supplied in Book, updated in focus_me
-        'current' : 0
-        }
-    
-    def __init__(self):
-        super().__init__(None)
-    def focus_me(self,index):
-        print('focus call from ',str(index))
-mmw = miniMW()
-
-import book
-the_book = book.Book(5,mmw)
+# Create a main window, which creates an untitled book, which creates a page model
+mw = mainwindow.MainWindow(QSettings())
+# cheat and reach into the mainwindow and get that book
+the_book = mw.open_books[0]
 
 # get a ref to the imageviewer, make it big
 iv = the_book.imagev
 iv.resize(500,600)
 
-# get a ref to the memory manager used by load/check_header
+# get a ref to the metadata manager used by load/check_header
 mm = the_book.get_meta_manager()
 
 # exercise the meta read/writes
@@ -142,14 +123,14 @@ check_log('Invalid IMAGELINKING',logging.ERROR)
 path_to_sb = os.path.join(file_path,'small_book.txt')
 qfile = QFile(path_to_sb)
 qfile.open(QIODevice.ReadOnly)
-doc_stream = QTextStream(qfile)
-the_book.new_book(doc_stream, None, None, None, 'small_book.txt', file_path)
+doc_stream = utilities.FileBasedTextStream(qfile)
+the_book.new_book(doc_stream, None, None, None)
 
 
 ed = the_book.get_edit_view().Editor
 
 # put it on the screen, s.b. all gray, wait 500ms
-the_book.imagev.show()
+mw.show()
 QTest.qWait(1000)
 
 # jump to page 3
