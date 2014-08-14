@@ -30,17 +30,23 @@ This code manages app-level global resources, for example
   * default spellcheck dictionary tags (via dictionaries module)
   * fonts (via the font module)
   * highlighting styles and colors (via colors module)
-  * the Help file and its display panel
+  * the Help file and its display panel (via helpview)
+  * the app-level Preferences (via preferences)
 
-Within the main window it creates the widgets that display the various
-"view" objects.
+Creates the app-level menu structure and all the menu actions.
+
+Creates the widgets that display the various "view" objects.
 
 Instantiates and manages multiple Book objects.
 
 Maintains a sequence of integers for successive "untitled-n" booknames.
 Kept & used by File > New action.
 
-Support the user action of dragging a panel out of the tab-set to be an
+Manage the change of user focus from one document to another, switching
+all the dependent panels of the incoming Book for those of the outgoing
+one (see focus_me()).
+
+TODO Support the user action of dragging a panel out of the tab-set to be an
 independent window, or vice-versa.
 
 '''
@@ -141,7 +147,7 @@ PANEL_DICT = {
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, settings=None):
+    def __init__(self, settings):
         super().__init__()
         # Save the settings object for now and shutdown time.
         self.settings = settings
@@ -176,11 +182,11 @@ class MainWindow(QMainWindow):
         last_session = self._read_flist('mainwindow/open_files')
         if len(last_session) : # there were some files open
             if len(last_session) == 1 :
-                msg = _TR('Start-up', 'One book was open at the end of the last session.')
+                msg = _TR('Start-up dialog', 'One book was open at the end of the last session.')
             else:
-                msg = _TR('Start-up', '%n books were open at the end of the last session.',
+                msg = _TR('Start-up dialog', '%n books were open at the end of the last session.',
                           n=len(last_session) )
-            info = _TR("Start-up", "Click OK to re-open all")
+            info = _TR("Start-up dialog", "Click OK to re-open all")
             if utilities.ok_cancel_msg( msg, info) :
                 for file_path in last_session :
                     ftbs = utilities.path_to_stream(file_path)
@@ -203,9 +209,11 @@ class MainWindow(QMainWindow):
     # brought to the front. So be prepared for redundant calls.
 
     def focus_me(self, book_index):
-        #print('focusing {0} = {1}'.format(book_index,self.open_books[book_index].get_book_name()))
         outgoing = self.focus_book
-        if book_index == outgoing : return
+        if book_index == outgoing : return # redundant call
+        mainwindow_logger.debug(
+            'focusing {0} = {1}'.format(book_index,self.open_books[book_index].get_book_name())
+        )
         self.focus_book = book_index
         # Record the user's arrangement of panels for the outgoing book,
         # as a list of tuples ('tabname', widget) in correct sequence.
@@ -357,12 +365,12 @@ class MainWindow(QMainWindow):
                 meta_stream = utilities.related_output(doc_stream,'meta')
                 if not meta_stream:
                     utilities.warning_msg(
-                        _TR('File:Save', 'Unable to create metadata file.'),
+                        _TR('File:Save', 'Unable to open metadata file for writing.'),
                         _TR('File:Save', 'Use loglevel=error for details.') )
                     return False
             else:
                 utilities.warning_msg(
-                    _TR('File:Save', 'Unable to open file for writing.'),
+                    _TR('File:Save', 'Unable to open book file for writing.'),
                     _TR('File:Save', 'Use loglevel=error for details.') )
                 return False
             return active_book.save_book(doc_stream, meta_stream)
@@ -398,12 +406,12 @@ class MainWindow(QMainWindow):
         if target_book.get_save_needed() :
             # Compose message of translated parts because _TR does not
             # allow for incorporating strings, only numbers.
-            msg = _TR('File Close', 'Book file ', 'filename inserted next')
+            msg = _TR('File Close dialog', 'Book file ', 'filename follows here')
             msg += target_book.get_book_name()
-            msg += _TR('File Close', ' has been modified!', 'follows filename')
+            msg += _TR('File Close dialog', ' has been modified!', 'filename precedes this')
             ret = utilities.save_discard_cancel_msg(
                 msg,
-                info = _TR('File Close',
+                info = _TR('File Close dialog',
                            'Save it, Discard changes, or Cancel Closing?')
                 )
             if ret is None : # Cancel
@@ -415,7 +423,7 @@ class MainWindow(QMainWindow):
         # tab it is, because the user can drag tabs around.
         i = self.editview_tabset.indexOf(target_book.get_edit_view())
         # The following causes another tab to be focussed, changing self.focus_book
-        # and saving target_books tabs in target_book, not that we care.
+        # and saving target_book's tabs in target_book, not that we care.
         self.editview_tabset.removeTab(i)
         # 2, remove the book from our dict of open books.
         del self.open_books[target_index]
@@ -442,9 +450,8 @@ class MainWindow(QMainWindow):
     def _add_to_recent(self, path):
         if path in self.recent_files :
             del self.recent_files[self.recent_files.index(path)]
-        if len(self.recent_files) > 8 :
-            del self.recent_files[8]
         self.recent_files.insert(0,path)
+        self.recent_files = self.recent_files[:9]
 
     # Upon the aboutToShow signal from the File menu, populate the Recent
     # submenu with a list of files, but only the ones that are currently
@@ -563,7 +570,7 @@ class MainWindow(QMainWindow):
         #  divider if not Mac
         if not C.PLATFORM_IS_MAC:
             self.file_menu.addSeparator()
-        #  Preferences with the menu role that on mac, moves to the app menu
+        #  TODO Preferences with the menu role that on mac, moves to the app menu
         #  Quit with the menu role that moves it to the app menu
         work = QAction( _TR('Quit command','&Quit'), self )
         work.setMenuRole(QAction.QuitRole)
@@ -611,11 +618,11 @@ class MainWindow(QMainWindow):
                 unsaved.append(seq)
         if len(unsaved):
             if len(unsaved) == 1 :
-                msg = _TR('Shutdown', 'There is one unsaved file')
+                msg = _TR('Shutdown message', 'There is one unsaved file')
             else :
-                msg = _TR('Shutdown', 'There are %n unsaved files', n=len(unsaved))
+                msg = _TR('Shutdown message', 'There are %n unsaved files', n=len(unsaved))
             ret = utilities.save_discard_cancel_msg(
-                msg, _TR('Shutdown', 'Save, Discard changes, or Cancel Quit?') )
+                msg, _TR('Shutdown message', 'Save, Discard changes, or Cancel Quit?') )
             if ret is None :
                 # user wants to cancel shutdown
                 event.ignore()
