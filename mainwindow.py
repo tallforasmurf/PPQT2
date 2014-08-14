@@ -128,8 +128,26 @@ mainwindow_logger = logging.getLogger(name='main_window')
 # Dicts copied from the following are used to keep track of the several
 # view-panel objects owned by each Book. A new Book gets a copy and fills
 # it in with references to its view objects. The main window keeps a copy
-# that has references to the objects currently being displayed. The key
-# is the name of the panel that appears in its tab. The value is a widget.
+# that has references to the objects currently being displayed. These
+# dicts are used and updated by the focus_me() method.
+#
+# The keys 'Images' through 'Loupe' are the labels of the panels. The Book
+# object initializes their values with references to the widgets that
+# implement those panels.
+#
+# Key 'default' is the default sequence of panel tabs, left to right, used by
+# the book to set itself up.
+#
+# Key 'tab_list' is a list of tab labels in their actual sequence at the time
+# a book loses focus, as the user may have rearranged them.
+#
+# Key 'current' is the tab index of the panel tab that was active when the
+# book lost focus, e.g. index of the Find or Fnote panel.
+#
+# When a book loses focus, its panel labels and current index are stored
+# under 'tab_list' and the index of the current tab under 'current'. When a
+# book comes into focus the panel tabset is rebuilt in the correct sequence
+# from this info.
 
 PANEL_DICT = {
     'Images':None,
