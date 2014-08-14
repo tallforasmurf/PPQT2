@@ -22,18 +22,15 @@ __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
 '''
-Unit test for mainwindow.py
+Unit test for mainwindow.py - minimal check of settings save of recent files
+and open files.
 '''
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Unit test module boilerplate stuff
 #
-
-import sys
-import os
 # set up logging to a stream
 import io
 log_stream = io.StringIO()
-#log_stream = sys.stderr
 import logging
 logging.basicConfig(stream=log_stream,level=logging.INFO)
 def check_log(text, level):
@@ -59,22 +56,23 @@ def empty_log():
     if 0 == len(log_data) : return True
     print(log_data)
     return False
-def _read_flist(settings,array_key):
-    f_list = []
-    f_count = settings.beginReadArray(array_key)
-    for f in range(f_count): # which may be 0
-        settings.setArrayIndex(f)
-        f_list.append( settings.value('filepath') )
-    settings.endArray()
-    return f_list
-# Input is an array key and a possibly empty list of path strings
 def _write_flist(settings, file_list, array_key):
-    if len(file_list):
-        settings.beginWriteArray( array_key, len(file_list) )
-        for f in range(len(file_list)) :
-            settings.setArrayIndex( f )
-            settings.setValue( 'filepath',file_list[f] )
-        settings.endArray()
+    settings.beginWriteArray(array_key,len(file_list))
+    for f in range(len(file_list)) :
+        settings.setArrayIndex(f)
+        settings.setValue('filepath',file_list[f])
+    settings.endArray()
+def _read_flist(settings, array_key):
+    file_list = []
+    f_count = settings.beginReadArray(array_key)
+    for f in range(f_count): # it may be 0
+        settings.setArrayIndex(f)
+        file_list.append(settings.value('filepath'))
+    settings.endArray()
+    return file_list
+
+import sys
+import os
 my_path = os.path.realpath(__file__)
 test_path = os.path.dirname(my_path)
 files_path = os.path.join(test_path,'Files')
@@ -82,7 +80,6 @@ ppqt_path = os.path.dirname(test_path)
 sys.path.append(ppqt_path)
 from PyQt5.QtWidgets import QApplication
 app = QApplication(sys.argv)
-import constants as C
 
 # Set up the app so that settings work -- this in lieu of the ppqt2.py
 # Note the app name is distinct from the old, so that v1 and v2 can
@@ -96,35 +93,36 @@ settings = QSettings()
 # and awayyyy we go
 import mainwindow
 from PyQt5.QtCore import Qt,QPoint,QSize
-settings.clear()
-openlist = [
-    os.path.join(files_path,'small_book.txt'),
-    os.path.join(os.path.join(files_path,'realbook'),'realbook.txt')
-]
-_write_flist(settings, openlist, 'mainwindow/open_files')
-mw = mainwindow.MainWindow(settings)
-# Enable the following 2 lines to go interactive
-#mw.show()
-#app.exec_()
 
-# log won't be empty because of dict error messages
-#assert empty_log()
+## SECOND test check loading saving recent files and previously open files
+## clear the sessions and insert some previous files
+## and open files.
+
+mw = None # clear out that mainwindow
+settings.clear()
+recentlist = ['/the/path/to/glory/recent_1',
+            '/the/path/to/glory2/recent_2',
+            '/the/path/to/glory3/recent_3']
+_write_flist(settings, recentlist, 'mainwindow/recent_files')
+# Enable the following to see "Re-open" dialog - click cancel
+openlist = ['/somewhere/over/the/rainbow/open_1',
+            '/somewhere/over/the/rainbow/open_2']
+_write_flist(settings, openlist, 'mainwindow/open_files')
+#CLICK CANCEL TO MESSAGE
+mw = mainwindow.MainWindow(settings)
 mw.close()
+# open file list should be empty because cancel clicked
+xlist = _read_flist(settings, 'mainwindow/open_files')
+assert len(xlist) == 0
+# recent file list should go in and come out the same
+xlist = _read_flist(settings, 'mainwindow/recent_files')
+assert len(xlist) == len(recentlist)
+for path in xlist:
+    assert path in recentlist
+# log may not be empty owing to dictionary path msgs
+#assert empty_log()
 
 app.quit()
-
-# two opened files should still be open also in the recent list
-# however, order might change
-
-olist = _read_flist(settings, 'mainwindow/open_files')
-for path in olist:
-    assert path in openlist
-rlist = _read_flist(settings, 'mainwindow/recent_files')
-for path in rlist:
-    assert path in openlist
-
-#print(settings.value('mainwindow/size'))
-
 # idle a bit after quit to let garbage be collected
 from PyQt5.QtTest import QTest
 QTest.qWait(200)
