@@ -59,16 +59,14 @@ app = QApplication(sys.argv)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, QSettings
 from PyQt5.QtGui import QTextBlock, QTextCursor
-# enough of a book to satisfy Document class
-class FakeBook(QObject):
-    def __init__(self):
-        super().__init__()
-
 import editdata
-fake_book = FakeBook()
-the_doc = editdata.Document(fake_book)
+import mainwindow
+mw = mainwindow.MainWindow(QSettings())
+the_book = mw.open_books[0]
+the_doc = the_book.get_edit_model()
+
 # edit data with some >ascii data
 test_lines = ['Ōne','twő','thrĕep']
 test_data = '\n'.join(test_lines)
@@ -89,7 +87,7 @@ j = 0
 for line in the_doc.all_lines():
     assert line == test_lines[j]
     j+= 1
-for line in the_doc.z_to_a_lines(0,2):
+for line in the_doc.z_to_a_lines(1,3):
     j -= 1
     assert line == test_lines[j]
 assert j==0
@@ -102,7 +100,7 @@ for line in the_doc.a_to_z_lines(1,0):
 assert j==0
 # a to z for a==z
 for line in the_doc.a_to_z_lines(1,1) :
-    assert line == test_lines[1]
+    assert line == test_lines[0]
 tc.setPosition(5) # middle of 2nd line
 for line in the_doc.cursor_lines(tc):
     assert line == test_lines[1]
