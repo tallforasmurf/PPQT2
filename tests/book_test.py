@@ -22,7 +22,8 @@ __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
 '''
-Unit test for book.py
+Unit test for book.py - assume normal function is adequately tested
+by mainwindow.sikuli - here exercise only the log and error messages.
 '''
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Unit test module boilerplate stuff
@@ -44,7 +45,11 @@ def check_log(text, level):
     log_data = log_stream.getvalue()
     x = log_stream.seek(0)
     x = log_stream.truncate()
-    return (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
+    ret = (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
+    if not ret:
+        print('expected:',text)
+        print('actual:',log_data)
+    return ret
 # add .. dir to sys.path so we can import ppqt modules which
 # are up one directory level
 import sys
@@ -66,29 +71,15 @@ import metadata
 import utilities
 import mainwindow
 
+import book
+
+import dictionaries
+settings = QSettings()
+settings.clear()
+settings.setValue("paths/dicts_path",files_path)
+settings.setValue("dictionaries/default_tag","en_GB")
 import dictionaries
 dictionaries.initialize(settings)
-
-class miniMW(QWidget):
-    PANEL_DICT = {
-        'Images':None,
-        'Notes':None,
-        'Find' :None,
-        'Pages':None,
-        'Chars':None,
-        'Words':None,
-        'Fnote':None,
-        'Loupe':None,
-        'default' : ['Images','Notes','Find','Words','Chars','Pages','Fnote','Loupe'],
-        'tab_list' : None, # supplied in Book, updated in focus_me
-        'current' : 0
-        }
-    
-    def __init__(self):
-        super().__init__(None)
-    def focus_me(self,index):
-        print('focus call from ',str(index))
-mmw = miniMW()
 
 def load_section(mgr, section, line_list, vers=None):
     stream = utilities.MemoryStream()
@@ -130,13 +121,12 @@ def check_single(mgr, section, parm):
     txt = stream.readAll()
     assert (section+' '+parm) in txt
 
-import book
-the_book = book.Book( 1, mmw )
-# the book has now registered its metadata rdrs/wtrs.
-# we can invoke those indirectly by calling its meta manager
-# for load_meta and write_meta. First set up a new doc and
-# put a little text in it so cursors are valid.
-the_book.new_empty() # create editm, editv
+
+mmw = mainwindow.MainWindow(settings)
+# mainwindow opens a new-empty book, peek into it and grab a ref.
+
+the_book = mmw.open_books[0]
+# Put a little text in it so cursors are valid.
 em = the_book.get_edit_model()
 text = '''1. Now is the time
 2. For all good bits
@@ -144,6 +134,9 @@ text = '''1. Now is the time
 4. Of their byte.
 '''
 em.setPlainText(text)
+# the book has now registered its metadata rdrs/wtrs.
+# we can invoke those indirectly by calling its meta manager
+# for load_meta and write_meta.
 # test all md readers
 m = the_book.get_meta_manager()
 import constants as C
@@ -160,7 +153,7 @@ s = C.MD_MD
 load_single(m, s, 'en_US')
 check_single(m, s, 'en_US')
 load_single(m, s, 'ukrainian')
-assert check_log('Unable to open dictionary ukrainian',logging.ERROR)
+assert check_log('Unable to open default dictionary ukrainian',logging.ERROR)
 s = C.MD_ES
 load_single(m, s, '18')
 check_single(m, s, '18')
@@ -178,7 +171,7 @@ s = C.MD_CU
 p = '5 5'
 load_single(m, s, p)
 check_single(m, s, p)
-e = 'Ignoring invalid cursor position "'
+e = 'Ignoring invalid cursor position metadata "'
 p = 'x 5'
 load_single(m, s, p)
 assert check_log(e+p+'"',logging.ERROR)
@@ -202,7 +195,7 @@ check_section(m, s, ['1 2 3','2 3 3'])
 l = ['1 2 3','2 3 4','3 4 5','4 5 6','5 6 7','6 7 8','7 8 9','8 9 10','9 10 11']
 load_section(m, s, l)
 check_section(m, s, l)
-e = 'Ignoring invalid bookmark position "'
+e = 'Ignoring invalid bookmark metadata "'
 l = ['0 2 3']
 load_section(m, s, l)
 assert check_log(e+l[0]+'"',logging.ERROR)
