@@ -61,19 +61,26 @@ app.setOrganizationDomain("pgdp.net")
 app.setApplicationName("PPQT2")
 from PyQt5.QtCore import QSettings
 settings = QSettings()
+
+import utilities
+
+import dictionaries
+settings = QSettings()
+settings.clear()
+settings.setValue("paths/dicts_path",files_path)
+settings.setValue("dictionaries/default_tag","en_GB")
+import dictionaries
+dictionaries.initialize(settings)
 import fonts
 fonts.initialize(settings)
 import mainwindow
 mw = mainwindow.MainWindow(settings)
-import utilities
-
-import book
-the_book = book.Book( 0, mw )
-# Do a File>New, this creates the edit model and view.
-the_book.new_empty()
+# mainwindow made a book and set it new-empty
+the_book = mw.open_books[0]
 # grab the editview, no api defined or needed
 ev = the_book.editv
 em = the_book.get_edit_model()
+
 
 text = '''1. Now is the time
 2. For all good bits
@@ -85,14 +92,14 @@ em.setPlainText(text)
 from PyQt5.QtTest import QTest
 from PyQt5.QtCore import Qt # namespace for keys etc.
 
-ev.show()
+mw.show()
 while utilities.ok_cancel_msg('Make a selection','it will be centered'):
     QTest.qWait(4000)
     ev.center_this(ev.Editor.textCursor())
 
 app.exec_()
 exit()
-
+n
 
 # now to the testing
 
