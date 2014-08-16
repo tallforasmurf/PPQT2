@@ -55,6 +55,9 @@ Offers these additional methods:
 
     show_position(pos)   Same a show_this but for an integer position.
 
+    go_to_line_number('nn') Given a string representing a line number,
+                         position the cursor at the head of that line.
+
     go_to_block(tb)      given a text block, put the edit cursor at its start
                          and show it via show_this.
 
@@ -67,14 +70,21 @@ Offers these additional methods:
 '''
 
 import regex
-from PyQt5.Qt import Qt, QEvent, QObject, QCoreApplication
+from PyQt5.Qt import Qt, QEvent, QObject, QCoreApplication, QSize
 _TR = QCoreApplication.translate
 
 from PyQt5.QtWidgets import (
     QAction,
-    QFileDialog,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QMenu,
+    QPlainTextEdit,
+    QSizePolicy,
+    QSpacerItem,
     QTextEdit,
+    QVBoxLayout,
     QWidget
     )
 from PyQt5.QtGui import (
@@ -84,7 +94,8 @@ from PyQt5.QtGui import (
     QTextBlockFormat,
     QTextCursor,
     QTextCharFormat,
-    QTextDocument
+    QTextDocument,
+    QTextFormat
     )
 import editview_uic
 import fonts
@@ -157,7 +168,7 @@ class HighLighter(QSyntaxHighlighter):
                 if self.speller(t) :
                     self.setFormat(p,l,spelling_fmt)
 
-class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
+class EditView( QWidget ):
     def __init__(self, my_book, focusser, parent=None):
         # Initialize our superclass(es)
         super().__init__(parent)
@@ -173,35 +184,35 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         self.highlighter = HighLighter(self,my_book)
         self.scanno_check = False
         self.spelling_check = False
-        # invoke the UI setup defined by pyuic5, passing this
-        # object as the parameter that setupUi refers to as "EditWidget".
-        # It creates and initializes all the sub-widgets under the
-        # following properties of "self":
+        #
+        # Take our UI setup out of line. self._uic creates and
+        # initializes all the sub-widgets under self. :
         #     .Editor - the QPlainTextEditor
         #     .DocName - QLabel for the document filename
         #     .Folio - QLabel for the current folio value
         #     .ImageFilename - QLineEdit for the current image filename
         #     .LineNumber - QLineEdit for the line number
         #     .ColNumber - QLabel for the cursor column
+        # Signals from these widgets are hooked up below.
         #
-        # Those names are the only dependencies between this code
-        # and the QDesigner/pyuic5 output.
-        self.setupUi(self)
+        self._uic()
         # Connect the editor to the document.
         self.Editor.setDocument(self.document)
-        # Set up mechanism for a current-line highlight
-        self.current_line_fmt = QTextBlockFormat()
-        self.normal_line_fmt = QTextBlockFormat()
-        self.normal_line_fmt.setBackground(QBrush(Qt.white))
-        self.last_text_block = self.Editor.textCursor().block()
-        # Set the fonts of our widgets.
-        self.font_change(False) # update all fonts to default
-        # hook up to be notified of a change in font choice
+        # Set up mechanism for a current-line highlight, see _set_colors
+        # and _cursor_moved.
+        self.last_text_block = None # to know when cursor moves to new line
+        self.current_line_sel = QTextEdit.ExtraSelection()
+        self.current_line_fmt = QTextCharFormat()
+        self.current_line_fmt.setProperty(QTextFormat.FullWidthSelection, True)
+        # Sign up to get a signal on a change in font choice
         fonts.notify_me(self.font_change)
-        # Get the current highlight colors. This sets members scanno_format,
-        # spelling_format, current_line_thing, norm_style and mod_style.
-        self._set_colors()
+        # Fake that signal to set the fonts of our widgets.
+        self.font_change(False)
+        # Sign up to get a signal on a change of color preferences.
         colors.notify_me(self._set_colors)
+        # Fake the signal to set up widgets. This sets .scanno_format,
+        # .spelling_format, .current_line_thing, .norm_style and .mod_style.
+        self._set_colors()
         # Put the document name in our widget
         self.DocName.setText(self.my_book.get_book_name())
         # Set the cursor shape to IBeam -- no idea why this supposed default
@@ -217,116 +228,22 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         # Connect the Editor's cursorPositionChanged signal to our slot
         self.Editor.cursorPositionChanged.connect(self._cursor_moved)
         # Fill in the line and column number by faking that signal
-        self._cursor_moved(force=True)
+        self._cursor_moved()
+        # Create and install our context menu
+        self.context_menu = self._make_context_menu()
+        self.setContextMenuPolicy(Qt.DefaultContextMenu)
+
+
+        #TODO FIX THIS
+
         # Filter the Editor's key events. We have to do this because,
         # when the Editor widget is created by Qt Creator, we do not
         # get the option of inserting a keyPressEvent() slot in it.
         self.Editor.installEventFilter(self)
-        # Create and install our context menu
-        self.context_menu = self._make_context_menu()
-        self.setContextMenuPolicy(Qt.DefaultContextMenu)
         # Push the focus into the editor
         self.Editor.setFocus(Qt.MouseFocusReason)
 
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    #                 INTERNAL METHODS
-
-    # Set up text formats for the current line, spellcheck words
-    # and for scanno words. Done in a method because this has to be
-    # redone when the colorsChanged signal happens.
-    def _set_colors(self):
-        self.scanno_format = colors.get_scanno_format()
-        self.spelling_format = colors.get_spelling_format()
-        self.current_line_fmt.setBackground(colors.get_current_line_brush())
-        self.norm_style = 'color:Black;font-weight:normal;'
-        self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
-        # Fake the mod-change signal to update the document name color
-        self.mod_change_signal(self.document.isModified())
-
-    # Slot to receive the modificationChanged signal from the document.
-    # Also called from the book when metadata changes state.
-    # Change the color of the DocName to match.
-    def mod_change_signal(self,bool):
-        self.DocName.setStyleSheet(self.mod_style if self.my_book.get_save_needed() else self.norm_style)
-
-    # This slot receives the ReturnPressed signal from the LineNumber field.
-    def _line_number_enter(self):
-        self.go_to_line_number(self.LineNumber.text())
-
-    # Public method to retrieve the current line number string.
-    def get_line_number(self):
-        return self.LineNumber.text()
-
-    # Go to line number string: called from the _line_number_enter slot and
-    # also from the Notes panel. Given a supposed line number as a string
-    # 'nnn', get the corresponding textblock, or if it doesn't exist, the end
-    # textblock, and use that to position the document. Do not assume an
-    # integer string value or a valid line numbr. Finally, make sure focus
-    # goes back to editor.
-    def go_to_line_number(self, lnum_string):
-        try:
-            lnum = int(lnum_string) - 1 # text block is origin-0
-            tb = self.document.findBlockByLineNumber(lnum)
-            if not tb.isValid() : raise ValueError
-        except ValueError: # from int() or explicit
-            utilities.beep()
-            editview_logger.info('Request for invalid line number {0}'.format(lnum_string))
-            tb = self.document.lastBlock()
-        self.Editor.setFocus(Qt.TabFocusReason)
-        self.go_to_block(tb)
-
-    # This slot receives the ReturnPresssed signal from ImageFilename.
-    def _image_enter(self):
-        self.go_to_image_name(self.ImageFilename.text())
-
-    # Public method to retrieve the current image filename.
-    def get_image_name(self):
-        return self.ImageFilename.text()
-
-    # Go to page image by name: Ask the page database for the index of the
-    # user-entered filename value and if it recognizes it, get the position
-    # of it and set that. This is called from the slot above and also from
-    # the Notes panel.
-    def go_to_image_name(self, name_string):
-        pn = self.page_model.name_index(name_string)
-        if pn is not None :
-            self.center_position(self.page_model.position(pn))
-        else : # unknown image filename, restore current value
-            utilities.beep()
-            editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
-            self._cursor_moved(force=True)
-        self.Editor.setFocus(Qt.TabFocusReason)
-
-    # This slot is connected to Editor's cursorPositionChanged signal, so is
-    # called whenever the cursor moves for any reason, i.e. very very often!
-    # It is also called directly when one of the internal methods below moves
-    # the cursor. Change the contents of the column number display. If the
-    # cursor has moved to a different line, change also the line number, scan
-    # image name, and folio displays to match the new position.
-    def _cursor_moved(self, force=False):
-        tc = self.Editor.textCursor()
-        self.ColNumber.setText( str( tc.positionInBlock() ) )
-        tb = tc.block()
-        if tb == self.last_text_block and not force :
-            return # still on same line, nothing more to do
-        # Fill in line-number widget, line #s are origin-1
-        self.LineNumber.setText( str( tb.blockNumber()+1 ) )
-        # Fill in the image name and folio widgets
-        pn = self.page_model.page_index(tc.position())
-        if pn is not None : # the page model has info on this position
-            self.ImageFilename.setText(self.page_model.filename(pn))
-            self.Folio.setText(self.page_model.folio_string(pn))
-        else: # no image data, or cursor is above page 1
-            self.ImageFilename.setText('')
-            self.Folio.setText('')
-        # clear any highlight on the previous current line
-        temp_cursor = QTextCursor(self.last_text_block)
-        temp_cursor.setBlockFormat(self.normal_line_fmt)
-        # remember this new current line
-        self.last_text_block = tb
-        # and set its highlight
-        temp_cursor = QTextCursor(tb)
-        temp_cursor.setBlockFormat(self.current_line_fmt)
+        # End of __init__()
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress :
@@ -392,6 +309,79 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         return retval
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    #                 INTERNAL METHODS
+
+    # Set up text formats for the current line, spellcheck words
+    # and for scanno words. Done in a method because this has to be
+    # redone when the colorsChanged signal happens.
+    def _set_colors(self):
+        self.scanno_format = colors.get_scanno_format()
+        self.spelling_format = colors.get_spelling_format()
+        self.current_line_fmt.setBackground(colors.get_current_line_brush())
+        self.current_line_sel.format = QTextCharFormat(self.current_line_fmt)
+        self.norm_style = 'color:Black;font-weight:normal;'
+        self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
+        # Fake the mod-change signal to update the document name color
+        self.mod_change_signal(self.document.isModified())
+
+    # Slot to receive the modificationChanged signal from the document.
+    # Also called from the book when metadata changes state.
+    # Change the color of the DocName to match.
+    def mod_change_signal(self,bool):
+        self.DocName.setStyleSheet(self.mod_style if self.my_book.get_save_needed() else self.norm_style)
+
+    # This slot receives the ReturnPressed signal from the LineNumber field.
+    def _line_number_enter(self):
+        self.go_to_line_number(self.LineNumber.text())
+
+    # This slot receives the ReturnPresssed signal from ImageFilename.
+    def _image_enter(self):
+        self.go_to_image_name(self.ImageFilename.text())
+
+    # This slot is connected to Editor's cursorPositionChanged signal, so is
+    # called whenever the cursor moves for any reason, i.e. very very often!
+    # It is also called directly when one of the internal methods below moves
+    # the cursor. Change the contents of the column number display. If the
+    # cursor has moved to a different line, change also the line number, scan
+    # image name, and folio displays to match the new position.
+    # Note that we show the current line by changing the text block format,
+    # and unfortunately the QTextDocument sees this as an undo-able action,
+    # and sets modified state. So we save and restore the unmodified state.
+    def _cursor_moved(self):
+        tc = QTextCursor(self.Editor.textCursor()) # copy of cursor
+        self.ColNumber.setText( str( tc.positionInBlock() ) )
+        tb = tc.block()
+        if tb == self.last_text_block :
+            return # still on same line, nothing more to do
+        # Fill in line-number widget, line #s are origin-1
+        self.LineNumber.setText( str( tb.blockNumber()+1 ) )
+        # Fill in the image name and folio widgets
+        pn = self.page_model.page_index(tc.position())
+        if pn is not None : # the page model has info on this position
+            self.ImageFilename.setText(self.page_model.filename(pn))
+            self.Folio.setText(self.page_model.folio_string(pn))
+        else: # no image data, or cursor is above page 1
+            self.ImageFilename.setText('')
+            self.Folio.setText('')
+        # Change the extra selection to the current line. The cursor needs
+        # to have no selection. Yes, we are here because the cursor moved,
+        # but that doesn't mean no-selection; it might have moved because
+        # of a shift-click extending the selection.
+        tc.clearSelection()
+        self.current_line_sel.cursor = tc
+        self.Editor.setExtraSelections([self.current_line_sel])
+
+    # Slot to receive the fontsChanged signal. If it is the UI font, set
+    # that, which propogates to all children including Editor, so set the
+    # editor's mono font in any case, but using our current point size.
+    # Also called from the book when reading metadata.
+
+    def font_change(self,is_mono):
+        if not is_mono :
+            self.setFont(fonts.get_general())
+        self.Editor.setFont(fonts.get_fixed(self.my_book.get_font_size()))
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 CONTEXT MENU
     #
     # Define the four actions for our context menu, then make the menu.
@@ -428,8 +418,12 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         if after :
             self._start_highlights()
     #
-    # The choose-scanno and choose-dictionary actions are passed along to the
-    # book. These are called by the triggered signal of the menu items.
+    # These are called by the triggered signal of the menu items. The
+    # choose-scanno and choose-dictionary actions are passed along to the
+    # book. It asks the user to choose a file or a dict, and if a new file or
+    # dict is selected, it causes the word model to load the new scannos or
+    # recheck spelling with the new dict. The highlighter works off the
+    # values kept by the word model.
     #
     def _act_choose_scanno(self) :
         new = self.my_book.ask_scanno_file()
@@ -486,26 +480,61 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
     def contextMenuEvent(self, event):
         self.context_menu.exec_(event.globalPos())
 
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     #                 PUBLIC METHODS
+    #
+    # Retrieve the current image filename. Called from Notes.
 
-    # Called by the parent Book prior to a Save-As renaming the book.
+    def get_image_name(self):
+        return self.ImageFilename.text()
+
+    # Go to page image by name: Ask the page database for the index of the
+    # user-entered filename value and if it recognizes it, get the position
+    # of it and set that. This is called from _image_enter and also from
+    # the Notes panel.
+
+    def go_to_image_name(self, name_string):
+        pn = self.page_model.name_index(name_string)
+        if pn is not None :
+            self.center_position(self.page_model.position(pn))
+        else : # unknown image filename, restore current value
+            utilities.beep()
+            editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
+            self._cursor_moved(force=True)
+        self.Editor.setFocus(Qt.TabFocusReason)
+
+    # Retrieve the current line number string. Called from Notes.
+
+    def get_line_number(self):
+        return self.LineNumber.text()
+
+    # Called by the parent Book when the book is renamed as part of Save-As.
+
     def book_renamed(self,name):
         self.DocName.setText(name)
-
-    # Slot to receive the fontsChanged signal. If it is the UI font, set
-    # that, which propogates to all children including Editor, so set the
-    # editor's mono font in any case, but using our current point size.
-    # Also called from the book when reading metadata.
-
-    def font_change(self,is_mono):
-        if not is_mono :
-            self.setFont(fonts.get_general())
-        self.Editor.setFont(fonts.get_fixed(self.my_book.get_font_size()))
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 Cursor positioning
     #
+    # Go to line number string: called from the _line_number_enter slot and
+    # also from the Notes panel. Given a supposed line number as a string
+    # 'nnn', get the corresponding textblock, or if it doesn't exist, the end
+    # textblock, and use that to position the document. Do not assume an
+    # integer string value or a valid line numbr. Finally, make sure focus
+    # goes back to editor (it might now be in the Notes panel).
+    #
+    def go_to_line_number(self, lnum_string):
+        try:
+            lnum = int(lnum_string) - 1 # text block is origin-0
+            tb = self.document.findBlockByLineNumber(lnum)
+            if not tb.isValid() : raise ValueError
+        except ValueError: # from int() or explicit
+            utilities.beep()
+            editview_logger.info('Request for invalid line number {0}'.format(lnum_string))
+            tb = self.document.lastBlock()
+        self.Editor.setFocus(Qt.TabFocusReason)
+        self.go_to_block(tb)
+
     # Position the cursor at the head of a given QTextBlock (line)
     # and get the focus. Does not assume tb is a valid textblock.
 
@@ -616,3 +645,196 @@ class EditView( QWidget, editview_uic.Ui_EditViewWidget ):
         tc.setPosition(anchor)
         tc.setPosition(position,QTextCursor.KeepAnchor)
         return tc
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    #            INITIALIZE UI
+    #
+    # First we built the Edit panel using Qt Creator which produced a large
+    # and somewhat opaque block of code that had to be mixed in by
+    # multiple inheritance. This had several drawbacks, so the following
+    # is a "manual" UI setup using code drawn from the generated code.
+    #
+    def _uic(self):
+        # First set up the properties of "self", a QWidget.
+        self.setObjectName("EditViewWidget")
+        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setHeightForWidth(False) # don't care to bind height to width
+        self.setSizePolicy(sizePolicy)
+        self.setMinimumSize(QSize(250, 250))
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setWindowTitle("")
+        self.setToolTip("")
+        self.setStatusTip("")
+        self.setWhatsThis("")
+        # Set up our primary widget, the editor
+        self.Editor = QPlainTextEdit(self)
+        self.Editor.setObjectName("Editor")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(2) # Edit deserves all available space
+        sizePolicy.setVerticalStretch(2)
+        sizePolicy.setHeightForWidth(False)
+        self.Editor.setSizePolicy(sizePolicy)
+        self.Editor.setFocusPolicy(Qt.StrongFocus)
+        self.Editor.setContextMenuPolicy(Qt.NoContextMenu)
+        self.Editor.setAcceptDrops(True)
+        self.Editor.setLineWidth(2)
+        self.Editor.setDocumentTitle("")
+        self.Editor.setLineWrapMode(QPlainTextEdit.NoWrap)
+
+        # Set up the frame that will contain the bottom row of widgets
+        # It doesn't need a parent and doesn't need to be a class member
+        # because it will be added to a layout, which parents it.
+        bot_frame = QFrame()
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(False)
+        bot_frame.setSizePolicy(sizePolicy)
+        bot_frame.setMinimumSize(QSize(0, 24))
+        bot_frame.setContextMenuPolicy(Qt.NoContextMenu)
+        bot_frame.setFrameShape(QFrame.Panel)
+        bot_frame.setFrameShadow(QFrame.Sunken)
+        bot_frame.setLineWidth(3)
+
+        # Set up the horizontal layout that will contain the following
+        # objects. Its parent is the frame, which gives it a look?
+
+        HBL = QHBoxLayout(bot_frame)
+        HBL.setContentsMargins(4,2,4,2)
+
+        # Set up DocName, the document name widget. It is parented
+        # to the bot_frame and positioned by the layout.
+
+        self.DocName = QLabel(bot_frame)
+        self.DocName.setText("")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(2)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(False)
+        self.DocName.setSizePolicy(sizePolicy)
+        self.DocName.setMinimumSize(QSize(60, 12))
+        self.DocName.setContextMenuPolicy(Qt.NoContextMenu)
+        self.DocName.setFrameShape(QFrame.StyledPanel)
+        self.DocName.setObjectName("DocName")
+        self.DocName.setToolTip(_TR("EditViewWidget", "Document filename", "tool tip"))
+        self.DocName.setWhatsThis(_TR("EditViewWidget", "The filename of the document being edited. It changes color when the document has been modified."))
+        HBL.addWidget(self.DocName)
+        spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        HBL.addItem(spacerItem)
+
+        # Set up the label "Folio:" and the Folio display label
+        FolioLabel = QLabel(bot_frame)
+        FolioLabel.setAlignment(Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+        FolioLabel.setText(_TR("EditViewWidget", "Folio", "label of folio display"))
+        HBL.addWidget(FolioLabel)
+
+        self.Folio = QLabel(bot_frame)
+        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(False)
+        self.Folio.setSizePolicy(sizePolicy)
+        self.Folio.setMinimumSize(QSize(30, 12))
+        self.Folio.setContextMenuPolicy(Qt.NoContextMenu)
+        self.Folio.setFrameShape(QFrame.StyledPanel)
+        self.Folio.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        self.Folio.setObjectName("Folio display")
+        self.Folio.setToolTip(_TR("EditViewWidget", "Folio value for current page", "tooltip"))
+        self.Folio.setStatusTip(_TR("EditViewWidget", "Folio value for the page under the edit cursor", "statustip"))
+        self.Folio.setWhatsThis(_TR("EditViewWidget", "The Folio (page number) value for the page under the edit cursor. Use the Pages panel to adjust folios to agree with the printed book.","whats this"))
+        HBL.addWidget(self.Folio)
+        spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        HBL.addItem(spacerItem)
+        FolioLabel.setBuddy(self.Folio)
+
+        # Set up the image filename lineedit and its buddy label.
+        ImageFilenameLabel = QLabel(bot_frame)
+        ImageFilenameLabel.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        ImageFilenameLabel.setText(_TR("EditViewWidget", "Image", "Image field label"))
+        HBL.addWidget(ImageFilenameLabel)
+        self.ImageFilename = QLineEdit(bot_frame)
+        sizePolicy = QSizePolicy( QSizePolicy.Expanding, QSizePolicy.Fixed )
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(False)
+        self.ImageFilename.setSizePolicy(sizePolicy)
+        self.ImageFilename.setMinimumSize(QSize(30, 12))
+        self.ImageFilename.setMouseTracking(False)
+        self.ImageFilename.setFocusPolicy(Qt.ClickFocus)
+        self.ImageFilename.setContextMenuPolicy(Qt.NoContextMenu)
+        self.ImageFilename.setAcceptDrops(True)
+        self.ImageFilename.setInputMask("")
+        self.ImageFilename.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        self.ImageFilename.setObjectName("ImageFilename")
+        self.ImageFilename.setToolTip(_TR("EditViewWidget", "Scan image filename", "Image tooltip"))
+        self.ImageFilename.setStatusTip(_TR("EditViewWidget", "Filename of the scan image under the edit cursor", "Image status tip"))
+        self.ImageFilename.setWhatsThis(_TR("EditViewWidget", "This is the name of the scanned image that produced the text under the edit cursor. This image file is displayed in the Image panel.","Image whats this"))
+        HBL.addWidget(self.ImageFilename)
+        spacerItem =  QSpacerItem(0, 0,  QSizePolicy.Expanding,  QSizePolicy.Minimum)
+        HBL.addItem(spacerItem)
+        ImageFilenameLabel.setBuddy(self.ImageFilename)
+
+        # Set up the line number lineedit and its buddy label.
+        LineNumberLabel = QLabel(bot_frame)
+        LineNumberLabel.setText(_TR("EditViewWidget", "Line#", "Line number label"))
+        LineNumberLabel.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        HBL.addWidget(LineNumberLabel)
+        self.LineNumber = QLineEdit(bot_frame)
+        sizePolicy = QSizePolicy( QSizePolicy.Expanding,  QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(False)
+        self.LineNumber.setSizePolicy(sizePolicy)
+        self.LineNumber.setMinimumSize(QSize(0, 12))
+        self.LineNumber.setMouseTracking(False)
+        self.LineNumber.setFocusPolicy(Qt.ClickFocus)
+        self.LineNumber.setContextMenuPolicy(Qt.NoContextMenu)
+        self.LineNumber.setAcceptDrops(True)
+        self.LineNumber.setLayoutDirection(Qt.LeftToRight)
+        self.LineNumber.setCursorPosition(0)
+        self.LineNumber.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        self.LineNumber.setPlaceholderText("")
+        self.LineNumber.setCursorMoveStyle(Qt.LogicalMoveStyle)
+        self.LineNumber.setObjectName("LineNumber")
+        self.LineNumber.setToolTip(_TR("EditViewWidget", "Line number at cursor", "Line number tooltip"))
+        self.LineNumber.setStatusTip(_TR("EditViewWidget", "Line number under cursor or top of current selection","Line number statustip"))
+        self.LineNumber.setWhatsThis(_TR("EditViewWidget", "The line number in the document where the edit cursor is, or the top line of the selection. Enter a new number to jump to that line.","Line number whatsthis"))
+        ImageFilenameLabel.setBuddy(self.ImageFilename)
+        HBL.addWidget(self.LineNumber)
+        spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        HBL.addItem(spacerItem)
+
+        # Set up the column number field and its buddy label.
+        ColNumberLabel = QLabel(bot_frame)
+        ColNumberLabel.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        ColNumberLabel.setText(_TR("EditViewWidget", "Col#", "Col number label"))
+        HBL.addWidget(ColNumberLabel)
+        self.ColNumber = QLabel(bot_frame)
+        sizePolicy = QSizePolicy( QSizePolicy.Expanding, QSizePolicy.Preferred )
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(False)
+        self.ColNumber.setSizePolicy(sizePolicy)
+        self.ColNumber.setMinimumSize(QSize(30, 12))
+        self.ColNumber.setContextMenuPolicy(Qt.NoContextMenu)
+        self.ColNumber.setFrameShape(QFrame.StyledPanel)
+        self.ColNumber.setFrameShadow(QFrame.Plain)
+        self.ColNumber.setLineWidth(1)
+        self.ColNumber.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        self.ColNumber.setObjectName("ColNumber")
+        self.ColNumber.setToolTip(_TR("EditViewWidget", "Cursor column number", "tool tip"))
+        self.ColNumber.setStatusTip(_TR("EditViewWidget", "Cursor column number", "status tip"))
+        self.ColNumber.setWhatsThis(_TR("EditViewWidget", "The column number position of the cursor in the current line.","whatsthis"))
+        HBL.addWidget(self.ColNumber)
+
+        # Set up a vertical layout and put two items in it, the editor and HBL
+        VBL = QVBoxLayout()
+        VBL.setContentsMargins(8, 8, 8, 8)
+        VBL.addWidget(self.Editor)
+        VBL.addWidget(bot_frame)
+        self.setLayout(VBL)
+
+        # end of _uic
