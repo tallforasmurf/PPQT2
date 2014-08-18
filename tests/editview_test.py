@@ -69,10 +69,6 @@ settings = QSettings()
 settings.clear()
 settings.setValue("paths/dicts_path",files_path)
 settings.setValue("dictionaries/default_tag","en_GB")
-import dictionaries
-dictionaries.initialize(settings)
-import fonts
-fonts.initialize(settings)
 import mainwindow
 mw = mainwindow.MainWindow(settings)
 # mainwindow made a book and set it new-empty
@@ -93,13 +89,28 @@ from PyQt5.QtTest import QTest
 from PyQt5.QtCore import Qt # namespace for keys etc.
 
 mw.show()
-while utilities.ok_cancel_msg('Make a selection','it will be centered'):
-    QTest.qWait(4000)
-    ev.center_this(ev.Editor.textCursor())
 
-app.exec_()
-exit()
-n
+#vp = ev.Editor.viewport()
+#print('viewport w {0} h{1}'.format(vp.width(),vp.height()))
+#vb = ev.Editor.verticalScrollBar()
+#print('vertical min {0} max {1}'.format(vb.minimum(),vb.maximum()))
+
+#while utilities.ok_cancel_msg('Make a selection','i make heem veezeebul'):
+    #QTest.qWait(4000)
+    #ev.center_this(ev.Editor.textCursor())
+    #fm = ev.Editor.fontMetrics()
+    #print('fm h {0} l {1} sp {2}'.format(
+        #fm.height(), fm.leading(), fm.lineSpacing() ) )
+    ##ed = ev.Editor
+    ##tc = ed.textCursor()
+    ##print('cursor pa',tc.position(),tc.anchor())
+    ##qr = ed.cursorRect(tc)
+    ##print('crect xywh',qr.x(),qr.y(),qr.width(),qr.height())
+    ##vp = ed.viewport()
+    ##qr = vp.geometry()
+    ##print('viewp xywh',qr.x(),qr.y(),qr.width(),qr.height())
+#app.exec_()
+#exit()
 
 # now to the testing
 
@@ -124,6 +135,7 @@ def key_seq(seq):
 def check_sel(str):
     qtc = ev.get_cursor()
     sel = qtc.selectedText()
+    print('{0} v {1}'.format(str,sel))
     return str == sel
 
 test_target = ev.Editor
@@ -153,14 +165,15 @@ key_into(Qt.Key_A, 'ctl')
 key_into(Qt.Key_0)
 key_into(Qt.Key_Enter)
 assert check_sel('3.')
-assert check_log('invalid line number',logging.INFO)
+assert check_log('invalid line number',logging.ERROR)
 QTest.mouseClick(test_target,Qt.LeftButton)
 key_into(Qt.Key_A, 'ctl')
 key_into(Qt.Key_9)
 key_into(Qt.Key_9)
+key_into(Qt.Key_9)
 key_into(Qt.Key_Enter)
 assert check_sel('3.')
-assert check_log('invalid line number',logging.INFO)
+assert check_log('invalid line number',logging.ERROR)
 
 # click in the image name field, select all, key X and return
 # then verify that the field has been cleared and the editor
