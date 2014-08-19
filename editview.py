@@ -604,7 +604,6 @@ class EditView( QWidget ):
     def _top_pixel_of_pos(self, pos):
         tc = QTextCursor(self.document)
         tc.setPosition(pos)
-        print('coord of {0} = {1}'.format(pos,self.Editor.cursorRect(tc).y()))
         return self.Editor.cursorRect(tc).y()
 
     def center_this(self, tc):
@@ -619,7 +618,7 @@ class EditView( QWidget ):
         S = self._top_pixel_of_pos(tc.selectionEnd()) - P + L
         M = V2 - P - min(V2, max(0, S - V2))
         A = self._top_pixel_of_pos( self.document.firstBlock().position() )
-        Z = self._top_pixel_of_pos( self.document.lastBlock().position() )
+        Z = self._top_pixel_of_pos( self.document.characterCount()-1 )
         vsb = self.Editor.verticalScrollBar()
         vsb.setValue( vsb.value() - int( (M/(Z-A)) * (vsb.maximum()-vsb.minimum()) ) )
         # who sez BASIC is dead?
