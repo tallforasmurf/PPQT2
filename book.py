@@ -101,7 +101,7 @@ class Book(QObject):
         # the mainwindow calls new_empty, old_book, or new_book below.
         self.edit_point_size = C.DEFAULT_FONT_SIZE
         self.edit_cursor = (0,0)
-        self.bookname = ''
+        self.book_name = ''
         self.book_folder = ''
         self.book_full_path = ''
         # Initialize the metadata-modified flag, see metadata_modified()
@@ -131,9 +131,9 @@ class Book(QObject):
         #
         # Create the view objects that display and interact with the data
         # models. These need to be accessible to the main window for the
-        # focus_me operation so are stored in the panel_dict. The edit view
-        # is created in _init_edit() after we have loaded a document.
+        # focus_me operation so are stored in the panel_dict.
         #
+        self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
         self.imagev = imageview.ImageDisplay(self) # keep a short reference
         self.panel_dict['Images'] = self.imagev
         self.panel_dict['Notes'] = noteview.NotesPanel(self)
@@ -166,7 +166,6 @@ class Book(QObject):
         self.book_name = 'Untitled-{0}'.format(self.sequence)
         self.book_folder = ''
         self.book_full_path = ''
-        self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence))
         self.editm.setModified(False)
 
     # KNOWN BOOK: called to load a book that has a .meta file. Given:
@@ -185,7 +184,6 @@ class Book(QObject):
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
-        self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
         self.metamgr.load_meta(meta_stream)
         if self.pagem.active():
             # we have a book with page info, wake up the image viewer
@@ -215,8 +213,6 @@ class Book(QObject):
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
         self.editm.setModified(True)
-        # Create the visible editor, leaving cursor at 0.
-        self.editv = editview.EditView(self, lambda: self.mainwindow.focus_me(self.sequence) )
         # If there are good_words and bad_words streams, call the worddata
         # metadata reader functions directly to accept them.
         if good_stream:
