@@ -164,6 +164,7 @@ class Book(QObject):
 
     def new_empty(self):
         self.book_name = 'Untitled-{0}'.format(self.sequence)
+        self.editv.book_renamed(self.book_name)
         self.book_folder = ''
         self.book_full_path = ''
         self.editm.setModified(False)
@@ -181,6 +182,7 @@ class Book(QObject):
 
     def old_book(self, doc_stream, meta_stream):
         self.book_name = doc_stream.filename()
+        self.editv.book_renamed(self.book_name)
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
@@ -209,6 +211,7 @@ class Book(QObject):
 
     def new_book(self, doc_stream, meta_stream, good_stream, bad_stream) :
         self.book_name = doc_stream.filename()
+        self.editv.book_renamed(self.book_name)
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
