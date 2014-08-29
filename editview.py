@@ -513,6 +513,11 @@ class EditView( QWidget ):
     def book_renamed(self,name):
         self.DocName.setText(name)
 
+    # Called from other panels who need to connect editor signals,
+    # e.g. the Find panel.
+    def get_actual_editor(self):
+        return self.Editor
+
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 Cursor positioning
     #
