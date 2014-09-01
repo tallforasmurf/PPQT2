@@ -40,6 +40,10 @@ Provides a context menu with these user commands:
 
 Offers these additional methods:
 
+    set_find_range(tc)   Set the selection of tc to be highlighted as the
+                         limited find-range. Called from findview.
+    clear_find_range()   Make the limited find-range highlighting go away.
+
     center_this(tc)      Given a text cursor with a selection, put the top
                          of the selection in the middle of the window, unless
                          the selection is taller than 1/2 the window in which
@@ -198,12 +202,18 @@ class EditView( QWidget ):
         self._uic()
         # Connect the editor to the document.
         self.Editor.setDocument(self.document)
-        # Set up mechanism for a current-line highlight, see _set_colors
+        # Set up mechanism for a current-line highlight and a find-range
+        # highlight. See set_find_range, clear_find_range, _set_colors
         # and _cursor_moved.
         self.last_text_block = None # to know when cursor moves to new line
         self.current_line_sel = QTextEdit.ExtraSelection()
-        self.current_line_fmt = QTextCharFormat()
+        self.current_line_fmt = QTextCharFormat() # see _set_colors
         self.current_line_fmt.setProperty(QTextFormat.FullWidthSelection, True)
+        self.range_sel = QTextEdit.ExtraSelection()
+        self.range_sel.cursor = QTextCursor(self.document) # null cursor
+        self.range_fmt = QTextCharFormat() # see _set_colors
+        self.range_fmt.setProperty(QTextCharFormat.FullWidthSelection, True)
+        self.extra_sel_list = [self.current_line_sel, self.range_sel]
         # Sign up to get a signal on a change in font choice
         fonts.notify_me(self.font_change)
         # Fake that signal to set the fonts of our widgets.
@@ -211,7 +221,8 @@ class EditView( QWidget ):
         # Sign up to get a signal on a change of color preferences.
         colors.notify_me(self._set_colors)
         # Fake the signal to set up widgets. This sets .scanno_format,
-        # .spelling_format, .current_line_thing, .norm_style and .mod_style.
+        # .spelling_format, .current_line_sel, .range_sel, .norm_style and
+        # .mod_style.
         self._set_colors()
         # Put the document name in our widget
         self.DocName.setText(self.my_book.get_book_name())
@@ -319,6 +330,8 @@ class EditView( QWidget ):
         self.spelling_format = colors.get_spelling_format()
         self.current_line_fmt.setBackground(colors.get_current_line_brush())
         self.current_line_sel.format = QTextCharFormat(self.current_line_fmt)
+        self.range_fmt.setBackground(colors.get_find_range_brush())
+        self.range_sel.format = QTextCharFormat(self.range_fmt)
         self.norm_style = 'color:Black;font-weight:normal;'
         self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
         # Fake the mod-change signal to update the document name color
@@ -369,7 +382,7 @@ class EditView( QWidget ):
         # of a shift-click extending the selection.
         #xtc.clearSelection()
         self.current_line_sel.cursor = tc
-        self.Editor.setExtraSelections([self.current_line_sel])
+        self.Editor.setExtraSelections(self.extra_sel_list)
 
     # Slot to receive the fontsChanged signal. If it is the UI font, set
     # that, which propogates to all children including Editor, so set the
@@ -512,6 +525,17 @@ class EditView( QWidget ):
 
     def book_renamed(self,name):
         self.DocName.setText(name)
+
+    # Set and clear the highlighting on a limited find range. Called from
+    # findview.py to make the current find range visible.
+    def set_find_range(self,tc):
+        wtc  = self.range_sel.cursor
+        wtc.setPosition(tc.selectionEnd())
+        wtc.setPosition(tc.selectionStart(), QTextCursor.KeepAnchor)
+        self.Editor.setExtraSelections(self.extra_sel_list)
+    def clear_find_range(self):
+        self.range_sel.cursor.clearSelection()
+        self.Editor.setExtraSelections(self.extra_sel_list)
 
     # Called from other panels who need to connect editor signals,
     # e.g. the Find panel.
