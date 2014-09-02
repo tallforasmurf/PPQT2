@@ -213,7 +213,7 @@ class EditView( QWidget ):
         self.range_sel.cursor = QTextCursor(self.document) # null cursor
         self.range_fmt = QTextCharFormat() # see _set_colors
         self.range_fmt.setProperty(QTextCharFormat.FullWidthSelection, True)
-        self.extra_sel_list = [self.current_line_sel, self.range_sel]
+        self.extra_sel_list = [self.range_sel, self.current_line_sel]
         # Sign up to get a signal on a change in font choice
         fonts.notify_me(self.font_change)
         # Fake that signal to set the fonts of our widgets.
