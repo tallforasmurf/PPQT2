@@ -95,7 +95,7 @@ def file_split(path):
 #
 # Class MemoryStream provides a QTextStream based on an in-memory buffer
 # which will not go out of scope causing a crash. It also provides the
-# convenient methods rewind() and writeLine(). QTextStream.pos() is 
+# convenient methods rewind() and writeLine(). QTextStream.pos() is
 # overridden to do a flush() before returning the position, otherwise
 # it is never accurate. Note that pos() returns a count of bytes, while
 # the units being written are 16-bit Unicode chars. Hence the sequence
@@ -311,19 +311,19 @@ def related_output(FBTS, suffix, encoding=None):
 # QInputDialog.getItem. Return the chosen item. Arguments are:
 #
 #   title : the title of the dialog
-#   explanation: explanatory text below the title
-#        both title and explanation must be TRanslated by caller!
-#   item_list: a (python) list of (python) strings, the available items
-#   current: optional index of the currently-chosen item
-#   parent: optional QWidget over which to center the dialog
+#   caption: explanatory text above the choice list
+#      -- both title and explanation must be TRanslated by caller.
+#   item_list: a Python list of strings, the available choice items
+#   parent: required QWidget over which to center the dialog
+#   current=0: optional index of the currently-chosen item
 #
 # QInputDialog returns a tuple of the actual text of the selected item or
 # of the default item, and boolean True for OK or false for Cancel.
 
-def choose_from_list(title, explanation, item_list, parent=None, current=0):
+def choose_from_list(title, caption, item_list, parent, current=0):
     (item_text, ok) = QInputDialog.getItem(
         parent,
-        title, explanation,
+        title, caption,
         item_list, current,
         editable=False)
     if ok : return item_text
@@ -334,8 +334,9 @@ def choose_from_list(title, explanation, item_list, parent=None, current=0):
 def beep():
     QApplication.beep()
 
-#Internal function to initialize a Qt message-box object with an icon,
-# a main message line, and an optional second message line.
+# Internal function to initialize a QMessageBox object with an icon,
+# a main message line, and an optional second message line. The
+# QMessageBox is used for all dialogs that need only button-clicks.
 
 def _make_message ( text, icon, info = '', parent=None):
     mb = QMessageBox( parent )
@@ -379,27 +380,59 @@ def save_discard_cancel_msg( text, info = '', parent=None ):
     if ret == QMessageBox.Cancel : return None
     return ret == QMessageBox.Save
 
-# A simple find dialog, used by the Notes and other panels. Inputs:
-#     parent widget over which to center the dialog
-#     initial text for the dialog, typically a current selection
-#     caption string for top of dialog
-# We use the property-based api to QInputDialog so we can prime the input
-# field with the provided text. We truncate the input text at 40 characters
-# to avoid the case where the user has highlighted a long paragraph and
-# then thoughtlessly keyed ^F.
+# Generic internal method to display a modal request for string input and
+# wait for Ok or Cancel. The parameters are:
+#
+# * title is the dialog window title
+# * caption is the text line above the string input field
+#      -- both must be TRanslated by the caller
+# * parent is the widget over which to center (required)
+# * prepared='' is optional text to put in the input field
+# * ok_label=None If a different OK is wanted, e.g. Find
+#
+# The return is a tuple of (OK-not-cancel, input-text).
 
-def get_find_string(caption, prep_text = '', parent = None ):
+def _string_query( title, caption, parent, prepared='', ok_label=None ):
     qd = QInputDialog(parent)
     qd.setInputMode(QInputDialog.TextInput)
-    qd.setOkButtonText('Find')
+    if ok_label is not None :
+        qd.setOkButtonText(ok_label)
+    qd.setTextValue(prepared)
+    qd.setWindowTitle(title)
     qd.setLabelText(caption)
-    if prep_text is not None :
-        qd.setTextValue(prep_text[:40])
-    b = ( QDialog.Accepted == qd.exec_() )
-    if b :
-        return (True, qd.textValue())
-    else:
-        return (False, '' )
+    ok = ( QDialog.Accepted == qd.exec_() )
+    answer = qd.textValue() if ok else ''
+    return (ok, answer)
+
+# A general get-a-string from the user dialog. Inputs:
+#
+# * title, window title
+# * caption, explanatory line above input field
+#    -- both translated by the caller
+# * parent, required widget over which to center
+# * prepared='', optional text for the input field
+#
+# Return is None if the user Cancels, otherwise the input text.
+
+def get_string( title, caption, parent, prepared='') :
+    (ok, answer) = _string_query(title,caption,parent,prepared)
+    if ok: return answer
+    return None
+
+#
+# A simple find dialog, used by the Notes and other panels. Inputs:
+#
+# * parent, widget over which to center the dialog
+# * caption, explanatory line above input field
+#      must be translated by the caller
+# * prepared='', optional text to pre-load input field
+#
+# Return is entered text, or None meaning Cancel was clicked.
+
+def get_find_string(caption, parent, prepared = ''):
+    (ok, answer) = _string_query(C.FIND_BUTTON,caption,parent,prepared,ok_label=C.FIND_BUTTON)
+    if ok : return answer
+    return None
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Diagnostic routines for evaluating events
