@@ -91,7 +91,7 @@ class NotesPanel(QPlainTextEdit):
         super().__init__(parent)
         self.book = my_book
         # Where we store the last-sought-for find string
-        self.find_text = ''
+        self.find_text = None
         # Register to read and write metadata
         my_book.get_meta_manager().register( C.MD_NO, self.read_meta, self.save_meta )
         # Set our only font (we don't care about the general font, only mono)
@@ -207,21 +207,22 @@ class NotesPanel(QPlainTextEdit):
     def find_action(self):
         # Show the find dialog initialized with
         # a copy of the current selection.
-        prep_text = self.textCursor().selectedText()
-        (ok, self.find_text) = utilities.get_find_string(
+        prep_text = self.textCursor().selectedText()[:40]
+        self.find_text = utilities.get_find_string(
             _TR('Notes panel find dialog','Text to find'),
-            prep_text[:40], self )
-        if ok and len(self.find_text) :
+            self, prep_text)
+        if self.find_text is not None :
             self._do_find()
 
     # Edit > Find Next (^g) action: if there is no active find-text
     # pretend that ^f was hit, otherwise repeat the search.
     def find_next_action(self):
-        if 0 == len(self.find_text) :
-            # No previous string to look for; get one.
-            self.find_action()
-        else :
+        if self.find_text is not None :
+            # Some previous string to look for, find-again.
             self._do_find()
+        else :
+            # no previous string, do beginning find
+            self.find_action()
 
     # Re-implement keyPressEvent to provide these functions:
     #   ctrl-plus and ctrl-minus zoom the font size one point.
