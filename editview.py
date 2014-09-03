@@ -525,17 +525,30 @@ class EditView( QWidget ):
 
     def book_renamed(self,name):
         self.DocName.setText(name)
+        self.clear_find_range()
 
-    # Set and clear the highlighting on a limited find range. Called from
-    # findview.py to make the current find range visible.
-    def set_find_range(self,tc):
-        wtc  = self.range_sel.cursor
-        wtc.setPosition(tc.selectionEnd())
-        wtc.setPosition(tc.selectionStart(), QTextCursor.KeepAnchor)
+    # Manage the cursor that defines the valid range for find/replace. Called
+    # from findview.py to set, clear, or retrieve the current find range.
+    # When a limited range is set, make it visible. The actual find range
+    # is either the whole document or else the selection in the cursor that
+    # is embedded in the range_sel ExtraSelection.
+    #
+    # Set the current edit cursor's selection as the find range.
+    def set_find_range(self):
+        tc = self.Editor.textCursor()
+        self.range_sel.cursor.setPosition(tc.selectionEnd())
+        self.range_sel.cursor.setPosition(tc.selectionStart(), QTextCursor.KeepAnchor)
         self.Editor.setExtraSelections(self.extra_sel_list)
+    # Clear the current find range.
     def clear_find_range(self):
         self.range_sel.cursor.clearSelection()
         self.Editor.setExtraSelections(self.extra_sel_list)
+    # Return a cursor defining the bounds of the current find range.
+    def get_find_range(self):
+        tc = QTextCursor(self.range_sel.cursor) # copy of range cursor
+        if not tc.hasSelection() :
+            tc.select(QTextCursor.Document)
+        return tc
 
     # Called from other panels who need to connect editor signals,
     # e.g. the Find panel.
