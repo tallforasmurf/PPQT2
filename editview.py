@@ -217,6 +217,7 @@ class EditView( QWidget ):
         # Sign up to get a signal on a change in font choice
         fonts.notify_me(self.font_change)
         # Fake that signal to set the fonts of our widgets.
+        self.one_line_height = 0 # set in font_change
         self.font_change(False)
         # Sign up to get a signal on a change of color preferences.
         colors.notify_me(self._set_colors)
@@ -393,6 +394,7 @@ class EditView( QWidget ):
         if not is_mono :
             self.setFont(fonts.get_general())
         self.Editor.setFont(fonts.get_fixed(self.my_book.get_font_size()))
+        self.one_line_height = self.Editor.fontMetrics().lineSpacing()
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 CONTEXT MENU
@@ -615,28 +617,20 @@ class EditView( QWidget ):
     # than 1/2 the window height, put the top of the selection higher, but in
     # no case off the top of the window.
     #
-    # All coordinates are in pixels in the viewport coordinate system. Only
-    # the vertical (y) coordinates matter, x is always 0.
-    #
-    # Let L be line spacing from the current fontMetrics. Let V be the viewport
-    # .height() and let V2 = V/2-L, coordinate of the middle of the port.
-    #
-    # To get the coordinates of a line, use QTextEdit.cursorRect() and
-    # from it get .y() for the top or .y()+L for the bottom.
-    #
-    # Let P be the position of the top of the selection. Let S be the
-    # height of the selection. Let M be the amount to move P to bring it
-    # to the middle of the viewport: M = V2 - P (negative means "up").
-    #
-    # This is too simple, we need to adjust for a selection where S>V2.
-    # Let M = V2 - P - min(V2, max(0, S-V2))
-    #
-    # To effect a move by M we need to set a new position in the vertical
-    # scrollbar. The scrollbar works on arbitrary units from .minimum() to
-    # .maximum(). We need to adjust its value by M as a fraction of the total
-    # height of the document. Let A be the coordinate of the first line, let
-    # Z be the coordinate of the last line; then set the scrollbar to
-    # .value() + (M/(Z-A)*(.maximum - .minimum).
+    # Calculations are mostly in terms of lines (textblocks).
+    # Let VX be the viewport height (pixels)
+    # Let VL be the viewport height in lines (VX/self.one_line_height)
+    # Let VL2 be half the viewport height in lines
+    # Let FV be the first visible block number
+    # Let CL = FV+VL2 be the block number now on the center line of the port
+    # Let PN be the block number of the top of the desired selection
+    # Let MP = CL-P be the count of lines to move up or down to put P
+    #       P in the center, where negative means "up"
+    # Let SH be the height of the selection, typically 1 but possibly SH > VL2
+    # Adjust MP to bring all the selection into the viewport if possible.
+    # MP = CL - P - min(VL2, max(0, SH - VL2))
+    # Let ADJ = MP / total lines in the document
+    # Adjust the vertical scroll bar position by ADJ
 
     def center_position(self, pos):
         tc = self.Editor.textCursor()
@@ -644,27 +638,37 @@ class EditView( QWidget ):
         self.center_this(tc)
 
     def _top_pixel_of_pos(self, pos):
-        tc = QTextCursor(self.document)
-        tc.setPosition(pos)
-        return self.Editor.cursorRect(tc).y()
+        xc = QTextCursor(self.document)
+        xc.setPosition(pos)
+        return self.Editor.cursorRect(xc).y()
 
     def center_this(self, tc):
         # The selection in tc might be the current edit cursor, or it might
         # be a different selection e.g. from a Find operation. Establish it
-        # as the selection.
+        # as the selection. This does not move the visible image.
         self.Editor.setTextCursor(QTextCursor(tc))
-        L = self.Editor.fontMetrics().lineSpacing()
-        V = self.Editor.viewport().height()
-        V2 = int(V/2) - L
-        P = self._top_pixel_of_pos(tc.selectionStart())
-        S = self._top_pixel_of_pos(tc.selectionEnd()) - P + L
-        M = V2 - P - min(V2, max(0, S - V2))
-        A = self._top_pixel_of_pos( self.document.firstBlock().position() )
-        Z = self._top_pixel_of_pos( self.document.characterCount()-1 )
+        # Let VX be the viewport height (pixels)
+        # Let VL be the viewport height in lines (VX/self.one_line_height)
+        # Let VL2 be half the viewport height in lines
+        VL2 = int(self.Editor.viewport().height() / (2 * self.one_line_height))
+        # Let FV be the first visible block number
+        # Let CL = FV+VL2 be the block number now on the center line of the port
+        CL = self.Editor.firstVisibleBlock().blockNumber() + VL2
+        # Let PN be the block number of the top of the desired selection
+        PN = self.document.findBlock(tc.selectionStart()).blockNumber()
+        # Let SH be the height of the selection, typically 1 but possibly SH > VL2
+        SH = self.document.findBlock(tc.selectionEnd()).blockNumber() - PN + 1
+        # Let MP = CL-P be the count of lines to move up or down to put P
+        #       P in the center, where negative means "up"
+        # Adjust MP to bring all the selection into the viewport if possible.
+        # MP = CL - P - min(VL2, max(0, SH - VL2))
+        MP = CL - PN - min( VL2, max( 0, SH - VL2 ) )
+        # Let ADJ = MP / total lines in the document
+        # Adjust the vertical scroll bar position by ADJ
+        ADJ = MP / self.document.lastBlock().blockNumber()
         vsb = self.Editor.verticalScrollBar()
-        vsb.setValue( vsb.value() - int( (M/(Z-A)) * (vsb.maximum()-vsb.minimum()) ) )
-        # who sez BASIC is dead?
-        self._cursor_moved()
+        vsb.setValue( vsb.value() - int( ADJ * (vsb.maximum()-vsb.minimum()) ) )
+        #self._cursor_moved()
         self.Editor.setFocus(Qt.TabFocusReason)
 
     # Lots of other code needs a textcursor for the current document.
