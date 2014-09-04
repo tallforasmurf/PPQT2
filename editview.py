@@ -185,6 +185,7 @@ class PTEditor( QPlainTextEdit ):
         self.my_book = my_book # Need access to book
 
     def keyPressEvent(self, event):
+        #utilities.printKeyEvent(event)
         kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key())
         if kkey in C.KEYS_EDITOR :
             event.accept() # yes, this is one we handle
@@ -201,18 +202,19 @@ class PTEditor( QPlainTextEdit ):
                 mark_list = self.my_book.bookmarks # quick reference to the list
                 if kkey in C.KEYS_MARK_SET : # alt-1..9, set bookmark
                     # Set a bookmark to the current edit selection
-                    mark_list[mark_number] = QTextCursor(self.textCursor)
+                    mark_list[mark_number] = QTextCursor(self.textCursor())
                     self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
                 elif kkey in C.KEYS_MARK : # ctl-1..9, go to mark
                     # Move to the save position including a saved selection
                     if mark_list[mark_number] is not None :
-                        self.setTextCursor(mark_list[mark_number])
+                        self.parent().center_this(mark_list[mark_number])
                 else : # shft-ctl-1..9, go to mark, extending selection
                     if mark_list[mark_number] is not None:
                         pos = mark_list[mark_number].position()
-                        tc = QTextCursor(self.Editor.textCursor)
+                        tc = QTextCursor(self.textCursor())
                         tc.setPosition(pos, QTextCursor.KeepAnchor)
-                        self.Editor.setTextCursor(tc)
+                        self.setTextCursor(tc)
+                        self.ensureCursorVisible()
         else: # not a key for the editor, pass it on.
             event.ignore()
             super().keyPressEvent(event)
