@@ -69,6 +69,7 @@ MD_CC = 'CHARCENSUS'
 MD_CU = 'CURSOR'
 MD_DH = 'DOCHASH'
 MD_ES = 'EDITSIZE'
+MD_FP = 'FINDPANEL'
 MD_GW = 'GOODWORDS'
 MD_IZ = 'IMAGEZOOM'
 MD_IX = 'IMAGELINKING'
@@ -82,7 +83,7 @@ MD_VL = 'WORDCENSUS'
 # Flag bits for the metadata_modified value in a Book.
 # Each type of metadata that can be modified and then
 # not-modified (as by ^z undo) has its own flag. Those
-# that can only go one way, become modified, use Misc.
+# that can only go one way, become modified, use _FLAG.
 MD_MOD_NO = 0x02 # notes
 MD_MOD_FLAG = 0x80 # some metadata or other
 
@@ -100,7 +101,7 @@ FolioRuleSet = 0x01
 FolioRuleSkip = 0x02
 
 '''
-These words are used in multiple Edit menus in different modules
+These words are used in multiple menus in different modules
 so we translate them here once and use them in all.
 '''
 ED_MENU_EDIT = _TR('Edit Menu','Edit','Menu title')
@@ -113,6 +114,7 @@ ED_MENU_FIND = _TR('Edit Menu','Find','Edit menu action')
 ED_MENU_NEXT = _TR('Edit Menu','Find Next','Edit menu action')
 ED_MENU_PRIOR = _TR('Edit Menu','Find Previous','Edit menu action')
 
+FIND_BUTTON = _TR('"Find" button','Find')
 
 '''
 Keystrokes checked by editor and other panels that monitor KeyEvent signals.
@@ -175,15 +177,31 @@ CTL_SHFT_6 = int(Qt.ShiftModifier) | CTL_6
 CTL_SHFT_7 = int(Qt.ShiftModifier) | CTL_7
 CTL_SHFT_8 = int(Qt.ShiftModifier) | CTL_8
 CTL_SHFT_9 = int(Qt.ShiftModifier) | CTL_9
-CTL_ALT_1 = int(Qt.AltModifier) | CTL_1
-CTL_ALT_2 = int(Qt.AltModifier) | CTL_2
-CTL_ALT_3 = int(Qt.AltModifier) | CTL_3
-CTL_ALT_4 = int(Qt.AltModifier) | CTL_4
-CTL_ALT_5 = int(Qt.AltModifier) | CTL_5
-CTL_ALT_6 = int(Qt.AltModifier) | CTL_6
-CTL_ALT_7 = int(Qt.AltModifier) | CTL_7
-CTL_ALT_8 = int(Qt.AltModifier) | CTL_8
-CTL_ALT_9 = int(Qt.AltModifier) | CTL_9
+# On the Mac platform, Qt does not deliver the correct Alt-digit values, it
+# delivers the Mac's keyboard replacements, e.g. for Option-2 it delivers Alt
+# + the Euro symbol \u20AC. This may or may not be a bug but rather than
+# fight it, we make the mac UI use the physical command and control keys,
+# translated by Qt into Ctl+Meta rather than Alt.
+if PLATFORM_IS_MAC :
+    CTL_ALT_1 = int(Qt.MetaModifier) | CTL_1
+    CTL_ALT_2 = int(Qt.MetaModifier) | CTL_2
+    CTL_ALT_3 = int(Qt.MetaModifier) | CTL_3
+    CTL_ALT_4 = int(Qt.MetaModifier) | CTL_4
+    CTL_ALT_5 = int(Qt.MetaModifier) | CTL_5
+    CTL_ALT_6 = int(Qt.MetaModifier) | CTL_6
+    CTL_ALT_7 = int(Qt.MetaModifier) | CTL_7
+    CTL_ALT_8 = int(Qt.MetaModifier) | CTL_8
+    CTL_ALT_9 = int(Qt.MetaModifier) | CTL_9
+else : # for Win & Linux use the actual Alt modifier
+    CTL_ALT_1 = int(Qt.AltModifier) | CTL_1
+    CTL_ALT_2 = int(Qt.AltModifier) | CTL_2
+    CTL_ALT_3 = int(Qt.AltModifier) | CTL_3
+    CTL_ALT_4 = int(Qt.AltModifier) | CTL_4
+    CTL_ALT_5 = int(Qt.AltModifier) | CTL_5
+    CTL_ALT_6 = int(Qt.AltModifier) | CTL_6
+    CTL_ALT_7 = int(Qt.AltModifier) | CTL_7
+    CTL_ALT_8 = int(Qt.AltModifier) | CTL_8
+    CTL_ALT_9 = int(Qt.AltModifier) | CTL_9
 CTL_MINUS = int(Qt.ControlModifier) | Qt.Key_Minus
 CTL_PLUS = int(Qt.ControlModifier) | Qt.Key_Plus
 CTL_SHFT_EQUAL = int(Qt.ShiftModifier) | CTL_EQUAL
