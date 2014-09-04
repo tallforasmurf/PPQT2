@@ -76,7 +76,7 @@ Offers these additional methods:
 import regex
 from PyQt5.Qt import Qt, QEvent, QObject, QCoreApplication, QSize
 _TR = QCoreApplication.translate
-
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
     QAction,
     QFrame,
@@ -172,6 +172,52 @@ class HighLighter(QSyntaxHighlighter):
                 if self.speller(t) :
                     self.setFormat(p,l,spelling_fmt)
 
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Define a custom QPlainTextEdit. This differs from the stock variety only
+# in that it has a keyEvent override to trap numerous special keystrokes.
+#
+class PTEditor( QPlainTextEdit ):
+
+    editFindKey = pyqtSignal(int)
+
+    def __init__(self, parent, my_book):
+        super().__init__(parent)
+        self.my_book = my_book # Need access to book
+
+    def keyPressEvent(self, event):
+        kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key())
+        if kkey in C.KEYS_EDITOR :
+            event.accept() # yes, this is one we handle
+            if kkey in C.KEYS_FIND :
+                # ^f, ^g, etc. -- just pass them straight to the Find panel
+                self.editFindKey.emit(kkey)
+            elif kkey in C.KEYS_ZOOM :
+                self.setFont( fonts.scale(kkey, self.font()) )
+                self.my_book.save_font_size(self.font().pointSize())
+            elif kkey in C.KEYS_BOOKMARKS :
+                # Something to do with a bookmark. They are kept in the Book
+                # because they are read and written in the metadata.
+                mark_number = int(event.key()) - 0x31  # number in 0..8
+                mark_list = self.my_book.bookmarks # quick reference to the list
+                if kkey in C.KEYS_MARK_SET : # alt-1..9, set bookmark
+                    # Set a bookmark to the current edit selection
+                    mark_list[mark_number] = QTextCursor(self.textCursor)
+                    self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
+                elif kkey in C.KEYS_MARK : # ctl-1..9, go to mark
+                    # Move to the save position including a saved selection
+                    if mark_list[mark_number] is not None :
+                        self.setTextCursor(mark_list[mark_number])
+                else : # shft-ctl-1..9, go to mark, extending selection
+                    if mark_list[mark_number] is not None:
+                        pos = mark_list[mark_number].position()
+                        tc = QTextCursor(self.Editor.textCursor)
+                        tc.setPosition(pos, QTextCursor.KeepAnchor)
+                        self.Editor.setTextCursor(tc)
+        else: # not a key for the editor, pass it on.
+            event.ignore()
+            super().keyPressEvent(event)
+
+
 class EditView( QWidget ):
     def __init__(self, my_book, focusser, parent=None):
         # Initialize our superclass(es)
@@ -217,7 +263,7 @@ class EditView( QWidget ):
         # Sign up to get a signal on a change in font choice
         fonts.notify_me(self.font_change)
         # Fake that signal to set the fonts of our widgets.
-        self.one_line_height = 0 # set in font_change
+        self.one_line_height = 0 # updated in font_change
         self.font_change(False)
         # Sign up to get a signal on a change of color preferences.
         colors.notify_me(self._set_colors)
@@ -229,7 +275,7 @@ class EditView( QWidget ):
         self.DocName.setText(self.my_book.get_book_name())
         # Set the cursor shape to IBeam -- no idea why this supposed default
         # inherited from QTextEdit, doesn't happen. But it doesn't.
-        self.Editor.viewport().setCursor(Qt.IBeamCursor)
+        # self.Editor.viewport().setCursor(Qt.IBeamCursor)
         # Connect the Editor's modificationChanged signal to our slot.
         self.Editor.modificationChanged.connect(self.mod_change_signal)
         # Connect the returnPressed signal of the LineNumber widget
@@ -245,80 +291,7 @@ class EditView( QWidget ):
         self.context_menu = self._make_context_menu()
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
 
-
-        #TODO FIX THIS
-
-        # Filter the Editor's key events. We have to do this because,
-        # when the Editor widget is created by Qt Creator, we do not
-        # get the option of inserting a keyPressEvent() slot in it.
-        self.Editor.installEventFilter(self)
-        # Push the focus into the editor
-        self.Editor.setFocus(Qt.MouseFocusReason)
-
         # End of __init__()
-
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.KeyPress :
-            return self._editorKeyPressEvent(event)
-        if event.type() == QEvent.Show :
-            self.focusser()
-        return False
-
-    # Re-implement keyPressEvent for the Editor widget to provide bookmarks,
-    # text zoom, and find. Because Editor is defined down in the Qt Designer
-    # boilerplate, we can't override its keyPressEvent, so we use the above
-    # eventFilter to get them. Because this is the eventFilter API not the
-    # keyPressEvent API, it doesn't matter if we do event.accept(), it only
-    # matters that we return True if we handled the event, False if not.
-    #
-    #   Zoom:
-    # ctrl-plus, ctrl-minus zoom the font size by +/-1 point. Note that since
-    # Qt5, QPlainTextEdit has zoomIn/zoomOut slots, but as we also need the
-    # function in other panels, we do it ourselves.
-    #
-    #   Bookmarks:
-    # ctrl-n for n in 1..9 jumps the insertion point to bookmark n
-    # ctrl-shift-n extends the current selection to bookmark n
-    # ctrl-alt-n sets bookmark n to the current position
-    #
-    #   Find:
-    # ctrl-f/F/g/G/t/T/= interact with the Find panel to begin or continue
-    # search and replace operations.
-
-    def _editorKeyPressEvent(self, event):
-        retval = False # assume we don't handle this event
-        kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key())
-        if kkey in C.KEYS_EDITOR :
-            retval = True # yes, this is one we handle
-            if kkey in C.KEYS_FIND :
-                # ^f, ^g, etc. -- just pass them straight to the Find panel
-                # TODO: define private signal and emit
-                # self.emit(SIGNAL("editKeyPress"),kkey)
-                pass
-            elif kkey in C.KEYS_ZOOM :
-                self.Editor.setFont( fonts.scale(kkey, self.Editor.font()) )
-                self.my_book.save_font_size(self.Editor.font().pointSize())
-            elif kkey in C.KEYS_BOOKMARKS :
-                # Something to do with a bookmark. They are kept in the Book
-                # because they are read and written in the metadata.
-                mark_number = int(event.key()) - 0x31  # number in 0..8
-                mark_list = self.my_book.bookmarks # quick reference to the list
-                if kkey in C.KEYS_MARK_SET :
-                    # Set a bookmark to the current edit selection
-                    mark_list[mark_number] = QTextCursor(self.Editor.textCursor)
-                    self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
-                else : # kkey in C.KEYS_MARK or MARK_SHIFT :
-                    # move to saved location, if that bookmark is set,
-                    # extending the selection if the shift modifier is on.
-                    if mark_list[mark_number] is not None:
-                        pos = mark_list[mark_number].position()
-                        move_mode = QTextCursor.KeepAnchor if kkey in C.KEYS_MARK_SHIFT \
-                               else QTextCursor.MoveAnchor
-                        tc = QTextCursor(self.Editor.textCursor)
-                        tc.setPosition(pos, move_mode)
-                        self.Editor.setTextCursor(tc)
-        # else:  not a key for the editor, return False
-        return retval
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 INTERNAL METHODS
@@ -715,7 +688,7 @@ class EditView( QWidget ):
         self.setStatusTip("")
         self.setWhatsThis("")
         # Set up our primary widget, the editor
-        self.Editor = QPlainTextEdit(self)
+        self.Editor = PTEditor(self,self.my_book)
         self.Editor.setObjectName("Editor")
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(2) # Edit deserves all available space
