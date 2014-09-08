@@ -219,7 +219,7 @@ def path_to_stream(requested_path, encoding=None):
 #   starting_path: optional path to begin search, e.g. book path
 # Encoding is not passed, so encoding depends on the filename or suffix.
 
-def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
+def ask_existing_file(caption, parent=None, starting_path='', filter_string='',encoding=None):
     # Ask the user to select a file
     (chosen_path, _) = QFileDialog.getOpenFileName(
             parent,
@@ -228,7 +228,7 @@ def ask_existing_file(caption, parent=None, starting_path='', filter_string=''):
         )
     if len(chosen_path) == 0 : # user pressed Cancel
         return None
-    return path_to_stream(chosen_path)
+    return path_to_stream(chosen_path,encoding)
 
 # Given a FileBasedTextStream (probably a document opened by the preceding
 # function), look for a related file in the same folder and if found, return
@@ -337,13 +337,16 @@ def beep():
 # Internal function to initialize a QMessageBox object with an icon,
 # a main message line, and an optional second message line. The
 # QMessageBox is used for all dialogs that need only button-clicks.
+# Note that there seems no way to keep it from treating the informative
+# text line as rich text, despite setTextFormat.
 
 def _make_message ( text, icon, info = '', parent=None):
     mb = QMessageBox( parent )
+    mb.setTextFormat(Qt.PlainText)
     mb.setText( text )
     mb.setIcon( icon )
     if info:
-        mb.setInformativeText( info )
+        mb.setInformativeText( info.replace('<','&lt;') )
     return mb
 
 # Display a modal info message, blocking until the user clicks OK.
