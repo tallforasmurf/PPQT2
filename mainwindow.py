@@ -459,6 +459,35 @@ class MainWindow(QMainWindow):
         # following assignment should remove the last reference to the book,
         # and schedule the book and associated objects for garbage collect.
         target_book = None
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Implement loading and saving find panel user buttons. Start the search
+    # for files in the active book's folder. User can navigate to extras
+    # if need be.
+    def _find_save(self):
+        target_book = self.open_books[self.focus_book]
+        find_panel = target_book.get_find_panel()
+        stream = utilities.ask_saving_file(
+            _TR('File:Save Find Buttons open dialog',
+                'Choose file to contain find button definitions'),
+            self,
+            starting_path=target_book.get_book_full_path(),
+            encoding='UTF-8')
+        if stream : # is not None, file is open
+            find_panel.user_button_output(stream)
+        # else user hit cancel, forget it
+
+    def _find_load(self):
+        target_book = self.open_books[self.focus_book]
+        find_panel = target_book.get_find_panel()
+        stream = utilities.ask_existing_file(
+            _TR('File:Load Find Buttons open dialog',
+                'Choose a file of find button definitions'),
+            self,
+            starting_path=target_book.get_book_full_path(),
+            encoding='UTF-8')
+        if stream :# is not None, we opened it
+            find_panel.user_button_input(stream)
+            target_book.metadata_modified(True,C.MD_MOD_FLAG)
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Maintain the list of "recent" file paths. The list is kept in usage
@@ -579,6 +608,20 @@ class MainWindow(QMainWindow):
         work.setShortcut(QKeySequence.Close)
         work.setToolTip( _TR('File:Close tooltip', 'Close the active book') )
         work.triggered.connect(self._close)
+
+        #  Load Find Buttons -> _find_load()
+        work = self.file_menu.addAction( _TR('File menu command', 'Load Find Buttons') )
+        work.setToolTip( _TR('File:Load Find Buttons tooltip',
+            'Load a file of definitions for the custom buttons in the Find panel' )
+                         )
+        work.triggered.connect(self._find_load)
+        #  Save Find Buttons -> _find_save()
+        work = self.file_menu.addAction( _TR('File menu command', 'Save Find Buttons') )
+        work.setToolTip( _TR('File:Save Find Buttons tooltip',
+                              'Save definitions of the custom buttons in the Find panel' )
+                         )
+        work.triggered.connect(self._find_save)
+
         # Open Recent gets a submenu that is added to the File menu.
         # The aboutToShow signal is connected to our _build_recent slot.
         self.recent_menu = QMenu( _TR('Sub-menu name', '&Recent Files') )
