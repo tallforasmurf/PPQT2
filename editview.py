@@ -101,7 +101,6 @@ from PyQt5.QtGui import (
     QTextDocument,
     QTextFormat
     )
-import editview_uic
 import fonts
 import colors
 import logging
