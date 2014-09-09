@@ -1,0 +1,73 @@
+A file of find buttons can define any or all of the 24 user-defined buttons.
+
+To see the correct format of the file, set a few user-defined button, then
+use File > Save Find Buttons to save them to a file. Edit the file to see the
+proper format. A file of find buttons is always encoded UTF-8 and may contain
+any Unicode characters.
+
+You can put any kind of commentary in between button definitions in the file.
+While loading a file of button definitions, PPQT skips all lines until it
+sees a line that starts with a number, a colon and a left brace, for example
+
+ 17 : {
+
+That starts the definition of, in this case, button 17. Once a button
+definition has started, it continues until PPQT sees a line that ends in a
+right brace, }. The "}" must be the last character on the line or it will not
+be recognized as the end of the definition.
+
+The buttons are numbered from zero at the top left down to 23 at the bottom
+right. Or you can use the special button number 99 which means, put this in
+the highest-numbered button that does not have a definition now.
+
+The data between the first "{" and the next "}" must be a Python "dict"
+literal; that is, a series of items separated by commas, where an item is a
+key, a colon, and a value, for example
+
+ 'find' : '/*', 'regex' : False,
+
+and so on. White space is allowed around the items. The items can be one to a
+line, or all on one line, or any mix.
+
+If the text between "{" and "}" does not constitute a valid Python literal
+dictionary, an error message is written to the log file and the button is not
+loaded.
+
+Each item in the dictionary specifies a value for one of the Find/Replace
+widgets. A widget that is not specified, will not be changed when the button
+is clicked. For example if there is no item with the key of 'regex' then the
+regex switch will be unchanged when that button is clicked. Or, you may
+specify the special value of None (just the word, no quotes: 'regex':None) to
+mean, do not change this widget.
+
+The item keys and their values are as follows.
+
+ KEY         WIDGET               VALUE
+
+ 'label'     Button label         'string in quotes'
+ 'tooltip'   Button tooltip       'string in quotes'
+ 'find'      Find text field      'string in quotes'
+ 'rep1'      Replace text box 1   'string in quotes'
+ 'rep2'      Replace text box 2   'string in quotes'
+ 'rep3'      Replace text box 3   'string in quotes'
+ 'all'       All! switch          True or False
+ 'andnext'   +Next switch         True or False
+ 'andprior'  +Prior switch        True or False
+ 'case'      Respect Case switch  True or False
+ 'regex'     Regex switch         True or False
+ 'word'      Whole Word switch    True or False
+
+True and False must be written in full with an initial capital, as shown. You
+may write strings in 'single quotes' or "double ones".
+
+Only one item is required, 'label':'string'. If the definition does not have
+a 'label' key with a string value, it is ignored.
+
+Because of the Python syntax for literal strings, when you want to include a
+backslash \ in a string, you must double it: \\ Use \\n to put the two
+characters \n in a string. If you fail to double the slash, \n will go into
+the string as a literal newline.
+
+You can write any Unicode value into a string, but you may also write Unicode
+character values using the syntax \uxxxx where xxxx is four hexadecimal
+digits, for example the Euro sign is \u20ac.
