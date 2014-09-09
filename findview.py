@@ -118,18 +118,18 @@ sw_and_next  After a successful replace, do a Next search
 
 sw_and_prior After a successful replace, do a Prior search
 
-sw_ALL_bang  On clicking any Replace, initiate a global replace.
+sw_do_all  On clicking any Replace, initiate a global replace.
 
 On global replace, the search text is applied throughout the current search
 range and a list is made of all matches. The user is shown a warning dialog:
 
-   About to replace n occurrences of
+   OK to replace n occurrences of
     ...find text...
    With
     ...replace text...
    [OK] [CANCEL]
 
-[Cancel] is the default. When OK is clicked, the replacements are done.
+When OK is clicked, the replacements are done.
 
 The FindPanel constructor implements a metadata reader and writer to save and
 load the contents of the four RecallMenuButtons into metadata. Thus the most
@@ -145,14 +145,12 @@ with the stored values. When one is ctl-clicked, the user is prompted for a
 new label for the button, then the current values of the UI controls are
 loaded into it.
 
-SOME CONTROL TBS is used to indicate Load User Buttons. The user is asked to
-select a file containing user button data, basically a series of literal
-dicts as documented for v1. SOME CONTROL TBS is used to indicate Save User
-Buttons: the user is asked to choose a file to write the current user buttons
-into. Note in version 1, a UserButton stored and reloaded both the Greedy
-button and the in-selection button. In version 2, greedy is not supported and
-it makes no sense to set in-selection on, if it was off, from a user button.
-On the contrary, in-selection should not be disturbed.
+The main window presents File > Load/Save Find Buttons commands. These are
+implemented by calling here. Note in version 1, a UserButton stored and
+reloaded both the Greedy button and the in-selection button. In version 2,
+greedy is not supported and it makes no sense to set in-selection on, if it
+was off, from a user button. On the contrary, in-selection should not be
+disturbed. If these fields appear in a loaded user button, they are ignored.
 
 '''
 
@@ -949,9 +947,9 @@ class FindPanel(QWidget):
             )
         info_with = _TR(
             "replace <string> with <string>",
-            " with "
+            "\nwith\n"
             )
-        info_msg = self.find_field.text()[:30] + info_with + self.replace_fields[button].text()[:30]
+        info_msg = self.find_field.text().__repr__() + info_with + self.replace_fields[button].text().__repr__()
         if not utilities.ok_cancel_msg(msg,info_msg,self) :
             return
         # Do the deed.
