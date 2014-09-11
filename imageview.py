@@ -60,6 +60,7 @@ We intercept keystrokes and process them as follows:
 import constants as C
 import metadata
 import pagedata
+import resources # for hand icons
 import math # for isnan() only
 
 from PyQt5.QtCore import (
@@ -72,6 +73,7 @@ from PyQt5.QtCore import (
 _TR = QCoreApplication.translate
 
 from PyQt5.QtWidgets import (
+    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -85,6 +87,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import (
     QColor,
+    QIcon,
     QImage,
     QKeyEvent,
     QPixmap,
@@ -457,6 +460,32 @@ class ImageDisplay(QWidget):
         self.setFocusPolicy(Qt.ClickFocus) # focus into whole widget
         self.scroll_area.setFocusProxy(self) # you, pass it on.
 
+        # Create the image-linking toolbuttons.
+        # Cursor-to-image uses left-hands.
+        c2i_on = QPixmap(':/hand-left-closed.png')
+        c2i_off = QPixmap(':/hand-left-open.png')
+        c2i_con = QIcon()
+        c2i_con.addPixmap(c2i_on,QIcon.Normal,QIcon.On)
+        c2i_con.addPixmap(c2i_off,QIcon.Normal,QIcon.Off)
+        self.cursor_to_image = QToolButton()
+        self.cursor_to_image.setCheckable(True)
+        self.cursor_to_image.setContentsMargins(0,0,0,0)
+        self.cursor_to_image.setIconSize(QSize(30,24))
+        self.cursor_to_image.setMaximumSize(QSize(32,26))
+        self.cursor_to_image.setIcon(c2i_con)
+        # Image-to-cursor uses right-hands.
+        i2c_on = QPixmap(':/hand-right-closed.png')
+        i2c_off = QPixmap(':/hand-right-open.png')
+        i2c_con = QIcon()
+        i2c_con.addPixmap(i2c_on,QIcon.Normal,QIcon.On)
+        i2c_con.addPixmap(i2c_off,QIcon.Normal,QIcon.Off)
+        self.image_to_cursor = QToolButton()
+        self.image_to_cursor.setCheckable(True)
+        self.image_to_cursor.setContentsMargins(0,0,0,0)
+        self.image_to_cursor.setIconSize(QSize(30,24))
+        self.image_to_cursor.setMaximumSize(QSize(32,26))
+        self.image_to_cursor.setIcon(i2c_con)
+
         # Create a spinbox to set the zoom from 15 to 200 and connect its
         # signal to our slot.
         self.zoom_pct = QSpinBox()
@@ -504,12 +533,19 @@ class ImageDisplay(QWidget):
         self.zoom_to_height.setMinimumWidth(w)
         self.zoom_to_width.setMinimumWidth(w)
 
+        # Create an HBox for the top of the panel which contains only
+        # the cursor-to-image link button.
+        tophbox = QHBoxLayout()
+        tophbox.setContentsMargins(0,0,0,0)
+        tophbox.addWidget(self.cursor_to_image,0)
+        tophbox.addStretch() # left-align the button
         # Create an HBox layout to contain the above controls, using
         # spacers left and right to center them and a spacers between
         # to control the spacing.
 
         zhbox = QHBoxLayout()
-        zhbox.setContentsMargins(6,2,6,2)
+        zhbox.setContentsMargins(0,0,0,0)
+        zhbox.addWidget(self.image_to_cursor,0)
         zhbox.addStretch(2) # left and right spacers have stretch 2
         zhbox.addWidget(pct_label,0)
         zhbox.addWidget(self.zoom_pct,0)
@@ -519,16 +555,11 @@ class ImageDisplay(QWidget):
         zhbox.addWidget(self.zoom_to_width,0)
         zhbox.addStretch(2) # right side spacer
 
-        # TODO: figure out layout with these buttons which are now invisible
-        self.cursor_to_image = QToolButton()
-        self.cursor_to_image.setCheckable(True)
-        self.image_to_cursor = QToolButton()
-        self.image_to_cursor.setCheckable(True)
-
         # With all the pieces in hand, create our layout with a stack of
         # image over row of controls.
         vbox = QVBoxLayout()
-        vbox.setContentsMargins(4,0,4,0)
+        vbox.setContentsMargins(0,0,0,0)
+        vbox.addLayout(tophbox,0)
         # The image gets a high stretch and default alignment.
         vbox.addWidget(self.scroll_area,2)
         vbox.addLayout(zhbox,0)
