@@ -1362,5 +1362,6 @@ class FindPanel(QWidget):
         vb1 = QVBoxLayout()
         vb1.addWidget(frame_find,0)
         vb1.addWidget(frame_reps,0)
-        vb1.addWidget(frame_user,1)
+        vb1.addStretch()
+        vb1.addWidget(frame_user,0)
         self.setLayout(vb1)
