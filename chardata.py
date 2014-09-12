@@ -77,7 +77,6 @@ class CharData(QObject):
     # Return the tuple( unichar, count ) at position j of the sorted sequence
     # of characters. Be a little suspicious of the caller.
     def get_tuple(self,j):
-        # many errors could be tested for, j<0, j>count, not isinstance(j,int)
         try :
             return (self.k_view[j], self.v_view[j])
         except :
@@ -98,25 +97,27 @@ class CharData(QObject):
     def refresh(self):
         editm = self.my_book.get_edit_model()
         c = self.census # save a few lookups
-        self.k_view = None
-        self.v_view = None
         if len(c) : # something in the dict now
-            for char in c.keys():
+            self.v_view = None # discard values view
+            for char in self.k_view:
                 c[char] = 0
+            self.k_view = None # don't update that
             for line in editm.all_lines() :
                 n = self.census.setdefault(char,0)
                 c[char] = n+1
-            mtc = [char for char in c.keys() if c[char] == 0 ]
+            self.k_view = c.keys()
+            mtc = [char for char in self.k_view if c[char] == 0 ]
             for char in mtc :
                 del c[char]
-        else : # empty dict
+            self.v_view = c.values()
+        else : # empty dict; k_view and v_view are None
             for line in editm.all_lines() :
                 for char in line :
-                    n = self.census.setdefault(char,0)
-                    self.census[char] = n+1
+                    n = c.setdefault(char,0)
+                    c[char] = n+1
             # Restore the views for fast access
-            self.k_view = self.census.keys()
-            self.v_view = self.census.values()
+            self.k_view = c.keys()
+            self.v_view = c.values()
 
     # Load a character census from a metadata file. The V1 line format is
     # "X count category", X a unicode character and count and category
