@@ -25,9 +25,12 @@ __email__ = "tallforasmurf@yahoo.com"
 
                           CHARDATA.PY
 
-Defines a class for storing the counts of characters in a document.
-An object of this class is created by the book when a file is created
-or opened. It acts as the data model for the Chars panel (charview.py).
+Defines a class for storing the counts of characters in a document. An object
+of this class is created by the book when a file is created or opened. It
+acts as the real data model for the Chars panel (charview.py). However, it is
+not based on QAbstractTableModel, because that class also has to provide
+user-visible strings such as column headers and tooltips, and these are more
+appropriately defined in the charview module.
 
     Storing Characters
 
@@ -41,9 +44,10 @@ lines can differ between version-1 and -2 metadata, see comments below.
 During a Save, the metamanager calls the method char_save() to write the
 current census as metadata, passing a text stream to write into.
 
-The Chars panel calls char_count() to size its table. It calls get_tuple(n)
-for a tuple of (char, count) for the value and count of the nth char, which
-accesses the dict by way of an ValueView to attain O(1) speed.
+The QAbstractTableModel in charview calls char_count() to size its table. It
+calls get_tuple(n) for a tuple of (char, count) for the value and count of
+the nth character in the sorted sequence. Access to the nth char is by way of
+sorteddict KeyView and ValueView which promis attain O(1) time.
 
 The Chars panel calls refresh() when that button is clicked, causing us
 to rip through the whole document counting the characters.
