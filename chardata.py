@@ -56,9 +56,12 @@ from blist import sorteddict
 import metadata
 import logging
 cd_logger = logging.getLogger(name='Char Data')
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 
 class CharData(QObject):
+    # Define the signal we emit when we have loaded new data
+    CharsLoaded = pyqtSignal()
+
     def __init__(self,my_book):
         super().__init__()
         # Save access to the book, from which we learn the metadata
@@ -154,6 +157,7 @@ class CharData(QObject):
         # Restore the views for fast access
         self.k_view = self.census.keys()
         self.v_view = self.census.values()
+        self.CharsLoaded.emit()
 
     # Save the character table as "X count". In v1 we also saved the unicode
     # category but there's no point, it saves no time to read it back as
