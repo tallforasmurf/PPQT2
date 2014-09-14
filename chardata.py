@@ -81,6 +81,11 @@ class CharData(QObject):
     def char_count(self):
         return len(self.census)
 
+    # Return only the character at position j, saving a little time
+    # for the sort filter.
+    def get_char(self, j):
+        return self.k_view[j]
+
     # Return the tuple( unichar, count ) at position j of the sorted sequence
     # of characters. Be a little suspicious of the caller.
     def get_tuple(self,j):
