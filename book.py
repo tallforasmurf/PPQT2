@@ -70,6 +70,8 @@ import metadata
 import editdata
 import editview
 import findview
+import chardata
+import charview
 import worddata
 import pagedata
 import imageview
@@ -126,6 +128,7 @@ class Book(QObject):
         # Create the data model objects. These are private to the book.
         self.editm = editdata.Document(self) # document, to be initialized later
         self.pagem = pagedata.PageData(self) # page data
+        self.charm = chardata.CharData(self) # character data
         self.wordm = worddata.WordData(self) # vocabulary data
         # TODO: footnotes, bookloupe?
         #
@@ -138,10 +141,10 @@ class Book(QObject):
         self.panel_dict['Images'] = self.imagev
         self.panel_dict['Notes'] = noteview.NotesPanel(self)
         self.panel_dict['Find' ] = findview.FindPanel(self)
+        self.panel_dict['Chars'] = charview.CharView(self)
         # TODO other view objects TBS, QLabels are placeholders
         self.panel_dict['Pages'] = QLabel(str(sequence)+'Pages') # pageview.PagePanel(self)
         self.panel_dict['Words'] = QLabel(str(sequence)+'Words') # wordview.WordPanel(self)
-        self.panel_dict['Chars'] = QLabel(str(sequence)+'Chars') # charview.CharPanel(self)
         self.panel_dict['Fnote'] = QLabel(str(sequence)+'Fnote') # fnoteview.FnotePanel(self)
         self.panel_dict['Loupe'] = QLabel(str(sequence)+'Loupe') # loupeview.LoupePanel(self)
         self.panel_dict['tab_list'] = [
@@ -518,10 +521,15 @@ class Book(QObject):
     # give access to the spellcheck object
     def get_speller(self):
         return self._speller
+    # give access tot the char data model
+    def get_char_model(self):
+        return self.charm
     # give access to the word data model
     def get_word_model(self):
         return self.wordm
     # give access to the Find panel object
     def get_find_panel(self):
         return self.panel_dict['Find']
-    # TODO: get_fnote_data()?, get_loupe_data()?
+    # give access to the Char panel mostly for test
+    def get_char_panel(self):
+        return self.panel_dict['Chars']
