@@ -54,6 +54,7 @@ to rip through the whole document counting the characters.
 '''
 from blist import sorteddict
 import metadata
+import constants as C
 import logging
 cd_logger = logging.getLogger(name='Char Data')
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -115,8 +116,9 @@ class CharData(QObject):
                 c[char] = 0
             self.k_view = None # don't update that
             for line in editm.all_lines() :
-                n = self.census.setdefault(char,0)
-                c[char] = n+1
+                for char in line :
+                    n = self.census.setdefault(char,0)
+                    c[char] = n+1
             self.k_view = c.keys()
             mtc = [char for char in self.k_view if c[char] == 0 ]
             for char in mtc :
@@ -130,6 +132,7 @@ class CharData(QObject):
             # Restore the views for fast access
             self.k_view = c.keys()
             self.v_view = c.values()
+        self.my_book.metadata_modified(C.MD_MOD_FLAG,True)
 
     # Load a character census from a metadata file. The V1 line format is
     # "X count category", X a unicode character and count and category
