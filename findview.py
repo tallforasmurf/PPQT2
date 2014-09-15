@@ -683,7 +683,7 @@ class FindPanel(QWidget):
             # Make sure our panel is visible, focus in Find text,
             # with existing text selected for easy replacement.
             if not self.isVisible() :
-                pass # make this panel visible TODO
+                self.book.make_me_visible(self)
             self.find_field.setFocus(Qt.ShortcutFocusReason)
             self.find_field.selectAll()
             if kkey == C.CTL_SHFT_F :
@@ -755,6 +755,7 @@ class FindPanel(QWidget):
         if repl : # is not None, set that string
             self.replace_fields[1].setText(repl)
             self.replace_fields[1].note_user(False)
+        self.book.make_me_visible(self)
         self.start_search(FindPanel.SEARCH_LIMIT) # do a First
 
     # Execute one of the four do-search buttons. flag has SEARCH_LIMIT for
