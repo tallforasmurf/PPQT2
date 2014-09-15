@@ -487,6 +487,12 @@ class Book(QObject):
         return (0 != self.md_modified) or self.editm.isModified()
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Make one of our panels visible. Just pass the requesting widget
+    # on to the main window.
+    def make_me_visible(self,widg):
+        self.mainwindow.make_tab_visible(widg)
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # The following methods provide access to book info for other modules.
 
     # give access to the book name

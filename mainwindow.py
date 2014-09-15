@@ -257,6 +257,20 @@ class MainWindow(QMainWindow):
                 self.open_books[book_index].get_edit_view() ) )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Called by the current book to make a particular tab the visible one,
+    # e.g. to make the Find visible on a ^F. The argument is a widget
+    # that should occupy one of the current tabs. Ask the tabset for its
+    # index, and if it is found, make that the current index. (If it is
+    # not found, log it and do nothing.)
+
+    def make_tab_visible(self, tabwidg):
+        ix = self.panel_tabset.indexOf(tabwidg)
+        if ix >= 0 : # widget exists in this tabset
+            self.panel_tabset.setCurrentIndex(ix)
+            return
+        mainwindow_logger.error('Request to show nonexistent widget')
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Implement File>New:
     #    Create a Book object
     #    Call its new_empty() method,
