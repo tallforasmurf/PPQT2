@@ -165,7 +165,7 @@ import unicodedata # for NFKC
 import ast # for literal_eval
 import logging
 worddata_logger = logging.getLogger(name='worddata')
-
+from PyQt5.QtCore import QCoreApplication
 # ====================================================================
 # Define the properties of a vocabulary token and provide dicts to
 # convert between properties and their name-strings.
@@ -502,10 +502,16 @@ class WordData(object):
     #
     # Method to perform a census. This is called from wordview when the
     # user clicks the Refresh button asking for a new scan over all words in
-    # the book.
+    # the book. A QProgressDialog is passed, which we load with the maximum
+    # count of rows and update as we go.
     #
-    def refresh(self):
+    def refresh(self,progress):
         global re_lang_attr, re_token
+
+        count = 0
+        end_count = self.document.blockCount()
+        progress.setMaximum(end_count)
+        progress.setValue(0)
 
         # get a reference to the dictionary to use
         self.speller = self.my_book.get_speller()
@@ -519,6 +525,10 @@ class WordData(object):
         alt_dict = None
         alt_tag = None
         for line in self.document.all_lines():
+            count += 1
+            if 0 == (count % 20):
+                progress.setValue(count)
+                QCoreApplication.processEvents()
             j = 0
             m = re_token.search(line,0)
             while m : # while match is not None
@@ -536,7 +546,6 @@ class WordData(object):
                     self._add_token(m.group(0),alt_dict)
                 j = m.end()
                 m = re_token.search(line,j)
-
         # look for zero counts and delete those items. In order not to
         # confuse the value and keys views, make a list of the actual word
         # tokens to be deleted, then use del.
@@ -546,6 +555,7 @@ class WordData(object):
                 togo.append(self.vocab_kview[j])
         for key in togo:
             del self.vocab[key]
+        progress.setValue(end_count)
 
     # Internal method for adding a possibly-hyphenated token to the vocabulary,
     # incrementing its count. This is used during the census/refresh scan, and
