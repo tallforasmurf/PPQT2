@@ -196,6 +196,18 @@ prop_bgh = set([BW,GW,HY])
 # exception if no XX but set & prop_nox ensures it is gone.
 prop_nox = set([UC,LC,MC,HY,AP,ND,BW,GW,AD])
 
+# Function to convert a property set into a V1 flag-string for display.
+def prop_string(p):
+    s = ['-'] * 6
+    if UC in p : s[0] = 'A'
+    elif LC in p : s[1] = 'a'
+    elif MC in p : s[0] = 'A'; s[1] = 'a'
+    if ND in p : s[2] = '9'
+    if HY in p : s[3] = 'h'
+    if AP in p : s[4] = 'p'
+    if XX in p : s[5] = 'X'
+    return ''.join(s)
+
 # ====================================================================
 # A suite of regexes to parse out important tokens from a text line.
 #
@@ -492,7 +504,6 @@ class WordData(object):
     # user clicks the Refresh button asking for a new scan over all words in
     # the book.
     #
-    # TODO: progress bar API!
     def refresh(self):
         global re_lang_attr, re_token
 
@@ -668,6 +679,10 @@ class WordData(object):
         except Exception as whatever:
             worddata_logger.error('bad call to word_props_at({0})'.format(n))
             return (set())
+    # Used to turn off XX when a word is added to good-words.
+    def set_props_at(self, n, props):
+        [count, old_props] = self.vocab_vview[n]
+        self.vocab_vview[n] = [count, props]
     # mostly used by unit test, get the index of a word by its key
     def word_index(self, w):
         try:
