@@ -73,6 +73,7 @@ import findview
 import chardata
 import charview
 import worddata
+import wordview
 import pagedata
 import imageview
 import noteview
@@ -143,8 +144,8 @@ class Book(QObject):
         self.panel_dict['Find' ] = findview.FindPanel(self)
         self.panel_dict['Chars'] = charview.CharView(self)
         # TODO other view objects TBS, QLabels are placeholders
+        self.panel_dict['Words'] = wordview.WordPanel(self) # wordview.WordPanel(self)
         self.panel_dict['Pages'] = QLabel(str(sequence)+'Pages') # pageview.PagePanel(self)
-        self.panel_dict['Words'] = QLabel(str(sequence)+'Words') # wordview.WordPanel(self)
         self.panel_dict['Fnote'] = QLabel(str(sequence)+'Fnote') # fnoteview.FnotePanel(self)
         self.panel_dict['Loupe'] = QLabel(str(sequence)+'Loupe') # loupeview.LoupePanel(self)
         self.panel_dict['tab_list'] = [
@@ -533,6 +534,9 @@ class Book(QObject):
     # give access to the word data model
     def get_word_model(self):
         return self.wordm
+    # give access to the words panel (mostly for test)
+    def get_word_panel(self):
+        return self.panel_dict['Words']
     # give access to the Find panel object
     def get_find_panel(self):
         return self.panel_dict['Find']
