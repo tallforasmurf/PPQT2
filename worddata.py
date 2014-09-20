@@ -166,6 +166,18 @@ import ast # for literal_eval
 import logging
 worddata_logger = logging.getLogger(name='worddata')
 from PyQt5.QtCore import QCoreApplication
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Global function to strip all types of apostrophe and dash from a word.
+# Global static set of all types of unicode apostrophe and dash forms.
+
+APO_DASH_SET = {"'","\u02bc","\u2019","-","\u00ad","\u2010",
+                "\u2011","\u2012","\u2013","\u2014","\u2015",
+                "\ufe58","\ufe63","\uff0d" }
+
+def clean_word(word):
+    return ''.join([c for c in word if not c in APO_DASH_SET])
+
 # ====================================================================
 # Define the properties of a vocabulary token and provide dicts to
 # convert between properties and their name-strings.
@@ -224,6 +236,7 @@ xp_word = "(\\w*(\\[..\\])?\\w+)+"
 # Next: the above with embedded hyphens or apostrophes (incl. u2019's):
 # She's my mother-in-law's 100-year-old ph[oe]nix by [OE]dipus. This
 # will not recognize a singleton ligature preceding or following an apostrophe.
+# It also will not recognize several forms of dash (\u2011-\u2015) as hyphens.
 
 xp_hyap = "(" + xp_word + "[\\'\\-\u2019])*" + xp_word
 
@@ -689,10 +702,37 @@ class WordData(object):
         except Exception as whatever:
             worddata_logger.error('bad call to word_props_at({0})'.format(n))
             return (set())
-    # Used to turn off XX when a word is added to good-words.
-    def set_props_at(self, n, props):
-        [count, old_props] = self.vocab_vview[n]
-        self.vocab_vview[n] = [count, props]
+
+    # Return a reference to the good-words set
+    def get_good_set(self):
+        return self.good_words
+
+    # Note the addition of a word to the good-words set. The word probably
+    # (but does not have to) exist in the database; add GW and remove XX from
+    # its properties.
+    def add_to_good_set(self, word):
+        self.good_words.add(word)
+        if word in self.vocab_kview :
+            [count, pset] = self.vocab[word]
+            pset.add(GW)
+            pset -= set([XX]) # conditional .remove()
+            self.vocab[word] = [count,pset]
+
+    # Note the removal of a word from the good-words set. The word exists in
+    # the good-words set, because the wordview panel good-words list only
+    # calls this for words it is displaying. The word may or may not exist in
+    # the database. If it does, remove GW and set XX based on a spellcheck
+    # test.
+    def del_from_good_set(self, word):
+        self.good_words.remove(word)
+        if word in self.vocab_kview :
+            [count, pset] = self.vocab[word]
+            pset -= set([GW,XX])
+            dic_tag = self.alt_tags.get(word)
+            if not self.speller.check(word, dic_tag) :
+                pset.add(XX)
+            self.vocab[word] = [count, pset]
+
     # mostly used by unit test, get the index of a word by its key
     def word_index(self, w):
         try:
