@@ -345,6 +345,7 @@ class WordData(object):
     # method is cool with that.
 
     def good_read(self, stream, sentinel, v, parm) :
+        global prop_nox
         for line in metadata.read_to(stream, sentinel):
             # note depending on read_to to strip whitespace
             if line in self.bad_words :
@@ -355,8 +356,8 @@ class WordData(object):
                 self.good_words.add(line)
                 if line in self.vocab : # vocab already loaded, it seems
                     props = self.vocab[line][1]
-                    props += GW
-                    props -= XX
+                    props.add(GW)
+                    props &= prop_nox
     #
     # 2. Load a bad_words file or metadata segment.
     #
@@ -370,8 +371,8 @@ class WordData(object):
                 self.bad_words.add(line)
                 if line in self.vocab :
                     props = self.vocab[line][1]
-                    props += BW
-                    props += XX
+                    props.add(BW)
+                    props.add(XX)
     #
     # 3. Load the scannos segment of a metadata file or, if the user chooses
     # a new scannos list, load the contents of the designated file. In the
@@ -530,9 +531,13 @@ class WordData(object):
         self.speller = self.my_book.get_speller()
         # clear the alt-dict list.
         self.alt_tags = blist.sorteddict()
-        # zero out all counts that we have so far
+        # Zero out all counts and property sets that we have so far. We will
+        # develop new properties when each word is first seen. Properties
+        # such as HY will not have changed, but both AD and XX might have
+        # changed while the word text remains the same.
         for j in range(len(self.vocab)) :
             self.vocab_vview[j][0] = 0
+            self.vocab_vview[j][1] = set()
 
         # iterate over all lines extracting tokens and processing them.
         alt_dict = None
