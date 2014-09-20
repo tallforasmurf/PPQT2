@@ -175,4 +175,4 @@ class CharData(QObject):
         for char in self.census :
             count = self.census[char]
             stream << char + ' ' + str(count) + '\n'
-        stream << metadata.close_string(sentinel)
+        stream << metadata.close_line(sentinel)
