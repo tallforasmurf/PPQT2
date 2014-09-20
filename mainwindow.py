@@ -216,6 +216,17 @@ class MainWindow(QMainWindow):
             self._new() # open one, new, book.
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Slot to receive the currentChanged signal from the editview tabset.
+    # Look through self.open_books and find the one whose edit widget is
+    # now current, and do a focus_me for it.
+    def _editview_change(self, index):
+        eview = self.editview_tabset.widget(index)
+        for (seqno, book) in self.open_books.items() :
+            if eview == book.get_edit_view() :
+                self.focus_me(seqno)
+                return
+        mainwindow_logger.error('cannot relate editview tab index to book')
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Make a selected book the focus of all panels. This is called explicitly
     # when a book is first created, and when the editview tabset changes the
     # current selection. It is called also when an editview gets a focus-in
@@ -570,6 +581,7 @@ class MainWindow(QMainWindow):
         # Create the tabset that displays editviews
         self.editview_tabset = QTabWidget()
         self.editview_tabset.setMovable(True) # let user move tabs around
+        self.editview_tabset.currentChanged.connect(self._editview_change)
         # Create the tabset that displays find, notes, help &etc.
         self.panel_tabset = QTabWidget()
         self.panel_tabset.setMovable(True)
