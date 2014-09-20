@@ -283,8 +283,11 @@ class MainWindow(QMainWindow):
         new_book = book.Book( seq, self )
         new_book.new_empty()
         self.open_books[seq] = new_book
-        self.editview_tabset.addTab(
+        index = self.editview_tabset.addTab(
             new_book.get_edit_view(), new_book.get_book_name() )
+        self.editview_tabset.setTabToolTip(index,
+                _TR('Tooltip of edit of new unsaved file',
+                    'this file has not been saved') )
         self.focus_me(seq)
 
 
@@ -378,7 +381,10 @@ class MainWindow(QMainWindow):
             a_book.old_book( fbts, meta_stream )
         else :
             a_book.new_book( fbts, gg_stream, gw_stream, bw_stream )
-        self.editview_tabset.addTab(a_book.get_edit_view(), a_book.get_book_name())
+        index = self.editview_tabset.addTab(
+            a_book.get_edit_view(), a_book.get_book_name())
+        self.editview_tabset.setTabToolTip(index,
+            a_book.get_book_folder() )
         self.focus_me(seq)
         self.last_open_path = fbts.folderpath() # start for next open or save
         self._add_to_recent(fbts.fullpath())
