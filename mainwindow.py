@@ -220,12 +220,13 @@ class MainWindow(QMainWindow):
     # Look through self.open_books and find the one whose edit widget is
     # now current, and do a focus_me for it.
     def _editview_change(self, index):
-        eview = self.editview_tabset.widget(index)
-        for (seqno, book) in self.open_books.items() :
-            if eview == book.get_edit_view() :
-                self.focus_me(seqno)
-                return
-        mainwindow_logger.error('cannot relate editview tab index to book')
+        if index > -1 :
+            eview = self.editview_tabset.widget(index)
+            for (seqno, book) in self.open_books.items() :
+                if eview == book.get_edit_view() :
+                    self.focus_me(seqno)
+                    return
+            mainwindow_logger.error('cannot relate editview tab index to book')
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Make a selected book the focus of all panels. This is called explicitly
     # when a book is first created, and when the editview tabset changes the
