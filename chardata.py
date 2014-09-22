@@ -157,7 +157,7 @@ class CharData(QObject):
             except :
                 cd_logger.error('invalid CHARCENSUS line "'+line+'" ignored')
                 continue
-            count = min(1,count) # in case it was zero, make nonzero
+            count = max(1,count) # in case it was zero, make nonzero
             if char in self.census :
                 cd_logger.warn('"'+char+'" appears more than once in metadata')
                 continue
