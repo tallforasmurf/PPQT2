@@ -36,13 +36,16 @@ At this time there are three:
     dictionaries, when the user has dictionaries other than
     the ones distributed in "extras".
 
-NOTE: Through Preferences the user sets these two paths independently.
-Preferences will not permit either to be set to an invalid path (unreadable
-or nonexistent -- see check_path() below) but will permit a null string.
-Moreover a valid path could *become* inaccessible between shutdown and
-startup.
+    The "loupe" path is where to find the executable program
+    named bookloupe in this system. If it has not been set
+    explicitly it is the null string.
 
-So we have to assume that the values in settings could be null strings and
+The user sets these paths using the Preferences or other dialog. No dialog
+will permit any to be set to an invalid path (unreadable or nonexistent --
+see check_path() below), but will permit a null string. Moreover a valid path
+could *become* inaccessible between shutdown and startup.
+
+So we have to assume that the values in settings could be null strings or
 could be invalid (which will be treated as null strings).
 
 A null string for the extras path is "corrected" to the app's folder plus
@@ -67,11 +70,15 @@ The following functions are offered:
 
     get_extras_path() returns the current selection for extras.
 
+    get_loupe_path() returns the current selection for bookloupe
+    or a null string if none.
+
     check_path(path) test that a path exists and is readable,
     returning True if so, else False.
 
     set_dicts_path()
-    set_extras_path() are called from the Preferences dialog TODO.
+    set_loupe_path()
+    set_extras_path() are called from Preferences or other dialog TODO.
 
 '''
 
@@ -82,6 +89,7 @@ paths_logger = logging.getLogger(name='paths')
 
 _DICTS = ''
 _EXTRAS = ''
+_LOUPE = ''
 
 # Note os.access('',F_OK) returns False
 
@@ -89,8 +97,15 @@ def check_path(path):
     return os.access( path ,os.F_OK ) and os.access( path, os.R_OK )
 
 def initialize(settings):
-    global _DICTS, _EXTRAS
+    global _DICTS, _EXTRAS, _LOUPE
     paths_logger.debug('paths initializing')
+    # Recover save bookloupe path if any
+    candidate = settings.value("paths/loupe_path",'')
+    if check_path(candidate):
+        _LOUPE = candidate
+    else :
+        _LOUPE = ''
+    # Recover extras path if any
     candidate = settings.value("paths/extras_path",'')
     if check_path(candidate):
         _EXTRAS = candidate
@@ -109,7 +124,7 @@ def initialize(settings):
         else:
             # couldn't find extras, default it to cwd
             _EXTRAS = os.getcwd()
-    # At this point we have a non-null valid path string in _EXTRAS
+    # At this point we have a valid, non-null path string in _EXTRAS
     # Examine the dicts path similarly.
     candidate = settings.value("paths/dicts_path",'')
     if check_path(candidate):
@@ -124,12 +139,15 @@ def initialize(settings):
             # Nope, don't see extras/dicts. Just in case the
             # settings contained a non-null bad path, make it null
             _DICTS = ''
+    paths_logger.debug('initial loupe path is ' + _LOUPE)
     paths_logger.debug('initial extras path is ' + _EXTRAS)
     paths_logger.debug('initial dicts path is ' + _DICTS)
 
 def shutdown(settings):
-    global _DICTS, _EXTRAS
+    global _DICTS, _EXTRAS, _LOUPE
 
+    paths_logger.debug('paths saving loupe: ' + _LOUPE)
+    settings.setValue("paths/loupe_path",_LOUPE)
     paths_logger.debug('paths saving extras: ' + _EXTRAS)
     settings.setValue("paths/extras_path",_EXTRAS)
     paths_logger.debug('paths saving dicts: ' + _DICTS)
@@ -149,8 +167,19 @@ def get_dicts_path():
     global _DICTS
     return str(_DICTS)
 
-# Set a user-selected Dicts path or Extras path from the Preferences.
-# Assume the caller used check_path() first.
+# Return the current value of the bookloupe executable or a null string.
+
+def get_loupe_path():
+    global _LOUPE
+    return str(_LOUPE)
+
+# Set some user-selected path. In each case assume the caller used
+# check_path() first.
+
+def set_loupe_path(path):
+    global _LOUPE
+    paths_logger.debug('setting loupe path to: ' + path)
+    _LOUPE = str(path)
 
 def set_dicts_path(path):
     global _DICTS
