@@ -27,7 +27,7 @@ __email__ = "tallforasmurf@yahoo.com"
 This somewhat minimal module records and makes available the
 current paths to resources needed by the other modules.
 
-At this time there are two:
+At this time there are three:
 
     The "extras" path is where to find non-code items distributed
     with the program, for example Find macros and help.html.
@@ -64,12 +64,12 @@ The following functions are offered:
 
     get_dicts_path() returns the current selection for dictionaries
     if any, or ''
-    
+
     get_extras_path() returns the current selection for extras.
 
     check_path(path) test that a path exists and is readable,
     returning True if so, else False.
-    
+
     set_dicts_path()
     set_extras_path() are called from the Preferences dialog TODO.
 
@@ -98,31 +98,30 @@ def initialize(settings):
         # extras_path is not in the settings (maybe a new installation?) or
         # is not a valid path. Set it to a default based on the location of
         # this app, which we get different ways depending on whether we are
-        # running in development or bundled by pyinstaller. TODO: is
-        # pyqtdeploy the same? (probably not)
-        if hasattr(sys, 'frozen') : # bundled by pyinstaller?
+        # running in development or bundled by pyinstaller or pyqtdeploy.
+        if hasattr(sys, 'frozen') : # bundled by pyinstaller/cxfreeze/pyqtdeploy?
             my_folder = os.path.dirname(sys.executable)
         else: # running from command line or an IDE
             my_folder = os.path.dirname(__file__)
-        candidate = os.path.join(my_folder,'extras') 
-        if check_path( candidate) :
+        candidate = os.path.join(my_folder,'extras')
+        if check_path( candidate ) :
             _EXTRAS = candidate
         else:
             # couldn't find extras, default it to cwd
             _EXTRAS = os.getcwd()
     # At this point we have a non-null valid path string in _EXTRAS
-    # Now examine the dicts path similarly.
+    # Examine the dicts path similarly.
     candidate = settings.value("paths/dicts_path",'')
     if check_path(candidate):
         _DICTS = candidate
     else :
-        # Empty or invalid path string for dicts_path, try to 
+        # Empty or invalid path string for dicts_path, try to
         # 'correct' it to extras/dicts if that exists.
         candidate = os.path.join( _EXTRAS, 'dicts' )
         if check_path( candidate ) :
             _DICTS = candidate
         else :
-            # Nope, don't see extras/dicts. Just in case the 
+            # Nope, don't see extras/dicts. Just in case the
             # settings contained a non-null bad path, make it null
             _DICTS = ''
     paths_logger.debug('initial extras path is ' + _EXTRAS)
@@ -130,7 +129,7 @@ def initialize(settings):
 
 def shutdown(settings):
     global _DICTS, _EXTRAS
-    
+
     paths_logger.debug('paths saving extras: ' + _EXTRAS)
     settings.setValue("paths/extras_path",_EXTRAS)
     paths_logger.debug('paths saving dicts: ' + _DICTS)
@@ -154,11 +153,11 @@ def get_dicts_path():
 # Assume the caller used check_path() first.
 
 def set_dicts_path(path):
-    global _DICTS   
+    global _DICTS
     paths_logger.debug('setting dicts path to: ' + path)
     _DICTS = str(path)
 
 def set_extras_path(path):
-    global _EXTRAS    
-    paths_logger.debug('setting extras path to: ' + path)    
+    global _EXTRAS
+    paths_logger.debug('setting extras path to: ' + path)
     _EXTRAS = str(path)
