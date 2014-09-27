@@ -71,6 +71,7 @@ paths.initialize(settings)
 check_log('initial extras path is '+test_path ,logging.DEBUG)
 assert paths.get_extras_path() == test_path
 assert paths.get_dicts_path() == ''
+assert paths.get_loupe_path() == ''
 # point settings to an extras, expect dicts to follow
 test_extras = os.path.join(files_path,'extras')
 settings.setValue("paths/extras_path", test_extras)
@@ -79,21 +80,30 @@ check_log('initial extras path is '+test_extras ,logging.DEBUG)
 assert paths.get_extras_path() == test_extras
 test_dicts = os.path.join(test_extras,'dicts')
 assert paths.get_dicts_path() == test_dicts
+# Make sure that what we put into loupe, we get back
+test_loupe = os.path.join(test_extras,'bookloupe.exe') # which doesn't exist
+paths.set_loupe_path(test_loupe)
+assert paths.get_loupe_path() == test_loupe
 # test shutdown
 settings.clear()
 paths.shutdown(settings)
 assert settings.value("paths/extras_path",'wrong') == test_extras
 assert settings.value("paths/dicts_path",'wrong') == test_dicts
-# operate the pref sets
+assert settings.value("paths/loupe_path",'wrong') == test_loupe
+# set bad values because paths expects caller to verify validity
 dummy_dicts = '/some/where/dicts'
 paths.set_dicts_path(dummy_dicts)
 dummy_extras = '/what/ever/extras'
 paths.set_extras_path(dummy_extras)
+dummy_loupe = 'nexist/pas/bookloupe'
+paths.set_loupe_path(dummy_loupe)
 assert paths.get_dicts_path() == dummy_dicts
 assert paths.get_extras_path() == dummy_extras
-# shut down with bad values
+assert paths.get_loupe_path() == dummy_loupe
+# shut down with those bad values
 paths.shutdown(settings)
-# start up with bad values, look for defaults
+# start up with bad values, expect defaults
 paths.initialize(settings)
-assert paths.get_extras_path() == test_path
-assert paths.get_dicts_path() == ''
+assert paths.get_extras_path() == test_path # bad path -> cwd
+assert paths.get_dicts_path() == '' # bad path -> null
+assert paths.get_loupe_path() == '' # bad path -> null
