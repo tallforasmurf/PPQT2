@@ -103,7 +103,8 @@ def check_path(path, executable=False):
 def initialize(settings):
     global _DICTS, _EXTRAS, _LOUPE
     paths_logger.debug('paths initializing')
-    # Recover save bookloupe path if any
+    # Recover save bookloupe path if any. If none, try a likely
+    # place. If that fails, leave it the null string.
     candidate = settings.value("paths/loupe_path",'')
     if not check_path(candidate,executable=True):
         # Try to default to a reasonable fall-back
@@ -115,12 +116,11 @@ def initialize(settings):
         if not check_path(candidate, executable=True) :
             candidate = '' # Nope, that isn't it
     _LOUPE = candidate
+    paths_logger.debug('initial loupe path is ' + _LOUPE)
 
     # Recover extras path if any
     candidate = settings.value("paths/extras_path",'')
-    if check_path(candidate):
-        _EXTRAS = candidate
-    else :
+    if not check_path(candidate):
         # extras_path is not in the settings (maybe a new installation?) or
         # is not a valid path. Set it to a default based on the location of
         # this app, which we get different ways depending on whether we are
@@ -130,28 +130,24 @@ def initialize(settings):
         else: # running from command line or an IDE
             my_folder = os.path.dirname(__file__)
         candidate = os.path.join(my_folder,'extras')
-        if check_path( candidate ) :
-            _EXTRAS = candidate
-        else:
-            # couldn't find extras, default it to cwd
-            _EXTRAS = os.getcwd()
+        if not check_path( candidate ) :
+            # extras folder not found, fall back to CWD
+            candidate = os.getcwd()
+    _EXTRAS = candidate
     # At this point we have a valid, non-null path string in _EXTRAS
+    paths_logger.debug('initial extras path is ' + _EXTRAS)
+
     # Examine the dicts path similarly.
     candidate = settings.value("paths/dicts_path",'')
-    if check_path(candidate):
-        _DICTS = candidate
-    else :
+    if not check_path(candidate):
         # Empty or invalid path string for dicts_path, try to
         # 'correct' it to extras/dicts if that exists.
         candidate = os.path.join( _EXTRAS, 'dicts' )
-        if check_path( candidate ) :
-            _DICTS = candidate
-        else :
-            # Nope, don't see extras/dicts. Just in case the
+        if not check_path( candidate ) :
+            # Nope, do not see extras/dicts. Just in case the
             # settings contained a non-null bad path, make it null
-            _DICTS = ''
-    paths_logger.debug('initial loupe path is ' + _LOUPE)
-    paths_logger.debug('initial extras path is ' + _EXTRAS)
+            candidate = ''
+    _DICTS = candidate
     paths_logger.debug('initial dicts path is ' + _DICTS)
 
 def shutdown(settings):
