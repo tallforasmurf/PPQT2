@@ -36,6 +36,7 @@ _TR = QCoreApplication.translate
 import os
 PLATFORM_NAME_STR = os.uname().sysname # e.g 'Darwin', 'Windows'
 PLATFORM_IS_MAC = PLATFORM_NAME_STR.startswith('Darw')
+PLATFORM_IS_WIN = PLATFORM_NAME_STR.startswith('Win')
 
 # default values for the rare startup where the settings are empty
 
