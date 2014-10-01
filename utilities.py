@@ -34,6 +34,7 @@ from PyQt5.QtCore import (
     QFile,
     QFileInfo,
     QIODevice,
+    QTemporaryFile,
     QTextStream,
     QTextCodec,
     QByteArray)
@@ -279,7 +280,7 @@ def file_less_suffix(FBTS):
 #   starting_path: optional path to begin search, e.g. book path
 # Encoding is not passed, so encoding depends on the filename or suffix.
 
-def ask_saving_file(caption, parent=None, starting_path='', filter_string=''):
+def ask_saving_file(caption, parent=None, starting_path='', filter_string='', encoding=None):
     (chosen_path, _) = QFileDialog.getSaveFileName(
             parent,
             caption,
@@ -287,7 +288,7 @@ def ask_saving_file(caption, parent=None, starting_path='', filter_string=''):
         )
     if len(chosen_path) == 0 : # user pressed Cancel
         return None
-    return path_to_output(chosen_path)
+    return path_to_output(chosen_path,encoding)
 
 # Convert a canonical file path to an output FileBasedTextStream, or return
 # None if that isn't possible.
@@ -303,6 +304,16 @@ def related_output(FBTS, suffix, encoding=None):
     target = FBTS.filename() + '.' + suffix
     a_file = QFile( qd.absoluteFilePath(target) )
     return _qfile_to_stream(a_file, QIODevice.WriteOnly, encoding)
+
+# Create and return a FileBasedTextStream in a temporary location. Uses
+# QTemporaryFile. When the FBTS is garbage-collected, the temp qfile goes out
+# of scope and is automatically deleted. Although based on a QTemporaryFile
+# all functions of FBTS work including filename, folderpath, rewind, etc.
+def temporary_file(encoding = 'UTF-8'):
+    tf = QTemporaryFile()
+    fbts = FileBasedTextStream(QTemporaryFile)
+    fbts.setCodec(encoding)
+    return fbts
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #  General Message routines
