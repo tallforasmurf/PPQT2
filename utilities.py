@@ -311,7 +311,8 @@ def related_output(FBTS, suffix, encoding=None):
 # all functions of FBTS work including filename, folderpath, rewind, etc.
 def temporary_file(encoding = 'UTF-8'):
     tf = QTemporaryFile()
-    fbts = FileBasedTextStream(QTemporaryFile)
+    tf.open() # actually create the file
+    fbts = FileBasedTextStream(tf)
     fbts.setCodec(encoding)
     return fbts
 
