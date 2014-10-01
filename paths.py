@@ -86,14 +86,18 @@ import os
 import sys
 import logging
 paths_logger = logging.getLogger(name='paths')
+import constants as C
 
 _DICTS = ''
 _EXTRAS = ''
 _LOUPE = ''
 
-# Note os.access('',F_OK) returns False
+# Note that os.access('',F_OK) returns False
 
-def check_path(path):
+def check_path(path, executable=False):
+    if executable :
+        return os.access( path, os.F_OK ) and os.access( path, os.X_OK )
+    # else not checking executable-ness only readability
     return os.access( path ,os.F_OK ) and os.access( path, os.R_OK )
 
 def initialize(settings):
@@ -101,10 +105,17 @@ def initialize(settings):
     paths_logger.debug('paths initializing')
     # Recover save bookloupe path if any
     candidate = settings.value("paths/loupe_path",'')
-    if check_path(candidate):
-        _LOUPE = candidate
-    else :
-        _LOUPE = ''
+    if not check_path(candidate,executable=True):
+        # Try to default to a reasonable fall-back
+        if C.PLATFORM_IS_WIN :
+            # TODO: reasonable fallback path for windows??
+            candidate = ''
+        else : # Mac, Linux likely location
+            candidate = '/usr/local/bin/bookloupe'
+        if not check_path(candidate, executable=True) :
+            candidate = '' # Nope, that isn't it
+    _LOUPE = candidate
+
     # Recover extras path if any
     candidate = settings.value("paths/extras_path",'')
     if check_path(candidate):
