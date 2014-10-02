@@ -207,30 +207,6 @@ def path_to_stream(requested_path, encoding=None):
         return None
     return _qfile_to_stream(a_file, QIODevice.ReadOnly, encoding)
 
-# The following is a wrapper on QFileDialog.getOpenFileName, the Qt dialog
-# for getting a path to an existing readable file.
-#
-# If the user selects a file it is opened as an input FileBasedTextStream.
-# Return is a FileBasedTextStream ready to read, or None.
-#
-# Arguments:
-#   caption: explanatory caption for the dialog (caller must TRanslate)
-#   parent: optional QWidget over which to center the dialog
-#   filter: optional filter string, see QFileDialog examples
-#   starting_path: optional path to begin search, e.g. book path
-# Encoding is not passed, so encoding depends on the filename or suffix.
-
-def ask_existing_file(caption, parent=None, starting_path='', filter_string='',encoding=None):
-    # Ask the user to select a file
-    (chosen_path, _) = QFileDialog.getOpenFileName(
-            parent,
-            caption,
-            starting_path, filter_string
-        )
-    if len(chosen_path) == 0 : # user pressed Cancel
-        return None
-    return path_to_stream(chosen_path,encoding)
-
 # Given a FileBasedTextStream (probably a document opened by the preceding
 # function), look for a related file in the same folder and if found, return
 # a new stream for it. The filename may be literal 'foo.typ' or a glob
@@ -267,29 +243,6 @@ def file_less_suffix(FBTS):
         return _qfile_to_stream(a_file, FBTS.open_mode())
     return None
 
-# The following is a wrapper on QFileDialog.getSaveFileName, the Qt dialog
-# for getting a path to a writeable file path.
-#
-# If the user selects a path, it is opened as an output FileBasedTextStream.
-# Return is either that stream or None.
-#
-# Arguments:
-#   caption: explanatory caption for the dialog (caller must TRanslate)
-#   parent: optional QWidget over which to center the dialog
-#   filter: optional filter string, see QFileDialog examples
-#   starting_path: optional path to begin search, e.g. book path
-# Encoding is not passed, so encoding depends on the filename or suffix.
-
-def ask_saving_file(caption, parent=None, starting_path='', filter_string='', encoding=None):
-    (chosen_path, _) = QFileDialog.getSaveFileName(
-            parent,
-            caption,
-            starting_path, filter_string
-        )
-    if len(chosen_path) == 0 : # user pressed Cancel
-        return None
-    return path_to_output(chosen_path,encoding)
-
 # Convert a canonical file path to an output FileBasedTextStream, or return
 # None if that isn't possible.
 def path_to_output(requested_path, encoding=None):
@@ -316,7 +269,81 @@ def temporary_file(encoding = 'UTF-8'):
     fbts.setCodec(encoding)
     return fbts
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# File-related message routines.
+#
+# The following is a wrapper on QFileDialog.getOpenFileName, the Qt dialog
+# for getting a path to an existing readable file.
+#
+# If the user selects a file it is opened as an input FileBasedTextStream.
+# Return is a FileBasedTextStream ready to read, or None.
+#
+# Arguments:
+#   caption: explanatory caption for the dialog (caller must TRanslate)
+#   parent: optional QWidget over which to center the dialog
+#   filter: optional filter string, see QFileDialog examples
+#   starting_path: optional path to begin search, e.g. book path
+# Encoding is not passed, so encoding depends on the filename or suffix.
+
+def ask_existing_file(caption, parent=None, starting_path='', filter_string='',encoding=None):
+    # Ask the user to select a file
+    (chosen_path, _) = QFileDialog.getOpenFileName(
+            parent,
+            caption,
+            starting_path, filter_string
+        )
+    if len(chosen_path) == 0 : # user pressed Cancel
+        return None
+    return path_to_stream(chosen_path,encoding)
+
+# The following is a wrapper on QFileDialog.getSaveFileName, the Qt dialog
+# for getting a path to a writeable file path.
+#
+# If the user selects a path, it is opened as an output FileBasedTextStream.
+# Return is either that stream or None.
+#
+# Arguments:
+#   caption: explanatory caption for the dialog (caller must TRanslate)
+#   parent: optional QWidget over which to center the dialog
+#   filter: optional filter string, see QFileDialog examples
+#   starting_path: optional path to begin search, e.g. book path
+# Encoding is not passed, so encoding depends on the filename or suffix.
+
+def ask_saving_file(caption, parent=None, starting_path='', filter_string='', encoding=None):
+    (chosen_path, _) = QFileDialog.getSaveFileName(
+            parent,
+            caption,
+            starting_path, filter_string
+        )
+    if len(chosen_path) == 0 : # user pressed Cancel
+        return None
+    return path_to_output(chosen_path,encoding)
+
+# The following uses QFileDialog.getOpenFileName to get the name of an existing
+# file and then tests that the file is executable. If the user selects a
+# file and it is executable, the full path is returned. Used to get the path
+# to bookloupe and possibly other executable helpers.
+#
+# Arguments:
+#   caption: explanatory caption for the dialog (caller must TRanslate)
+#   parent: optional QWidget over which to center the dialog
+#
+# Return is a path, or '' if the user pressed Cancel, or None if the
+# user selected an existing but non-executable file.
+
+def ask_executable(caption, parent=None, starting_path=''):
+    (chosen_path, _) = QFileDialog.getOpenFileName(
+            parent,
+            caption,
+            starting_path,''
+        )
+    if len(chosen_path) == 0 : # user pressed Cancel
+        return ''
+    qfi = QFileInfo(chosen_path)
+    if not qfi.isExecutable() :
+        return None
+    return chosen_path
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #  General Message routines
 #
 # Display a modal request for a selection from a list of options using
@@ -329,8 +356,8 @@ def temporary_file(encoding = 'UTF-8'):
 #   parent: required QWidget over which to center the dialog
 #   current=0: optional index of the currently-chosen item
 #
-# QInputDialog returns a tuple of the actual text of the selected item or
-# of the default item, and boolean True for OK or false for Cancel.
+# QInputDialog returns a tuple of the actual text of the selected item or of
+# the default item, and boolean True for OK or false for Cancel.
 
 def choose_from_list(title, caption, item_list, parent, current=0):
     (item_text, ok) = QInputDialog.getItem(
