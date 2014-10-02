@@ -650,7 +650,7 @@ class EditView( QWidget ):
         return QTextCursor(self.Editor.textCursor())
     # Return the essence of the cursor as a tuple (pos,anc)
     def get_cursor_val(self):
-        return (self.Editor.textCursor().position(), self.Editor.textCursor.anchor())
+        return (self.Editor.textCursor().position(), self.Editor.textCursor().anchor())
     # Some other code likes to reposition the edit selection:
     def set_cursor(self, tc):
         self.Editor.setTextCursor(tc)
