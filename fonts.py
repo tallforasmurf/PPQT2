@@ -118,7 +118,7 @@ def _emit_signal(boola):
 
 from PyQt5.QtGui import (
     QFont,
-    QFontInfo, 
+    QFontInfo,
     QFontDatabase
 )
 from PyQt5.QtWidgets import QFontDialog
@@ -200,6 +200,7 @@ def scale(zoom_key, qfont ) :
     return qfont
 
 # The following are for use from the Preferences dialog.
+# TODO: could this use QFontComboBox?
 
 def choose_font(mono=True, parent=None):
     fonts_logger.debug('choose_font mono={0}'.format(mono))
