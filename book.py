@@ -77,6 +77,7 @@ import wordview
 import pagedata
 import imageview
 import noteview
+import loupeview
 import paths
 import dictionaries
 import constants as C
@@ -147,7 +148,7 @@ class Book(QObject):
         self.panel_dict['Words'] = wordview.WordPanel(self) # wordview.WordPanel(self)
         self.panel_dict['Pages'] = QLabel(str(sequence)+'Pages') # pageview.PagePanel(self)
         self.panel_dict['Fnote'] = QLabel(str(sequence)+'Fnote') # fnoteview.FnotePanel(self)
-        self.panel_dict['Loupe'] = QLabel(str(sequence)+'Loupe') # loupeview.LoupePanel(self)
+        self.panel_dict['Loupe'] = loupeview.LoupeView(self)
         self.panel_dict['tab_list'] = [
         (tabname, self.panel_dict[tabname]) for tabname in self.panel_dict['default']
             ]
@@ -543,3 +544,6 @@ class Book(QObject):
     # give access to the Char panel mostly for test
     def get_char_panel(self):
         return self.panel_dict['Chars']
+    # give access to the Loupe panel mostly for test
+    def get_loupe_panel(self):
+        return self.panel_dict['Loupe']
