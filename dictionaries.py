@@ -107,7 +107,7 @@ def shutdown(settings):
 def _find_tags(path, tag_dict):
     if not paths.check_path(path) :
         return # path does not exist or is not readable
-    
+
     # Get a list of all files in this path.
     try:
         file_names = os.listdir(path)
@@ -226,8 +226,11 @@ class Speller(object):
         if dict_to_use : # we have a valid primary or alt dictionary
             try :
                 return dict_to_use.spell(word)
-            except Exception : # ? error: whatever, misspelled
-                dictionaries_logger.error("Unexpected error spelling {0}:{1}".format(alt_tag,encword))
+            except UnicodeError as UE :
+                dictionaries_logger.error("error encoding spelling word {}".format(word))
+                return False
+            except Exception as Wha :
+                dictionaries_logger.error("Unexpected error spelling {}".format(word))
                 return False
         else: # No available dictionary, say it is correct
             return True
