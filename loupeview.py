@@ -202,7 +202,7 @@ class LoupeModel(QAbstractTableModel):
             msg2 = _TR('header for end of output string',
                        'Last part of bookloupe output:' )
             msg2 += '\n'
-            msg2 += CPE.output[:-100].decode('UTF-8','replace')
+            msg2 += CPE.output[-100:].decode('UTF-8','replace')
             utilities.warning_msg( msg1, msg2, self.parent())
             return # leaving message_tuples empty
         # convert the bytes to unicode. bookloupe's message templates are
