@@ -190,7 +190,7 @@ class LoupeModel(QAbstractTableModel):
         fbts << self.my_book.get_edit_model().full_text()
         fbts.rewind() # forces a flush()
         # create the bookloupe command
-        command = [bl_path,'-e','-s','-l','-m','-v', fbts.fullpath()]
+        command = [bl_path,'-d','-e','-s','-t','-l','-m','-v', fbts.fullpath()]
         # run it, capturing the output as a byte stream
         try:
             bytesout = subprocess.check_output( command, stderr=subprocess.STDOUT )
