@@ -175,7 +175,7 @@ class LoupeModel(QAbstractTableModel):
         if not bl_path : # path is null string
             bl_path = utilities.ask_executable(
                 _TR('File-open dialog to select bookloupe',
-                    'Select the bookloupe executable file'), parent)
+                    'Select the bookloupe executable file'), self.parent() )
             if bl_path is None : # user selected non-executable
                 utilities.warning_msg(
                     _TR('Error choosing bookloupe file',
