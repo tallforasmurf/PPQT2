@@ -492,31 +492,31 @@ class PageData(object):
             pagedata_logger.error('Invalid index {0} to set_folios'.format(R))
             pass
 
-# The following is from Mark Pilgrim's "Dive Into Python" slightly
-# modified to return upper or lower-case.
-romanNumeralMap = (('M',  1000),
-                   ('CM', 900),
-                   ('D',  500),
-                   ('CD', 400),
-                   ('C',  100),
-                   ('XC', 90),
-                   ('L',  50),
-                   ('XL', 40),
-                   ('X',  10),
-                   ('IX', 9),
-                   ('V',  5),
-                   ('IV', 4),
-                   ('I',  1))
-def toRoman(n,lc):
-    """convert integer to Roman numeral"""
-    if  isinstance(n,int) and (0 < n < 5000) :
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Decimal-to-Roman numeral converter, adapted from Mark Pilgrim's
+# "Dive Into Python".
+_ROMAN_MAP = (('M',  1000),
+              ('CM', 900),
+              ('D',  500),
+              ('CD', 400),
+              ('C',  100),
+              ('XC', 90),
+              ('L',  50),
+              ('XL', 40),
+              ('X',  10),
+              ('IX', 9),
+              ('V',  5),
+              ('IV', 4),
+              ('I',  1))
+def toRoman( n, lc=True ):
+    if (0 < n < 5000) and int(n) == n :
         result = ""
-        for numeral, integer in romanNumeralMap:
+        for numeral, integer in _ROMAN_MAP:
             while n >= integer:
                 result += numeral
                 n -= integer
-    else : # invalid number, don't raise an exception
-        result = "!!!!"
-    if lc :
-        return result.lower()
+    else : # invalid number, log but don't raise an exception
+        pagedata_logger.error('Invalid number for roman numeral {0}'.format(n))
+        result = "????"
+    if lc : result = result.lower()
     return result
