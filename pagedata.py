@@ -442,6 +442,12 @@ class PageData(object):
             pagedata_logger.error('Invalid index {0} to position'.format(R))
             return 0
 
+    def set_position(self, R, pos):
+        try :
+            self.cursor_list[R].setPosition(pos)
+        except :
+            pagedata_logger.error('Problem setting position of page {) to {}'.format(R,pos))
+
     def proofers(self, R):
         try :
             return self.proofers_list[R]
