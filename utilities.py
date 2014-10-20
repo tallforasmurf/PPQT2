@@ -175,13 +175,15 @@ class FileBasedTextStream(QTextStream):
 # This is where we enforce our rule on encodings: we support only UTF-8 and
 # ISO8859-1 (a.k.a. Latin-1), and of course ASCII which is a proper subset of
 # both. UTF-8 is the default, but before opening a file we check the filename
-# string for "-l" or "-ltn" before the suffix, (as in scannos-ltn.txt) or a
-# suffix of ".ltn", and default to Latin-1. Otherwise we open it UTF-8.
+# string for "-l" or "-ltn" or "-lat" before the suffix, (as in
+# scannos-lat.txt) or a suffix of ".ltn", and default those to Latin-1.
+# Otherwise we open it UTF-8.
 #
 def _check_encoding(fname):
     enc = C.ENCODING_UTF
     if '-l.' in fname \
     or '-ltn.' in fname \
+    or '-lat.' in fname \
     or fname.endswith('.ltn') :
         enc = C.ENCODING_LATIN
     return enc
