@@ -90,7 +90,8 @@ MD_MOD_FLAG = 0x80 # some metadata or other
 
 '''
 These values are used to encode folio controls for the
-Page/folio table.
+Page/folio table. They need to be in 0..2/3 so they can
+be used to index lists of matching names.
 '''
 
 FolioFormatArabic = 0x00
