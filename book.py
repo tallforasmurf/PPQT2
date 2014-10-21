@@ -75,6 +75,7 @@ import charview
 import worddata
 import wordview
 import pagedata
+import pageview
 import imageview
 import noteview
 import loupeview
@@ -146,7 +147,7 @@ class Book(QObject):
         self.panel_dict['Chars'] = charview.CharView(self)
         # TODO other view objects TBS, QLabels are placeholders
         self.panel_dict['Words'] = wordview.WordPanel(self) # wordview.WordPanel(self)
-        self.panel_dict['Pages'] = QLabel(str(sequence)+'Pages') # pageview.PagePanel(self)
+        self.panel_dict['Pages'] = pageview.PagePanel(self) # pageview.PagePanel(self)
         self.panel_dict['Fnote'] = QLabel(str(sequence)+'Fnote') # fnoteview.FnotePanel(self)
         self.panel_dict['Loupe'] = loupeview.LoupeView(self)
         self.panel_dict['tab_list'] = [
@@ -547,3 +548,5 @@ class Book(QObject):
     # give access to the Loupe panel mostly for test
     def get_loupe_panel(self):
         return self.panel_dict['Loupe']
+    def get_page_panel(self):
+        return self.panel_dict['Pages']
