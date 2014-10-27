@@ -29,132 +29,133 @@ __email__ = "tallforasmurf@yahoo.com"
 The class defined here supervises the loading and saving of metadata, and
 provides a level of indirection (symbolic binding) between file management
 and data management. One object of class MetaMgr is created by each Book to
-handle the metadata for that book. Also included: a method to translate a
-Guiguts .bin file into our metadata format and some utilities useful for
-reading and writing a metadata stream.
+handle the metadata for that book.
 
-The .meta data file comprises a number of sections that are marked
-off by boundary lines similar to:
+The metadata file for a book has the suffix .ppqt. It consists of a series of
+JSON objects. Each JSON object has a single named value. The name of the
+value is the section name as defined in constants.py: MD_BW and following.
+Each encoded section object begins with "\n{" and runs through the matching
+"}". (Note this means the file should *start*with* a newline!)
 
-    {{SECTIONNAME}}
-    ...data lines...
-    {{/SECTIONNAME}}
+    \n{ "SECTIONNAME" : one Python value, usually a dict, occupying
+         an arbitrary number of lines... }
+    \n{ "NEXT SECTION NAME" : ...
 
-It also contains one-line items of the form:
+The user may edit the file, modifying values within JSON object definitions;
+of course any such modifications will be lost when the file is rewritten on a
+Save operation. Because we expect users will (rarely) edit the metadata file
+we have to permit:
 
-    {{SECTIONNAME single-value}}
-
-The names of the sections are defined in constants.py with names MD_xx.
-
-Because we expect some users will sometimes edit .meta files we assume,
-first, the file must be editable UTF-8 (no binary data, or binary data must
-be converted to hex characters) and second, we have to permit:
-    * blank lines within sections,
-    * blank lines between sections,
-    * leading and trailing spaces on section header/footer lines or data lines
-    * undefined nonblank data between sections e.g. commentary
-    * sequence of data lines (the user might add vocabulary words out of order)
-    * sections occuring multiple times - Each reader function determines if a
-      later section will extend or replace an earlier one
+    * arbitrary whitespace within sections (JSON handles this)
+    * arbitrary text of any length between sections,
+    * arbitrary sequence of sections
+    * sections occuring multiple times - Each reader function determines if
+      a later section will extend or replace an earlier one
+    * arbitrary sequence of items within a section because the JSON encoder
+      rearranges the order of dict entries, and the user might rearrange
+      items of a list.
 
 We want to encapsulate knowledge of the content and format of of each type of
 metadata in the classes that create and use that type of metadata. We do not
 want that knowledge to leak into the load/save logic as it did in version 1.
 So we set up a level of indirection in the form of a dict that relates
-SECTIONNAME strings to methods that read and write the data in those
-sections. Objects instantiated by the Book register their reader and writer
-methods here by section.
+section objects to methods that create or consume the data in those sections.
+Objects instantiated by the Book register their reader and writer methods
+here by section name.
 
 The key to MetaMgr.section_dict is a SECTIONNAME and its value is [reader,
 writer] where those are methods. MetaMgr.register(section,reader,writer) is
 called to register the reader and a writer for a given section.
 
-In MetaMgr.load_meta(), we scan a stream for "{{SECTIONNAME...}}", look up
-that section in section_dict, and call the reader. In MetaMgr.save_meta() we go
-through the keys of section_dict, calling each writer in turn. Also 
-available is MetaMgr.save_section() to write the metadata of a single section
-by name (used when duplicating a Book).
+In MetaMgr.load_meta(), we scan a stream for top-level objects, and decode
+them in turn. Each decoded object should be a Python dict with just one key,
+the section name, whose value is a single Python object. We look up that
+section in section_dict, and call the reader passing the decoded value.
 
-The signature of a reader is:  rdr(qts, section, vers, parm), where
-    * qts is a QTextStream positioned at the line after the {{SECTIONNAME line,
-    * vers is the value "n" of a {{VERSION n}} line if one has been seen,
+In MetaMgr.save_meta() we go through the keys of section_dict, calling each
+registered writer in turn. The writer returns a single Python value. We write
+to the output stream the JSON encoding of {'SECTION':value}, with newlines on
+each side. Also available is MetaMgr.save_section() to write the metadata of
+a single section by name (used when duplicating a Book).
+
+The signature of a reader is:  rdr(section, value, version), where
     * section is the SECTIONNAME string,
-    * parm is whatever text was found between SECTIONNAME and }}.
+    * value is the decoded value for SECTIONNAME
+    * version is the value "n" of a {"VERSION":n} object if one has been seen
 
-The reader is trusted to know if this SECTIONNAME has one line or multiple
-lines, and is expected to consume the data through the {{/SECTIONNAME}} line
-if any. The utility metadata.read_to() is provided as a generator that returns
-lines up to a section boundary or end of file. A single-line section of
-course needs no input; the value is in parm and the stream is already
-positioned after it. It is possible to register the same reader function for
-multiple SECTIONNAME values, and it can use the section parameter to tell
-which it is decoding.
+It is possible to register the same reader function for multiple SECTIONNAME
+values, and it can use the section parameter to tell which it is decoding.
 
-The signature of a writer is wtr(qts, section). The writer is expected to
-write the single line of a one-line section, or the entire section including
-{{SECTIONNAME}} and {{/SECTIONNAME}}. The utilities metadata.open_line() and
-metadata.close_line() return strings ready to be output. A given writer
-function could be registered for multiple sections, distinguishing which to
-do from the section parameter.
+The signature of a writer is wtr(section). The writer is expected to return a
+single Python value, typically a dict, containing the data that the
+corresponding reader would expect on load of that section. That value is
+JSON-encoded with the key of section. A given writer function could be
+registered for multiple sections, distinguishing which to do from the section
+parameter.
+
+The standard JSON encoder does not support Python set or byte values. We
+extend it with customized encode and decode operations. A set value is
+encoded as a dict {"<SET>":[list_of_set_values]}. A byte value is encoded as
+a dict {"<BYTE>":"string_of_hex_chars"}.
+
 '''
 
 import constants as C
-import utilities # for MemoryStream
-import regex
 import logging
 import types # for FunctionType validation in register
 
 metadata_logger = logging.getLogger(name='metadata')
 
-# Set up an RE to recognize a sentinel and capture its parameter if any. This
-# can be global because the result of using it is a match object, which is
-# local to the caller. Correct use is m=re_sentinel.match(string), after
-# which m.group(1) is the section name and m.group(2) is all that followed it
-# before the closing braces, including spaces, so apply strip() to that
-# before using it. Don't use re_sentinel.search as this would allow
-# non-spaces to precede a sentinel. Whitespace ok, others not.
+# =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# The json objects don't retain any state between uses, and PPQT is
+# single-threaded, so we can store them as globals. The JSON library API for
+# custom encoding/decoding is rather magnificently random. To do custom
+# DEcoding, we define an object-hook function. It will be called during
+# decoding to inspect each decoded JSON object as a dict {"key":value} and it
+# may return either the input dict, or a replacement object.
 
-re_sentinel = regex.compile("^\\s*\\{\\{([A-Z]+)([^}]*)\\}\\}")
+import json
 
-# Helpful utilities for our reader/writer clients:
-#
-# 1. Format an open string given a sentinel.
-#
-def open_string( section, parm = None ):
-    if parm :
-        section = section + ' ' + str(parm)
-    return '{{' + section + '}}'
-def open_line( section, parm = None ):
-    return open_string(section, parm) + '\n'
-#
-# 2. Format a close string given a sentinel
-#
-def close_string(section) :
-    return '{{/' + section + '}}'
-def close_line(section) :
-    return close_string(section) + '\n'
-#
-# 3. Provide a generator that reads a stream to a given end-sentinel, or to
-# any end-sentinel (preventing runaway if an opening sentinel is mis-typed)
-# or to end of file, whichever comes first. Skips over empty lines.
-#
-# This makes for simple coding of a loop to process the lines of a section or
-# a whole file.
-#
-def read_to(qts, sentinel):
-    stopper = close_string(sentinel)
-    while True:
-        if qts.atEnd() :
-            line = stopper # end of file before sentinel seen
-        else:
-            line = qts.readLine().strip()
-        if line.startswith('{{/') : # looks like a /sentinel
-            break # end the loop for one reason or the other
-        yield line
+def _json_object_hook(object_dict):
+    if 1 == len(object_dict):
+        # simple single-key value, get key and value.
+        [(key, value)] = object_dict.items()
+        if key == '<SET>' :
+             # instead of the dict, return the value of the encoded set
+            object_dict = set(value)
+        if key == '<BYTE>' :
+            # instead of the dict, return the value of the encoded bytestring
+            object_dict = bytes.fromhex(value)
+    return object_dict
 
-# Each instance of MetaMgr encapsulates what is known about the
-# metadata of a single book. The book creates one of these and
-# all of its components register for their sections through it.
+# Now we create a custom decoder object passing the name of our hook.
+
+_metadata_decoder = json.JSONDecoder(object_hook=_json_object_hook)
+
+# Then we can use that decoder object's .raw_decode() method for decoding,
+# see MetaMger.load_meta.
+
+# To create a custom ENcoder, we define a class derived from JSONEncoder,
+# with an override of its default() method. It gets a look at every Python
+# object about to be encoded, and can return a substitute Python object that
+# the default encoder is able to serialize.
+
+class _Extended_Encoder(json.JSONEncoder):
+    def default(self,obj):
+        if isinstance(obj, bytes) :
+            # Thanks Frank Zago for this code!
+            return { '<BYTE>' : "".join("{:02x} ".format(c) for c in obj) }
+        if isinstance(obj, set) :
+            return { '<SET>' : list(obj) }
+        return super().default(obj)
+
+# To use the custom encoder we pass that class definition(!) to the standard
+# method json.dumps(), see MetaMgr.write_meta() below.
+
+# =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Each instance of the MetaMgr class encapsulates what is known about the
+# metadata of a single book. The book creates one of these and all of its
+# components register for their sections through it.
 
 class MetaMgr(object):
     # class constant for validating reader and writer parameters
@@ -170,221 +171,120 @@ class MetaMgr(object):
         self.section_dict = {C.MD_V : [self._v_reader, self._v_writer]}
         # End of __init__
 
-    # The reader and writer methods for the {{VERSION n}} section.
-    def _v_reader(self, qts, section, vers, parm) :
-        if len(parm) :
-            # some nonempty parameter followed VERSION
-            self.version_read = parm
-            metadata_logger.debug('metadata {0} {1}'.format(section,parm) )
+    # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # The reader and writer methods for the {"VERSION":n} section.
+    def _v_reader(self, section, value, version) :
+        if (isinstance(value, int) or isinstance(value,float)) \
+           and value >= 1 and value <= 9 :
+            # convert reasonable numeric value to string
+            value = str(value)
+        if isinstance(value, str) and value >= '1' and value <= '9' :
+            self.version_read = value
         else:
-            metadata_logger.warn('{0} with no parameter: assuming 1'.format(section))
+            metadata_logger.warn('{0} with unexpected value {2}, assuming "1"'.format(section,value))
             self.version_read = '1'
 
-    def _v_writer(self, qts, section) :
-        qts << open_line(section, self.version_write)
+    def _v_writer(self, section) :
+        return self.version_write
 
     def version(self):
         return self.version_read
 
-    # Other members of the Book's fleet of objects call this method
-    # to register to read and write a section of metadata.
-    # TODO a way to prioritize single-line items like VERSION, DEFAULTDICT
-    def register(self, sentinel, rdr, wtr):
+    # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Members of the Book's fleet of objects call this method to register to
+    # read and write a section of metadata.
+    def register(self, section, rdr, wtr):
         if isinstance(rdr, self._rdr_wtr_types) \
         and isinstance(wtr, self._rdr_wtr_types) :
-            if isinstance(sentinel,str) :
-                if sentinel not in self.section_dict :
-                    self.section_dict[sentinel] = [rdr, wtr]
-                    metadata_logger.debug('registered metadata for '+sentinel)
+            if isinstance(section,str) :
+                if section not in self.section_dict :
+                    self.section_dict[section] = [rdr, wtr]
+                    metadata_logger.debug('Registered reader/writer for '+section)
                 else :
-                    metadata_logger.warn('duplicate metadata registration ignored for '+sentinel)
+                    metadata_logger.warn('Duplicate metadata registration ignored for '+section)
             else:
-                metadata_logger.error('metadata reg. sentinel not a string value')
+                metadata_logger.error('Registered section name not a string value')
         else:
-            metadata_logger.error('metadata reg. rdr/wtr not function types')
+            metadata_logger.error('Registered rdr/wtr not function types section '+section)
 
-    # Load the contents of a metadata file stream by directing each section
-    # to its registered reader. If there is no registered reader,
-    # set that sentinel to the unknowns above.
+    # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Load the contents of a metadata file stream by decoding each section in
+    # turn, and passing the decoded section value to its registered reader.
+    # If there is no registered reader, log it.
 
     def load_meta(self, qts) :
-        global re_sentinel
-        while not qts.atEnd() :
-            line = qts.readLine().strip()
-            m = re_sentinel.match(line)
-            if m :
-                section = m.group(1)
-                parm = m.group(2).strip()
-                if section in self.section_dict :
-                    metadata_logger.debug('reading '+section+' metadata')
-                    self.section_dict[section][0](qts, section, self.version_read, parm)
-                else:
-                    # Nobody has registered for this section (or it is
-                    # {{USER-TYPO}}) so skip all its lines.
-                    metadata_logger.error('No reader registered for '+section+' - skipping')
-                    for line in read_to(qts, section):
-                        pass
+        global _metadata_decoder
+        # Get the whole stream of encodes as a single string value. (Remember
+        # the good old days when we didn't have gigs of RAM and this kind of
+        # thing would be unthinkable?)
+        json_string = qts.readAll()
+        # In the following, object_start is the index of where we see the
+        # next "\n{" and object_end is the index returned by raw_encode().
+        object_start = 0
+        object_end = 0
+        while True:
+            # get the index of the next encoded {item and quit if no more.
+            object_start = json_string.find('\n{',object_end) + 1
+            if 0 >= object_start : break # no more objects
+            try:
+                (decoded_value, object_end) = _metadata_decoder.raw_decode(
+                    json_string, idx=object_start)
+                if isinstance(decoded_value,dict) and \
+                   1 == len(decoded_value) :
+                    [(section, value)] = decoded_value.items()
+                    if section in self.section_dict :
+                        metadata_logger.debug('loading section '+section)
+                        self.section_dict[section][0](section,value,self.version_read)
+                    else:
+                        # Nobody has registered for this section (or it is a user typo)
+                        # so log the problem.
+                        metadata_logger.error(
+                            'No reader registered for {}, ignoring it'.format(section))
+                else :
+                    # Decoded JSON object is not a simple {"key":value}. Don't know
+                    # what to do, just log it and go on.
+                    metadata_logger.error(
+                        'Unexpected JSON object type in metadata file between {} and {}, ignoring it'.format(object_start,object_end))
+            except ValueError as error_object :
+                # Log the error. A typical msg would be "Expecting property
+                # name enclosed in double quotes: line n column n (char n)"
+                error_msg = str(error_object)
+                text_end = min(object_start+100, len(json_string))
+                metadata_logger.error("Error decoding metadata: "+error_msg)
+                metadata_logger.error("Text reads: "+json_string[object_start:text_end])
+                # Advance the pointers so we don't loop on the same error.
+                object_end = object_start
+                # and continue the loop on the next section.
+            # end of while True
+        # end of load_meta
 
-    # Write the contents of a metadata file by calling the writer for
-    # each registered section. Call VERSION first, others in whatever order
-    # the dictionary hash gives them.
+
+    # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Write the contents of a metadata file by calling the writer for each
+    # registered section, and encoding the value it returns. Start the file
+    # with a newline. Write the VERSION section first, others in whatever
+    # order the dictionary hash gives them.
 
     def write_meta(self, qts) :
-        self.section_dict[C.MD_V][1](qts,C.MD_V)
-        for section, [rdr, wtr] in self.section_dict.items() :
-            if section != C.MD_V :
-                metadata_logger.debug('writing {0} metadata'.format(section) )
-                wtr(qts, section)
+        global _Extended_Encoder
+        sections = [_s for _s in self.section_dict.keys() ]
+        sections.remove(C.MD_V)
+        sections.insert(0,C.MD_V)
+        for section in sections:
+            metadata_logger.debug('writing metadata section {}'.format(section) )
+            # make a one-entry dict of section : value
+            _d = { section : self.section_dict[section][1](section) }
+            qts << '\n' # start every object on a new line
+            qts << json.dumps(_d, indent=2, cls=_Extended_Encoder )
 
     # Write the contents of a single metadata section.
-    
+
     def write_section(self, qts, section) :
         if section in self.section_dict :
-            metadata_logger.debug('writing section ' + section)
-            self.section_dict[section][1]( qts, section )
+            metadata_logger.debug('writing metadata section {} only'.format(section) )
+            _d = { section : self.section_dict[section][1](section) }
+            qts << '\n' # start every object on a new line
+            qts << json.dumps(_d, indent=2, cls=_Extended_Encoder
+                )
         else :
-            metadata_logger.error('no writer for section ' + section)
-        
-# Utility to translate the contents of a Guiguts .bin file to our .meta
-# format and return it in a QTextStream. Arguments are:
-# bin_stream, an open QTextStream representing a GG .bin file
-# book_stream, the book file described by bin_stream (we need to read
-#    through it to get the character offset to each line, in order to
-#    translate GG line numbers into PPQT char offsets
-
-import ast # for literal_eval
-import collections # for defaultdict
-
-def translate_bin(bin_stream, book_stream) :
-
-    meta_stream = utilities.MemoryStream()
-    # Regex to recognize the GG page info string, which is a perl dict:
-    #    'Pg001' => {'offset' => 'ppp.0', 'label' => 'Pg 1', 'style' => 'Arabic', 'action' => 'Start @', 'base' => '001'},
-    #cap(1) ^^^     ^ ------ cap(2) ------->
-    re_page = regex.compile("\s+'Pg([^']+)'\s+=>\s+(\{.*\}),")
-
-    # Regex to recognize the proofer info string, something like this:
-    # $::proofers{'002'}[2] = 'susanskinner';
-    #     png # ---^^^   ^ index - we assume these come in sequence 1-n!
-    re_proof = regex.compile("\$::proofers\{'(.*)'\}\[\d\] = '(.*)'")
-
-    # Regex to recognize the bookmark info string, like this:
-    # $::bookmarks[0] = 'ppp.lll';
-    #   cap(1)-----^  (2)^^^ ^^^--cap(3)
-    re_mark = regex.compile("\$::bookmarks\[(\d)\]\s*=\s*'(\d+)\.(\d+)'")
-
-    # Read the book_stream and note the offset of each line.
-    # When the book is in the QPlainTextDocument each line has its length
-    # in characters plus 1 for the \u2029 line-separator.
-    line_offsets = [] # an integer for every line in book_stream
-    offset = 0
-    while not book_stream.atEnd() :
-        line_offsets.append(offset)
-        line = book_stream.readLine()
-        offset += len(line) + 1
-    line_offsets.append(offset) # offset to EOF just in case
-
-    # Reposition book_stream to the start as a courtesy to our caller
-    book_stream.seek(0)
-
-    # A dict in which the keys are page #s and the values, proofer strings
-    proofers = collections.defaultdict(str)
-
-    # A list that gets for each page, a dict of info with keys of
-    # offset, label, style, action and base, all from the perl dict.
-    page_list = []
-
-    # list of that gets ( key, offset ) tuples for bookmark values.
-    mark_list = []
-
-    # Scan the .bin text collecting page and proofer data.
-    # Blank lines and things we don't recognize are just ignored.
-
-    in_pgnum = False # True while in the page-info section of the .bin
-
-    while not bin_stream.atEnd() :
-        line = bin_stream.readLine()
-        if line.startswith('%::pagenumbers') :
-            in_pgnum = True
-            continue
-        if in_pgnum and line.startswith(');') :
-            in_pgnum = False
-            continue
-        match = re_page.search(line)
-        if in_pgnum and ( match ) :
-            # We have a page-info line. Convert the perl dict syntax to
-            # python syntax, so 'key'=>'val' becomes 'key':'val'
-            perl_dict_line = match.cap(2)
-            perl_dict_line.replace('=>', ':')
-            try: # some things with a small chance of failing
-                page = ast.literal_eval(perl_dict_line)
-                # convert "offset:ppp.ccc" into a document offset integer
-                (ppp, ccc) = page['offset'].split('.')
-                page['offset'] = int( line_offsets[ int(ppp) - 1 ] + int(ccc) )
-            except Exception:
-                msg = line
-                if len(line) > 30 : msg = line[:30] + '...'
-                metadata_logger.warn('error on .bin line '+msg)
-                continue
-            # add png number string to the dict
-            page['png'] = match.cap(1)
-            # save for later
-            page_list.append(page)
-            continue # finished with page info...
-        # not page info, is it a proofer line?
-        match = re_proof.indexIn(line)
-        if match :
-            # append this proofer name to the (possibly zero) others for
-            # the given line. They can contain spaces! Replace with numspace.
-            one_proofer = match.cap(2).replace(' ', '\u2002')
-            proofers[ match.cap(1) ] += ('\\' + one_proofer)
-            continue
-        # neither of those, is it a bookmark?
-        match = re_mark.match(line)
-        if match :
-            offset = int( line_offsets[ int(match.cap(2))-1 ] + int(match.cap(3)) )
-            key = int( match.cap(1) )
-            mark_list.append( (key, offset) )
-        # blank line, whatever, ignored
-
-    # For convenience add the accumulated proofer strings to the info dict
-    # for each page.
-    for page in page_list :
-        page['proofers'] = proofers[page['png']]
-    #Write the accumulated data into the meta_stream.
-    meta_stream << u"{{" + C.MD_V + "2}}\n"
-    meta_stream << u"{{" + C.MD_PT + "}}\n"
-    prior_format = C.FolioFormatArabic # Default starting folio format
-    for page in page_list :
-        # See pagedata.py for the PAGETABLE metadata format.
-        # Translate the GG folio actions to our pagetable form.
-        folio_rule = C.FolioRuleSkip # Skip anything not recognized
-        if page['action'] == '+1' :
-            folio_rule = C.FolioRuleAdd1
-        elif page['action'] == 'Start @':
-            folio_rule = C.FolioRuleSet
-        # Translate the GG folio styles
-        folio_format = C.FolioFormatArabic # in case nothing matches
-        if page['style'] == '"' :
-            folio_format = prior_format
-        elif page['style'] == 'Roman':
-            folio_format = C.FolioFormatLCRom
-        elif page['style'] == 'Arabic' :
-            folio_format = C.FolioFormatArabic
-        prior_format = folio_format
-        # Note: we are not collecting the GG "label" data, as it
-        # is the formatted value "Pg xiv" or "Pg 25". Instead we
-        # keep the "base" data which is the integer for "Start @"
-        # entries, or null. In the Page panel folio numbers will be
-        # mostly 0 until you click Update, then all will be correct.
-        meta_stream << '{0} {1} {2} {3} {4} {5}\n'.format(
-            page['offset'], page['png'], page['proofers'],
-            folio_rule, folio_format, int(page['base'] or 1)
-            )
-    meta_stream << u"{{/" + C.MD_PT + "}}\n"
-    meta_stream << u"{{" + C.MD_BM + "}}\n"
-    for (key, offset) in mark_list :
-        meta_stream << '{0} {1}\n'.format(key, offset)
-    meta_stream << u"{{/" + C.MD_BM + "}}\n"
-    meta_stream.seek(0) # that's all, folks
-# that's it. output data written into the stream.
+            metadata_logger.error('No writer registered for section {}'.format(section))
