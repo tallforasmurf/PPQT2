@@ -258,6 +258,20 @@ class MetaMgr(object):
             # end of while True
         # end of load_meta
 
+    # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Write the contents of a single metadata section. This is a subroutine
+    # for write_meta(), and also called from unit-test code and from the
+    # code that clones a book.
+
+    def write_section(self, qts, section) :
+        if section in self.section_dict :
+            metadata_logger.debug('writing metadata section {}'.format(section) )
+            # make a one-entry dict of section : value
+            _d = { section : self.section_dict[section][1](section) }
+            qts << '\n' # start every section-object on a new line
+            qts << json.dumps(_d, indent=2, cls=_Extended_Encoder )
+        else :
+            metadata_logger.error('No writer registered for section {}'.format(section))
 
     # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Write the contents of a metadata file by calling the writer for each
@@ -271,20 +285,4 @@ class MetaMgr(object):
         sections.remove(C.MD_V)
         sections.insert(0,C.MD_V)
         for section in sections:
-            metadata_logger.debug('writing metadata section {}'.format(section) )
-            # make a one-entry dict of section : value
-            _d = { section : self.section_dict[section][1](section) }
-            qts << '\n' # start every object on a new line
-            qts << json.dumps(_d, indent=2, cls=_Extended_Encoder )
-
-    # Write the contents of a single metadata section.
-
-    def write_section(self, qts, section) :
-        if section in self.section_dict :
-            metadata_logger.debug('writing metadata section {} only'.format(section) )
-            _d = { section : self.section_dict[section][1](section) }
-            qts << '\n' # start every object on a new line
-            qts << json.dumps(_d, indent=2, cls=_Extended_Encoder
-                )
-        else :
-            metadata_logger.error('No writer registered for section {}'.format(section))
+            self.write_section(qts, section)
