@@ -52,7 +52,7 @@ sorteddict KeyView and ValueView which promis attain O(1) time.
 The Chars panel calls refresh() when that button is clicked, causing us
 to rip through the whole document counting the characters.
 '''
-from blist import sorteddict
+from sortedcontainers import SortedDict
 import metadata
 import constants as C
 import logging
@@ -69,12 +69,12 @@ class CharData(QObject):
         # manager and the edit data model.
         self.my_book = my_book
         # The character list as a dict 'x':count.
-        self.census = sorteddict()
+        self.census = SortedDict()
         # Key and Values views on the census dict for indexed access.
         self.k_view = None # supplied in char_read() or refresh()
         self.v_view = None
         # Register to handle metadata.
-        self.my_book.get_meta_manager().register('CHARCENSUS', self.char_read, self.char_save)
+        self.my_book.get_meta_manager().register(C.MD_CC, self.char_read, self.char_save)
 
     # Report the count of characters, used by charview to size the table.
     # The returned value can be 0 after opening a document with no metadata
@@ -83,7 +83,8 @@ class CharData(QObject):
         return len(self.census)
 
     # Return only the character at position j, saving a little time
-    # for the sort filter.
+    # for the sort filter. Assuming this is never called except from
+    # the data() method of the table, hence j will never be invalid.
     def get_char(self, j):
         return self.k_view[j]
 
@@ -101,78 +102,85 @@ class CharData(QObject):
     # time. However, once a census has been built, later refresh calls only
     # change the counts, and possibly add or subtract a few characters.
     #
-    # For now we do the naive thing and just build the census completely from
-    # scratch on every call. However it may be worth recoding to do what
-    # worddata does: if a census exists, set all existing counts to zero, run
-    # the census, then delete any items with zero-counts. This would avoid
-    # rebuilding the KeysView and ValuesView, and any other apparatus
-    # sorteddict might maintain behind the scenes.
+    # For performance' sake we do what worddata does: if a census exists, set
+    # all existing counts to zero, run the census, then delete any items with
+    # zero-counts.
     def refresh(self):
         editm = self.my_book.get_edit_model()
         c = self.census # save a few lookups
         if len(c) : # something in the dict now
             self.v_view = None # discard values view
+            # clear all existing counts to 0
             for char in self.k_view:
                 c[char] = 0
-            self.k_view = None # don't update that
+            self.k_view = None # don't maintain keys view
+            # Count every char in the document
             for line in editm.all_lines() :
                 for char in line :
                     n = self.census.setdefault(char,0)
                     c[char] = n+1
+            # recreate the keys view
             self.k_view = c.keys()
+            # List the chars that are no longer there and delete them
             mtc = [char for char in self.k_view if c[char] == 0 ]
             for char in mtc :
                 del c[char]
+            # recreate the values view
             self.v_view = c.values()
         else : # empty dict; k_view and v_view are None
             for line in editm.all_lines() :
                 for char in line :
                     n = c.setdefault(char,0)
                     c[char] = n+1
-            # Restore the views for fast access
+            # Create the views for fast access
             self.k_view = c.keys()
             self.v_view = c.values()
         self.my_book.metadata_modified(C.MD_MOD_FLAG,True)
 
-    # Load a character census from a metadata file. The V1 line format is
-    # "X count category", X a unicode character and count and category
-    # are integers. However the user can edit metadata so we trust nothing.
-    # We only require the count to be non-negative (i.e. if you don't know
-    # the count, put in 0). Also the user can't be relied upon to get the
-    # category right; and moreover the category code in version 1 was an
-    # integer and now we want the 2-character string; so just ignore the
-    # category token if present.
+    # Load a character census from a metadata file. The input value should be
+    # a list [ ["X",count]... ], see char_save() below. However the user can
+    # edit metadata so we trust nothing. We check every entry to make sure
+    # the key is a single char and the value is an int>0.
 
-    def char_read(self, stream, sentinel,v,p) :
+    def char_read(self, sentinel,value,version) :
         self.census.clear()
         self.v_view = None
         self.k_view = None
-        for line in metadata.read_to(stream, sentinel):
-            parts = line.split()
-            try :
-                char = parts[0]
-                count = int(parts[1]) # can raise IndexError or ValueError
-                if (len(char) != 1) or (count < 0) :
-                    raise ValueError
-            except :
-                cd_logger.error('invalid CHARCENSUS line "'+line+'" ignored')
-                continue
-            count = max(1,count) # in case it was zero, make nonzero
-            if char in self.census :
-                cd_logger.warn('"'+char+'" appears more than once in metadata')
-                continue
-            self.census[char] = count
-        # Restore the views for fast access
-        self.k_view = self.census.keys()
-        self.v_view = self.census.values()
-        self.CharsLoaded.emit()
+        if isinstance(value,list) :
+            for item in value :
+                try:
+                    if isinstance(item,list) \
+                    and 2 == len(item) :
+                        (key, count) = item
+                    else :
+                        raise ValueError
+                    if isinstance(key,str) \
+                    and (1 == len(key)) \
+                    and isinstance(count,int) \
+                    and (count > 0) :
+                        self.census[key] = count
+                    else :
+                        raise ValueError
+                except :
+                    cd_logger.error(
+                        'Ignoring invalid CHARCENSUS chararacter {}'.format(item) )
+            # Restore the views for fast access
+            self.k_view = self.census.keys()
+            self.v_view = self.census.values()
+            self.CharsLoaded.emit()
+        else :
+            cd_logger.error('CHARCENSUS metadata must be a list, ignoring all')
 
-    # Save the character table as "X count". In v1 we also saved the unicode
-    # category but there's no point, it saves no time to read it back as
-    # opposed to just generating it on input.
-    def char_save(self, stream, sentinel) :
-        stream << metadata.open_line(sentinel)
-        for char in self.census :
-            count = self.census[char]
-            stream << char + ' ' + str(count) + '\n'
-        stream << metadata.close_line(sentinel)
+    # Save the character table as a list [ ["X",count]... ] for all unicode
+    # values "X" in the census. We cannot simply return self.census because
+    # JSON does not know how to serialize a SortedDict. We cannot simply return
+    # dict(self.census) although that would work, because the serialized version
+    # is not in sorted order -- the JSON serializer reproduces the dict in hash
+    # key sequence. This would make it difficult to impossible for a user to edit
+    # the metadata. So we peel off the items in sorted order and make a list.
+    # There's not much time lost because on input (above) we have to check the
+    # validity of every item anyway.
+
+    def char_save(self, sentinel) :
+        l = [ [key,value] for (key, value) in self.census.items() ]
+        return l
