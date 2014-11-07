@@ -131,10 +131,6 @@ range and a list is made of all matches. The user is shown a warning dialog:
 
 When OK is clicked, the replacements are done.
 
-The FindPanel constructor implements a metadata reader and writer to save and
-load the contents of the four RecallMenuButtons into metadata. Thus the most
-recent search and replace patterns are saved with the book.
-
 The bottom of the panel is occupied by 24 buttons in a grid array in a frame.
 These are the user macro buttons, which can be saved or loaded to a text
 file. They are defined as UserButton class.
@@ -146,11 +142,17 @@ new label for the button, then the current values of the UI controls are
 loaded into it.
 
 The main window presents File > Load/Save Find Buttons commands. These are
-implemented by calling here. Note in version 1, a UserButton stored and
-reloaded both the Greedy button and the in-selection button. In version 2,
-greedy is not supported and it makes no sense to set in-selection on, if it
-was off, from a user button. On the contrary, in-selection should not be
-disturbed. If these fields appear in a loaded user button, they are ignored.
+implemented by calling here. This is separate from the book metadata system.
+Loading user button definitions from, and saving them to, a text file is
+a Version 1 feature that is retained and the same file format used. See
+FindPanel.user_button_input() and .user_button_output().
+
+The FindPanel constructor implements a metadata reader and writer to save and
+load the contents of the four RecallMenuButtons and the current Userbutton
+values into the book metadata, so the most recent search and replace patterns
+and user button values are saved with the book. These operations use the
+Version 2 JSON-based metadata system. See FindPanel._meta_read() and
+._meta_write().
 
 '''
 
@@ -243,6 +245,10 @@ class RecallMenuButton(QToolButton):
         # A disabled action to be in the menu when empty
         self.null_action = QAction('...empty...',self)
         self.null_action.setEnabled(False)
+
+    # Clear the stack, used from metadata-reader to facilitate unit test.
+    def clear(self):
+        self.string_stack = []
 
     # When our menu is to pop-up, fill it with the saved actions.
     def fill_menu(self):
@@ -587,7 +593,9 @@ class FindPanel(QWidget):
         # Register to read and write metadata class MD_FP, for its
         # format see _meta_read below.
         self.book.get_meta_manager().register(
-            C.MD_FP, self._meta_read, self._meta_write )
+            C.MD_FR, self._meta_read_rb, self._meta_write_rb )
+        self.book.get_meta_manager().register(
+            C.MD_FU, self._meta_read_ub, self._meta_write_ub )
         # Lay our UI out -- code at the end of the module.
         # This creates the objects:
         #    Checkboxes,
@@ -1059,15 +1067,15 @@ class FindPanel(QWidget):
             line = stream.readLine().strip()
             m = start_def.match(line)
             if m : # is not None we have a possible definition 17 : {
-                but_no = int(m.group(1))
+                but_no = int(m.group(1)) # guaranteed numeric by the regex
                 # Special feature: button 99 means use highest empty button
                 if but_no == 99 :
                     for i in reversed(range(FindPanel.USER_BUTTON_MAX)) :
                         if not self.user_buttons[i].is_active() :
                             but_no = i
                             break
-                    # if loop ends with no hit, all buttons active,
-                    # but_no remains 99 and will fail next test.
+                    # if loop ends with no hit, all buttons are active,
+                    # and but_no remains 99 and will fail the next test.
                 if (but_no >= 0) and (but_no < FindPanel.USER_BUTTON_MAX):
                     line = line[len(m.group(0))-1: ] # drop 17 : but keep {
                     while True:
@@ -1082,7 +1090,7 @@ class FindPanel(QWidget):
                     # validate and load, setting label and tooltip.
                     ub = self.user_buttons[but_no]
                     ub.load_dict(line) # always sets label
-                # else not valid index to start - ignore it
+                # else not valid button-number - ignore it
             # else doesn't start with "n:{" - blank? comment? just skip it
         # end of file
 
@@ -1111,61 +1119,78 @@ class FindPanel(QWidget):
                 stream << sep_str.join(items)
                 stream << end_def
 
-    # Functions to read and write the FINDPANEL metadata section,
-    # which is new in V2 (in V1 these items were saved in settings).
+    # Functions to read and write the FINDPANEL metadata sections,
+    # which are new in V2 (in V1 these items were saved in settings).
     #
-    # Two classes of data may be in the stream:
-    #   RB n 'string that may contain spaces'
-    # is a string to be remembered in recall button n (0..3).
-    #   UB n '{dictionary.__repr__}'
-    # is a dictionary representation to store in user button n (0..23).
-    # Both strings are treated with care as the user can edit metadata.
-    # Because either string might contain spaces we cannot use split
-    # but must us a regex.
-    RB_regex = regex.compile('''^\s*RB\s+(\d+)\s+(['"].*?['"])$''')
-    UB_regex = regex.compile('''^\s*UB\s+(\d+)\s+({[^}]+})\s*$''')
-    def _meta_read(self,stream,sentinel,vers,parm):
-        for line in metadata.read_to(stream,sentinel) :
-            try:
-                m = FindPanel.RB_regex.match(line)
-                if m is not None :
-                    # we have a match to an RB line
-                    j = int(m.group(1))
-                    k = m.group(1)
-                    # Collect the button text. Make sure it is a string of
-                    # reasonable length.
-                    s = ast.literal_eval(m.group(2)) # error if not a literal
-                    if type(s) != type(k) or len(s) > 512 :
-                        raise ValueError
-                    # it is a string and not too long so,
-                    # index error if j not in 0..3
-                    self.recall_buttons[j].remember(s)
-                    continue
-                m = FindPanel.UB_regex.match(line)
-                if m is not None :
-                    # UserButton.load_dict has the code to validate the text.
-                    j = int(m.group(1))
-                    # This raises index error if j not in 0..23.
-                    self.user_buttons[j].load_dict(m.group(2))
-                else : # neither RB nor UB
-                    raise ValueError
-            except :
-                find_logger.error('ignoring invalid FINDPANEL metadata')
-                find_logger.error('line is: '+line)
-                continue
-        # end for line in metadata.readto()
+    # The output of a writer is a single Python value. For MD_FR, the recall
+    # buttons, it is a dict { "n" : [ str9, str8... ],...} for "n" in "0123"
+    # and the strings being the recall stack strings. The strings are listed
+    # in reverse order so that when they are read back, they are pushed onto
+    # the recall stack in the correct order.
 
-    def _meta_write(self,stream,sentinel):
-        stream << metadata.open_line(sentinel)
+    def _meta_write_rb(self, sentinel):
+        rbd = dict()
         for j in [0,1,2,3] :
+            sl = []
             for k in reversed(range(self.recall_buttons[j].stack_size())) :
-                stream << 'RB {0} {1}\n'.format(
-                    j, self.recall_buttons[j].get_string(k).__repr__() )
+                sl.append(
+                    self.recall_buttons[j].get_string(k)
+                )
+            rbd[str(j)] = sl
+        return rbd
+
+    # To read back the recall button metadata, we apply some sanity
+    # checks because we permit user editing.
+
+    def _meta_read_rb(self, sentinel, value, version):
+        try:
+            for (rbx, sl) in value.items() : # exception if not a dict
+                try:
+                    rbn = int(rbx) # exception if not numeric
+                    self.recall_buttons[rbn].clear()
+                    if len(sl) > RecallMenuButton.MAX_STRINGS : raise ValueError
+                    for s in sl : # exception if not an iterable
+                        if not isinstance(s, str) : raise ValueError
+                        self.recall_buttons[rbn].remember(s) # exception if not in 0-3
+                except : # some problem with rbx/sl
+                    find_logger.error(
+                        'Ignoring invalid FIND_RB {}:{}'.format(rbx,sl)
+                        )
+        except : # value does not support items()
+            find_logger.error(
+                'FIND_RB metadata is not a dict value'
+                )
+
+    # For MD_FU, the user buttons, the output is a dict { "n" : ubdict,...}
+    # that is, one item per user button whose value is that buttons dict.
+
+    def _meta_write_ub(self,sentinel):
+        ubd = dict()
         for j in range(FindPanel.USER_BUTTON_MAX):
             if self.user_buttons[j].is_active() :
-                stream << 'UB {0} {1}\n'.format(
-                    j, self.user_buttons[j].udict.__repr__() )
-        stream << metadata.close_line(sentinel)
+                ubd[str(j)] = self.user_buttons[j].udict
+        return ubd
+
+    # To read back the user button metadata we look for stupid errors in
+    # the top-level value. However, the user button itself has a detailed
+    # error-checker for the string repr of a dict, so we convert the dict
+    # to a string and let the button do the checking.
+
+    def _meta_read_ub(self,sentinel,value,version):
+        if isinstance(value,dict):
+            for (ubx, ubd) in value.items() :
+                try :
+                    ubn = int(ubx) # exception if not numeric
+                    if not isinstance(ubd, dict) : raise ValueError
+                    self.user_buttons[ubn].load_dict(ubd.__repr__())
+                except :
+                    find_logger.error(
+                        'Ignoring invalid FIND_UB entry headed '+ubx
+                        )
+        else :
+            find_logger.error(
+                'FIND_UB metadata value not a dict, ignoring it'
+                )
 
     def _uic(self):
         # Make the widgets and lay them out. Signals are connected
