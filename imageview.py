@@ -157,38 +157,35 @@ class ImageDisplay(QWidget):
         # the following triggers entry to _new_zoom_pct() below
         self.zoom_pct.setValue(int(100*self.zoom_factor))
 
-    # Metadata: read or write the {{IMAGEZOOM f}} section.
-    # Parameter f should be a decimal number between 0.15 and 2.0
-    # but we do not depend on text the user could edit.
-    def _zoom_read(self, qts, section, vers, parm):
+    # Metadata: read or write the value of the current image zoom factor as a
+    # decimal between 0.15 and 2.0. On input defend against user mistakes.
+    def _zoom_read(self, section, value, version):
         try:
-            z = float(parm) # throws exception on a bad literal
+            z = float(value) # throws exception on non-numeric value
             if math.isnan(z) or (z < 0.15) or (z > 2.0) :
                 raise ValueError
             self.zoom_factor = z
         except:
-            imageview_logger.error('Invalid IMAGEZOOM "{0}" ignored'.format(parm))
+            imageview_logger.error('Invalid IMAGEZOOM "{}" ignored'.format(value))
 
-    def _zoom_write(self, qts, section):
-        qts << metadata.open_line(section, str(self.zoom_factor))
+    def _zoom_write(self, section):
+        return self.zoom_factor
 
-    # Metadata: read or write the {{IMAGELINK b}} section. The parameter should
-    # be an int 0/1/2/3. Bit 0 represents the state of cursor_to_image
-    # (usually 1); bit 1 represents the state of image_to_cursor (usually 0).
-    def _link_read(self, qts, section, vers, parm):
+    # Metadata: read or write the values of the image_to_cursor and
+    # cursor_to_image switches as a list [cursor_to_image, image_to_cursor].
+    # On input defend against user meddling. Actually bool(x) is pretty lax,
+    # any scalar not zero and any iterable not empty is True. Zero and
+    # iterables of length 0 are False.
+    def _link_read(self, section, value, version):
         try:
-            b = int(parm) # exception on a bad literal
-            if (b < 0) or (b > 3) : raise ValueError
-            self.cursor_to_image.setChecked( True if b & 1 else False )
-            self.image_to_cursor.setChecked( True if b & 2 else False )
+            (c2i, i2c) = value # exception if not iterable of 2 items
+            self.cursor_to_image.setChecked( bool(c2i) )
+            self.image_to_cursor.setChecked( bool(i2c) )
         except :
-            imageview_logger.error('Invalid IMAGELINKING "{0}" ignored'.format(parm))
+            imageview_logger.error('Invalid IMAGELINKING "{}" ignored'.format(value))
 
-    def _link_write(self, qts, section):
-        b = 0
-        if self.cursor_to_image.isChecked() : b |= 1
-        if self.image_to_cursor.isChecked() : b |= 2
-        qts << metadata.open_line(section, str(b))
+    def _link_write(self, section):
+        return [self.cursor_to_image.isChecked(), self.image_to_cursor.isChecked()]
 
     # The Book calls here after it has loaded a book with defined page data,
     # passing the path to the folder containing the book. If we can find a
