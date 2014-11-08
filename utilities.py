@@ -226,15 +226,15 @@ def related_file(FBTS, filename, encoding=None):
     return None
 
 # Given a FileBasedTextStream, look for a file with the same filename plus an
-# additional suffix (e.g. foo.html.meta or foo.txt.bin) and if found, return
+# additional suffix (e.g. foo.html.ppqt or foo.txt.bin) and if found, return
 # a new stream for it.
 
-def related_suffix(FBTS, suffix, encoding=None):
+def related_suffix(FBTS, suffix=C.METAFILE_SUFFIX, encoding=None):
     target = FBTS.filename() + '.' + suffix
     return related_file(FBTS, target, encoding)
 
 # Given a FileBasedTextStream, look for a file with the same basename
-# (e.g. given foo.html.meta, look for foo.html) and if there is just
+# (e.g. given foo.html.blah, look for foo.html) and if there is just
 # one such, return a new stream for it.
 
 def file_less_suffix(FBTS):
