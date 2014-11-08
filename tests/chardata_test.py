@@ -26,8 +26,6 @@ Unit test for chardata.py
 '''
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Unit test module boilerplate stuff
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Unit test module boilerplate stuff
 
 import test_boilerplate as T
 T.set_up_paths()
