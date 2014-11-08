@@ -119,7 +119,6 @@ import colors
 import constants as C
 import logging
 import utilities
-import metadata
 import book
 mainwindow_logger = logging.getLogger(name='main_window')
 
