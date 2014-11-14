@@ -225,9 +225,9 @@ class Book(QObject):
         # If there are good_words and bad_words streams, call the worddata
         # metadata reader functions directly to accept them.
         if good_stream:
-            self.wordm.good_read(good_stream,C.MD_GW,'0','')
+            self.wordm.good_file(good_stream)
         if bad_stream :
-            self.wordm.bad_read(bad_stream,C.MD_BW,'0','')
+            self.wordm.bad_file(bad_stream)
         if meta_stream :
             # Process the Guiguts metadata for page info
             self.metamgr.load_meta(meta_stream)
@@ -424,7 +424,7 @@ class Book(QObject):
         scanno_stream = utilities.ask_existing_file(
             caption, self.editv, self.book_folder, None )
         if scanno_stream is not None :
-            self.wordm.scanno_read(scanno_stream,C.MD_SC,0,None)
+            self.wordm.scanno_file(scanno_stream)
             return True
         return False
 
