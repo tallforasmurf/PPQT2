@@ -371,6 +371,8 @@ class PagePanel(QWidget):
         self.view.doubleClicked.connect(self.go_to_row)
         # Connect the update button to the model's update method
         self.refresh_button.clicked.connect(self.do_refresh)
+        # Connect the actual page model's signal on metadata-read
+        self.pdata.PagesUpdated.connect(self.do_update)
         # Connect the insert button to our do_insert method
         self.insert_button.clicked.connect(self.do_insert)
         # Ask the fonts module to tell us if the mono font changes
@@ -386,6 +388,14 @@ class PagePanel(QWidget):
 
     def do_refresh(self):
         self.model.update_folios()
+        self.view.configure_columns()
+
+    # Slot for the PagesUpdated signal from the pagedata model,
+    # indicating we should refresh the table to show new metadata.
+
+    def do_update(self):
+        self.model.beginResetModel()
+        self.model.endResetModel()
         self.view.configure_columns()
 
     # This slot receives a double-click from the table view, passing an

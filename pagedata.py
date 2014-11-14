@@ -163,6 +163,7 @@ import constants as C
 import metadata
 import editdata
 from PyQt5.QtGui import QTextBlock, QTextCursor
+from PyQt5.QtCore import QObject, pyqtSignal
 
 '''
 This regex recognizes page separator lines. In a typical book a page
@@ -190,8 +191,12 @@ re_line_sep = regex.compile(
     '^-+File: ([^\\.]+)\\.png-(-*((\\\\[^\\\\]*)+)\\\\-*|-+)$'
     ,regex.IGNORECASE)
 
-class PageData(object):
+class PageData(QObject):
+    # define the signal we emit on reading metadata
+    PagesUpdated = pyqtSignal()
+
     def __init__(self, my_book):
+        super().__init__(None)
         self.my_book = my_book
         # Save reference to the metamanager
         self.metamgr = my_book.get_meta_manager()
@@ -265,6 +270,7 @@ class PageData(object):
             self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
             self._active = True
             self._add_stopper()
+            self.PagesUpdated.emit()
 
     # common to scan_pages and read_pages, add a search-stopper
     # to the list of cursors - see page_at() below for use.
@@ -335,6 +341,7 @@ class PageData(object):
         if 0 < len(self.filename_list) :
             self._active = True
             self._add_stopper()
+            self.PagesUpdated.emit()
 
     def active(self) :
         return self._active
