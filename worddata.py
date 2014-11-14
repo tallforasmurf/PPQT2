@@ -52,45 +52,51 @@ This is called as words are found in the census and added to the database.
 If the user chooses a new spelling dictionary the Book calls
 recheck_spelling() to reapply check() to all words in the database.
 
-    Load Process
-
-On creation this object registers with the metamanager to read and write the
-metadata sections for word-census, char-census, good-words, bad-words, and
-scannos.
-
-Good-words, bad-words, and scannos sections are handled by good_read(),
-bad_read() and scanno_read() respectively, which save words in separate sets.
-(sets not dicts, because these words basically have no properties aside from
-being good or bad or scanno-ish.) All these lines are expected to have a
-single token each. They are not required to be sorted, as the user can edit
-the metadata file. scanno_read() is also called by the Book when the user
-selects a new scannos file.
-
-word_read() is registered to read the WORDCENSUS section and initializes the
-vocabulary dict. The info on these lines can differ between version-1 and -2
-metadata (see word_read() for format notes) and care is taken to allow for
-user mistakes.
-
     Save Process
 
-During a Save, the metamanager calls the methods good_save(), bad_save(),
-scanno_save() and word_save() in some order, passing each a text stream to
-write into.
+On creation this object registers with the metamanager to read and write the
+metadata sections for word-census, good-words, bad-words, and scannos.
+
+During a Save, the metadata manager calls the methods good_save(),
+bad_save(), scanno_save() and word_save() in some order. Each returns a
+single object that encodes its data items. For good, bad, and scanno words,
+that is a list of string tokens. For word_save() it is a more complex list,
+see comments near that method.
+
+    Load Process
+
+Good-words, bad-words, and scannos sections are handled by good_read(),
+bad_read() and scanno_read() respectively, which save words in separate sets
+-- in sets not dicts, because these words basically have no properties aside
+from being good or bad or scanno-ish. These three sections are expected to
+each be a list of tokens. They are not required to be sorted, as the user can
+edit the metadata file. scanno_read() is also called by the Book when the
+user selects a new scannos file.
+
+word_read() is registered to read the WORDCENSUS section and initializes the
+vocabulary dict from the object saved by word_save(), with validity checks in
+case of user editing.
 
     Census Process
 
 When the user requests a "refresh" of the Words panel the refresh() method is
-called. This method gets the Document (see editdata.py) from the Book and
-from it gets an iterator to fetch the lines of the document.
+called. This method gets the edit model from the Book and from it gets an
+iterator to fetch the lines of the document.
 
-We zero out the counts on all known tokens. We also empty our dictionary of
-words that use alt-dict tags, as the user might have added or removed some
-lang= properties. Then we parse each line into tokens using a regex, adding
-tokens to the dictionary only as necessary, and incrementing the counts.
+The first time this is done in a new book, the dictionary is empty. But on
+all following times, the dictionary already has all or most of the tokens in
+the book and the only changes will be due to user editing, possibly removing
+or adding a few tokens. So the refresh process is geared to this use-case.
 
-After scanning all lines we delete from the dict any token whose count is zero.
-That could happen if the token was once in the document, but has since been
-edited out.
+We zero out the counts on all previously-known tokens. We also empty our
+dictionary of words that use alt-dict tags, as the user might have added or
+removed some lang= properties. Then we parse each line into tokens using a
+regex, adding new tokens to the dictionary only as necessary, and
+incrementing the counts.
+
+After scanning all lines we scan the dict and any token whose count is now
+zero. That could happen if the token was once in the document, but has since
+been edited out.
 
     Storing Word-tokens
 
@@ -178,7 +184,7 @@ APO_DASH_SET = {"'","\u02bc","\u2019","-","\u00ad","\u2010",
 def clean_word(word):
     return ''.join([c for c in word if not c in APO_DASH_SET])
 
-# ====================================================================
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define the properties of a vocabulary token and provide dicts to
 # convert between properties and their name-strings.
 
@@ -202,7 +208,9 @@ prop_decode = {
     'UC':UC, 'LC':LC, 'MC':MC, 'HY':HY, 'AP':AP,
     'ND':ND, 'BW':BW, 'GW':GW, 'XX':XX, 'AD':AD
     }
-# set to test spell-check-ability
+# set of all properties for checking metadata
+prop_all = set([UC,LC,MC,HY,AP,ND,BW,GW,XX,AD])
+# set to test lack of spell-check-ability
 prop_bgh = set([BW,GW,HY])
 # set used to clear XX from a set of properties -- set.remove(XX) raises an
 # exception if no XX but set & prop_nox ensures it is gone.
@@ -220,7 +228,8 @@ def prop_string(p):
     if XX in p : s[5] = 'X'
     return ''.join(s)
 
-# ====================================================================
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
 # A suite of regexes to parse out important tokens from a text line.
 #
 # First, a word composed of digits and/or letters, where
@@ -275,8 +284,9 @@ re_token = regex.compile(xp_any, regex.IGNORECASE)
 # e.g. "class='x' lang='en_GB'"
 #
 # According to W3C (www.w3.org/TR/html401/struct/dirlang.html) you can put
-# lang= into any tag, esp. span, para, div, td, and so forth. . We scan that
-# for lang='value' allowing for single, double, or no quotes on the value.
+# lang= into any tag, esp. span, para, div, td, and so forth. We scan an
+# attribute string for lang='value' allowing for single, double, or no quotes
+# on the value.
 
 xp_lang = '''lang=[\\'\\"]*([\\w\\-]+)[\\'\\"]*'''
 re_lang_attr = regex.compile(xp_lang, regex.IGNORECASE)
@@ -288,8 +298,7 @@ re_lang_attr = regex.compile(xp_lang, regex.IGNORECASE)
 # save the dict tag as an alternate dictionary for all words until the
 # matching close tag is seen.
 
-
-# ==========================================================================
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # Class to implement saving all the census data related to one book. Created
 # by a Book object, which passes itself as my_book so that this object can
@@ -327,173 +336,209 @@ class WordData(object):
         self.metamgr.register(C.MD_VL, self.word_read, self.word_save)
     # End of __init__
 
-    #
-    # Methods used when loading a new or existing file:
-    #
-    # 1. Load a good_words metadata section. Called with a stream positioned
-    # just after the starting sentinel line e.g. {{GOODWORDS}}. For each reader,
-    # end of section is the sentinel again, e.g. "{{/GOODWORDS}}". The
-    # metamanager utility read_to() facilitates reading all lines of a section.
-    #
-    # We do not know whether good- and bad-words will be loaded before
-    # or after the vocabulary. So we allow for either sequence. If there are
-    # multiples of these sections, they are additive.
-    #
-    # The good_read() and bad_read() methods can also be called for a new
-    # file, one without proper metadata but with good_words/bad_words files.
-    # The input is the good/bad_words text file. The metadata.read_to()
-    # method is cool with that.
 
-    def good_read(self, stream, sentinel, v, parm) :
-        global prop_nox
-        for line in metadata.read_to(stream, sentinel):
-            # note depending on read_to to strip whitespace
-            if line in self.bad_words :
-                worddata_logger.warn(
-                    '"{0}" is in both good and bad words - use in good ignored'.format(line)
-                    )
-            else :
-                self.good_words.add(line)
-                if line in self.vocab : # vocab already loaded, it seems
-                    props = self.vocab[line][1]
-                    props.add(GW)
-                    props &= prop_nox
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Methods used when saving metadata. The items in the good_words,
+    # bad_words, and scanno sets are simply returned as a list of strings.
     #
-    # 2. Load a bad_words file or metadata segment.
+    def good_save(self, section) :
+        return [ token for token in self.good_words ]
+
+    def bad_save(self, section) :
+        return [ token for token in self.bad_words ]
+
+    def scanno_save(self, section) :
+        return [ token for token in self.scannos ]
     #
-    def bad_read(self, stream, sentinel, v, parm) :
-        for line in metadata.read_to(stream, sentinel):
-            if line in self.good_words :
-                worddata_logger.warn(
-                    '"{0}" is in both good and bad words - use in bad ignored'.format(line)
-                    )
-            else :
-                self.bad_words.add(line)
-                if line in self.vocab :
-                    props = self.vocab[line][1]
-                    props.add(BW)
-                    props.add(XX)
+    # To save the vocabulary, write a list for each word:
+    #   [ "token", "tag", count, [prop-code...] ]
+    # where "token" is the word as a string, "tag" is its alt-dict tag
+    # or a null string, count is an integer and [prop-code...] is the
+    # integer values from the word's property set as a list. Note that
+    # alt_tag needs to be a string because json doesn't handle None.
     #
-    # 3. Load the scannos segment of a metadata file or, if the user chooses
-    # a new scannos list, load the contents of the designated file. In the
-    # latter case we want to replace the list, so here we clear the set
-    # before reading. Hence if a metadata file has multiple scanno segments,
-    # only the last one is effective. Note: we can use metamgr.read_to() with
-    # a scannos file because read_to() stops on either a sentinel or end of
-    # file.
+    def word_save(self, section) :
+        vlist = []
+        for word in self.vocab:
+            [count, prop_set] = self.vocab[word]
+            tag = "" if AD not in prop_set else self.alt_tags[word]
+            plist = list(prop_set)
+            vlist.append( [ word, count, tag, plist ] )
+        return vlist
+
     #
-    def scanno_read(self, stream, sentinel, v, parm) :
-        self.scannos = set() # clear any prior values
-        for line in metadata.read_to(stream, sentinel):
-            self.scannos.add(line)
+    # Methods used to load metadata. Called by the metadata manager with
+    # a single Python object, presumably the object that was prepared by
+    # the matching _save method above. Because the user might edit the metadata
+    # file, do a little quality control.
     #
-    # 4. Load the vocabulary segment of a metadata file, allowing for old and
-    # new encodings of the properties, and for user-edited malformed
-    # vocabulary lines. Be very generous about user errors in a modified meta
-    # file, if the user wants to just put in a single word with no count or
-    # properties, fine.
+
+    def good_read(self, section, value, version):
+        if isinstance(value, list) :
+            for token in value :
+                if isinstance(token, str) :
+                    if token in self.bad_words :
+                        worddata_logger.warn(
+                            '"{}" is in both good and bad words - use in good ignored'.format(token)
+                            )
+                    else :
+                        self.good_words.add(token)
+                        if token in self.vocab : # vocab already loaded, it seems
+                            props = self.vocab[token][1]
+                            props.add(GW)
+                            props &= prop_nox
+                else :
+                    worddata_logger.error(
+                        '{} in GOODWORDS list ignored'.format(token)
+                        )
+        else :
+            worddata_logger.error(
+                'GOODWORDS metadata is not a list of strings, ignoring it'
+                )
+
+    def bad_read(self, section, value, version):
+        if isinstance(value, list) :
+            for token in value :
+                if isinstance(token, str) :
+                    if token in self.good_words :
+                        worddata_logger.warn(
+                            '"{}" is in both good and bad words - use in bad ignored'.format(token)
+                            )
+                    else :
+                        self.bad_words.add(token)
+                        if token in self.vocab : # vocab already loaded, it seems
+                            props = self.vocab[token][1]
+                            props.add(BW)
+                            props.add(XX)
+                else :
+                    worddata_logger.error(
+                        '{} in BADWORDS list ignored'.format(token)
+                        )
+        else :
+            worddata_logger.error(
+                'BADWORDS metadata is not a list of strings, ignoring it'
+                )
+
+    def scanno_read(self, section, value, version):
+        if isinstance(value, list) :
+            for token in value :
+                if isinstance(token, str) :
+                    self.scannos.add(token)
+                else :
+                    worddata_logger.error(
+                        '{} in SCANNOLIST ignored'.format(token)
+                        )
+        else :
+            worddata_logger.error(
+                'SCANNOLIST metadata is not a list of strings, ignoring it'
+                )
+
+    # Load the vocabulary section of a metadata file, allowing for
+    # user-edited malformed items. Be very generous about user errors in a
+    # modified meta file. The expected value for each word is as written by
+    # word_save() above, ["token", count, tag, [props]] but allow a single
+    # item ["token"] or just "token" so the user can put in a single word
+    # with no count or properties. Convert null-string alt-tag to None.
     #
-    # Before adding a word make sure to unicode-flatten it. (It should be
-    # flat in the file, but we didn't do that in V1, and anyway the user can
-    # add words to the file.)
+    # Before adding a word make sure to unicode-flatten it.
     #
-    def word_read(self, stream, sentinel, v, parm) :
+    def word_read(self, section, value, version) :
+        global prop_all, prop_nox
         # get a new speller in case the Book read a different dict already
         self.speller = self.my_book.get_speller()
-        line_num = 0
-        for line in metadata.read_to(stream, sentinel):
-            line_num += 1
-            word = None
-            count = 0
-            prop_set = set()
-            alt_tag = None
-            parts = line.split()
-            try:
-                word = parts[0] # IndexError if line is empty.
-                if 0 < word.find('/') : # word/alt-tag
-                    (word, alt_tag) = word.split('/')
+        # if value isn't a list, bail out now
+        if not isinstance(value,list):
+            worddata_logger.error(
+                'WORDCENSUS metadata is not a list, ignoring it'
+                )
+            return
+        # inspect each item of the list.
+        for wlist in value:
+            try :
+                if isinstance(wlist,str) :
+                    # expand "token" to ["token"]
+                    wlist = [wlist]
+                if not isinstance(wlist, list) : raise ValueError
+                if len(wlist) != 4 :
+                    if len(wlist) > 4 :raise ValueError
+                    if len(wlist) == 1 : wlist.append(0) # add default count of 0
+                    if len(wlist) == 2 : wlist.append('') # add default alt-tag
+                    if len(wlist) == 3 : wlist.append([]) # add default props
+                word = wlist[0]
+                if not isinstance(word,str) : raise ValueError
                 word = unicodedata.normalize('NFKC',word)
-                if 3 > len(parts) :
-                    # just word, or word and count, so a user addition to
-                    # meta file. Just add it to the vocabulary with count 1,
-                    # handling hyphens and all.
-                    self._add_token(word, alt_tag)
-                    continue # that's that, on to next line
-                # line had 3 (or more?) parts: assume proper metadata.
-                count = int(parts[1]) # ValueError if not an int str
-                count = max(1,count) # convert 0, negative to 1
-                if v < '2' : # test metadata file version
-                    # In V.1 the third item is an integer representing a set of bits
-                    # decoded as follows.
-                    bits = int(parts[2]) # ValueError if not an int
-                    bitcase = 0x03 & bits
-                    if 0x03 == bitcase : prop_set.add(MC)
-                    if 0x01 == bitcase : prop_set.add(UC)
-                    if 0x02 == bitcase : prop_set.add(LC)
-                    if 0x04 & bits : prop_set.add(ND)
-                    if 0x08 & bits : prop_set.add(HY)
-                    if 0x10 & bits : prop_set.add(AP)
-                    if 0x80 & bits : prop_set.add(XX)
-                else :
-                    # in V.2 the third item is e.g "{1,4}" -- the __repr__()
-                    # of a set of ints with spaces compressed out so it
-                    # splits as one token. Convert back to a set and
-                    # cautiously add its members to prop_set. literal_eval
-                    # will throw SyntaxError or ValueError on bad syntax.
-                    input_set = ast.literal_eval(parts[2])
-                    if type(input_set) == type(prop_set) :
-                        for i in input_set :
-                            if i in prop_encode :
-                                prop_set.add(i)
-                    else: # it was a valid literal but not a set
-                        raise ValueError('bad property set')
-            except (IndexError, ValueError, SyntaxError):
-                worddata_logger.warn('line {0} of word census list invalid'.format(line_num))
-                worddata_logger.warn('  ignoring "'+line+'"')
-                continue # on to next line.
-            # note we are not checking for duplicates
-            if word in self.bad_words : prop_set.add(BW)
-            if word in self.good_words : prop_set.add(GW)
+                count = int(wlist[1]) # exception if not numeric
+                alt_tag = wlist[2]
+                if not isinstance(alt_tag,str) : raise ValueError
+                if alt_tag == '' : alt_tag = None
+                prop_set = set(wlist[3]) # exception if not iterable
+                if len( prop_set - prop_all ) : raise ValueError #bogus props
+            except :
+                worddata_logger.error(
+                    'WORDCENSUS item {} is invalid, ignoring it'.format(wlist)
+                    )
+                continue
+            # checking done, store the word.
+            if (0 == len(prop_set)) or (0 == count) :
+                # word with no properties or count is a user addition, enter
+                # it as if we found it in the file, including deducing the
+                # properties, spell-check, hyphenation split.
+                self._add_token(word, alt_tag)
+                continue # that's that, on to next line
+            # Assume we have a word saved by word_save(), but possibly the
+            # good_words and bad_words have been edited and read-in first.
+            # Note we are not checking for duplicates
+            if word in self.bad_words :
+                prop_set.add(BW)
+                prop_set.add(XX)
+            if word in self.good_words :
+                prop_set.add(GW)
+                prop_set &= prop_nox
             if alt_tag :
                 prop_set.add(AD)
                 self.alt_tags[word] = alt_tag
             self.vocab[word] = [count, prop_set]
-        # end of "for line in vocabulary section"
+        # end of "for wlist in value"
+    # end of word_read()
+
+    # Methods used when opening a new file, one with no metadata.
     #
-    # Methods used when saving a metadata file. The stream argument is
-    # the file to write. The sentinel is written at the start and end.
+    # The Book will call these methods passing a text stream when it finds a
+    # good-words file or bad-words file. Each of these is expected to have
+    # one token per line. We don't presume to know in what order the files
+    # are presented, but we DO assume that the vocabulary census has not yet
+    # been taken. That requires the user clicking Refresh and that cannot
+    # have happened while first opening the file.
+
+    def good_file(self, stream) :
+        while not stream.atEnd() :
+            token = stream.readLine().strip()
+            if token in self.bad_words :
+                worddata_logger.warn(
+                    '"{}" is in both good and bad words - use in good ignored'.format(token)
+                    )
+            else :
+                self.good_words.add(token)
+
+    def bad_file(self, stream) :
+        while not stream.atEnd() :
+            token = stream.readLine().strip()
+            if token in self.good_words :
+                worddata_logger.warn(
+                    '"{}" is in both good and bad words - use in bad ignored'.format(token)
+                    )
+            else :
+                self.bad_words.add(token)
     #
-    # 1, 2, 3. Save the good-words, bad-words and scanno sets.
+    # The user can choose a new scannos file any time while editing. So there
+    # might be existing data, so we clear the set before reading.
     #
-    def good_save(self, stream, sentinel) :
-        stream << metadata.open_line(sentinel)
-        for word in self.good_words:
-            stream << word + '\n'
-        stream << metadata.close_line(sentinel)
-    def bad_save(self, stream, sentinel) :
-        stream << metadata.open_line(sentinel)
-        for word in self.bad_words:
-            stream << word + '\n'
-        stream << metadata.close_line(sentinel)
-    def scanno_save(self, stream, sentinel) :
-        stream << metadata.open_line(sentinel)
-        for word in self.scannos:
-            stream << word + '\n'
-        stream << metadata.close_line(sentinel)
-    #
-    # 4. Save the vocabulary, each as WORD[/alt_tag] count {set}
-    #
-    def word_save(self, stream, sentinel) :
-        stream << metadata.open_line(sentinel)
-        for word in self.vocab:
-            [count, prop_set] = self.vocab[word]
-            stream << word
-            if AD in prop_set:
-                stream << '/' + self.alt_tags[word]
-            stream << ' ' + str(count) + ' '
-            stream << str(prop_set).replace(' ','')
-            stream << '\n'
-        stream << metadata.close_line(sentinel)
+    def scanno_file(self, stream) :
+        self.scannos = set() # clear any prior values
+        while not stream.atEnd() :
+            token = stream.readLine().strip()
+            self.scannos.add(token)
+
     #
     # The following is called by the Book when the user chooses a different
     # spelling dictionary. Store a new spellcheck object. Recheck the
