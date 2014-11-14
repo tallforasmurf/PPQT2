@@ -77,6 +77,11 @@ word_read() is registered to read the WORDCENSUS section and initializes the
 vocabulary dict from the object saved by word_save(), with validity checks in
 case of user editing.
 
+We do not know (nor should care) in which order the metadata readers are
+called. However, each of good_, bad_ and word_read can affect the display of
+the word table, so after each one we emit a signal, WordsUpdated, which is
+received by the wordview module for which we are the model.
+
     Census Process
 
 When the user requests a "refresh" of the Words panel the refresh() method is
@@ -171,7 +176,7 @@ import unicodedata # for NFKC
 import ast # for literal_eval
 import logging
 worddata_logger = logging.getLogger(name='worddata')
-from PyQt5.QtCore import QCoreApplication
+from PyQt5.QtCore import QCoreApplication, QObject, pyqtSignal
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Global function to strip all types of apostrophe and dash from a word.
@@ -305,9 +310,12 @@ re_lang_attr = regex.compile(xp_lang, regex.IGNORECASE)
 # call back to the Book to get the meta manager, the current spellcheck
 # object, and the edit data model.
 
-class WordData(object):
+class WordData(QObject):
+    # Define the signal we emit when we have loaded new data
+    WordsUpdated = pyqtSignal()
 
     def __init__(self, my_book):
+        super().__init__(None)
         # Save reference to the book
         self.my_book = my_book
         # Save reference to the metamanager
@@ -391,6 +399,9 @@ class WordData(object):
                     worddata_logger.error(
                         '{} in GOODWORDS list ignored'.format(token)
                         )
+            if len(self.good_words) :
+                # We loaded some, the display might need to change
+                self.WordsUpdated.emit()
         else :
             worddata_logger.error(
                 'GOODWORDS metadata is not a list of strings, ignoring it'
@@ -414,6 +425,9 @@ class WordData(object):
                     worddata_logger.error(
                         '{} in BADWORDS list ignored'.format(token)
                         )
+            if len(self.bad_words) :
+                # We loaded some, the display might need to change
+                self.WordsUpdated.emit()
         else :
             worddata_logger.error(
                 'BADWORDS metadata is not a list of strings, ignoring it'
@@ -499,6 +513,8 @@ class WordData(object):
                 self.alt_tags[word] = alt_tag
             self.vocab[word] = [count, prop_set]
         # end of "for wlist in value"
+        # Tell wordview that the display might need to change
+        self.WordsUpdated.emit()
     # end of word_read()
 
     # Methods used when opening a new file, one with no metadata.
