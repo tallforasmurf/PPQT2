@@ -57,7 +57,7 @@ def check_log(text, level):
     x = log_stream.seek(0)
     x = log_stream.truncate()
     t = (1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
-    if not t: print(log_data) # about to fail an assertion
+    if not t: print('log contains:\n',log_data) # about to fail an assertion
     return t
 
 # Assume we are nested somewhere within ppqt,
