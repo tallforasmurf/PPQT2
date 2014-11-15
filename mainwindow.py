@@ -119,7 +119,6 @@ import colors
 import constants as C
 import logging
 import utilities
-import metadata
 import book
 mainwindow_logger = logging.getLogger(name='main_window')
 
@@ -325,15 +324,16 @@ class MainWindow(QMainWindow):
             self._open( fbts )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    # Open a file, given the document as a FileBasedTextStream
-    # * If file opened is fname.meta, look for a file named fname; if it
-    #   exists open it instead, e.g. given foo.txt.meta, open foo.txt.
+    # Open a file, given the document as a FileBasedTextStream, and META
+    # means our metafile suffix (C.METAFILE_SUFFIX).
+    # * If file opened is fname.META, look for a file named fname; if it
+    #   exists open it instead, e.g. given foo.txt.META, open foo.txt.
     #   If it doesn't exist, tell the user and exit.
     # * If a file of the same name and path is already open, just focus
     #   it and exit.
-    # * Determine if there is a .meta file, a .bin file, or neither
+    # * Determine if there is a .META file, a .bin file, or neither
     # * Create a metadata input stream if possible
-    # * If no .meta, look for good_words and bad_words
+    # * If no .META, look for good_words and bad_words
     # * If the only open book is an "Untitled-n" and
     #     it is unmodified, delete it.
     # * Call Book.old_book() or .new_book() as appropriate
@@ -341,16 +341,16 @@ class MainWindow(QMainWindow):
     # * Give this book the focus.
 
     def _open(self, fbts):
-        # look for opening a .meta file
-        if 'meta' == fbts.suffix():
+        # look for opening a .META file
+        if C.METAFILE_SUFFIX == fbts.suffix():
             fb2 = utilities.file_less_suffix(fbts)
             if fb2 is None :
-                m1 = _TR('File:Open','Cannot open a .meta file alone')
+                m1 = _TR('File:Open','Cannot open a metadata file alone')
                 m2 = _TR('File:Open','There is no book file matching ',
                          'filename follows this') + fbts.filename()
                 utilities.warning_msg(m1, m2)
                 return
-            # we see foo.txt with foo.txt.meta, silently open it
+            # we see foo.txt with foo.txt.META, silently open it
             fbts = fb2
         # look for already-open file
         seq = self._is_already_open(fbts.fullpath())
@@ -362,9 +362,9 @@ class MainWindow(QMainWindow):
         bw_stream = None
         gg_stream = None
         # open the metadata stream, which is always UTF-8
-        meta_stream = utilities.related_suffix(fbts, 'meta', encoding=C.ENCODING_UTF)
+        meta_stream = utilities.related_suffix(fbts, C.METAFILE_SUFFIX, encoding=C.ENCODING_UTF)
         if meta_stream is None :
-            # opening book without .meta; look for .bin which is always LTN1
+            # opening book without metadata; look for .bin which is always LTN1
             bin_stream = utilities.related_suffix(fbts,'bin',encoding=C.ENCODING_LATIN)
             if bin_stream :
                 gg_stream = metadata.translate_bin(bin_stream,fbts)
@@ -412,7 +412,7 @@ class MainWindow(QMainWindow):
                 return self._save_as()
             doc_stream = utilities.path_to_output( active_book.get_book_full_path() )
             if doc_stream : # successfully opened for output
-                meta_stream = utilities.related_output(doc_stream,'meta')
+                meta_stream = utilities.related_output(doc_stream,C.METAFILE_SUFFIX)
                 if not meta_stream:
                     utilities.warning_msg(
                         _TR('File:Save', 'Unable to open metadata file for writing.'),

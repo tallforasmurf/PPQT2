@@ -225,9 +225,9 @@ class Book(QObject):
         # If there are good_words and bad_words streams, call the worddata
         # metadata reader functions directly to accept them.
         if good_stream:
-            self.wordm.good_read(good_stream,C.MD_GW,'0','')
+            self.wordm.good_file(good_stream)
         if bad_stream :
-            self.wordm.bad_read(bad_stream,C.MD_BW,'0','')
+            self.wordm.bad_file(bad_stream)
         if meta_stream :
             # Process the Guiguts metadata for page info
             self.metamgr.load_meta(meta_stream)
@@ -272,93 +272,86 @@ class Book(QObject):
     # possible to establish the cursor value and bookmarks. (If the document
     # had not been read, the editor would not be able to set a cursor
     # position above zero.)
-    #
-    # This means that the v.1 {{ENCODING enc}} section was pointless; the
-    # encoding of the file cannot be learned from that. So that old section is
-    # ignored on input and not written on output.
 
-    # Process the {{BOOKMARKS}} section. Each line is "x p a" where x is the
-    # index in 1-9, and p/a are the cursor position and anchor. (In other
-    # words, a bookmark can include a non-empty selection.) Note the earliest
-    # versions of PPQT didn't save the anchor value, so watch for that and
-    # duplicate the position.
+    # Process the {"BOOKMARKS": [ [x,p,a],...] } section. The save value is a
+    # list of lists [x,p,a] where x is the index in 1-9, and p, a are the
+    # cursor position and anchor. (In other words, a bookmark can include a
+    # non-empty selection.)
 
     # refactor testing for acceptable cursor position, for cpos an int
     def _test_cpos(self, cpos):
         return cpos >= 0 and cpos < self.editm.characterCount()
 
-    def _read_bookmarks(self, stream, sentinel, v, parm):
-        for line in metadata.read_to(stream,sentinel) :
-            try:
-                parts = line.split()
-                if len(parts) == 2 : # old metadata file
-                    parts.append(parts[1]) # duplicate pos as anchor
-                [i,p,a] = parts # exception if not 3 items
-                ix = int(i) # exception if not int
-                if ix < 1 or ix > 9 :
-                    raise ValueError
-                cpos = int(p) # further exceptions if not ints
-                canc = int(a)
-                if self._test_cpos(cpos) and self._test_cpos(canc) :
-                    self.bookmarks[ix] = self.editv.make_cursor(cpos,canc)
-                else :
-                    raise ValueError
-            except:
-                self.logger.error('Ignoring invalid bookmark metadata "'+line+'"')
-    def _save_bookmarks(self, stream, section):
-        stream << metadata.open_line(section)
+    def _read_bookmarks(self, sentinel, value, version):
+        try:
+            for [x,p,a] in value : # unpacking error if not [ [x,p,a],...]
+                try:
+                    ix = int(x) # exception if not numeric
+                    if ix < 1 or ix > 9 :
+                        raise ValueError
+                    cpos = int(p) # further exceptions if not numerics
+                    canc = int(a)
+                    if self._test_cpos(cpos) and self._test_cpos(canc) :
+                        self.bookmarks[ix] = self.editv.make_cursor(cpos,canc)
+                    else :
+                        raise ValueError
+                except:
+                    self.logger.error( 'Ignoring invalid bookmark metadata {}'.format([x,p,a]) )
+        except: # unpacking error only
+            self.logger.error( 'BOOKMARKS metadata not valid, some bookmarks ignored.' )
+
+    def _save_bookmarks(self, section):
+        ret = [ ]
         for ix in range(1,10):
             if self.bookmarks[ix] is not None:
-                stream << '{0} {1} {2}\n'.format(
-                    ix, self.bookmarks[ix].position(), self.bookmarks[ix].anchor() )
-        stream << metadata.close_line(section)
+                ret.append([ix, self.bookmarks[ix].position(), self.bookmarks[ix].anchor()])
+        return ret
 
-    # Process {{CURSOR position anchor}}. Be suspicious of the coding as the
+    # Process {"CURSOR: [position, anchor]}. Be suspicious of the coding as the
     # user might have (mis)edited it.
 
-    def _read_cursor(self, stream, sentinel, v, parm):
+    def _read_cursor(self, sentinel, value, version):
         try:
-            [p,a] = parm.split() # exception if wrong number of values
-            cpos = int(p) # exception if not integer
+            [p,a] = value # exception if wrong number of values
+            cpos = int(p) # exceptions if not integer
             canc = int(a)
             if self._test_cpos(cpos) and self._test_cpos(canc) :
                 self.edit_cursor = (cpos, canc)
             else :
                 raise ValueError
         except:
-            self.logger.error('Ignoring invalid cursor position metadata "'+parm+'"')
+            self.logger.error('Ignoring invalid cursor position {}'.format(value))
 
-    def _save_cursor(self, stream, section):
-        parm = '{0} {1}'.format(self.edit_cursor[0],self.edit_cursor[1])
-        stream << metadata.open_line(section,parm)
+    def _save_cursor(self, section):
+        return self.edit_cursor # json converts tuple to list
 
-    # Process {{MAINDICT <dictag>}}. Look for dictag in the available tags
+    # Process {"MAINDICT": <dictag>}. Look for dictag in the available tags
     # starting with the book path (if we are reading metadata, a book path
     # exists). If the tag exists at some level, make a new speller using it.
     # The tag might not be available, either because the user mistyped it,
     # or because the dictionary path isn't set right, or other reasons.
     # In that case log an error and stay with the current default.
 
-    def _read_dict(self, stream, sentinel, v, parm) :
+    def _read_dict(self, sentinel, value, version) :
         tag_dict = dictionaries.get_tag_list(self.book_folder)
         try:
-            dict_path = tag_dict[parm] # index error if parm not a known tag
-            speller = dictionaries.Speller(parm,tag_dict[parm])
+            dict_path = tag_dict[value] # index error if value not a known tag
+            speller = dictionaries.Speller(value,tag_dict[value])
             if not speller.is_valid() :
                 raise ValueError
             # we have a valid dictionary tag and spellcheck object
-            self.dict_tag = parm
+            self.dict_tag = value
             self._speller = speller
         except:
             self.logger.error(
-                'Unable to open default dictionary {0}, using default {1}'.format(parm,self.dict_tag))
-    def _save_dict(self, stream, section):
-        stream << metadata.open_line(section, self.dict_tag)
+                'Unable to open default dictionary {0}, using default {1}'.format(value,self.dict_tag))
+    def _save_dict(self, section):
+        return self.dict_tag
 
-    # Process {{EDITSIZE int}}, current edit point size (new in v.2.)
-    def _read_size(self, stream, sentinel, v, parm) :
+    # Process {"EDITSIZE" : int}, current edit point size (new in v.2.)
+    def _read_size(self, sentinel, value, version) :
         try:
-            s = int(parm) # error if not int
+            s = int(value) # error if not numeric
             if s >= fonts.POINT_SIZE_MINIMUM and s <= fonts.POINT_SIZE_MAXIMUM :
                 self.edit_point_size = s
                 self.editv.font_change(True) # fake a font-change signal
@@ -366,37 +359,39 @@ class Book(QObject):
                 raise ValueError
         except:
             self.logger.error(
-                'Ignoring invalid edit point size {0}'.format(parm) )
-    def _save_size(self, stream, section) :
-        stream << metadata.open_line(section, str(self.edit_point_size))
+                'Ignoring invalid edit point size {0}'.format(value) )
+    def _save_size(self, section) :
+        return self.edit_point_size
 
-    # Process {{DOCHASH hashstring}}. The purpose of this is to detect when
-    # by some error, the metadata file is not the same level as the text file,
-    # for example if one was restored from backup and the other not.
+    # Process {"DOCHASH": b'hashstringinhex'}. The purpose of this is to
+    # detect when by some error, the metadata file is not the same level as
+    # the text file, for example if one was restored from backup and the
+    # other not.
     def _signature(self):
         # Calculate a hash signature of the current document and return
         # it as a string like "b'\\xde\\xad\\xbe\\xef...'"
         cuisineart = QCryptographicHash(QCryptographicHash.Sha1)
         cuisineart.reset()
         cuisineart.addData( self.editm.full_text() )
-        return bytes(cuisineart.result()).__repr__()
+        return bytes(cuisineart.result())
     # Note in v.1 and Python 2.7, the result of __repr__ on a byte array was
     # a char string like '\xde\xad\xbe\xef...' In v.2 under Python 3, the
     # result is b'\\xde\\xad\\xbe\\xef...' which does not compare equal to a
     # string value even if it contains the same byte sequence. So if reading
     # a v.1 meta file, coerce it to bytes. Since the user could have mucked
     # with it, allow for errors.
-    def _read_hash(self, stream, sentinel, v, parm) :
-        if v < '2' :
+    def _read_hash(self, sentinel, value, version) :
+        if version < '2' :
             try:
-                parm = bytes(parm,'Latin-1','ignore').__repr__()
+                value = bytes(value,'Latin-1','ignore')
             except :
                 self.logger.error(
                 'Could not convert dochash to bytes, ignoring dochash' )
                 return
         # If the saved and current hashes now disagree, it is because the metadata
         # was saved along with a different book or version. Warn the user.
-        if self._signature() != parm :
+        if self._signature() != value :
+            self.logger.error('Doc hash in metadata does not match book contents')
             utilities.warning_msg(
                 text= _TR(
                     'Book object',
@@ -410,9 +405,9 @@ class Book(QObject):
                     )
             )
 
-    def _save_hash(self, stream, section) :
+    def _save_hash(self, section) :
         # Calculate an SHA-1 hash over the current document and write it.
-        stream << metadata.open_line(section, self._signature())
+        return self._signature()
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # The following methods assist the editview to implement its context menu.
@@ -429,7 +424,7 @@ class Book(QObject):
         scanno_stream = utilities.ask_existing_file(
             caption, self.editv, self.book_folder, None )
         if scanno_stream is not None :
-            self.wordm.scanno_read(scanno_stream,C.MD_SC,0,None)
+            self.wordm.scanno_file(scanno_stream)
             return True
         return False
 

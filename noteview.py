@@ -93,7 +93,7 @@ class NotesPanel(QPlainTextEdit):
         # Where we store the last-sought-for find string
         self.find_text = None
         # Register to read and write metadata
-        my_book.get_meta_manager().register( C.MD_NO, self.read_meta, self.save_meta )
+        my_book.get_meta_manager().register( C.MD_NO, self._read_meta, self._save_meta )
         # Set our only font (we don't care about the general font, only mono)
         # n.b. this gets the Book's default size as it hasn't loaded a document
         # yet.
@@ -136,37 +136,21 @@ class NotesPanel(QPlainTextEdit):
         # In order to get focus events, we need to set focus policy
         self.setFocusPolicy(Qt.StrongFocus)
 
-    # Save the current notes text to a metadata file. Get each line of
-    # text (text block) in turn. If a line starts with '{{' (which might
-    # be a conflict with a metadata sentinel line) prefix it with u\fffd.
-    # This is what V.1 did, so we continue it.
-    def save_meta(self, qts, sentinel):
-        qts << metadata.open_line(sentinel)
-        tb = self.document().firstBlock()
-        while tb.isValid():
-            line = tb.text()
-            if line.startswith('{{'):
-                line = C.UNICODE_REPL + line
-            qts << line
-            qts << '\n'
-            tb = tb.next()
-        qts << metadata.close_line(sentinel)
+    # Save the current notes text to a metadata file. We write
+    # the whole text as one string, so the JSON is {"NOTES":"humongous string..."}
+    def _save_meta(self, section):
+        return self.toPlainText()
+
     # Read notes text from a metadata file. Clear our internal document just
-    # to be sure. Get each line from the input stream and append it to the
-    # document using the appendPlainText() method of the editor (which ought
-    # to be a method of the document, but whatever). Set the cursor to the
-    # top. Re-set the font in case the Book read a different size. Set our
-    # document to unmodified state.
-    def read_meta(self,qts,sentinel,version,parm):
+    # to be sure. Then install the JSON value which is a (possibly very long)
+    # string. Set it as not-modified and put the cursor on the first line.
+    def _read_meta(self,section,value,version):
         self.document().clear()
-        for line in metadata.read_to(qts,sentinel):
-            if line.startswith(C.UNICODE_REPL+'{{'):
-                line = line[1:]
-            self.appendPlainText(line)
+        self.setPlainText(value)
         tc = QTextCursor(self.document())
         tc.setPosition(0)
         self.setTextCursor(tc)
-        self.document().setModified(False)
+        self.document().setModified(False) # will cause a call of self.yikes
         self.font_change(True) # update font selection
 
     # Notify our book of a change in the modification state.

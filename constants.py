@@ -47,6 +47,8 @@ STARTUP_DEFAULT_SIZE = QSize(1024,600)
 # not to go writing literal string constants everywhere
 ENCODING_UTF = 'UTF-8'
 ENCODING_LATIN = 'ISO-8859-1'
+# File suffix to tack on to a book filename to name our metadata file
+METAFILE_SUFFIX = 'ppqt'
 
 # constant value for the line-delimiter used by QPlainTextEdit
 UNICODE_LINE_DELIM = '\u2029'
@@ -70,7 +72,8 @@ MD_CC = 'CHARCENSUS'
 MD_CU = 'CURSOR'
 MD_DH = 'DOCHASH'
 MD_ES = 'EDITSIZE'
-MD_FP = 'FINDPANEL'
+MD_FR = 'FIND_RB'
+MD_FU = 'FIND_UB'
 MD_GW = 'GOODWORDS'
 MD_IZ = 'IMAGEZOOM'
 MD_IX = 'IMAGELINKING'

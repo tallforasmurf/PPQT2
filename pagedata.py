@@ -43,29 +43,30 @@ When the Book is created it creates a PageData object which registers a
 reader and writer for the PAGETABLE metadata section.
 
 If the main window tells the Book to load a known file (one with matching
-.meta file), the metadata manager calls the registered read_pages method to
+metadata file), the metadata manager calls the registered read_pages method to
 store the page info from the metadata file.
 
 If the main window tells the Book to load a new file, one with no metadata,
 the Book calls the scan_pages() method. It uses the editdata module
 all_blocks iterator to scan the document and extract the key info from any
-page separator lines. When the book is later saved, these data are saved
-in the .meta file for next time, so page boundary lines are checked only the
+page separator lines. When the book is later saved, these data are saved in
+the metadata file for next time, so page boundary lines are checked only the
 first time a file is opened.
 
 In either case QTextCursors are created to mark the start of each page.
 
     Save Process
 
-The metadata manager calls the write_pages() method to write the metadata
-lines. The format is unchanged from V1.
+The metadata manager calls the write_pages() method to return a metadata
+object comprising all that is known about pages. This is the new V2
+JSON-based metadata method.
 
     Data Storage
 
 This "data model" has 6 items to store about each scan page:
 
   * The page start offset in the document. This is stored as a QTextCursor so
-  that Qt will update it continuously as the document is edited -- sometimes!
+  that Qt will update it continuously as the document is edited -- usually!
   See the note on Page Boundary Cursors below.
 
   * The scan image filename string, usually a number like "002" or "0075" but
@@ -79,26 +80,27 @@ This "data model" has 6 items to store about each scan page:
   * A string of proofer names separated by backslashes, e.g.
   \\Frau Sma\\fsmwalb\Scribe
 
-  Spaces are permitted in proofer names ("Frau Sma"), but when writing the
-  metadata file, spaces within this string are replaced with
-  C.UNICODE_EN_SPACE so the string will remain a unit under split(). Some
-  names may be null, as the 1st and 3rd in the example.
+  Spaces are permitted in proofer names ("Frau Sma").
 
-In effect this is a 6-column table indexed by row number. However
-in memory, data is in lists indexed by row number:
+In effect this is a 6-column table indexed by row number. However in memory,
+data is in lists indexed by row number:
 
   * cursor_list is a list of QTextCursor objects
+
   * filename_list is a list of filename strings
+
   * folio_list is a list of three-item lists [rule,format,number]
     -- not a list of tuples because the items are mutable
+
   * proofer_list is a list of lists containing proofer names, e.g.
-    [ "", "Frau Sma", "", "fsmwalb", "Scribe" ] with u2002's converted.
+    [ "", "Frau Sma", "", "fsmwalb", "Scribe" ].
 
-    Public Methods
+                      Public Methods
 
-pagedata has three clients: imageview needs the scan image filename for the
-current edit cursor location; editview needs the same to display in its
-status line; and pageview displays all the data in the Pages panel.
+pagedata has three clients:
+ * imageview needs the scan image filename for an edit cursor location;
+ * editview needs the same to display in its status line;
+ * pageview displays all the data in the Pages panel.
 
     active()    returns True when pagedata is available, False else.
 
@@ -110,17 +112,18 @@ status line; and pageview displays all the data in the Pages panel.
     name_index(fname) returns the row index R of the page with filename
                 fname, if it exists.
 
-    position(R) returns the document position for row R
+    position(R) returns the document position for page R
 
-    filename(R) returns the filename string for row R.
+    filename(R) returns the filename string for page R.
 
     folio_string(R) returns the formatted display of the folio for row R.
 
     proofers(R) returns the list of proofer name strings for row R.
 
-    folio_info(R)   returns the folio item list for row R.
+    folio_info(R)   returns the list [rule,format,number] for page R.
 
-    set_folios(R, rule, fmt, number) update the folio values for row R.
+    set_folios(R, rule, fmt, number) update the folio values for page R,
+        with None meaning no-change.
 
 
     Page Boundary Cursor Maintenance
@@ -131,11 +134,11 @@ page can be misplaced.
 
 Specifically, if the user selects a span of text that includes one or more
 page boundaries, and deletes or replaces that span of text, the cursor(s)
-that mark(s) the start(s) of the page(s) move to the end of the changed or
+that mark(s) the start(s) of those page(s) move to the end of the changed or
 deleted span. This part is inevitable (what else could the editor do?), but
 it does mean that if a span of text covering two or more pages is
 deleted/replaced, the affected page boundaries all end up pointing to the
-same point, the end of the replaced span.
+same position at the end of the replaced span.
 
 The bug (bugreports.qt-project.org/browse/QTBUG-32689) is that if you UNDO
 such an edit change -- as in "OMG did I really just delete three pages?
@@ -143,9 +146,9 @@ Quick, control-z!" -- the cursors are NOT restored to their former positions
 but remain pointing to the end of the now-restored section of text. So Undo
 fails to restore the page boundary positions once they are moved.
 
-This can occur but is rarely an issue under normal post-processing. In
+This is rarely an issue under normal post-process editing. However, in
 Version 1, the Reflow process often replaced spans of text that overlapped
-page boundaries but it took pains to preserve the markers in the reflowed
+page boundaries; but it took pains to preserve the markers in the reflowed
 text. However the user was encouraged to reflow and then Undo, and on Undo,
 bug 32689 would bite. In version 2, we do not support inline Reflow (only a
 translation to a new file with new page boundaries). So page boundary cursors
@@ -160,6 +163,7 @@ import constants as C
 import metadata
 import editdata
 from PyQt5.QtGui import QTextBlock, QTextCursor
+from PyQt5.QtCore import QObject, pyqtSignal
 
 '''
 This regex recognizes page separator lines. In a typical book a page
@@ -180,15 +184,19 @@ Regardless, the regex below handles either alternative and captures:
     group(3) : string of proofer names divided by backslashes, or None.
 
 The compiled regex can be a global because in use, it creates a match
-object that is private to the caller.
+object that is private to the calling instance of PageData.
 '''
 
 re_line_sep = regex.compile(
     '^-+File: ([^\\.]+)\\.png-(-*((\\\\[^\\\\]*)+)\\\\-*|-+)$'
     ,regex.IGNORECASE)
 
-class PageData(object):
+class PageData(QObject):
+    # define the signal we emit on reading metadata
+    PagesUpdated = pyqtSignal()
+
     def __init__(self, my_book):
+        super().__init__(None)
         self.my_book = my_book
         # Save reference to the metamanager
         self.metamgr = my_book.get_meta_manager()
@@ -209,6 +217,18 @@ class PageData(object):
         # Register to read and write metadata
         self.metamgr.register(C.MD_PT, self.read_pages, self.write_pages)
 
+    # Clear our lists prior to reading metadata. This is for convenience
+    # of the unit test. It is not expected that there will be multiple
+    # calls to read__pages in normal use.
+    def clear(self):
+        self.cursor_list = []
+        self.filename_list = []
+        self.folio_list = []
+        self.proofers_list = []
+        self._active = False
+        self.last_pos = None
+        self.last_row = 0
+        self.explicit_formats = set()
     #
     # Scan all lines of a new document and create page sep info. We fetch
     # QTextBlocks, not just content strings, because we need to get the
@@ -250,6 +270,7 @@ class PageData(object):
             self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
             self._active = True
             self._add_stopper()
+            self.PagesUpdated.emit()
 
     # common to scan_pages and read_pages, add a search-stopper
     # to the list of cursors - see page_at() below for use.
@@ -258,36 +279,47 @@ class PageData(object):
         qtc.setPosition( self.document.characterCount()-1 )
         self.cursor_list.append(qtc)
 
-    # Read the metadata lines and store in our lists. This should be called
-    # only once per book. The lists are not cleared at the start so if the
-    # metadata file has multiple PAGETABLE sections, they will accumulate.
-    # The data format is the same in V1 and V2, 6 space-delimited items, e.g.
-    #
-    #     35460 027 \\fmmarshall\\fsmwalb\Scribe 0 0 22
-    #
-    # or, when there were no proofer names in the separator lines,
-    #
-    #     34560 027 \\ 0 0 22
-    #
-    # Note that unlike worddata we make no allowances here for user
-    # meddling/editing of page data, except for guarding it in a try block.
-    #
-    def read_pages(self, stream, sentinel, vers, parm):
+    # Metadata output: collect our data into a single Python object.
+    # Specifically we return a list of lists:
+    # [ [ pos, "fname", "\proofer\names", rule, format, number]... ]
+
+    def write_pages(self, section):
+        if not self._active : return # don't write an empty section
+        table = []
+        for R in range(len(self.filename_list)):
+            posn = self.cursor_list[R].position()
+            fname = self.filename_list[R]
+            plist = self.proofers_list[R]
+            # proofer string with leading and delimiting backslash
+            pstr = '\\'+ ('\\'.join(plist))
+            [rule, fmt, nbr] = self.folio_list[R]
+            table.append( [posn, fname, pstr, rule, fmt, nbr] )
+        return table
+
+    # Metadata input: get the list output by write_pages and store in our
+    # lists. We don't expect user meddling with the metadata but cannot rule
+    # it out.
+
+    def read_pages(self, section, value, version):
         valid_rule = {C.FolioRuleAdd1,C.FolioRuleSet,C.FolioRuleSkip}
         valid_fmt = {C.FolioFormatArabic,C.FolioFormatLCRom,C.FolioFormatUCRom,C.FolioFormatSame}
         last_fmt = C.FolioFormatArabic
         last_pos = -1 # ensure monotonically increasing positions
-        for line in metadata.read_to(stream, sentinel):
+        self.clear()
+        if not isinstance(value, list) :
+            pagedata_logger.error('{} metadata must be a list of lists, ignoring it'.format(C.MD_PT))
+            return
+        for row in value:
             try:
                 # throws exception if not exactly 6 items
-                (P, fn, pfrs, rule, fmt, nbr) = line.split(' ')
-                P = int(P) # throws exception if not valid int string
+                [P, fn, pfrs, rule, fmt, nbr] = row
+                P = int(P) # exception if not valid numeric
                 tc = QTextCursor(self.document)
                 tc.setPosition(P) # no effect if P negative or too big
                 if (tc.position() != P) or (P < last_pos) :
                     raise ValueError("Invalid document position")
                 last_pos = P
-                rule = int(rule)
+                rule = int(rule) # exceptions if not numeric
                 fmt = int(fmt)
                 nbr = int(nbr)
                 if not ( (rule in valid_rule) and (fmt in valid_fmt) and (nbr >= 0) ) :
@@ -301,33 +333,15 @@ class PageData(object):
                 # get list of proofer strings, dropping opening null string
                 # due to leading backslash. If it is only '\\' the result
                 # is the list [''].
-                plist = pfrs.replace(C.UNICODE_EN_SPACE,' ').split('\\')[1:]
+                plist = pfrs.split('\\')[1:]
                 self.proofers_list.append(plist)
             except Exception as thing:
-                pagedata_logger.error('invalid line of page metadata: '+thing.args[0])
-                pagedata_logger.error('  ignoring "'+line+'"')
+                pagedata_logger.error('Invalid row of page metadata: '+thing.args[0])
+                pagedata_logger.error('  ignoring {}'.format(row))
         if 0 < len(self.filename_list) :
             self._active = True
             self._add_stopper()
-
-    # Write our data as metadata lines. In the page separator lines
-    # the proofers begin with backslash and are delimited with backslash.
-    # For now-inscrutable reasons I kept that format (instead of simple join)
-    # in the V1 the metadata file.
-
-    def write_pages(self, stream, sentinel):
-        if not self._active : return # don't write an empty section
-        stream << metadata.open_line(sentinel)
-        for R in range(len(self.filename_list)):
-            P = self.cursor_list[R].position()
-            fn = self.filename_list[R]
-            plist = self.proofers_list[R]
-            # proofer string with leading and delimiting backslash
-            pfs = '\\'+ ('\\'.join(plist).replace(' ',C.UNICODE_EN_SPACE))
-            [rule, fmt, nbr] = self.folio_list[R]
-            stream << '{0} {1} {2} {3} {4} {5}\n'.format(
-                     P,  fn, pfs, rule, fmt, nbr )
-        stream << metadata.close_line(sentinel)
+            self.PagesUpdated.emit()
 
     def active(self) :
         return self._active

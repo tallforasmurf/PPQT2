@@ -597,6 +597,8 @@ class WordPanel(QWidget) :
         self.proxy.filterChange.connect(self.setup_table)
         # double-click of a table row to do_find()
         self.view.doubleClicked.connect(self.do_find)
+        # Connect worddata changes due to metadata input
+        self.words.WordsUpdated.connect(self.do_update)
 
     # Receive the clicked() signal from the Refresh button.
     # Do not clear the filter, leave filtering alone over refresh.
@@ -608,6 +610,16 @@ class WordPanel(QWidget) :
         self.good_model.beginResetModel()
         self.good_model.get_data()
         self.good_model.endResetModel()
+
+    # Receive the WordsUpdated signal from the words model, indicating that
+    # the display of all words, or good words, may have changed owing to
+    # metadata input. Force a model reset of both models.
+    def do_update(self):
+        self.good_model.beginResetModel()
+        self.good_model.get_data()
+        self.good_model.endResetModel()
+        self.model.beginResetModel()
+        self.model.endResetModel()
 
     # When the contents of the table have changed (refresh or a
     # change of filter) set up table display parameters.
