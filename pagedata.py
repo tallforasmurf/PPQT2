@@ -159,6 +159,7 @@ import logging
 pagedata_logger = logging.getLogger(name='pagedata')
 
 import regex
+import utilities # for toRoman
 import constants as C
 import metadata
 import editdata
@@ -435,7 +436,6 @@ class PageData(QObject):
     # and kept in the database -- with some extra trouble.
 
     def folio_string(self, R):
-        global toRoman
         try :
             [rule, fmt, number] = self.folio_list[R]
             if rule == C.FolioRuleSkip :
@@ -444,7 +444,7 @@ class PageData(QObject):
                 fmt = self.folio_format(R) # calculate actual, see below
             if fmt == C.FolioFormatArabic :
                 return str(number)
-            return toRoman(number, fmt == C.FolioFormatLCRom)
+            return utilities.toRoman(number, fmt == C.FolioFormatLCRom)
         except IndexError:
             pagedata_logger.error('Invalid index {0} to folio_string'.format(R))
             return ''
@@ -511,32 +511,3 @@ class PageData(QObject):
         except IndexError:
             pagedata_logger.error('Invalid index {0} to set_folios'.format(R))
             pass
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Decimal-to-Roman numeral converter, adapted from Mark Pilgrim's
-# "Dive Into Python".
-_ROMAN_MAP = (('M',  1000),
-              ('CM', 900),
-              ('D',  500),
-              ('CD', 400),
-              ('C',  100),
-              ('XC', 90),
-              ('L',  50),
-              ('XL', 40),
-              ('X',  10),
-              ('IX', 9),
-              ('V',  5),
-              ('IV', 4),
-              ('I',  1))
-def toRoman( n, lc=True ):
-    if (0 < n < 5000) and int(n) == n :
-        result = ""
-        for numeral, integer in _ROMAN_MAP:
-            while n >= integer:
-                result += numeral
-                n -= integer
-    else : # invalid number, log but don't raise an exception
-        pagedata_logger.error('Invalid number for roman numeral {0}'.format(n))
-        result = "????"
-    if lc : result = result.lower()
-    return result
