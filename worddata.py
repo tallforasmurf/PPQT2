@@ -221,18 +221,6 @@ prop_bgh = set([BW,GW,HY])
 # exception if no XX but set & prop_nox ensures it is gone.
 prop_nox = set([UC,LC,MC,HY,AP,ND,BW,GW,AD])
 
-# Function to convert a property set into a V1 flag-string for display.
-def prop_string(p):
-    s = ['-'] * 6
-    if UC in p : s[0] = 'A'
-    elif LC in p : s[1] = 'a'
-    elif MC in p : s[0] = 'A'; s[1] = 'a'
-    if ND in p : s[2] = '9'
-    if HY in p : s[3] = 'h'
-    if AP in p : s[4] = 'p'
-    if XX in p : s[5] = 'X'
-    return ''.join(s)
-
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # A suite of regexes to parse out important tokens from a text line.
