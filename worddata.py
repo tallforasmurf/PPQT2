@@ -106,7 +106,7 @@ been edited out.
     Storing Word-tokens
 
 It is not unusual to have 10k-30k unique word tokens, hence performance is an
-issue. We use a blist.sorteddict to record the tokens, with the token as key
+issue. We use a SortedDict to record the tokens, with the token as key
 and its value a list of [count, property_set].
 
 The tokens are Python strings. We flatten them by applying NFKC composition
@@ -170,7 +170,7 @@ found.
 '''
 import constants as C
 import metadata
-import blist
+from sortedcontainers import SortedDict
 import regex
 import unicodedata # for NFKC
 import ast # for literal_eval
@@ -325,8 +325,8 @@ class WordData(QObject):
         # Save reference to a speller, which will be the default
         # at this point.
         self.speller = my_book.get_speller()
-        # The vocabulary list as a blist sorted dict.
-        self.vocab = blist.sorteddict()
+        # The vocabulary list as a sorted dict.
+        self.vocab = SortedDict()
         # Key and Values views on the vocab list for indexing by table row.
         self.vocab_kview = self.vocab.keys()
         self.vocab_vview = self.vocab.values()
@@ -336,7 +336,7 @@ class WordData(QObject):
         self.scannos = set()
         # A dict of words that use an alt-dict tag. The key is a word and the
         # value is the alt-dict tag string.
-        self.alt_tags = blist.sorteddict()
+        self.alt_tags = SortedDict()
         # Register metadata readers and writers.
         self.metamgr.register(C.MD_GW, self.good_read, self.good_save)
         self.metamgr.register(C.MD_BW, self.bad_read, self.bad_save)
@@ -591,7 +591,7 @@ class WordData(QObject):
         # get a reference to the dictionary to use
         self.speller = self.my_book.get_speller()
         # clear the alt-dict list.
-        self.alt_tags = blist.sorteddict()
+        self.alt_tags = SortedDict()
         # Zero out all counts and property sets that we have so far. We will
         # develop new properties when each word is first seen. Properties
         # such as HY will not have changed, but both AD and XX might have
@@ -737,7 +737,7 @@ class WordData(QObject):
     def word_count(self):
         return len(self.vocab)
     #
-    # Get the word at position n in the vocabulary, using the blist
+    # Get the word at position n in the vocabulary, using the SortedDict
     # KeysView for O(1) lookup time. Guard against invalid indices.
     #
     def word_at(self, n):
@@ -748,7 +748,7 @@ class WordData(QObject):
             return ('?')
     #
     # Get the count and/or property-set of the word at position n in the
-    # vocabulary, using the blist ValuesView for O(1) lookup time.
+    # vocabulary, using the SortedDict ValuesView for O(1) lookup time.
     #
     def word_info_at(self, n):
         try:
