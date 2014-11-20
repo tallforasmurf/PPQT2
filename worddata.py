@@ -176,7 +176,7 @@ import unicodedata # for NFKC
 import ast # for literal_eval
 import logging
 worddata_logger = logging.getLogger(name='worddata')
-from PyQt5.QtCore import QCoreApplication, QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Global function to strip all types of apostrophe and dash from a word.
@@ -595,7 +595,6 @@ class WordData(QObject):
             count += 1
             if 0 == (count % 20):
                 progress.setValue(count)
-                QCoreApplication.processEvents()
             j = 0
             m = re_token.search(line,0)
             while m : # while match is not None
