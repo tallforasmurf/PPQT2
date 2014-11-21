@@ -221,6 +221,17 @@ prop_bgh = set([BW,GW,HY])
 # exception if no XX but set & prop_nox ensures it is gone.
 prop_nox = set([UC,LC,MC,HY,AP,ND,BW,GW,AD])
 
+# Convert a property set from set values to a feature string
+def prop_string(props):
+    ps = ['-','-','-','-','-','-']
+    if UC in props or MC in props: ps[0] = 'A'
+    if LC in props or MC in props: ps[1] = 'a'
+    if ND in props: ps[2] = '9'
+    if HY in props: ps[3] = 'h'
+    if AP in props: ps[4] = 'p'
+    if XX in props: ps[5] = 'X'
+    return ''.join(ps)
+
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # A suite of regexes to parse out important tokens from a text line.
@@ -505,6 +516,7 @@ class WordData(QObject):
         self.WordsUpdated.emit()
     # end of word_read()
 
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Methods used when opening a new file, one with no metadata.
     #
     # The Book will call these methods passing a text stream when it finds a
@@ -533,6 +545,7 @@ class WordData(QObject):
                     )
             else :
                 self.bad_words.add(token)
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #
     # The user can choose a new scannos file any time while editing. So there
     # might be existing data, so we clear the set before reading.
@@ -543,7 +556,7 @@ class WordData(QObject):
             token = stream.readLine().strip()
             self.scannos.add(token)
 
-    #
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # The following is called by the Book when the user chooses a different
     # spelling dictionary. Store a new spellcheck object. Recheck the
     # spelling of all words except those with properties HY, GW, or BW.
@@ -562,7 +575,8 @@ class WordData(QObject):
                 if not self.speller.check(w,t):
                     p.add(XX)
                 self.vocab_vview[i][1] = p
-    #
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Method to perform a census. This is called from wordview when the
     # user clicks the Refresh button asking for a new scan over all words in
     # the book. A QProgressDialog is passed, which we load with the maximum
@@ -621,7 +635,7 @@ class WordData(QObject):
                 togo.append(self.vocab_kview[j])
         for key in togo:
             del self.vocab[key]
-        progress.setValue(end_count)
+        progress.reset()
 
     # Internal method for adding a possibly-hyphenated token to the vocabulary,
     # incrementing its count. This is used during the census/refresh scan, and
@@ -716,6 +730,8 @@ class WordData(QObject):
             # else in good-words
         # else hyphenated, spellcheck only its parts
         self.vocab[word] = [1, prop_set]
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #
     # The following methods are used by the Words panel.
     #

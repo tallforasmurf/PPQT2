@@ -114,6 +114,7 @@ it's or its.
 '''
 import logging
 wordview_logger = logging.getLogger(name='wordview')
+import utilities # for make_progress
 import worddata
 import regex
 from PyQt5.QtCore import (
@@ -713,8 +714,7 @@ class WordPanel(QWidget) :
         mid_layout.addStretch(0)
         mid_layout.addLayout(gw_layout,0)
 
-        # Make a progress dialog with 0.5 second delay and no cancel button
-        self.progress = QProgressDialog(
-            _TR('Word refresh progess bar',
-                'Rebuilding the vocabulary' ),'',0,100)
-        self.progress.setMinimumDuration(int(self.progress.minimumDuration()/4))
+        # Make a progress dialog
+        self.progress = utilities.make_progress(
+            _TR('Word-refresh progress bar title',
+                'Rebuilding the vocabulary' ), self)
