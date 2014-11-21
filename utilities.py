@@ -43,7 +43,8 @@ from PyQt5.QtWidgets import (
     QDialog,
     QFileDialog,
     QInputDialog,
-    QMessageBox)
+    QMessageBox,
+    QProgressDialog)
 import constants as C # for encoding names
 import logging
 utilities_logger = logging.getLogger(name='utilities')
@@ -477,6 +478,16 @@ def get_find_string(caption, parent, prepared = ''):
     (ok, answer) = _string_query(C.FIND_BUTTON,caption,parent,prepared,ok_label=C.FIND_BUTTON)
     if ok : return answer
     return None
+#
+# Create a QProgressDialog with no Cancel button and a 0.5-second display
+# time, based on a title string and parent widget passed by the caller. The
+# maximum value is set to 100. The user can either call setValue() in integer
+# percents, or call setMaximum() to set a different end-value.
+#
+def make_progress(caption, parent):
+    progress = QProgressDialog( caption, '', 0, 100)
+    progress.setMinimumDuration(250)
+    return progress
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Decimal integer to Roman-numeral conversion, used by both pagedata (for
