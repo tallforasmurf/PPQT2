@@ -65,25 +65,27 @@ _TR = QCoreApplication.translate
 from PyQt5.QtWidgets import QLabel # TODO eliminate when not needed
 
 import utilities
-import mainwindow
-import metadata
-import editdata
-import editview
-import findview
-import chardata
-import charview
-import worddata
-import wordview
-import pagedata
-import pageview
-import imageview
-import noteview
-import loupeview
 import paths
 import dictionaries
 import constants as C
-import logging
 import fonts
+import mainwindow
+import metadata
+import chardata
+import charview
+import editdata
+import editview
+import findview
+import fnotdata
+#import fnotview
+import imageview
+import loupeview
+import noteview
+import pagedata
+import pageview
+import worddata
+import wordview
+import logging
 
 class Book(QObject):
     def __init__(self, sequence, the_main ):
@@ -133,6 +135,7 @@ class Book(QObject):
         self.pagem = pagedata.PageData(self) # page data
         self.charm = chardata.CharData(self) # character data
         self.wordm = worddata.WordData(self) # vocabulary data
+        self.fnotm = fnotdata.FnoteData(self) # footnote data
         # TODO: footnotes, bookloupe?
         #
         # Create the view objects that display and interact with the data
@@ -531,10 +534,13 @@ class Book(QObject):
     # give access to the word data model
     def get_word_model(self):
         return self.wordm
+    # give access to the fnot data model
+    def get_fnot_model(self):
+        return self.fnotm
     # give access to the words panel (mostly for test)
     def get_word_panel(self):
         return self.panel_dict['Words']
-    # give access to the Find panel object
+    # give access to the Find panel object (test, also editview)
     def get_find_panel(self):
         return self.panel_dict['Find']
     # give access to the Char panel mostly for test
