@@ -506,7 +506,7 @@ _ROMAN_MAP = (('M',  1000),
               ('V',  5),
               ('IV', 4),
               ('I',  1))
-def toRoman( n, lc=True ):
+def to_roman( n, lc=True ):
     if (0 < n < 5000) and int(n) == n :
         result = ""
         for numeral, integer in _ROMAN_MAP:
@@ -518,7 +518,6 @@ def toRoman( n, lc=True ):
         result = "????"
     if lc : result = result.lower()
     return result
-
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Diagnostic routines for evaluating events
