@@ -520,6 +520,24 @@ def to_roman( n, lc=True ):
     return result
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Decimal to alpha conversion, used by fnotview for renumbering.
+# input 1..17577 (26**3) yields output A..ZZZ.
+
+AlphaMap = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+def to_alpha( n, lc=True ) :
+    if not (0 < n < 17577):
+        raise ValueError, "number out of range (must be 1..17577)"
+    if int(n) <> n:
+        raise ValueError, "decimal fractions can not be converted"
+    result = ''
+    while True :
+        ( n, m ) = divmod( n-1, 26 )
+        result = AlphaMap[m] + result
+        if n == 0 : break
+    if lc : return result.lower()
+    return result
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Diagnostic routines for evaluating events
 # TODO REMOVE
 from PyQt5.QtCore import QEvent, Qt
