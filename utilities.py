@@ -514,7 +514,8 @@ def to_roman( n, lc=True ):
                 result += numeral
                 n -= integer
     else : # invalid number, log but don't raise an exception
-        pagedata_logger.error('Invalid number for roman numeral {0}'.format(n))
+        utilities_logger.error(
+            'Invalid number for roman numeral {}'.format(n) )
         result = "????"
     if lc : result = result.lower()
     return result
@@ -525,16 +526,17 @@ def to_roman( n, lc=True ):
 
 AlphaMap = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 def to_alpha( n, lc=True ) :
-    if not (0 < n < 17577):
-        raise ValueError, "number out of range (must be 1..17577)"
-    if int(n) <> n:
-        raise ValueError, "decimal fractions can not be converted"
     result = ''
-    while True :
-        ( n, m ) = divmod( n-1, 26 )
-        result = AlphaMap[m] + result
-        if n == 0 : break
-    if lc : return result.lower()
+    if (0 < n < 17577) and int(n) == n :
+        while True :
+            ( n, m ) = divmod( n-1, 26 )
+            result = AlphaMap[m] + result
+            if n == 0 : break
+    else :
+        utilities_logger.error(
+            'Invalid number for alpha conversion {}'.format(n) )
+        result = '???'
+    if lc : result = result.lower()
     return result
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
