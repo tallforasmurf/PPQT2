@@ -159,7 +159,7 @@ import logging
 pagedata_logger = logging.getLogger(name='pagedata')
 
 import regex
-import utilities # for toRoman
+import utilities # for to_roman
 import constants as C
 import metadata
 import editdata
@@ -444,7 +444,7 @@ class PageData(QObject):
                 fmt = self.folio_format(R) # calculate actual, see below
             if fmt == C.FolioFormatArabic :
                 return str(number)
-            return utilities.toRoman(number, fmt == C.FolioFormatLCRom)
+            return utilities.to_roman(number, fmt == C.FolioFormatLCRom)
         except IndexError:
             pagedata_logger.error('Invalid index {0} to folio_string'.format(R))
             return ''
