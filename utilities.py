@@ -522,12 +522,12 @@ def to_roman( n, lc=True ):
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Decimal to alpha conversion, used by fnotview for renumbering.
-# input 1..17577 (26**3) yields output A..ZZZ.
+# input 1..18278 (26 + 26^2 + 26^3) yields output A..ZZZ.
 
 AlphaMap = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 def to_alpha( n, lc=True ) :
     result = ''
-    if (0 < n < 17577) and int(n) == n :
+    if (0 < n < 18278) and int(n) == n :
         while True :
             ( n, m ) = divmod( n-1, 26 )
             result = AlphaMap[m] + result
