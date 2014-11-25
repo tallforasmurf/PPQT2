@@ -200,8 +200,7 @@ import regex
 import constants as C
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtCore import QObject,QRegExp
-from PyQt5.QtGui import QTextBlock, QTextCursor
-from PyQt5.QtWidgets import QProgressDialog
+from PyQt5.QtGui import QTextCursor
 import logging
 fnotdata_logger = logging.getLogger(name='fnotdata')
 
@@ -575,9 +574,9 @@ class FnoteData(QObject):
         self.zone_cursors = []
         match = self.zone_finder_re.search(doc_text) # start from 0
         while match : # is not None
-            tcA = QTextCursor(doc)
+            tcA = QTextCursor(self.doc)
             tcA.setPosition(match.start(1))
-            tcZ = QTextCursor(doc)
+            tcZ = QTextCursor(self.doc)
             tcZ.setPosition(match.start(2))
             self.zone_cursors.append( [ tcA, tcZ ] )
             match = self.zone_finder_re.search(doc_text, match.end())
@@ -597,7 +596,7 @@ class FnoteData(QObject):
     # TODO: need progress bar???
 
     def move_notes(self):
-        worktc = QTextCursor(doc)
+        worktc = QTextCursor(self.doc)
         worktc.beginEditBlock()
         for [anchor_tc, note_tc] in self.the_list :
             note_line = self._cursor_end_line(note_tc)
