@@ -62,7 +62,6 @@ the editor to jump to that line.
 
 Class PagePanel(QWidget) defines the entire panel and initializes it.
 '''
-import pagedata
 import constants as C
 import logging
 import fonts
@@ -224,7 +223,6 @@ class PageTableModel(QAbstractTableModel):
     def update_folios(self):
         self.beginResetModel()
         folio = 0
-        fmt = None
         for r in range(self.pdata.page_count()) :
             [rule,fmt,val] = self.pdata.folio_info(r)
             if rule == C.FolioRuleAdd1 :
@@ -379,8 +377,8 @@ class PagePanel(QWidget):
         fonts.notify_me(self.font_change)
         # and that's page table setup.
 
-    def font_change(self,bool):
-        if bool : # mono font change
+    def font_change(self,boolean):
+        if boolean : # mono font change
             self.insert_text.setFont( fonts.get_fixed() )
 
     # Slot for the refresh button. Call the model to do the actual update.
@@ -441,7 +439,6 @@ class PagePanel(QWidget):
             )
             return
         # Get permission to do this significant operation.
-        m = "Insert this string at the top of %n pages?".format(n)
         ok = utilities.ok_cancel_msg(
             _TR("Page Table permission request",
                 "OK to insert the following string into %n pages?"),
