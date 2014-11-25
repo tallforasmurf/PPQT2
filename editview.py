@@ -74,7 +74,7 @@ Offers these additional methods:
 '''
 
 import regex
-from PyQt5.Qt import Qt, QEvent, QObject, QCoreApplication, QSize
+from PyQt5.Qt import Qt, QObject, QCoreApplication, QSize
 _TR = QCoreApplication.translate
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
@@ -94,7 +94,6 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import (
     QBrush,
     QSyntaxHighlighter,
-    QTextBlock,
     QTextBlockFormat,
     QTextCursor,
     QTextCharFormat,
@@ -315,7 +314,7 @@ class EditView( QWidget ):
     # Slot to receive the modificationChanged signal from the document.
     # Also called from the book when metadata changes state.
     # Change the color of the DocName to match.
-    def mod_change_signal(self,bool):
+    def mod_change_signal(self,boolean):
         self.DocName.setStyleSheet(self.mod_style if self.my_book.get_save_needed() else self.norm_style)
 
     # This slot receives the ReturnPressed signal from the LineNumber field.
@@ -434,7 +433,6 @@ class EditView( QWidget ):
     # Create the menu itself. This is part of initialization.
     #
     def _make_context_menu(self):
-        global _TR
         m = QMenu(self)
         act1 = QAction( _TR("EditViewWidget","Mark Scannos","context menu item"), m )
         act1.setCheckable(True)
