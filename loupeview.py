@@ -72,7 +72,6 @@ from PyQt5.QtCore import (
     QSortFilterProxyModel
     )
 from PyQt5.QtWidgets import (
-    QApplication,
     QHBoxLayout,
     QVBoxLayout,
     QPushButton,
