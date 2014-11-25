@@ -136,7 +136,6 @@ class Book(QObject):
         self.charm = chardata.CharData(self) # character data
         self.wordm = worddata.WordData(self) # vocabulary data
         self.fnotm = fnotdata.FnoteData(self) # footnote data
-        # TODO: footnotes, bookloupe?
         #
         # Create the view objects that display and interact with the data
         # models. These need to be accessible to the main window for the
@@ -339,7 +338,7 @@ class Book(QObject):
         tag_dict = dictionaries.get_tag_list(self.book_folder)
         try:
             dict_path = tag_dict[value] # index error if value not a known tag
-            speller = dictionaries.Speller(value,tag_dict[value])
+            speller = dictionaries.Speller(value,dict_path)
             if not speller.is_valid() :
                 raise ValueError
             # we have a valid dictionary tag and spellcheck object
@@ -420,7 +419,6 @@ class Book(QObject):
     # the stream to the word-model to store.
 
     def ask_scanno_file(self):
-        global _TR
         caption = _TR("EditViewWidget",
                 "Choose a file of OCR error words to mark",
                 "File dialog caption")
@@ -435,7 +433,6 @@ class Book(QObject):
     # tags and present them in a dialog. Contrary to the name, tag_list
     # is actually a dict, so pull out its keys for the dialog.
     def ask_dictionary(self) :
-        global _TR
         tag_list = dictionaries.get_tag_list(self.book_folder)
         if 0<len(tag_list):
             # dictionaries knows about at least one tag, display it/them
