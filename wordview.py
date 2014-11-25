@@ -129,8 +129,8 @@ from PyQt5.QtCore import (
     )
 _TR = QCoreApplication.translate
 from PyQt5.QtGui import (
-    QDragEnterEvent,
-    QDropEvent)
+    QDragEnterEvent
+)
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -143,7 +143,6 @@ from PyQt5.QtWidgets import (
     QLabel,
     QListView,
     QMenu,
-    QProgressDialog,
     QPushButton,
     QTableView
     )
@@ -552,7 +551,6 @@ class GoodView(QListView):
     # Handle just one key, Delete (or backspace).
     def keyPressEvent(self, event):
         key = int(event.key())
-        mods = int(event.modifiers())
         if ( key == Qt.Key_Backspace ) or ( key == Qt.Key_Delete ):
             event.accept()
             ix_list = self.selectedIndexes()
