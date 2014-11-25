@@ -102,7 +102,7 @@ class ColorSignaller(QObject):
 _SIGNALLER = ColorSignaller()
 
 def notify_me(slot):
-    colors_logger.debug('Connecting colorChange signal to ',slot.__name__)
+    colors_logger.debug('Connecting colorChange signal to {}'.format(slot.__name__))
     _SIGNALLER.connect(slot)
 def _emit_signal():
     colors_logger.debug('Emitting colorChange()')
@@ -166,7 +166,7 @@ def initialize(settings):
     _MFD_COLOR = QColor( settings.value('colors/modified_name',_MFD_COLOR.name()) )
 
 def shutdown(settings):
-    global _SPU_COLOR,_SPU_STYLE,_SNO_COLOR,_SNO_STYLE,_CL_COLOR,_MFD_COLOR
+    global _SPU_COLOR,_SPU_STYLE,_SNO_COLOR,_SNO_STYLE,_CL_COLOR,_FR_COLOR,_MFD_COLOR
     colors_logger.debug('colors:saving settings')
     settings.setValue('colors/spell_color',_SPU_COLOR.name())
     settings.setValue('colors/spell_style',_SPU_STYLE)
@@ -202,7 +202,7 @@ def get_spelling_format():
 # Functions called by the Preferences dialog.
 
 def set_defaults(signal=True):
-    global _SPU_COLOR,_SPU_STYLE,_SNO_COLOR,_SNO_STYLE,_CL_COLOR,_MFD_COLOR
+    global _SPU_COLOR,_SPU_STYLE,_SNO_COLOR,_SNO_STYLE,_CL_COLOR,_FR_COLOR,_MFD_COLOR
     colors_logger.debug('Resetting colors and styles to defaults')
     _MFD_COLOR = QColor('red')
     _CL_COLOR = QColor('#FAFAE0') # very light yellow
