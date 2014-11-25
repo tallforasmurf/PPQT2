@@ -57,7 +57,6 @@ Externally-available functions, some from QTextDocument, some unique
 '''
 from PyQt5.QtGui import (
     QTextBlock,
-    QTextCursor,
     QTextDocument,
     QAbstractTextDocumentLayout)
 from PyQt5.QtWidgets import (
