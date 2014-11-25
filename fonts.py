@@ -102,10 +102,10 @@ class FontSignaller(QObject):
 _SIGNALLER = FontSignaller()
 
 def notify_me(slot):
-    fonts_logger.debug('Connecting fontChange signal to ',slot.__name__)
+    fonts_logger.debug('Connecting fontChange signal to {}'.format(slot.__name__))
     _SIGNALLER.connect(slot)
 def _emit_signal(boola):
-    fonts_logger.debug('Emitting fontChange signal(',boola,')')
+    fonts_logger.debug('Emitting fontChange signal({})'.format(boola) )
     _SIGNALLER.send(boola)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -118,12 +118,9 @@ def _emit_signal(boola):
 
 from PyQt5.QtGui import (
     QFont,
-    QFontInfo,
     QFontDatabase
 )
 from PyQt5.QtWidgets import QFontDialog
-
-import resources # for the mono ttf
 
 _FONT_DB = QFontDatabase()
 _FONT_DB.addApplicationFont(':/liberation_mono.ttf')
