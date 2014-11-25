@@ -63,7 +63,6 @@ TODO: Book to save metadata mods on per-object basis so if Notes backs
 TODO: Propogate that change to Worddata?
 '''
 import constants as C
-import metadata
 import fonts
 import mainwindow
 import utilities
@@ -73,16 +72,14 @@ from PyQt5.QtWidgets import (
     QPlainTextDocumentLayout,
     QPlainTextEdit,
     QTextEdit,
-    QMenu,
-    QMenuBar
+    QMenu
     )
 from PyQt5.QtGui import (
     QTextDocument,
-    QTextBlock,
     QTextCursor,
     QKeySequence
     )
-from PyQt5.QtGui import QPalette,QBrush
+from PyQt5.QtGui import QPalette
 from PyQt5.QtCore import Qt, QCoreApplication
 _TR = QCoreApplication.translate
 
