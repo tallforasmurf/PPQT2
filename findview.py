@@ -161,7 +161,6 @@ from PyQt5.QtWidgets import(
     QCheckBox,
     QFrame,
     QGridLayout, QHBoxLayout, QVBoxLayout,
-    QLabel,
     QLineEdit,
     QMenu,
     QPushButton,
@@ -171,22 +170,20 @@ from PyQt5.QtWidgets import(
 )
 from PyQt5.QtGui import(
     QColor,
-    QIcon,QPixmap,
+    QIcon,
     QPalette,
     QTextCursor,
     QTextDocument,
     QValidator
 )
-from PyQt5.QtCore import QRect, QSize, QObject, pyqtSignal
+from PyQt5.QtCore import QSize, QObject, pyqtSignal
 from PyQt5.Qt import Qt, QCoreApplication
 _TR = QCoreApplication.translate
 
-import metadata
 import fonts
 import utilities
 import constants as C
 import regex
-import resources
 import logging
 find_logger = logging.getLogger(name='Find panel')
 
@@ -931,7 +928,7 @@ class FindPanel(QWidget):
         if self.sw_regex.isChecked() :
             rex = self.find_field.regex
             if rex is None : # bad regex syntax
-                utilities.beep
+                utilities.beep()
                 return
         else : # not a regex pattern, make it one.
             if f_pattern == '' : # empty pattern, not good for global find!
