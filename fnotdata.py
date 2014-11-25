@@ -565,9 +565,10 @@ class FnoteData(QObject):
     # record the zones as a list of lists, [tcA, tcZ] where
     # the cursors have this relationship:
     # tcA --> /F
-    #           ...unknown, probably null, text in zone before search
-    #           ...notes moved this zone already...
+    #           ...Unknown, often null, text in the zone before search
+    #           ...Notes moved to this zone already...
     # tcZ --> /nF/
+    # On the move, moved notes are inserted at tcZ pushing /F downward.
 
     def find_zones(self):
         doc_text = self.doc.full_text()
@@ -603,24 +604,26 @@ class FnoteData(QObject):
             # find the next zone that starts below the note
             for [tcA, tcZ] in self.zone_cursors :
                 if note_line < self._cursor_start_line(tcZ) :
-                    # the note is above the end of this section
+                    # the note precedes the end of this section
                     break # stop, this is the section if any is
             # end for zone
             if note_line > self._cursor_start_line(tcZ) :
-                # this note, and any remaining notes, are past the end
+                # The above loop ended naturally, not with a break,
+                # so this note, and any remaining notes, are past the end
                 # of the last zone in the list. We can do no more.
                 break
             if note_line >= self._cursor_end_line(tcA) :
                 # this note is already inside this zone
                 continue # to the next note
-            # Note note_tc is above the start of zone tcA/tcZ. Copy the note
-            # text and leading and trailing newlines to the end of the zone.
+            # Note note_tc is above the start of zone tcA/tcZ, so we will
+            # move it. Duplicate the note text with leading and trailing
+            # newlines to the end of the zone.
             note_text = note_tc.selectedText() # cache the note text
             worktc.setPosition(tcZ.position()) # point to end of zone
             # this advances tcZ automatically
             worktc.insertText( '\n' + note_text + '\n' )
-            # Use worktc to erase the original note text and the newlines
-            # on either side of it, so that is an undo action.
+            # Erase the original note text and the newlines before and after,
+            # using worktc so it is an undo action.
             worktc.setPosition(note_tc.anchor()-1)
             worktc.setPosition(note_tc.position()+1, QTextCursor.KeepAnchor)
             worktc.removeSelectedText()
@@ -658,7 +661,7 @@ class FnoteData(QObject):
         # so start(1) is the character index of the /F line. Group 2 is (F/)
         # so start(2) is the index of the F/ line. The final group stops with
         # either \n or $, in case the final F/ is end of document without \n
-        self.zone_finder_re = regex.compile( '\\n(/F).*(\\nF/)(\\n|$)' )
+        self.zone_finder_re = regex.compile( '\\n(/F)\\n.*(\\nF/)(\\n|$)' )
         # Set up a list of tuples, (class#, re-for-class), ordered from most
         # likely (cap alpha, numeric, lowercase alpha, symbol) but also
         # ordered so that roman numerals are prioritized over alphabetics.
