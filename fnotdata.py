@@ -589,16 +589,16 @@ class FnoteData(QObject):
     # chance that a note might straddle a zone (chance there is a /F line
     # INSIDE a Note text).
     #
+    # We assume fnotview will call for a refresh before this operation, and
+    # will not call it if there are mismatches or if the list is empty.
+    #
     # The move logic needs to be a single undo operation. That means all text
-    # changes have to go through a single QTextCursor, worktc. We assume
-    # fnotview will call for a refresh before this operation, and will not
-    # call it if there are mismatches or if the list is empty.
+    # changes have to go through a single QTextCursor, work_tc, which is
+    # passed as a parameter.
 
     # TODO: need progress bar???
 
-    def move_notes(self):
-        worktc = QTextCursor(self.doc)
-        worktc.beginEditBlock()
+    def move_notes(self, work_tc):
         for [anchor_tc, note_tc] in self.the_list :
             note_line = self._cursor_end_line(note_tc)
             # find the next zone that starts below the note
@@ -619,18 +619,19 @@ class FnoteData(QObject):
             # move it. Duplicate the note text with leading and trailing
             # newlines to the end of the zone.
             note_text = note_tc.selectedText() # cache the note text
-            worktc.setPosition(tcZ.position()) # point to end of zone
+            work_tc.setPosition(tcZ.position()) # point to end of zone
             # this advances tcZ automatically
-            worktc.insertText( '\n' + note_text + '\n' )
+            work_tc.insertText( '\n' + note_text + '\n' )
             # Erase the original note text and the newlines before and after,
-            # using worktc so it is an undo action.
-            worktc.setPosition(note_tc.anchor()-1)
-            worktc.setPosition(note_tc.position()+1, QTextCursor.KeepAnchor)
-            worktc.removeSelectedText()
+            # using work_tc so it is an undo action.
+            work_tc.setPosition(note_tc.anchor()-1)
+            work_tc.setPosition(note_tc.position()+1, QTextCursor.KeepAnchor)
+            work_tc.removeSelectedText()
             # Set note_tc to point to the new location, just above tcZ.
             note_tc.setPosition(tcZ.position() - len(note_text) - 2)
             note_tc.setPosition(tcZ.position() - 1,QTextCursor.KeepAnchor)
         # end for notes in the_list
+    # end move_notes
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Set up the regexes we use. Here and in the rest of the app we prefer
