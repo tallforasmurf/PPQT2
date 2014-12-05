@@ -384,12 +384,6 @@ class FnoteData(QObject):
         #
         self.count_of_unpaired_keys = len(orphan_anchors_list) + len(notes_list)
         progresso.reset()
-        ## dbg
-        #for [a,n] in self.the_list :
-            #print(
-                 #'None' if (a is None) else 'a:'+a.selectedText(),
-                 #'None' if n is None else 'n:'+n.selectedText()
-                #)
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Metadata writing and reading.
