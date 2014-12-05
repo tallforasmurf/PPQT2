@@ -495,6 +495,15 @@ class EditView( QWidget ):
     def get_line_number(self):
         return self.LineNumber.text()
 
+    # Get the origin-0 text block number of the current cursor.
+    # Called from Footnote View.
+
+    def get_line(self):
+        tc = self.Editor.textCursor()
+        cp = tc.selectionStart()
+        tb = self.document.findBlock(cp)
+        return tb.blockNumber()
+
     # Called by the parent Book when the book is renamed as part of Save-As.
 
     def book_renamed(self,name):
@@ -534,20 +543,28 @@ class EditView( QWidget ):
     #
     # Go to line number string: called from the _line_number_enter slot and
     # also from the Notes panel. Given a supposed line number as a string
-    # 'nnn', get the corresponding textblock and use that to position the
-    # document. Do not assume an integer string value or a valid line number;
-    # if invalid, beep and do nothing. Finally, make sure focus goes back to
-    # editor (it might now be in the Notes panel).
-    #
+    # 'nnn'; does not assume an integer string value or a valid line number;
+    # if invalid, beep and do nothing.
+
     def go_to_line_number(self, lnum_string):
         try:
-            lnum = int(lnum_string) - 1 # text block is origin-0
-            tb = self.document.findBlockByLineNumber(lnum)
-            if not tb.isValid() : raise ValueError
-            self.go_to_block(tb)
+            lnum = int(lnum_string) - 1 # text block # is origin-0
+            self.go_to_line(lnum)
         except ValueError: # from int() or explicit
             utilities.beep()
             editview_logger.error('Request to show invalid line number {0}'.format(lnum_string))
+
+    # Go to line number: called from the Footnotes panel. Position at
+    # a particular text block by number (origin-0).
+
+    def go_to_line(self, line_number):
+        try:
+            tb = self.document.findBlockByLineNumber(line_number)
+            if not tb.isValid() : raise ValueError
+            self.go_to_block(tb)
+        except ValueError: # bad line_number
+            utilities.beep()
+            editview_logger.error('Request to show invalid line number {0}'.format(line_number))
 
     # Position the cursor at the head of a given QTextBlock (line)
     # and get the focus. Does not assume tb is a valid textblock.
