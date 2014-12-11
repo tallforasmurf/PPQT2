@@ -567,23 +567,17 @@ class FnoteData(QObject):
         work_tc.insertText( new_key ) # that replaces the Key in the Anchor
         # Reset the anchor_tc to select the replaced Key
         anchor_tc.setPosition( anchor_start, QTextCursor.MoveAnchor )
-        anchor_tc.setPosition( anchor_start+len(new_key), QTextCursor.MoveAnchor )
-        # Upate the Note
+        anchor_tc.setPosition( anchor_start+len(new_key), QTextCursor.KeepAnchor )
+        # Update the Note. Extract its full text.
         note_text = note_tc.selectedText()
         # Locate the key as group(1) of a match against the Note
         #  [Footnote xiv: ...]
         #  start(1)--^  ^--end(1)
         match = self.note_finder_re.match( note_text )
-        # Create a new version of the Note with the new key in place of the old
-        note_text = note_text[:match.start(1)] + new_key + note_text[match.end(1):]
-        # Update the Note
-        note_start = note_tc.selectionStart()
-        work_tc.setPosition( note_start, QTextCursor.MoveAnchor )
-        work_tc.setPosition( note_tc.selectionEnd(), QTextCursor.KeepAnchor )
-        work_tc.insertText( note_text )
-        # Reset the Note cursor to select the modified Note text
-        note_tc.setPosition( note_start, QTextCursor.MoveAnchor )
-        note_tc.setPosition( note_start + len(note_text), QTextCursor.KeepAnchor )
+        # point work_tc at the Key within the note
+        work_tc.setPosition( note_tc.selectionStart() + match.start(1), QTextCursor.MoveAnchor )
+        work_tc.setPosition( note_tc.selectionStart() + match.end(1), QTextCursor.KeepAnchor )
+        work_tc.insertText( new_key ) # replace the key in the note
 
     # record the zones as a list of lists, [tcA, tcZ] where
     # the cursors have this relationship:

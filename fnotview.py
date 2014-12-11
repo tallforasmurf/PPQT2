@@ -268,10 +268,10 @@ class FnotePanel(QWidget):
         # self.streams[j]+=1; key=self.stream_lambdas[j](self.streams[j])
         self.number_streams = [ 0, 0, 0, 0, 0, 0 ]
         self.stream_lambdas = [
-            lambda n : utilities.to_roman( s, False ),
-            lambda n : utilities.to_alpha( s, False ),
-            lambda n : utilities.to_roman( s, True ),
-            lambda n : utilities.to_alpha( s, True ),
+            lambda n : utilities.to_roman( n, False ),
+            lambda n : utilities.to_alpha( n, False ),
+            lambda n : utilities.to_roman( n, True ),
+            lambda n : utilities.to_alpha( n, True ),
             lambda n : str(n),
             lambda n : None
             ]
