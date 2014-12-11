@@ -360,7 +360,8 @@ class FnoteData(QObject):
             this_anchor_line = self._cursor_start_line( anchor_tc )
             j = 0
             while j < len(self.the_list) : # old-fashioned loop
-                if this_anchor_line <= self._cursor_start_line( self.the_list[j-1][0] ) :
+                that_anchor_line = self._cursor_start_line( self.the_list[j][0] )
+                if this_anchor_line <= that_anchor_line :
                     break
                 j += 1
             self.the_list.insert( j, [anchor_tc, None] )
