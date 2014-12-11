@@ -219,7 +219,7 @@ KeyClass_sym = 5
 #
 class FnoteData(QObject):
     # The signal emitted upon complete metadata load
-    FnotesLoaded = pyqtSignal()
+    FootNotesLoaded = pyqtSignal()
 
     def __init__(self, my_book) :
         super().__init__(None)
@@ -384,6 +384,8 @@ class FnoteData(QObject):
         #
         self.count_of_unpaired_keys = len(orphan_anchors_list) + len(notes_list)
         progresso.reset()
+        if self.count() : # there were some footnotes
+            self.FootNotesLoaded.emit() # tell the view panel.
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Metadata writing and reading.
@@ -442,6 +444,9 @@ class FnoteData(QObject):
             except:
                 fnotdata_logger.error(
                     'FOOTNOTES metadata item is invalid, ignoring: {}'.format(item) )
+        # end for item in value
+        if self.count() : # there were some footnotes
+            self.FootNotesLoaded.emit() # tell the view panel.
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Analysis methods to get values from text cursor selections. These are
