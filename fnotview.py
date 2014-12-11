@@ -129,8 +129,8 @@ COL_ALIGNMENT = {
 # TODO: can we compute this from the header???
 MAX_NOTE_TEXT = 40
 # Values that make us display a matched note with a green background
-SUSPICIOUS_NOTE_SIZE = 30
-SUSPICIOUS_NOTE_DISTANCE = 30
+SUSPICIOUS_NOTE_SIZE = 10
+SUSPICIOUS_NOTE_DISTANCE = 50
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
