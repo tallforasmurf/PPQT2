@@ -209,7 +209,7 @@ class FnoteTableModel(QAbstractTableModel):
         # Now, what was it you wanted?
         if role == Qt.DisplayRole : # wants actual data
             if   col == 0 : return self.data.key(row)
-            elif col == 1 : return self.data.key_class(row)
+            elif col == 1 : return key_class_names[self.data.key_class(row)]
             elif col == 2 : return self.anchor_line
             elif col == 3 : return self.note_line
             elif col == 4 : return self.note_size
