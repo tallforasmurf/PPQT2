@@ -405,7 +405,7 @@ class FnotePanel(QWidget):
                 )
             expl = _TR(
                 'Footnote panel info message',
-                'There are %n unmatched Anchors and Notes.',m)
+                'There are %n unmatched Anchors and Notes.',n=m)
             utilities.warning_msg(emsg,expl,self)
         return m == 0
 
