@@ -70,6 +70,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
     )
+import logging
+fnotview_logger = logging.getLogger(name='fnotview')
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
@@ -445,8 +447,13 @@ class FnotePanel(QWidget):
                 if new_key is not None :
                     self.data.set_key(j, new_key, worktc)
             # end of for j in range of keys
+        except Exception as whatever:
+            fnotview_logger.error(
+                'Unexpected error renumbering footnotes: {}'.format(whatever.args)
+                )
         finally:
             worktc.endEditBlock
+        self.model.endResetModel()
     # end of do_renumber
 
     # For do_move, first make sure there are no mismatches. Then
@@ -465,7 +472,20 @@ class FnotePanel(QWidget):
                 'A Footnote zone is defined by "/F" and "F/" lines.' )
             utilities.warning_msg(emsg,expl,self)
             return
-        self.data.move_notes()
+        # create a working cursor and start an undo macro on it.
+        worktc = self.edit_view.get_cursor()
+        worktc.beginEditBlock()
+        # Do the actual work inside a try-finally block so as to be sure
+        # that the Edit Block is ultimately closed.
+        try :
+            self.data.move_notes(worktc)
+            self.do_refresh()
+        except Exception as whatever:
+            fnotview_logger.error(
+                'Unexpected error moving footnotes: {}'.format(whatever.args)
+                )
+        finally :
+            worktc.endEditBlock()
 
     #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Set-up functions for initializing the UI elements.
