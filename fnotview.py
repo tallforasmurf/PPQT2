@@ -393,9 +393,9 @@ class FnotePanel(QWidget):
     # are just going to do the refresh, and not try to figure out if
     # we really need to.
 
-    # subroutine to refresh (since some mismatches might have been fixed
-    # since the last one), check for unmatched notes, and if there are any,
-    # issue an error message and return False.
+    # subroutine to do a refresh -- because mismatches might have been fixed
+    # (or created!) since the last refresh -- then check for unmatched notes,
+    # and if there are any, issue an error message and return False.
 
     def _can_we_do_this(self):
         self.do_refresh()
@@ -411,6 +411,10 @@ class FnotePanel(QWidget):
             utilities.warning_msg(emsg,expl,self)
         return m == 0
 
+    # All cursors maintained by the data model are kept accurate during
+    # the set_key() operation so there is no need to refresh after this
+    # operation. Just tell the table to reset itself at the end.
+
     def do_renumber(self):
         if not self._can_we_do_this() : return
         # clear the number streams
@@ -420,8 +424,8 @@ class FnotePanel(QWidget):
         # create a working cursor and start an undo macro on it.
         worktc = self.edit_view.get_cursor()
         worktc.beginEditBlock()
-        # Do the actual work inside a try-finally block so as to be sure
-        # that the Edit Block is ultimately closed.
+        # Do the actual work inside a try-except block so as to be sure that
+        # the EditBlock is ultimately closed.
         try :
             for j in range(self.data.count()):
                 old_key = self.data.key(j)
@@ -451,14 +455,17 @@ class FnotePanel(QWidget):
             fnotview_logger.error(
                 'Unexpected error renumbering footnotes: {}'.format(whatever.args)
                 )
-        finally:
-            worktc.endEditBlock
+        worktc.endEditBlock()
         self.model.endResetModel()
     # end of do_renumber
 
-    # For do_move, first make sure there are no mismatches. Then
-    # have the database look for footnote zones. If it finds at least 1,
-    # tell it to go ahead and do the move.
+    # For do_move, first make sure there are no mismatches. Then have the
+    # database look for footnote zones. If it finds at least 1, tell it to go
+    # ahead and do the move.
+    #
+    # After the move, we must do a refresh because anchor-cursors for Anchors
+    # that are embedded in a Note that gets moved, are now invalid, and the
+    # only way to restore them is to refresh.
 
     def do_move(self):
         if not self._can_we_do_this() : return
@@ -479,13 +486,12 @@ class FnotePanel(QWidget):
         # that the Edit Block is ultimately closed.
         try :
             self.data.move_notes(worktc)
-            self.do_refresh()
         except Exception as whatever:
             fnotview_logger.error(
                 'Unexpected error moving footnotes: {}'.format(whatever.args)
                 )
-        finally :
-            worktc.endEditBlock()
+        worktc.endEditBlock()
+        self.do_refresh()
 
     #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Set-up functions for initializing the UI elements.

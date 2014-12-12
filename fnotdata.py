@@ -558,8 +558,10 @@ class FnoteData(QObject):
     # different length from the old, update the cursors after the
     # modifications.
 
-    def set_key(self, n, new_key, work_tc):
-        [anchor_tc, note_tc] = self.the_list[n]
+    def set_key(self, j, new_key, work_tc):
+        [anchor_tc, note_tc] = self.the_list[j]
+        old_key = anchor_tc.selectedText()
+        key_len_diff = len(new_key) - len(old_key)
         # Update the Anchor
         anchor_start = anchor_tc.selectionStart()
         work_tc.setPosition( anchor_start, QTextCursor.MoveAnchor )
@@ -568,8 +570,9 @@ class FnoteData(QObject):
         # Reset the anchor_tc to select the replaced Key
         anchor_tc.setPosition( anchor_start, QTextCursor.MoveAnchor )
         anchor_tc.setPosition( anchor_start+len(new_key), QTextCursor.KeepAnchor )
-        # Update the Note. Extract its full text.
+        # Update the Note. First, extract its full text as a Python string.
         note_text = note_tc.selectedText()
+        note_start = note_tc.selectionStart()
         # Locate the key as group(1) of a match against the Note
         #  [Footnote xiv: ...]
         #  start(1)--^  ^--end(1)
@@ -578,6 +581,9 @@ class FnoteData(QObject):
         work_tc.setPosition( note_tc.selectionStart() + match.start(1), QTextCursor.MoveAnchor )
         work_tc.setPosition( note_tc.selectionStart() + match.end(1), QTextCursor.KeepAnchor )
         work_tc.insertText( new_key ) # replace the key in the note
+        # Reposition the note_tc to account for a change in the length of the key.
+        note_tc.setPosition( note_start, QTextCursor.MoveAnchor )
+        note_tc.setPosition( note_start + len(note_text) + key_len_diff, QTextCursor.KeepAnchor )
 
     # record the zones as a list of lists, [tcA, tcZ] where
     # the cursors have this relationship:
@@ -609,6 +615,9 @@ class FnoteData(QObject):
     # We assume fnotview will call for a refresh before this operation, and
     # will not call it if there are mismatches or if the list is empty.
     #
+    # Also assume that fnotview will call for a refresh after this operation
+    # in order to correct the anchor cursors of embedded footnotes.
+    #
     # The move logic needs to be a single undo operation. That means all text
     # changes have to go through a single QTextCursor, work_tc, which is
     # passed as a parameter.
@@ -616,6 +625,7 @@ class FnoteData(QObject):
     # TODO: need progress bar???
 
     def move_notes(self, work_tc):
+        #dbg = 0 #DBG
         for [anchor_tc, note_tc] in self.the_list :
             note_line = self._cursor_end_line(note_tc)
             # find the next zone that starts below the note
@@ -647,6 +657,8 @@ class FnoteData(QObject):
             # Set note_tc to point to the new location, just above tcZ.
             note_tc.setPosition(tcZ.position() - len(note_text) - 2)
             note_tc.setPosition(tcZ.position() - 1,QTextCursor.KeepAnchor)
+            #dbg += 1
+            #if dbg == 7 : break # DBG
         # end for notes in the_list
     # end move_notes
 
