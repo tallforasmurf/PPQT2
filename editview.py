@@ -555,23 +555,25 @@ class EditView( QWidget ):
             editview_logger.error('Request to show invalid line number {0}'.format(lnum_string))
 
     # Go to line number: called from the Footnotes panel. Position at
-    # a particular text block by number (origin-0).
+    # a particular text block by number (origin-0). Allows -1 to mean
+    # end of file.
 
     def go_to_line(self, line_number):
         try:
             tb = self.document.findBlockByLineNumber(line_number)
-            if not tb.isValid() : raise ValueError
-            self.go_to_block(tb)
+            if not tb.isValid() :
+                tb = self.document.end()
+                if line_number != -1 :
+                    raise ValueError
         except ValueError: # bad line_number
-            utilities.beep()
             editview_logger.error('Request to show invalid line number {0}'.format(line_number))
+        self.go_to_block(tb) # regardless
 
     # Position the cursor at the head of a given QTextBlock (line)
     # and get the focus. Does not assume tb is a valid textblock.
 
     def go_to_block(self, tb):
         if not tb.isValid():
-            utilities.beep()
             editview_logger.error('Request to show invalid text block')
             tb = self.document.lastBlock()
         self.show_position(tb.position())
