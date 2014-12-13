@@ -40,15 +40,15 @@ At this time there are three:
     named bookloupe in this system. If it has not been set
     explicitly it is the null string.
 
-The user sets these paths using the Preferences or other dialog. No dialog
-will permit any to be set to an invalid path (unreadable or nonexistent --
-see check_path() below), but will permit a null string. Moreover a valid path
-could *become* inaccessible between shutdown and startup.
+The user sets these paths using the Preferences dialog. It must not permit
+any to be set to an invalid path (unreadable or nonexistent -- see
+check_path() below), but may permit a null string.
 
-So we have to assume that the values in settings could be null strings or
-could be invalid (which will be treated as null strings).
+However a valid path in the settings could become inaccessible between
+shutdown and startup. So we have to assume that the values in settings could
+be null strings or could be invalid (which will be treated as null strings).
 
-A null string for the extras path is "corrected" to the app's folder plus
+A null string or invalid extras path is "corrected" to the app's folder plus
 '/extras', or to the CWD if that is not readable.
 
 A null string for the dicts path is set to extras/dicts if that exists, else
@@ -78,7 +78,7 @@ The following functions are offered:
 
     set_dicts_path()
     set_loupe_path()
-    set_extras_path() are called from Preferences or other dialog TODO.
+    set_extras_path() are called from Preferences to set new choices.
 
 '''
 
@@ -151,8 +151,6 @@ def initialize(settings):
     paths_logger.debug('initial dicts path is ' + _DICTS)
 
 def shutdown(settings):
-    global _DICTS, _EXTRAS, _LOUPE
-
     paths_logger.debug('paths saving loupe: ' + _LOUPE)
     settings.setValue("paths/loupe_path",_LOUPE)
     paths_logger.debug('paths saving extras: ' + _EXTRAS)
@@ -164,20 +162,17 @@ def shutdown(settings):
 # string although it might the fairly-useless cwd.
 
 def get_extras_path():
-    global _EXTRAS
     return str(_EXTRAS)
 
 # Return the current path to dictionaries or a null string if none is
 # currently known.
 
 def get_dicts_path():
-    global _DICTS
     return str(_DICTS)
 
 # Return the current value of the bookloupe executable or a null string.
 
 def get_loupe_path():
-    global _LOUPE
     return str(_LOUPE)
 
 # Set some user-selected path. In each case assume the caller used
