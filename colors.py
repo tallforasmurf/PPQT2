@@ -51,7 +51,7 @@ The following are interrogated by an editview:
                         color of the current line.
 
     get_find_range_brush() Return a QBrush to use for the background
-                         color a limited find range.
+                         color of a limited find range.
 
 The following are used by the Preferences dialog:
 
@@ -183,19 +183,15 @@ def get_modified_color():
     return QColor(_MFD_COLOR)
 
 def get_current_line_brush():
-    global _CL_COLOR
     return QBrush(_CL_COLOR)
 
 def get_find_range_brush():
-    global _FR_COLOR
     return QBrush(_FR_COLOR)
 
 def get_scanno_format():
-    global _SNO_COLOR, _SNO_STYLE
     return _make_format(_SNO_COLOR, _SNO_STYLE)
 
 def get_spelling_format():
-    global _SPU_COLOR, _SPU_STYLE
     return _make_format(_SPU_COLOR,_SPU_STYLE)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
