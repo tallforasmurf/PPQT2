@@ -157,7 +157,6 @@ def initialize(settings):
     _MONO_QFONT = QFont(_MONO_FAMILY,_MONO_SIZE)
 
 def shutdown(settings):
-    global _GENL_SIZE,_MONO_SIZE,_GENL_FAMILY,_MONO_FAMILY
     fonts_logger.debug('fonts:saving settings')
     settings.setValue('fonts/general_family',_GENL_FAMILY)
     settings.setValue('fonts/mono_family',_MONO_FAMILY)
@@ -168,13 +167,11 @@ def shutdown(settings):
 # logic, who knows, but for now they just access the above globals.
 
 def get_fixed(point_size=None):
-    global _MONO_QFONT, _MONO_SIZE
     qf_mono = QFont(_MONO_QFONT)
     qf_mono.setPointSize(_MONO_SIZE if point_size is None else point_size)
     return qf_mono
 
 def get_general(point_size=None):
-    global _GENL_QFONT, _GENL_SIZE
     qf_general = QFont(_GENL_QFONT)
     qf_general.setPointSize(_GENL_SIZE if point_size is None else point_size)
     return qf_general
@@ -184,7 +181,6 @@ def get_general(point_size=None):
 # font size range.
 
 def scale(zoom_key, qfont ) :
-    global POINT_SIZE_MAXIMUM, POINT_SIZE_MINIMUM
     if zoom_key in C.KEYS_ZOOM :
         pts = qfont.pointSize()
         pts += (-1 if zoom_key == C.CTL_MINUS else 1)
@@ -197,7 +193,10 @@ def scale(zoom_key, qfont ) :
     return qfont
 
 # The following are for use from the Preferences dialog.
-# TODO: could this use QFontComboBox?
+#
+# todo? Nope. could this use QFontComboBox? No it could not, because that's a
+# drop-down not a full dialog. However the preferences dialog could use
+# QFontComboBox instead of calling this method.
 
 def choose_font(mono=True, parent=None):
     fonts_logger.debug('choose_font mono={0}'.format(mono))
@@ -216,7 +215,6 @@ def choose_font(mono=True, parent=None):
     else: return None
 
 def set_fixed(qfont):
-    global _MONO_FAMILY,_MONO_QFONT,_MONO_SIZE
     fonts_logger.debug('fonts:set_fixed')
     if qfont.family() != _MONO_FAMILY or qfont.pointSize() != _MONO_SIZE :
         # mono font is changing family a/o size
@@ -226,7 +224,6 @@ def set_fixed(qfont):
         _emit_signal(True)
 
 def set_general(qfont):
-    global _GENL_FAMILY,_GENL_QFONT,_GENL_SIZE
     fonts_logger.debug('fonts:set_general')
     if qfont.family() != _GENL_FAMILY or qfont.pointSize() != _GENL_SIZE :
         # general font is changing
