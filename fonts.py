@@ -102,10 +102,10 @@ class FontSignaller(QObject):
 _SIGNALLER = FontSignaller()
 
 def notify_me(slot):
-    fonts_logger.debug('Connecting fontChange signal to {}'.format(slot.__name__))
+    fonts_logger.info('Connecting fontChange signal to {}'.format(slot.__name__))
     _SIGNALLER.connect(slot)
 def _emit_signal(boola):
-    fonts_logger.debug('Emitting fontChange signal({})'.format(boola) )
+    fonts_logger.info('Emitting fontChange signal({})'.format(boola) )
     _SIGNALLER.send(boola)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -139,7 +139,7 @@ _GENL_QFONT = QFont()
 
 def initialize(settings):
     global _FONT_DB,_GENL_SIZE,_MONO_SIZE,_GENL_FAMILY,_MONO_FAMILY,_GENL_QFONT,_MONO_QFONT
-    fonts_logger.debug('Fonts initializing')
+    fonts_logger.info('Fonts initializing')
     # get the name of the font family the DB thinks is the default UI font
     general_family = _FONT_DB.systemFont(QFontDatabase.GeneralFont).family()
     # default to the name of our preferred font (which we know exists)
@@ -157,7 +157,7 @@ def initialize(settings):
     _MONO_QFONT = QFont(_MONO_FAMILY,_MONO_SIZE)
 
 def shutdown(settings):
-    fonts_logger.debug('fonts:saving settings')
+    fonts_logger.info('fonts:saving settings')
     settings.setValue('fonts/general_family',_GENL_FAMILY)
     settings.setValue('fonts/mono_family',_MONO_FAMILY)
     settings.setValue('fonts/general_size',_GENL_SIZE)
@@ -199,7 +199,7 @@ def scale(zoom_key, qfont ) :
 # QFontComboBox instead of calling this method.
 
 def choose_font(mono=True, parent=None):
-    fonts_logger.debug('choose_font mono={0}'.format(mono))
+    fonts_logger.info('choose_font mono={0}'.format(mono))
     if mono :
         caption = _TR('fonts.py',
                       'Select a monospaced font for editing'
@@ -215,7 +215,7 @@ def choose_font(mono=True, parent=None):
     else: return None
 
 def set_fixed(qfont):
-    fonts_logger.debug('fonts:set_fixed')
+    fonts_logger.info('fonts:set_fixed')
     if qfont.family() != _MONO_FAMILY or qfont.pointSize() != _MONO_SIZE :
         # mono font is changing family a/o size
         _MONO_QFONT = QFont(qfont) # copy the argument
@@ -224,7 +224,7 @@ def set_fixed(qfont):
         _emit_signal(True)
 
 def set_general(qfont):
-    fonts_logger.debug('fonts:set_general')
+    fonts_logger.info('fonts:set_general')
     if qfont.family() != _GENL_FAMILY or qfont.pointSize() != _GENL_SIZE :
         # general font is changing
         _GENL_QFONT = QFont(qfont)
