@@ -29,18 +29,22 @@ This module is imported by mainwindow on startup, when it calls
 initialize(). The services offered are designed so that other widgets
 don't have to know about the QFont/QFontInfo API.
 
-    notify_me(slot) sets the caller's slot to receive the fontChanged
-        signal, emitted when the user changes the general or fixed
-        font preference.
-
-    POINT_SIZE_MINIMUM static constants that limit font zoom range.
-    POINT_SIZE_MAXIMUM
+The following are called from the mainwindow:
 
     initialize(settings) creates a font database, makes sure it has
         our favorite Liberation Mono font, and identifies the user's
         preferred monospaced and general fonts from settings.
 
     shutdown(settings) saves current font choices in the settings.
+
+The following are called by widgets that allow font changes:
+
+    notify_me(slot) sets the caller's slot to receive the fontChanged
+        signal, emitted when the user changes the general or fixed
+        font preference.
+
+    POINT_SIZE_MINIMUM static constants that limit font zoom range.
+    POINT_SIZE_MAXIMUM
 
     get_fixed() returns a QFont for the selected monospaced font
         at a specified or default point size.
@@ -50,6 +54,8 @@ don't have to know about the QFont/QFontInfo API.
 
     scale() scales the size of a font up or down 1 point and returns the
         modified QFont.
+
+The following are called by the Preferences dialog:
 
     choose_font() puts up a font-choice dialog for fixed or general
         and returns the choice, or None if the user cancels.
@@ -62,6 +68,8 @@ don't have to know about the QFont/QFontInfo API.
     set_general(qf) set the user's choice of UI font, and if it is
         a change, emits the fontChanged(False) signal. This is probably
         only handled by the main window object.
+
+    set_defaults() returns to the default families and sizes.
 
 Signal generation: in the new PyQt5 signal/slot API, a signal is an attribute
 of a class. This module is mostly "static global" methods, but it needs to
