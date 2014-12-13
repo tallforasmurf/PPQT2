@@ -24,59 +24,38 @@ __email__ = "tallforasmurf@yahoo.com"
 '''
 Unit test for paths.py.
 '''
-
-import io
-log_stream = io.StringIO()
-import logging
-logging.basicConfig(stream=log_stream,level=logging.DEBUG)
-def check_log(text, level):
-    '''check that the log_stream contains the given text at the given level,
-       and rewind the log, then return T/F'''
-    global log_stream
-    level_dict = {logging.DEBUG:'DEBUG',
-                  logging.INFO:'INFO',
-                  logging.WARN:'WARN',
-                  logging.ERROR:'ERROR',
-                  logging.CRITICAL:'CRITICAL'}
-    log_data = log_stream.getvalue()
-    x = log_stream.seek(0)
-    x = log_stream.truncate()
-    return (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
-# add .. dir to sys.path so we can import ppqt modules which
-# are up one directory level
-import sys
+import test_boilerplate as T
+T.set_up_paths()
+T.make_app()
 import os
-my_path = os.path.realpath(__file__)
-test_path = os.path.dirname(my_path)
-files_path = os.path.join(test_path,'Files')
-ppqt_path = os.path.dirname(test_path)
-sys.path.append(ppqt_path)
-from PyQt5.QtWidgets import QApplication
-app = QApplication(sys.argv)
-app.setOrganizationName("PGDP")
-app.setOrganizationDomain("pgdp.net")
-app.setApplicationName("PPQT2")
-from PyQt5.QtCore import QSettings
-settings = QSettings()
+import logging
 import constants as C
 import paths
-
+T.settings.clear()
+# test readable folder
+test_path = T.path_to_Files
 assert paths.check_path(test_path)
+# nonexistent file
 assert not paths.check_path(os.path.join(test_path,'arglebargle'))
-assert not paths.check_path(os.path.join(files_path,'unreadable.aff'))
+# file that has the read perms turned off
+assert not paths.check_path(os.path.join(test_path,'unreadable.aff'))
 
-settings.clear()
-paths.initialize(settings)
+paths.initialize(T.settings)
+
 # with null settings, extras defaults to cwd = test_path
-check_log('initial extras path is '+test_path ,logging.DEBUG)
+assert T.check_log('initial extras path is '+test_path ,logging.INFO)
 assert paths.get_extras_path() == test_path
 assert paths.get_dicts_path() == ''
-assert paths.get_loupe_path() == ''
+# check assuming bookloupe is installed
+if C.PLATFORM_IS_WIN:
+    assert paths.get_loupe_path() == '' # TODO FIX WHEN KNOWN
+else:
+    assert paths.get_loupe_path() == '/usr/local/bin/bookloupe'
 # point settings to an extras, expect dicts to follow
-test_extras = os.path.join(files_path,'extras')
-settings.setValue("paths/extras_path", test_extras)
-paths.initialize(settings)
-check_log('initial extras path is '+test_extras ,logging.DEBUG)
+test_extras = os.path.join(T.path_to_Files,'extras')
+T.settings.setValue("paths/extras_path", test_extras)
+paths.initialize(T.settings)
+assert T.check_log('initial extras path is '+test_extras ,logging.INFO)
 assert paths.get_extras_path() == test_extras
 test_dicts = os.path.join(test_extras,'dicts')
 assert paths.get_dicts_path() == test_dicts
@@ -85,11 +64,11 @@ test_loupe = os.path.join(test_extras,'bookloupe.exe') # which doesn't exist
 paths.set_loupe_path(test_loupe)
 assert paths.get_loupe_path() == test_loupe
 # test shutdown
-settings.clear()
-paths.shutdown(settings)
-assert settings.value("paths/extras_path",'wrong') == test_extras
-assert settings.value("paths/dicts_path",'wrong') == test_dicts
-assert settings.value("paths/loupe_path",'wrong') == test_loupe
+T.settings.clear()
+paths.shutdown(T.settings)
+assert T.settings.value("paths/extras_path",'wrong') == test_extras
+assert T.settings.value("paths/dicts_path",'wrong') == test_dicts
+assert T.settings.value("paths/loupe_path",'wrong') == test_loupe
 # set bad values because paths expects caller to verify validity
 dummy_dicts = '/some/where/dicts'
 paths.set_dicts_path(dummy_dicts)
@@ -101,9 +80,9 @@ assert paths.get_dicts_path() == dummy_dicts
 assert paths.get_extras_path() == dummy_extras
 assert paths.get_loupe_path() == dummy_loupe
 # shut down with those bad values
-paths.shutdown(settings)
+paths.shutdown(T.settings)
 # start up with bad values, expect defaults
-paths.initialize(settings)
+paths.initialize(T.settings)
 assert paths.get_extras_path() == test_path # bad path -> cwd
 assert paths.get_dicts_path() == '' # bad path -> null
 assert paths.get_loupe_path() == '' # bad path -> null
