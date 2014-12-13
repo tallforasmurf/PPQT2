@@ -76,9 +76,12 @@ The following functions are offered:
     check_path(path) test that a path exists and is readable,
     returning True if so, else False.
 
+    The following are called from the Preferences dialog:
+
+    set_defaults() is called when initializing and from Preferences
     set_dicts_path()
     set_loupe_path()
-    set_extras_path() are called from Preferences to set new choices.
+    set_extras_path()
 
 '''
 
@@ -92,7 +95,8 @@ _DICTS = ''
 _EXTRAS = ''
 _LOUPE = ''
 
-# Note that os.access('',F_OK) returns False
+# Validate a path as readable or executable.
+# Note that os.access('',F_OK) returns False.
 
 def check_path(path, executable=False):
     if executable :
@@ -100,62 +104,75 @@ def check_path(path, executable=False):
     # else not checking executable-ness only readability
     return os.access( path ,os.F_OK ) and os.access( path, os.R_OK )
 
+# Set the default paths as best we can knowing nothing.
+
+def set_defaults():
+    global _DICTS, _EXTRAS, _LOUPE
+    # Default for the Loupe path is platform-dependent.
+    if C.PLATFORM_IS_WIN :
+        # TODO: where does bookloupe install on awindows??
+        candidate = ''
+    else : # Mac, Linux likely location
+        candidate = '/usr/local/bin/bookloupe'
+    if not check_path(candidate, executable=True) :
+        candidate = ''
+    _LOUPE = candidate
+    # Default for the Extras path is our-folder/extras
+    if hasattr(sys, 'frozen') : # bundled by pyinstaller/cxfreeze/pyqtdeploy?
+        my_folder = os.path.dirname(sys.executable)
+    else: # running from command line or an IDE
+        my_folder = os.path.dirname(__file__)
+    candidate = os.path.join(my_folder,'extras')
+    if not check_path( candidate ) :
+        # extras folder not found, fall back to CWD
+        candidate = os.getcwd()
+    _EXTRAS = candidate
+    # Default for dicts path is Extras/dicts, if it exists, else null
+    candidate = os.path.join( _EXTRAS, 'dicts' )
+    if not check_path( candidate ) :
+        candidate = ''
+
+# Starting up: set the default paths based on our current environment,
+# then load saved settings if they exist.
+
 def initialize(settings):
     global _DICTS, _EXTRAS, _LOUPE
-    paths_logger.debug('paths initializing')
-    # Recover save bookloupe path if any. If none, try a likely
-    # place. If that fails, leave it the null string.
-    candidate = settings.value("paths/loupe_path",'')
+    paths_logger.info('paths initializing')
+    set_defaults()
+    # Recover save bookloupe path if any, else the default.
+    candidate = settings.value( "paths/loupe_path", _LOUPE )
     if not check_path(candidate,executable=True):
-        # Try to default to a reasonable fall-back
-        if C.PLATFORM_IS_WIN :
-            # TODO: reasonable fallback path for windows??
-            candidate = ''
-        else : # Mac, Linux likely location
-            candidate = '/usr/local/bin/bookloupe'
-        if not check_path(candidate, executable=True) :
-            candidate = '' # Nope, that isn't it
+        candidate = '' # no-longer-valid path from settings
     _LOUPE = candidate
-    paths_logger.debug('initial loupe path is ' + _LOUPE)
+    paths_logger.info('initial loupe path is ' + _LOUPE)
 
-    # Recover extras path if any
-    candidate = settings.value("paths/extras_path",'')
-    if not check_path(candidate):
-        # extras_path is not in the settings (maybe a new installation?) or
-        # is not a valid path. Set it to a default based on the location of
-        # this app, which we get different ways depending on whether we are
-        # running in development or bundled by pyinstaller or pyqtdeploy.
-        if hasattr(sys, 'frozen') : # bundled by pyinstaller/cxfreeze/pyqtdeploy?
-            my_folder = os.path.dirname(sys.executable)
-        else: # running from command line or an IDE
-            my_folder = os.path.dirname(__file__)
-        candidate = os.path.join(my_folder,'extras')
-        if not check_path( candidate ) :
-            # extras folder not found, fall back to CWD
-            candidate = os.getcwd()
-    _EXTRAS = candidate
+    # Recover saved extras path if any, else leave the default.
+    candidate = settings.value( "paths/extras_path", _EXTRAS )
+    if check_path(candidate):
+        # extras_path is in the settings and valid.
+        _EXTRAS = candidate
     # At this point we have a valid, non-null path string in _EXTRAS
-    paths_logger.debug('initial extras path is ' + _EXTRAS)
+    paths_logger.info('initial extras path is ' + _EXTRAS)
 
-    # Examine the dicts path similarly.
-    candidate = settings.value("paths/dicts_path",'')
+    # Recover the saved dicts path if any, else try to find
+    # one in the newly-set Extras, else leave null.
+    candidate = settings.value( "paths/dicts_path", _DICTS )
     if not check_path(candidate):
-        # Empty or invalid path string for dicts_path, try to
-        # 'correct' it to extras/dicts if that exists.
+        # Either the saved path is no longer good, or _DICTS was
+        # defaulted to null string. But possibly we just set a
+        # new _EXTRAS, so try one more time.
         candidate = os.path.join( _EXTRAS, 'dicts' )
         if not check_path( candidate ) :
-            # Nope, do not see extras/dicts. Just in case the
-            # settings contained a non-null bad path, make it null
             candidate = ''
     _DICTS = candidate
-    paths_logger.debug('initial dicts path is ' + _DICTS)
+    paths_logger.info('initial dicts path is ' + _DICTS)
 
 def shutdown(settings):
-    paths_logger.debug('paths saving loupe: ' + _LOUPE)
+    paths_logger.info('paths saving loupe: ' + _LOUPE)
     settings.setValue("paths/loupe_path",_LOUPE)
-    paths_logger.debug('paths saving extras: ' + _EXTRAS)
+    paths_logger.info('paths saving extras: ' + _EXTRAS)
     settings.setValue("paths/extras_path",_EXTRAS)
-    paths_logger.debug('paths saving dicts: ' + _DICTS)
+    paths_logger.info('paths saving dicts: ' + _DICTS)
     settings.setValue("paths/dicts_path",_DICTS)
 
 # Return the current path to the extras. This should never be a null
@@ -180,15 +197,15 @@ def get_loupe_path():
 
 def set_loupe_path(path):
     global _LOUPE
-    paths_logger.debug('setting loupe path to: ' + path)
+    paths_logger.info('setting loupe path to: ' + path)
     _LOUPE = str(path)
 
 def set_dicts_path(path):
     global _DICTS
-    paths_logger.debug('setting dicts path to: ' + path)
+    paths_logger.info('setting dicts path to: ' + path)
     _DICTS = str(path)
 
 def set_extras_path(path):
     global _EXTRAS
-    paths_logger.debug('setting extras path to: ' + path)
+    paths_logger.info('setting extras path to: ' + path)
     _EXTRAS = str(path)
