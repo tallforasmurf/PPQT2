@@ -26,40 +26,11 @@ Unit test for colors.py. Originally it wasn't going to need a unit test
 driver, just using it from mainwindow would be enough, but it has
 acquired a lot of behavior.
 '''
-
-import io
-log_stream = io.StringIO()
+import test_boilerplate as T
 import logging
-logging.basicConfig(stream=log_stream,level=logging.INFO)
-def check_log(text, level):
-    '''check that the log_stream contains the given text at the given level,
-       and rewind the log, then return T/F'''
-    global log_stream
-    level_dict = {logging.DEBUG:'DEBUG',
-                  logging.INFO:'INFO',
-                  logging.WARN:'WARN',
-                  logging.ERROR:'ERROR',
-                  logging.CRITICAL:'CRITICAL'}
-    log_data = log_stream.getvalue()
-    x = log_stream.seek(0)
-    x = log_stream.truncate()
-    return (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
-# add .. dir to sys.path so we can import ppqt modules which
-# are up one directory level
-import sys
-import os
-my_path = os.path.realpath(__file__)
-test_path = os.path.dirname(my_path)
-files_path = os.path.join(test_path,'Files')
-ppqt_path = os.path.dirname(test_path)
-sys.path.append(ppqt_path)
-from PyQt5.QtWidgets import QApplication
-app = QApplication(sys.argv)
-app.setOrganizationName("PGDP")
-app.setOrganizationDomain("pgdp.net")
-app.setApplicationName("PPQT2")
-from PyQt5.QtCore import QSettings
-settings = QSettings()
+T.set_up_paths()
+T.make_app()
+
 import constants as C
 import colors
 from PyQt5.QtGui import (QColor,QBrush, QTextCharFormat)
@@ -67,16 +38,18 @@ from PyQt5.QtGui import (QColor,QBrush, QTextCharFormat)
 # check initialize
 # check defaults on empty settings
 
-settings.clear()
-colors.initialize(settings)
-colors.shutdown(settings)
-assert settings.value('colors/spell_color') == '#ff00ff' # == magenta
-assert settings.value('colors/spell_style') == QTextCharFormat.WaveUnderline
-assert settings.value('colors/scanno_color') == '#d8bfd8' # == 'thistle'
-assert settings.value('colors/scanno_style') == QTextCharFormat.NoUnderline
-assert settings.value('colors/current_line') == '#fafae0'
-assert settings.value('colors/find_range') == "#ccffff"
-assert settings.value('colors/modified_name') == '#ff0000' # == 'red'
+T.settings.clear()
+colors.initialize(T.settings)
+colors.shutdown(T.settings)
+assert T.settings.value('colors/spell_color') == '#ff00ff' # == magenta
+assert T.settings.value('colors/spell_style') == QTextCharFormat.WaveUnderline
+assert T.settings.value('colors/scanno_color') == '#d8bfd8' # == 'thistle'
+assert T.settings.value('colors/scanno_style') == QTextCharFormat.NoUnderline
+assert T.settings.value('colors/current_line') == '#fafae0'
+assert T.settings.value('colors/current_line_style') == QTextCharFormat.NoUnderline
+assert T.settings.value('colors/find_range') == "#ccffff"
+assert T.settings.value('colors/find_range_style') == QTextCharFormat.NoUnderline
+assert T.settings.value('colors/modified_name') == '#ff0000' # == 'red'
 
 # make some changes
 SIGCOUNT = 0
@@ -89,17 +62,24 @@ colors.set_modified_color(QColor('#101010'))
 assert SIGCOUNT == 1
 assert colors.get_modified_color().name() == '#101010'
 
-colors.set_current_line_color(QColor('#202020'))
+qtcf = QTextCharFormat()
+qtcf.setUnderlineStyle(QTextCharFormat.WaveUnderline)
+qtcf.setUnderlineColor(QColor('#202020'))
+colors.set_current_line_format(qtcf)
 assert SIGCOUNT == 2
-qb = colors.get_current_line_brush()
-assert type(qb) == type(QBrush())
-assert '#202020' == qb.color().name()
+s0cf = QTextCharFormat()
+colors.get_current_line_format(s0cf)
+assert '#202020' == s0cf.underlineColor().name()
+assert s0cf.underlineStyle() == QTextCharFormat.WaveUnderline
 
-colors.set_find_range_color(QColor('#303030'))
+s0cf.setUnderlineStyle(QTextCharFormat.NoUnderline)
+s0cf.setBackground(QColor('#303030'))
+colors.set_find_range_format(s0cf)
 assert SIGCOUNT == 3
-qb = colors.get_find_range_brush()
-assert type(qb) == type(QBrush())
-assert '#303030' == qb.color().name()
+s0cf = QTextCharFormat()
+colors.get_find_range_format(s0cf)
+assert '#303030' == s0cf.background().color().name()
+assert s0cf.underlineStyle() == QTextCharFormat.NoUnderline
 
 s1cf = QTextCharFormat()
 s1cf.setUnderlineStyle(QTextCharFormat.DashDotDotLine)
@@ -119,16 +99,16 @@ s4cf = colors.get_spelling_format()
 assert s4cf.underlineStyle() == QTextCharFormat.DashUnderline
 assert s4cf.underlineColor().name() == '#404040'
 
-colors.shutdown(settings)
-assert settings.value('colors/spell_color') == '#404040' # == magenta
-assert settings.value('colors/spell_style') == QTextCharFormat.DashUnderline
-assert settings.value('colors/scanno_color') == '#303030' # == 'thistle'
-assert settings.value('colors/scanno_style') == QTextCharFormat.DashDotDotLine
-assert settings.value('colors/current_line') == '#202020'
-assert settings.value('colors/find_range') == '#303030'
-assert settings.value('colors/modified_name') == '#101010' # == 'red'
+colors.shutdown(T.settings)
+assert T.settings.value('colors/spell_color') == '#404040' # == magenta
+assert T.settings.value('colors/spell_style') == QTextCharFormat.DashUnderline
+assert T.settings.value('colors/scanno_color') == '#303030' # == 'thistle'
+assert T.settings.value('colors/scanno_style') == QTextCharFormat.DashDotDotLine
+assert T.settings.value('colors/current_line') == '#202020'
+assert T.settings.value('colors/find_range') == '#303030'
+assert T.settings.value('colors/modified_name') == '#101010' # == 'red'
 
-settings.clear() # don't leave junk for next time...
+T.settings.clear() # don't leave junk for next time...
 
 # manual - check color dialog
 # first time hit cancel

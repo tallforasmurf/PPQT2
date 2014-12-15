@@ -24,10 +24,10 @@ __email__ = "tallforasmurf@yahoo.com"
 '''
         colors.py
 
-Global color resource for PPQT2.
+Global color (actually, text-character-format) resource for PPQT2.
 
-This module stores the currently selected styles and colors for at least,
-scanno highlights and spelling-error highlights and current line.
+This module stores the currently selected styles and colors for
+scanno highlights, spelling-error highlights, current line and find range.
 
 The following are called by the mainwindow at startup and shutdown:
 
@@ -47,11 +47,13 @@ The following are interrogated by an editview:
     get_spelling_format() Return a QTextCharFormat with the chosen
                          style and color for spelling-error highlighting.
 
-    get_current_line_brush() Return a QBrush to use for the background
-                        color of the current line.
+    get_current_line_format() Update a QTextCharFormat with the
+                         current choices of color and line style for
+                         the current line highlight.
 
-    get_find_range_brush() Return a QBrush to use for the background
-                         color of a limited find range.
+    get_find_range_format() Update a QTextCharFormat with the
+                         current choices of color and line style for
+                         the limited find range highlight
 
 The following are used by the Preferences dialog:
 
@@ -60,21 +62,22 @@ The following are used by the Preferences dialog:
         centered over parent. Return a QColor or None if cancelled.
 
     set_modified_color(qcolor) Set the color to use in the document name.
+        (in fact, this is not called, it is not currently a Preference)
 
     set_scanno_format(fmt) Set the scanno highlight text format.
 
     set_spelling_format(fmt) Set the spelling-error highlight format.
 
-    set_current_line_color(qcolor) set the current-line highlight brush to a color
+    set_current_line_format(fmt) set the current-line highlight format.
 
-    set_find_range_brush(qcolor) set the find-range background brush
+    set_find_range_format(fmt) set the find-range highlight format.
 
     set_defaults() restore all colors and styles to default values
 
 Regarding the colorChange signal, see comments in fonts.py.
 '''
 
-from PyQt5.QtCore import QCoreApplication
+from PyQt5.QtCore import Qt, QCoreApplication
 _TR = QCoreApplication.translate
 
 import logging
@@ -109,25 +112,98 @@ def _emit_signal():
     _SIGNALLER.send()
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Internal function to create a QTextCharFormat. If the line_type (one of the
-# UnderlineStyle enum values) is NoUnderLine, make a format for a background
-# color, such as used with highlighting scannos.
 #
-# Otherwise the line_type is an underline, e.g. SpellCheckUnderline; we make
-# a format for that with style of underline with the given color.
+# Establish the static global choices of the colors and styles. These are
+# updated in set_defaults(), initialize(), and the set_* methods.
 
-def _make_format( qcolor = QColor('Black'), line_type = QTextCharFormat.NoUnderline):
-    qtcf = QTextCharFormat()
-    if line_type == QTextCharFormat.NoUnderline:
-        # make a background-color format
-        qtcf.setBackground(QBrush(qcolor))
-    else :
-        # make an underline format
-        qtcf.setUnderlineColor(qcolor)
-        qtcf.setUnderlineStyle(line_type)
-    return qtcf
+_MFD_COLOR = QColor('red') # color of modified file's name
+_CL_COLOR = QColor('#FAFAE0') # color background of the current edit line
+_CL_STYLE = QTextCharFormat.NoUnderline # line style, usually no-underline
+_FR_COLOR = QColor('#CCFFFF') # color background of a limited find range
+_FR_STYLE = QTextCharFormat.NoUnderline # line style, usually no-underline
+_SNO_COLOR = QColor('thistle') # color to highlight scannos
+_SNO_STYLE = QTextCharFormat.NoUnderline # scanno highlight style
+_SPU_COLOR = QColor('magenta') # color to highlight spelling errors
+_SPU_STYLE = QTextCharFormat.WaveUnderline # spelling highlight style
+
+def initialize(settings):
+    global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE, _MFD_COLOR
+    global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
+    colors_logger.debug('colors:initializing')
+    set_defaults(False) # set defaults and do not signal
+    _SPU_COLOR = QColor( settings.value('colors/spell_color',_SPU_COLOR.name()) )
+    _SPU_STYLE = settings.value('colors/spell_style',_SPU_STYLE)
+    _SNO_COLOR = QColor( settings.value('colors/scanno_color',_SNO_COLOR.name()) )
+    _SNO_STYLE = settings.value('colors/scanno_style',_SNO_STYLE)
+    _CL_COLOR = QColor( settings.value('colors/current_line',_CL_COLOR.name()) )
+    _CL_STYLE = settings.value( 'colors/current_line_style', _CL_STYLE )
+    _FR_COLOR = QColor( settings.value('colors/find_range',_FR_COLOR.name()) )
+    _FR_STYLE = settings.value( 'colors/find_range_style', _FR_STYLE )
+    _MFD_COLOR = QColor( settings.value('colors/modified_name',_MFD_COLOR.name()) )
+
+def shutdown(settings):
+    global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE, _MFD_COLOR
+    global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
+    colors_logger.debug('colors:saving settings')
+    settings.setValue('colors/spell_color',_SPU_COLOR.name())
+    settings.setValue('colors/spell_style',_SPU_STYLE)
+    settings.setValue('colors/scanno_color',_SNO_COLOR.name())
+    settings.setValue('colors/scanno_style',_SNO_STYLE)
+    settings.setValue('colors/current_line',_CL_COLOR.name())
+    settings.setValue('colors/current_line_style', _CL_STYLE)
+    settings.setValue('colors/find_range',_FR_COLOR.name())
+    settings.setValue('colors/find_range_style', _FR_STYLE)
+    settings.setValue('colors/modified_name',_MFD_COLOR.name())
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Functions called by any module needing to use a color or text format.
+# editview needs to use a single QTextCharFormat so it passes it to us
+# and we update its style and color. For scanno and spelling highlights
+# we make a fresh format each time.
+
+def _make_format( qtcf, color, line_type ):
+    qtcf.setUnderlineStyle(line_type)
+    if line_type == QTextCharFormat.NoUnderline:
+        qtcf.setBackground(QBrush(color)) # background get a QBrush
+    else :
+        # make an underline format
+        qtcf.setUnderlineColor(color) # underline color gets a QColor
+        qtcf.clearBackground()
+    return qtcf
+
+def get_current_line_format(current_fmt):
+    return _make_format(current_fmt, _CL_COLOR, _CL_STYLE)
+
+def get_find_range_format(current_fmt):
+    return _make_format(current_fmt, _FR_COLOR, _FR_STYLE)
+
+def get_scanno_format():
+    return _make_format(QTextCharFormat(), _SNO_COLOR, _SNO_STYLE)
+
+def get_spelling_format():
+    return _make_format(QTextCharFormat(), _SPU_COLOR,_SPU_STYLE)
+
+def get_modified_color():
+    return QColor(_MFD_COLOR)
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Functions called by the Preferences dialog.
+
+def set_defaults(signal=True):
+    global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE, _MFD_COLOR
+    global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
+    colors_logger.debug('Resetting colors and styles to defaults')
+    _MFD_COLOR = QColor('red')
+    _CL_COLOR = QColor('#FAFAE0') # very light yellow
+    _CL_STYLE = QTextCharFormat.NoUnderline # bg only no underline
+    _FR_COLOR = QColor('#CCFFFF') # very light blue
+    _FR_STYLE = QTextCharFormat.NoUnderline # bg, no-underline
+    _SNO_COLOR = QColor('thistle') # lavender, no underline
+    _SNO_STYLE = QTextCharFormat.NoUnderline
+    _SPU_COLOR = QColor('magenta') # strong red wavy underline
+    _SPU_STYLE = QTextCharFormat.WaveUnderline
+    if signal: _emit_signal()
+
 # Extract the two important features of a QTextCharFormat, its line style
 # and its color.
 
@@ -139,93 +215,23 @@ def _parse_format(qtfc):
         qc = qtfc.underlineColor()
     return (QColor(qc), line_type)
 
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#
-# Initialize the colors and styles from the settings. Current values are
-# stored in the following globals.
-
-_MFD_COLOR = QColor('red') # color of modified file's name
-_CL_COLOR = QColor('#FAFAE0') # color background of the current edit line
-_FR_COLOR = QColor('#CCFFFF') # color background of a limited find range
-_SNO_COLOR = QColor('thistle') # color to highlight scannos
-_SNO_STYLE = QTextCharFormat.NoUnderline # scanno highlight style
-_SPU_COLOR = QColor('magenta') # color to highlight spelling errors
-_SPU_STYLE = QTextCharFormat.WaveUnderline # spelling highlight style
-
-def initialize(settings):
-    global _SPU_COLOR,_SPU_STYLE,_SNO_COLOR,_SNO_STYLE,_CL_COLOR,_FR_COLOR,_MFD_COLOR
-    colors_logger.debug('colors:initializing')
-    set_defaults(False) # set defaults and do not signal
-    _SPU_COLOR = QColor( settings.value('colors/spell_color',_SPU_COLOR.name()) )
-    _SPU_STYLE = settings.value('colors/spell_style',_SPU_STYLE)
-    _SNO_COLOR = QColor( settings.value('colors/scanno_color',_SNO_COLOR.name()) )
-    _SNO_STYLE = settings.value('colors/scanno_style',_SNO_STYLE)
-    _CL_COLOR = QColor( settings.value('colors/current_line',_CL_COLOR.name()) )
-    _FR_COLOR = QColor( settings.value('colors/find_range',_FR_COLOR.name()) )
-    _MFD_COLOR = QColor( settings.value('colors/modified_name',_MFD_COLOR.name()) )
-
-def shutdown(settings):
-    global _SPU_COLOR,_SPU_STYLE,_SNO_COLOR,_SNO_STYLE,_CL_COLOR,_FR_COLOR,_MFD_COLOR
-    colors_logger.debug('colors:saving settings')
-    settings.setValue('colors/spell_color',_SPU_COLOR.name())
-    settings.setValue('colors/spell_style',_SPU_STYLE)
-    settings.setValue('colors/scanno_color',_SNO_COLOR.name())
-    settings.setValue('colors/scanno_style',_SNO_STYLE)
-    settings.setValue('colors/current_line',_CL_COLOR.name())
-    settings.setValue('colors/find_range',_FR_COLOR.name())
-    settings.setValue('colors/modified_name',_MFD_COLOR.name())
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Functions called by any module needing to use a color or text format.
-
-def get_modified_color():
-    return QColor(_MFD_COLOR)
-
-def get_current_line_brush():
-    return QBrush(_CL_COLOR)
-
-def get_find_range_brush():
-    return QBrush(_FR_COLOR)
-
-def get_scanno_format():
-    return _make_format(_SNO_COLOR, _SNO_STYLE)
-
-def get_spelling_format():
-    return _make_format(_SPU_COLOR,_SPU_STYLE)
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Functions called by the Preferences dialog.
-
-def set_defaults(signal=True):
-    global _SPU_COLOR,_SPU_STYLE,_SNO_COLOR,_SNO_STYLE,_CL_COLOR,_FR_COLOR,_MFD_COLOR
-    colors_logger.debug('Resetting colors and styles to defaults')
-    _MFD_COLOR = QColor('red')
-    _CL_COLOR = QColor('#FAFAE0') # very light yellow
-    _FR_COLOR = QColor('#CCFFFF') # very light blue
-    _SNO_COLOR = QColor('thistle')
-    _SNO_STYLE = QTextCharFormat.NoUnderline
-    _SPU_COLOR = QColor('magenta')
-    _SPU_STYLE = QTextCharFormat.WaveUnderline
-    if signal: _emit_signal()
-
 def set_modified_color(qc):
     global _MFD_COLOR
     colors_logger.debug('Set modified color to {0}'.format(qc.name()))
     _MFD_COLOR = QColor(qc)
     _emit_signal()
 
-def set_current_line_color(qc):
-    global _CL_COLOR
-    _CL_COLOR = QColor(qc)
+def set_current_line_format(qtcf):
+    global _CL_COLOR, _CL_STYLE
+    (_CL_COLOR, _CL_STYLE) = _parse_format(qtcf)
     _emit_signal()
-    colors_logger.debug('Set current line color to {0}'.format(qc.name()))
+    colors_logger.debug('Set current line format to {} {}'.format(int(_CL_STYLE),_CL_COLOR.name()))
 
-def set_find_range_color(qc):
-    global _FR_COLOR
-    _FR_COLOR = QColor(qc)
+def set_find_range_format(qtcf):
+    global _FR_COLOR, _FR_STYLE
+    (_FR_COLOR, _FR_STYLE) = _parse_format(qtcf)
     _emit_signal()
-    colors_logger.debug('Set find range color to {0}'.format(qc.name()))
+    colors_logger.debug('Set find range format to {} {}'.format(int(_FR_STYLE),_FR_COLOR.name()))
 
 def set_scanno_format(qtcf):
     global _SNO_COLOR, _SNO_STYLE
@@ -244,12 +250,8 @@ def set_spelling_format(qtcf):
 #   title: a translated title for the dialog, e.g. "Choose scanno highlight color"
 #   qc_initial: starting color value.
 # Returns None if the user cancels, or the chosen QColor.
-#
-# Note: passing DontUseNativeDialog in Mac OS because the native
-# OSX dialog does not display the title string!
 
 def choose_color(title, qc_initial, parent=None ):
-    option = QColorDialog.DontUseNativeDialog if C.PLATFORM_IS_MAC else 0
-    qc = QColorDialog.getColor( qc_initial, parent, title, option)
+    qc = QColorDialog.getColor( qc_initial, parent, title )
     if qc.isValid() : return qc
     return None

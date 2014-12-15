@@ -304,9 +304,9 @@ class EditView( QWidget ):
     def _set_colors(self):
         self.scanno_format = colors.get_scanno_format()
         self.spelling_format = colors.get_spelling_format()
-        self.current_line_fmt.setBackground(colors.get_current_line_brush())
+        colors.get_current_line_format(self.current_line_fmt)
         self.current_line_sel.format = QTextCharFormat(self.current_line_fmt)
-        self.range_fmt.setBackground(colors.get_find_range_brush())
+        colors.get_find_range_format(self.range_fmt)
         self.range_sel.format = QTextCharFormat(self.range_fmt)
         self.norm_style = 'color:Black;font-weight:normal;'
         self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
