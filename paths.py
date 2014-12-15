@@ -95,8 +95,11 @@ _DICTS = ''
 _EXTRAS = ''
 _LOUPE = ''
 
-# Validate a path as readable or executable.
-# Note that os.access('',F_OK) returns False.
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Validate a path as readable or executable. Note that os.access('',F_OK)
+# returns False, a null string is not valid.
 
 def check_path(path, executable=False):
     if executable :
@@ -104,7 +107,10 @@ def check_path(path, executable=False):
     # else not checking executable-ness only readability
     return os.access( path ,os.F_OK ) and os.access( path, os.R_OK )
 
-# Set the default paths as best we can knowing nothing.
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Set the default paths as best we can based on fixed information.
 
 def set_defaults():
     global _DICTS, _EXTRAS, _LOUPE
@@ -133,6 +139,9 @@ def set_defaults():
         candidate = ''
     _DICTS = str(candidate)
 
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
 # Starting up: set the default paths based on our current environment,
 # then load saved settings if they exist.
 
@@ -177,6 +186,31 @@ def shutdown(settings):
     paths_logger.info('paths saving dicts: ' + _DICTS)
     settings.setValue("paths/dicts_path",_DICTS)
 
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#
+# Create a global object that can send the signal
+# PathsChanged('dict'/'extras'/'loupe'). Objects that want to know when the
+# user changes path preferences, connect with paths.notify_me(my_slot)
+#
+
+from PyQt5.QtCore import ( pyqtSignal, QObject )
+
+class PathSignaller(QObject):
+    PathsChanged = pyqtSignal(str)
+    def connect(self, slot):
+        self.PathsChanged.connect(slot)
+    def send(self,what):
+        self.PathsChanged.emit(what)
+
+_SIGNALLER = PathSignaller() # create one object of that class
+
+def notify_me(slot):
+    paths_logger.info('Connecting PathsChanged signal to {}'.format(slot.__name__))
+    _SIGNALLER.connect(slot)
+def _emit_signal(what):
+    paths_logger.info('Emitting PathsChanged signal({})'.format(what) )
+    _SIGNALLER.send(what)
+
 # Return the current path to the extras. This should never be a null
 # string although it might the fairly-useless cwd.
 
@@ -201,13 +235,16 @@ def set_loupe_path(path):
     global _LOUPE
     paths_logger.info('setting loupe path to: ' + path)
     _LOUPE = str(path)
+    _emit_signal('loupe')
 
 def set_dicts_path(path):
     global _DICTS
     paths_logger.info('setting dicts path to: ' + path)
     _DICTS = str(path)
+    _emit_signal('dicts')
 
 def set_extras_path(path):
     global _EXTRAS
     paths_logger.info('setting extras path to: ' + path)
     _EXTRAS = str(path)
+    _emit_signal('extras')
