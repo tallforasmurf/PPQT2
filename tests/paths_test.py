@@ -86,3 +86,15 @@ paths.initialize(T.settings)
 assert paths.get_extras_path() == test_path # bad path -> cwd
 assert paths.get_dicts_path() == '' # bad path -> null
 assert paths.get_loupe_path() == '' # bad path -> null
+# Check sending of signal
+sig_value = None
+def catcher(what):
+    global sig_value
+    sig_value = what
+paths.notify_me(catcher)
+paths.set_extras_path('/somewhere/over/the/rainbow')
+assert sig_value == 'extras'
+paths.set_loupe_path('/somewhere/over/the/rainbow')
+assert sig_value == 'loupe'
+paths.set_dicts_path('/somewhere/over/the/rainbow')
+assert sig_value == 'dicts'
