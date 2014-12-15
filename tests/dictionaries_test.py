@@ -28,73 +28,68 @@ Unit test for dictionaries.py
 # Unit test module boilerplate stuff
 #
 # set up logging to a stream
-import io
-log_stream = io.StringIO()
 import logging
-logging.basicConfig(stream=log_stream,level=logging.INFO)
-def check_log(text, level):
-    '''check that the log_stream contains the given text at the given level,
-       and rewind the log, then return T/F'''
-    global log_stream
-    level_dict = {logging.DEBUG:'DEBUG',
-                  logging.INFO:'INFO',
-                  logging.WARN:'WARN',
-                  logging.ERROR:'ERROR',
-                  logging.CRITICAL:'CRITICAL'}
-    log_data = log_stream.getvalue()
-    x = log_stream.seek(0)
-    x = log_stream.truncate()
-    return (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
-# add .. dir to sys.path so we can import ppqt modules which
-# are up one directory level
 import sys
 import os
-my_path = os.path.realpath(__file__)
-test_path = os.path.dirname(my_path)
-ppqt_path = os.path.dirname(test_path)
-sys.path.append(ppqt_path)
-files_path = os.path.join(test_path, 'Files')
-# Create an app and empty settings
-from PyQt5.QtWidgets import QApplication
-app = QApplication(sys.argv)
-import constants as C
-app.setOrganizationName("PGDP")
-app.setOrganizationDomain("pgdp.net")
-app.setApplicationName("PPQT2")
-from PyQt5.QtCore import QSettings
-settings = QSettings()
-settings.setValue("dictionaries/path",files_path)
-settings.setValue("dictionaries/default_tag","en_GB")
+import test_boilerplate as T
+T.set_up_paths()
+T.make_app()
+
+# Initialize paths to Tests/Files/extras/dicts (from paths_test)
+import paths
+test_extras = os.path.join(T.path_to_Files,'extras')
+T.settings.clear()
+T.settings.setValue("paths/extras_path", test_extras)
+paths.initialize(T.settings)
+assert paths.get_extras_path() == test_extras
+test_dicts = paths.get_dicts_path()
+
 import dictionaries
-dictionaries.initialize(settings)
-assert files_path == dictionaries.get_dict_path()
+T.settings.setValue("dictionaries/default_tag",'en_GB')
+dictionaries.initialize(T.settings)
 assert 'en_GB' == dictionaries.get_default_tag()
 
-# There are 3 dicts in Tests/Files:
-expect_tags = ['en_US','en_GB','fr_FR']
-tag_list = dictionaries.get_tag_list('')
-for tag in expect_tags:
+# There are 3 dicts in Tests/Files/extras/dicts: en_US, en_GB, fr_FR
+# There are 4 in Tests/Files/extras, those 3 plus de_DE
+
+expect_tag_list = {'en_US':test_dicts,'en_GB':test_dicts,'fr_FR':test_dicts,'de_DE':test_extras}
+tag_list = dictionaries.get_tag_list()
+for (tag,path) in expect_tag_list.items():
     assert tag in tag_list
-assert len(expect_tags) == len(tag_list.keys())
-# Create a mismatched dic/aff pair
-dic_path = os.path.join(files_path,'foobar.dic')
-open(dic_path,'w')
-tag_list = dictionaries.get_tag_list('')
-assert check_log(".dic but not",logging.ERROR)
+    assert tag_list[tag] == expect_tag_list[tag]
+
+# cause T.path_to_Files to have mismatched foobar.dic
+dic_path = os.path.join(T.path_to_Files,'foobar.dic')
+f = open(dic_path,'w')
+f.close()
+tag_list = dictionaries.get_tag_list(T.path_to_Files)
+assert T.check_log(".dic but not",logging.ERROR)
 os.remove(dic_path) # clean up Files
-aff_path = os.path.join(files_path,'foobar.aff')
-open(aff_path,'w')
-tag_list = dictionaries.get_tag_list('')
-assert check_log(".aff but not",logging.ERROR)
+# cause T.path_to_Files to have mismatched foobar.aff
+aff_path = os.path.join(T.path_to_Files,'foobar.aff')
+f = open(aff_path,'w')
+f.close()
+tag_list = dictionaries.get_tag_list(T.path_to_Files)
+assert T.check_log(".aff but not",logging.ERROR)
 os.remove(aff_path) # clean up Files
+
 # "skipping" should appear if we check a path twice
-tag_list = dictionaries.get_tag_list(files_path)
-assert check_log("Skipping",logging.INFO)
-# Check the spellcheck object part
-SP = dictionaries.Speller("en_US",dictionaries.get_dict_path())
+tag_list = dictionaries.get_tag_list(test_dicts)
+assert T.check_log("Skipping",logging.INFO)
+
+# Check the spellcheck object: bad input makes not is_valid
+# and all words are ok
+SP = dictionaries.Speller("xx_YY",paths.get_dicts_path())
+assert T.check_log('bad dictionary path',logging.ERROR)
+assert not SP.is_valid()
+assert SP.check('neenerneener',None)
+SP = None # get rid of that object
+
+SP = dictionaries.Speller("en_US",paths.get_dicts_path())
+assert SP.is_valid()
 assert SP.check('raspberry',None)
 assert not SP.check('bazongas',None)
 assert SP.check('framboise','fr_FR')
 assert not SP.check('bazongas','fr_FR')
-# nonexistent alt tag
-assert SP.check('bazongas','de_DE')
+# nonexistent alt tag produces True
+assert SP.check('bazongas','en_AU')
