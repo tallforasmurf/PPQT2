@@ -32,12 +32,11 @@ the "tag" or dictionary filename, for example "en_US".
 The main window calls initialize() during startup, when we get the user's
 preferred default tag from saved settings.
 
-The set_dict_path() and set_default_tag() methods are called from the
-preferences dialog.
+The set_default_tag() functiion is called from the preferences dialog.
 
-initialize(settings)     Get dictionary defaults from settings if available.
+initialize(settings)     Get default tag from settings if available.
 
-shutdown(settings)       Save dictionary defaults in settings.
+shutdown(settings)       Save default tag in settings.
 
 set_default_tag(tag)     Note the tag of the preferred dictionary
                          from preferences
@@ -48,11 +47,13 @@ get_tag_list(path)       Prepare and return a dict{tag:path} where each
                          tag is an available language tag and path is
                          where the tag.dic/tag.aff files can be found.
                          The list is developed searching first in path
-                         (presumably a book path), then in the dict_path
-                         then the extras_path.
+                         (presumably a book path), then in the dict path
+                         then the extras path.
 
 make_speller(tag, path)  Make a spellcheck object of class Speller
                          for the language tag using path/tag.dic .aff.
+                         The tag and path are expected to be valid and
+                         accessible, probably from a tag_list above.
 
 class Speller.check(word, alt_tag=None) Check the spelling of word in the
                          primary or alternate dictionary. Return True for
@@ -85,16 +86,14 @@ def get_default_tag():
 
 def initialize(settings):
     global _PREFERRED_TAG
-    dictionaries_logger.debug('Dictionaries initializing')
     set_default_tag(
         settings.value("dictionaries/default_tag","en_US")
         )
+    dictionaries_logger.debug( 'Dictionaries initialized, default is {}'.format(_PREFERRED_TAG) )
 
 def shutdown(settings):
-    global _DICTS, _PREFERRED_TAG
-    dictionaries_logger.debug('Dictionaries saving to settings')
-    settings.setValue("dictionaries/default_tag",get_default_tag())
-
+    settings.setValue("dictionaries/default_tag",_PREFERRED_TAG)
+    dictionaries_logger.debug( 'Default dict {} saved to settings'.format(_PREFERRED_TAG) )
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
