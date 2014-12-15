@@ -110,13 +110,13 @@ def set_defaults():
     global _DICTS, _EXTRAS, _LOUPE
     # Default for the Loupe path is platform-dependent.
     if C.PLATFORM_IS_WIN :
-        # TODO: where does bookloupe install on awindows??
+        # TODO: where does bookloupe install on windows??
         candidate = ''
     else : # Mac, Linux likely location
         candidate = '/usr/local/bin/bookloupe'
     if not check_path(candidate, executable=True) :
         candidate = ''
-    _LOUPE = candidate
+    _LOUPE = str(candidate)
     # Default for the Extras path is our-folder/extras
     if hasattr(sys, 'frozen') : # bundled by pyinstaller/cxfreeze/pyqtdeploy?
         my_folder = os.path.dirname(sys.executable)
@@ -126,11 +126,12 @@ def set_defaults():
     if not check_path( candidate ) :
         # extras folder not found, fall back to CWD
         candidate = os.getcwd()
-    _EXTRAS = candidate
+    _EXTRAS = str(candidate)
     # Default for dicts path is Extras/dicts, if it exists, else null
     candidate = os.path.join( _EXTRAS, 'dicts' )
     if not check_path( candidate ) :
         candidate = ''
+    _DICTS = str(candidate)
 
 # Starting up: set the default paths based on our current environment,
 # then load saved settings if they exist.
@@ -143,15 +144,16 @@ def initialize(settings):
     candidate = settings.value( "paths/loupe_path", _LOUPE )
     if not check_path(candidate,executable=True):
         candidate = '' # no-longer-valid path from settings
-    _LOUPE = candidate
+    _LOUPE = str(candidate)
     paths_logger.info('initial loupe path is ' + _LOUPE)
 
     # Recover saved extras path if any, else leave the default.
+    # The default from set_defaults is a valid path.
     candidate = settings.value( "paths/extras_path", _EXTRAS )
     if check_path(candidate):
-        # extras_path is in the settings and valid.
-        _EXTRAS = candidate
-    # At this point we have a valid, non-null path string in _EXTRAS
+        # extras_path from settings (or the default) is valid.
+        _EXTRAS = str(candidate)
+    # else extras from settings is no longer valid, leave default.
     paths_logger.info('initial extras path is ' + _EXTRAS)
 
     # Recover the saved dicts path if any, else try to find
@@ -164,7 +166,7 @@ def initialize(settings):
         candidate = os.path.join( _EXTRAS, 'dicts' )
         if not check_path( candidate ) :
             candidate = ''
-    _DICTS = candidate
+    _DICTS = str(candidate)
     paths_logger.info('initial dicts path is ' + _DICTS)
 
 def shutdown(settings):
