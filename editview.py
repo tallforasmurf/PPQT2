@@ -249,15 +249,17 @@ class EditView( QWidget ):
         # Connect the editor to the document.
         self.Editor.setDocument(self.document)
         # Set up mechanism for a current-line highlight and a find-range
-        # highlight. See set_find_range, clear_find_range, _set_colors
+        # highlight. This consists of a list of two "extra selections".
+        # An "extra selection" is basically a tuple of a cursor and a
+        # format. See set_find_range, clear_find_range, _set_colors
         # and _cursor_moved.
         self.last_text_block = None # to know when cursor moves to new line
         self.current_line_sel = QTextEdit.ExtraSelection()
-        self.current_line_fmt = QTextCharFormat() # see _set_colors
+        self.current_line_fmt = QTextCharFormat() # updated in _set_colors
         self.current_line_fmt.setProperty(QTextFormat.FullWidthSelection, True)
         self.range_sel = QTextEdit.ExtraSelection()
         self.range_sel.cursor = QTextCursor(self.document) # null cursor
-        self.range_fmt = QTextCharFormat() # see _set_colors
+        self.range_fmt = QTextCharFormat() # updated in _set_colors
         self.range_fmt.setProperty(QTextCharFormat.FullWidthSelection, True)
         self.extra_sel_list = [self.range_sel, self.current_line_sel]
         # Sign up to get a signal on a change in font choice
@@ -296,9 +298,9 @@ class EditView( QWidget ):
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 INTERNAL METHODS
 
-    # Set up text formats for the current line, spellcheck words
-    # and for scanno words. Done in a method because this has to be
-    # redone when the colorsChanged signal happens.
+    # Set up text formats for the current line, find-range, spellcheck words
+    # and scanno words. This method is called to set up the colors initially
+    # and is the slot to receive the colorsChanged signal.
     def _set_colors(self):
         self.scanno_format = colors.get_scanno_format()
         self.spelling_format = colors.get_spelling_format()
@@ -330,10 +332,8 @@ class EditView( QWidget ):
     # It is also called directly when one of the internal methods below moves
     # the cursor. Change the contents of the column number display. If the
     # cursor has moved to a different line, change also the line number, scan
-    # image name, and folio displays to match the new position.
-    # Note that we show the current line by changing the text block format,
-    # and unfortunately the QTextDocument sees this as an undo-able action,
-    # and sets modified state. So we save and restore the unmodified state.
+    # image name, and folio displays to match the new position. Update the
+    # "extra selection" that puts highlighting on the current line.
     def _cursor_moved(self):
         tc = QTextCursor(self.Editor.textCursor()) # copy of cursor
         self.ColNumber.setText( str( tc.positionInBlock() ) )
@@ -350,11 +350,8 @@ class EditView( QWidget ):
         else: # no image data, or cursor is above page 1
             self.ImageFilename.setText('')
             self.Folio.setText('')
-        # Change the extra selection to the current line. The cursor needs
-        # to have no selection. Yes, we are here because the cursor moved,
-        # but that doesn't mean no-selection; it might have moved because
-        # of a shift-click extending the selection.
-        #xtc.clearSelection()
+        # Change the current-line "extra selection" to the new current line.
+        # Re-assign the list of extra selections to force update of display.
         self.current_line_sel.cursor = tc
         self.Editor.setExtraSelections(self.extra_sel_list)
 
