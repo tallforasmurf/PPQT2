@@ -98,12 +98,14 @@ class Book(QObject):
         self.panel_dict = mainwindow.PANEL_DICT.copy()
         # Set up a book-unique logging channel
         self.logger = logging.getLogger(name='book_'+str(self.sequence))
-        # Create the spellchecker using the global default dictionary.
-        # It may be recreated in _init_edit after we have a book path and
-        # have possibly read dictionary info from metadata.
+        # Create the spellchecker using the global default dictionary. It may
+        # be recreated when we have a book path and/or read a preferred dict
+        # tag from metadata.
         self.dict_tag = dictionaries.get_default_tag()
         self._speller = dictionaries.Speller(self.dict_tag,
             paths.get_dicts_path() )
+        # Connect to find out about a change in the dicts path.
+        paths.notify_me(self.path_change_slot)
         # Initialize slots for info about our book, which get filled in when
         # the mainwindow calls new_empty, old_book, or new_book below.
         self.edit_point_size = C.DEFAULT_FONT_SIZE
@@ -214,7 +216,9 @@ class Book(QObject):
     #
     # Set up as modified because the new metadata needs saving. Create page
     # metadata by scanning the text for page separators. Default the cursor
-    # position to zero, in absence of metadata.
+    # position to zero, in absence of metadata. Make a new speller dictionary
+    # just in the unlikely case that this new book folder has a local copy of
+    # the same dictionary tag as the global default we already set up.
 
     def new_book(self, doc_stream, meta_stream, good_stream, bad_stream) :
         self.book_name = doc_stream.filename()
@@ -240,6 +244,7 @@ class Book(QObject):
             self.imagev.set_path(self.book_folder)
             self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
         self.editv.set_cursor(self.editv.make_cursor(0,0))
+        self._speller = dictionaries.Speller( self.dict_tag, self.book_folder )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Give the book a new name and/or file path. Input is a
@@ -466,6 +471,17 @@ class Book(QObject):
                           "Dictionary request info")
                 )
         return False
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # When the dicts path changes, recreate our speller. A change in dicts
+    # path might not mean a change in the spell check because we might be
+    # getting the dict for this book from its own folder. But make the
+    # change in case. It will show up next time words gets refreshed.
+
+    def path_change_slot(self, what_path):
+        if what_path == 'dicts' :
+            self._speller = dictionaries.Speller(
+                self.dict_tag, self.book_folder)
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Note when metadata changes its modified state. Each module that stows
