@@ -427,7 +427,7 @@ class PageData(QObject):
         try :
             return self.filename_list[R]
         except:
-            pagedata_logger.info('Invalid index {0} to filename'.format(R))
+            pagedata_logger.debug('Invalid index {0} to filename'.format(R))
             return None
 
     # Return the display form of the folio number based on its value and

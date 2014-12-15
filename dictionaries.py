@@ -130,7 +130,7 @@ def _find_tags(path, tag_dict):
         if lang not in tag_dict :
             tag_dict[lang] = path
         else:
-            dictionaries_logger.info("Skipping {0} in {1}".format(lang,path))
+            dictionaries_logger.debug("Skipping {0} in {1}".format(lang,path))
     # Log any mismatched dic/aff names
     no_dic = aff_set - pair_set # should be empty set
     for lang in no_dic:

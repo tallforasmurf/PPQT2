@@ -147,14 +147,14 @@ def set_defaults():
 
 def initialize(settings):
     global _DICTS, _EXTRAS, _LOUPE
-    paths_logger.info('paths initializing')
+    paths_logger.debug('paths initializing')
     set_defaults()
     # Recover save bookloupe path if any, else the default.
     candidate = settings.value( "paths/loupe_path", _LOUPE )
     if not check_path(candidate,executable=True):
         candidate = '' # no-longer-valid path from settings
     _LOUPE = str(candidate)
-    paths_logger.info('initial loupe path is ' + _LOUPE)
+    paths_logger.debug('initial loupe path is ' + _LOUPE)
 
     # Recover saved extras path if any, else leave the default.
     # The default from set_defaults is a valid path.
@@ -163,7 +163,7 @@ def initialize(settings):
         # extras_path from settings (or the default) is valid.
         _EXTRAS = str(candidate)
     # else extras from settings is no longer valid, leave default.
-    paths_logger.info('initial extras path is ' + _EXTRAS)
+    paths_logger.debug('initial extras path is ' + _EXTRAS)
 
     # Recover the saved dicts path if any, else try to find
     # one in the newly-set Extras, else leave null.
@@ -176,14 +176,14 @@ def initialize(settings):
         if not check_path( candidate ) :
             candidate = ''
     _DICTS = str(candidate)
-    paths_logger.info('initial dicts path is ' + _DICTS)
+    paths_logger.debug('initial dicts path is ' + _DICTS)
 
 def shutdown(settings):
-    paths_logger.info('paths saving loupe: ' + _LOUPE)
+    paths_logger.debug('paths saving loupe: ' + _LOUPE)
     settings.setValue("paths/loupe_path",_LOUPE)
-    paths_logger.info('paths saving extras: ' + _EXTRAS)
+    paths_logger.debug('paths saving extras: ' + _EXTRAS)
     settings.setValue("paths/extras_path",_EXTRAS)
-    paths_logger.info('paths saving dicts: ' + _DICTS)
+    paths_logger.debug('paths saving dicts: ' + _DICTS)
     settings.setValue("paths/dicts_path",_DICTS)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -205,10 +205,10 @@ class PathSignaller(QObject):
 _SIGNALLER = PathSignaller() # create one object of that class
 
 def notify_me(slot):
-    paths_logger.info('Connecting PathsChanged signal to {}'.format(slot.__name__))
+    paths_logger.debug('Connecting PathsChanged signal to {}'.format(slot.__name__))
     _SIGNALLER.connect(slot)
 def _emit_signal(what):
-    paths_logger.info('Emitting PathsChanged signal({})'.format(what) )
+    paths_logger.debug('Emitting PathsChanged signal({})'.format(what) )
     _SIGNALLER.send(what)
 
 # Return the current path to the extras. This should never be a null
@@ -233,18 +233,18 @@ def get_loupe_path():
 
 def set_loupe_path(path):
     global _LOUPE
-    paths_logger.info('setting loupe path to: ' + path)
+    paths_logger.debug('setting loupe path to: ' + path)
     _LOUPE = str(path)
     _emit_signal('loupe')
 
 def set_dicts_path(path):
     global _DICTS
-    paths_logger.info('setting dicts path to: ' + path)
+    paths_logger.debug('setting dicts path to: ' + path)
     _DICTS = str(path)
     _emit_signal('dicts')
 
 def set_extras_path(path):
     global _EXTRAS
-    paths_logger.info('setting extras path to: ' + path)
+    paths_logger.debug('setting extras path to: ' + path)
     _EXTRAS = str(path)
     _emit_signal('extras')

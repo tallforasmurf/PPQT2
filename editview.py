@@ -486,7 +486,7 @@ class EditView( QWidget ):
             self.center_position(self.page_model.position(pn))
         else : # unknown image filename, restore current value
             utilities.beep()
-            editview_logger.info('Request for invalid image name {0}'.format(self.ImageFilename.text()))
+            editview_logger.debug('Request for invalid image name {0}'.format(self.ImageFilename.text()))
             self._cursor_moved()
         self.Editor.setFocus(Qt.TabFocusReason)
 
