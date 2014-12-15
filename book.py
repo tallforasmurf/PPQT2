@@ -147,7 +147,6 @@ class Book(QObject):
         self.panel_dict['Notes'] = noteview.NotesPanel(self)
         self.panel_dict['Find' ] = findview.FindPanel(self)
         self.panel_dict['Chars'] = charview.CharView(self)
-        # TODO other view objects TBS, QLabels are placeholders
         self.panel_dict['Words'] = wordview.WordPanel(self) # wordview.WordPanel(self)
         self.panel_dict['Pages'] = pageview.PagePanel(self) # pageview.PagePanel(self)
         self.panel_dict['Fnote'] = fnotview.FnotePanel(self) # fnotview.FnotePanel(self)
