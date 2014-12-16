@@ -323,13 +323,19 @@ def ask_saving_file(caption, parent=None, starting_path='', filter_string='', en
     return path_to_output(chosen_path,encoding)
 
 # The following uses QFileDialog.getOpenFileName to get the name of an existing
-# file and then tests that the file is executable. If the user selects a
-# file and it is executable, the full path is returned. Used to get the path
-# to bookloupe and possibly other executable helpers.
+# file and then tests that the file is executable. Note that the static function
+# getOpenFilename does not provide for a QDir.Executable enum-type filter. It
+# only supports text-style filters e.g. "*.jpg" but that won't work to choose
+# an executable in every platform. So we test for execut-ability on the return.
+#
+# If the user selects a file and it is executable, the full path is returned.
+# Used to get the path to bookloupe and possibly other executable helpers.
 #
 # Arguments:
 #   caption: explanatory caption for the dialog (caller must TRanslate)
 #   parent: optional QWidget over which to center the dialog
+#   starting_path: supposedly initializes the dialog but at least in Mac OS
+#     seems to not have any effect.
 #
 # Return is a path, or '' if the user pressed Cancel, or None if the
 # user selected an existing but non-executable file.
@@ -346,6 +352,26 @@ def ask_executable(caption, parent=None, starting_path=''):
     if not qfi.isExecutable() :
         return None
     return chosen_path
+#
+# The following is a wrapper on QFileDialog.getExistingDirectory, the Qt
+# dialog for getting a path to an existing folder. Used for choosing the
+# extras and dictionary folders.
+#
+# Arguments:
+#   caption: explanatory caption for the dialog (caller must TRanslate)
+#   parent: optional QWidget over which to center the dialog
+#   starting_path: optional path to begin search, e.g. book path
+#
+# Return is a path, or '' if the user pressed Cancel.
+
+def ask_folder(caption, parent=None, starting_path=''):
+    chosen_path = QFileDialog.getExistingDirectory(
+            parent,
+            caption,
+            starting_path
+        )
+    return chosen_path
+
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #  General Message routines
 #
