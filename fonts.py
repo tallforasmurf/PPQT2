@@ -120,8 +120,8 @@ def _emit_signal(boola):
 #
 # Static globals and functions to manage them.
 #
-# Generate a font database and make sure it contains our Liberation Mono
-# loading the normal font from our resources module.
+# Generate a font database and make sure it contains Liberation Mono
+# and Cousine, loading them from our resources module.
 #
 
 from PyQt5.QtGui import (
@@ -132,6 +132,7 @@ from PyQt5.QtWidgets import QFontDialog
 
 _FONT_DB = QFontDatabase()
 _FONT_DB.addApplicationFont(':/liberation_mono.ttf')
+_FONT_DB.addApplicationFont(':/cousine.ttf')
 
 # Primary use of these global constants is in unit test
 POINT_SIZE_MINIMUM = 6 # smallest point size for zooming
