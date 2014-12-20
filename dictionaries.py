@@ -150,7 +150,8 @@ def _find_tags(path, tag_dict):
 
 def get_tag_list(path = ''):
     tag_dict = {}
-    _find_tags(path, tag_dict)
+    if path : # don't bother searching a nullstring path
+        _find_tags(path, tag_dict)
     _find_tags(paths.get_dicts_path(), tag_dict)
     _find_tags(paths.get_extras_path(), tag_dict)
     return tag_dict
