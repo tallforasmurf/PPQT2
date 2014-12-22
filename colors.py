@@ -153,32 +153,41 @@ def shutdown(settings):
     settings.setValue('colors/find_range_style', _FR_STYLE)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Functions called by any module needing to use a color or text format.
-# editview needs to use a single QTextCharFormat so it passes it to us
-# and we update its style and color. For scanno and spelling highlights
-# we make a fresh format each time.
+# Functions called by editview to get text formats for four different
+# highlight types. In each case return a QTextCharFormat that reflects the
+# current color and underline-style set from preferences.
+#
+# For the current-line style and usually, the find-range style, editview
+# needs the fullWidthSelection property set, and we do that here.
 
-def _make_format( qtcf, color, line_type ):
+# Create a QTextCharFormat based on a color and underline value.
+
+def _make_format( color, line_type ):
+    qtcf = QTextCharFormat()
     qtcf.setUnderlineStyle(line_type)
     if line_type == QTextCharFormat.NoUnderline:
+        # make a background color format
         qtcf.setBackground(QBrush(color)) # background get a QBrush
     else :
         # make an underline format
         qtcf.setUnderlineColor(color) # underline color gets a QColor
-        qtcf.clearBackground()
     return qtcf
 
-def get_current_line_format(current_fmt):
-    return _make_format(current_fmt, _CL_COLOR, _CL_STYLE)
+def get_current_line_format():
+    qtcf = _make_format(_CL_COLOR, _CL_STYLE )
+    qtcf.setProperty( QTextCharFormat.FullWidthSelection, True )
+    return qtcf
 
-def get_find_range_format(current_fmt):
-    return _make_format(current_fmt, _FR_COLOR, _FR_STYLE)
+def get_find_range_format( full_width=True ):
+    qtcf = _make_format( _FR_COLOR, _FR_STYLE )
+    qtcf.setProperty( QTextCharFormat.FullWidthSelection, full_width )
+    return qtcf
 
 def get_scanno_format():
-    return _make_format(QTextCharFormat(), _SNO_COLOR, _SNO_STYLE)
+    return _make_format( _SNO_COLOR, _SNO_STYLE )
 
 def get_spelling_format():
-    return _make_format(QTextCharFormat(), _SPU_COLOR,_SPU_STYLE)
+    return _make_format( _SPU_COLOR,_SPU_STYLE )
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Functions called by the Preferences dialog.

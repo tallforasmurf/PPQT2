@@ -257,12 +257,9 @@ class EditView( QWidget ):
         # and _cursor_moved.
         self.last_text_block = None # to know when cursor moves to new line
         self.current_line_sel = QTextEdit.ExtraSelection()
-        self.current_line_fmt = QTextCharFormat() # updated in _set_colors
-        self.current_line_fmt.setProperty(QTextFormat.FullWidthSelection, True)
+        self.current_line_fmt = colors.get_current_line_format()
         self.range_sel = QTextEdit.ExtraSelection()
         self.range_sel.cursor = QTextCursor(self.document) # null cursor
-        self.range_fmt = QTextCharFormat() # updated in _set_colors
-        self.range_fmt.setProperty(QTextCharFormat.FullWidthSelection, True)
         self.extra_sel_list = [self.range_sel, self.current_line_sel]
         # Sign up to get a signal on a change in font choice
         fonts.notify_me(self.font_change)
@@ -306,10 +303,15 @@ class EditView( QWidget ):
     def _set_colors(self):
         self.scanno_format = colors.get_scanno_format()
         self.spelling_format = colors.get_spelling_format()
-        colors.get_current_line_format(self.current_line_fmt)
+        if self.scanno_check or self.spelling_check :
+            # force redo of all scanno/spellcheck highlights
+            self._clear_highlights()
+            self._start_highlights()
+        self.current_line_fmt = colors.get_current_line_format()
         self.current_line_sel.format = QTextCharFormat(self.current_line_fmt)
-        colors.get_find_range_format(self.range_fmt)
-        self.range_sel.format = QTextCharFormat(self.range_fmt)
+        if self.range_sel.cursor.hasSelection() :
+            self.range_sel.format = colors.get_find_range_format(True)
+        self.Editor.setExtraSelections(self.extra_sel_list) # force refresh of both
 
     # Slot to receive the modificationChanged signal from the document.
     # Also called from the book when metadata changes state.
@@ -516,10 +518,13 @@ class EditView( QWidget ):
         tc = self.Editor.textCursor()
         self.range_sel.cursor.setPosition(tc.selectionEnd())
         self.range_sel.cursor.setPosition(tc.selectionStart(), QTextCursor.KeepAnchor)
+        self.range_sel.format = colors.get_find_range_format(True)
         self.Editor.setExtraSelections(self.extra_sel_list)
-    # Clear the current find range.
+    # Clear the current find range. Must set the format to null to avoid
+    # leaving a bit of background color around.
     def clear_find_range(self):
         self.range_sel.cursor.clearSelection()
+        self.range_sel.format = QTextCharFormat()
         self.Editor.setExtraSelections(self.extra_sel_list)
     # Return a cursor defining the bounds of the current find range.
     def get_find_range(self):
