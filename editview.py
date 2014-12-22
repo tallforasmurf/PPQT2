@@ -243,6 +243,8 @@ class EditView( QWidget ):
         #     .ImageFilename - QLineEdit for the current image filename
         #     .LineNumber - QLineEdit for the line number
         #     .ColNumber - QLabel for the cursor column
+        #     .norm_style - stylesheet for unmodified book name
+        #     .mod_style - stylesheet for modified book name
         # Signals from these widgets are hooked up below.
         #
         self._uic()
@@ -308,10 +310,6 @@ class EditView( QWidget ):
         self.current_line_sel.format = QTextCharFormat(self.current_line_fmt)
         colors.get_find_range_format(self.range_fmt)
         self.range_sel.format = QTextCharFormat(self.range_fmt)
-        self.norm_style = 'color:Black;font-weight:normal;'
-        self.mod_style = 'color:' + colors.get_modified_color().name() + ';font-weight:bold;'
-        # Fake the mod-change signal to update the document name color
-        self.mod_change_signal(self.document.isModified())
 
     # Slot to receive the modificationChanged signal from the document.
     # Also called from the book when metadata changes state.
@@ -743,6 +741,9 @@ class EditView( QWidget ):
 
         self.DocName = QLabel(bot_frame)
         self.DocName.setText("")
+        self.norm_style = 'color:Black;font-weight:normal;'
+        self.mod_style = 'color:Red;font-weight:bold;'
+        self.DocName.setStyleSheet( self.norm_style )
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(2)
         sizePolicy.setVerticalStretch(0)

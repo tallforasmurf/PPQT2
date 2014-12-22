@@ -116,7 +116,6 @@ def _emit_signal():
 # Establish the static global choices of the colors and styles. These are
 # updated in set_defaults(), initialize(), and the set_* methods.
 
-_MFD_COLOR = QColor('red') # color of modified file's name
 _CL_COLOR = QColor('#FAFAE0') # color background of the current edit line
 _CL_STYLE = QTextCharFormat.NoUnderline # line style, usually no-underline
 _FR_COLOR = QColor('#CCFFFF') # color background of a limited find range
@@ -127,7 +126,7 @@ _SPU_COLOR = QColor('magenta') # color to highlight spelling errors
 _SPU_STYLE = QTextCharFormat.WaveUnderline # spelling highlight style
 
 def initialize(settings):
-    global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE, _MFD_COLOR
+    global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE
     global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
     colors_logger.debug('colors:initializing')
     set_defaults(False) # set defaults and do not signal
@@ -139,10 +138,9 @@ def initialize(settings):
     _CL_STYLE = settings.value( 'colors/current_line_style', _CL_STYLE )
     _FR_COLOR = QColor( settings.value('colors/find_range',_FR_COLOR.name()) )
     _FR_STYLE = settings.value( 'colors/find_range_style', _FR_STYLE )
-    _MFD_COLOR = QColor( settings.value('colors/modified_name',_MFD_COLOR.name()) )
 
 def shutdown(settings):
-    global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE, _MFD_COLOR
+    global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE
     global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
     colors_logger.debug('colors:saving settings')
     settings.setValue('colors/spell_color',_SPU_COLOR.name())
@@ -153,7 +151,6 @@ def shutdown(settings):
     settings.setValue('colors/current_line_style', _CL_STYLE)
     settings.setValue('colors/find_range',_FR_COLOR.name())
     settings.setValue('colors/find_range_style', _FR_STYLE)
-    settings.setValue('colors/modified_name',_MFD_COLOR.name())
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Functions called by any module needing to use a color or text format.
@@ -183,17 +180,13 @@ def get_scanno_format():
 def get_spelling_format():
     return _make_format(QTextCharFormat(), _SPU_COLOR,_SPU_STYLE)
 
-def get_modified_color():
-    return QColor(_MFD_COLOR)
-
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Functions called by the Preferences dialog.
 
 def set_defaults(signal=True):
-    global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE, _MFD_COLOR
+    global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE
     global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
     colors_logger.debug('Resetting colors and styles to defaults')
-    _MFD_COLOR = QColor('red')
     _CL_COLOR = QColor('#FAFAE0') # very light yellow
     _CL_STYLE = QTextCharFormat.NoUnderline # bg only no underline
     _FR_COLOR = QColor('#CCFFFF') # very light blue
@@ -214,12 +207,6 @@ def _parse_format(qtfc):
     else:
         qc = qtfc.underlineColor()
     return (QColor(qc), line_type)
-
-def set_modified_color(qc):
-    global _MFD_COLOR
-    colors_logger.debug('Set modified color to {0}'.format(qc.name()))
-    _MFD_COLOR = QColor(qc)
-    _emit_signal()
 
 def set_current_line_format(qtcf):
     global _CL_COLOR, _CL_STYLE
