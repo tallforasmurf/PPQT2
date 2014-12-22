@@ -17,7 +17,7 @@ __license__ = '''
 '''
 __version__ = "2.0.0"
 __author__  = "David Cortesi"
-__copyright__ = "Copyright 2013, 2014 David Cortesi"
+__copyright__ = "Copyright 2013, 2014, 2015 David Cortesi"
 __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 

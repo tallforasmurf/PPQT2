@@ -17,7 +17,7 @@ __license__ = '''
 '''
 __version__ = "2.0.0"
 __author__  = "David Cortesi"
-__copyright__ = "Copyright 2013, 2014 David Cortesi"
+__copyright__ = "Copyright 2013, 2014, 2015 David Cortesi"
 __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
@@ -27,4 +27,11 @@ Top level module of PPQT version 2.
 
 Performs all non-GUI global initialization of the application.
 Initiates mainwindow.py. Waits for completion.
+'''
+'''
+Locations for settings values:
+Linux: $HOME/.config/PGDP/PPQT2.conf
+Mac OSX: $HOME/Library/Preferences/com.PGDP.PPQT2.plist
+Windows (registry): HKEY_CURRENT_USER\Software\PGDP\PPQT2
+
 '''
