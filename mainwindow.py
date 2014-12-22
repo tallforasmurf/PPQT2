@@ -71,6 +71,7 @@ from PyQt5.QtWidgets import (
     )
 _TR = QCoreApplication.translate
 import os# TODO remove
+import preferences
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # The menu bar is created by the singleton MainWindow object, but
@@ -121,7 +122,7 @@ import logging
 import utilities
 import book
 mainwindow_logger = logging.getLogger(name='main_window')
-
+from PyQt5.QtTest import QTest # dbg
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # Dicts copied from the following are used to keep track of the several
@@ -563,10 +564,18 @@ class MainWindow(QMainWindow):
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # User has chosen a different font; if it is the general font, set
-    # that here so it will propogate to our children.
+    # that here so it will propogate to our children. n.b. this is never
+    # used as the preference for UI font is not implemented.
     def _font_change(self, is_mono):
         if not is_mono:
             self.setFont(fonts.get_general())
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Preferences menu action triggered. Create a Preferences dialog and
+    # show it.
+    def _preferences( self ) :
+        p = preferences.PreferenceDialog( self )
+        r = p.exec_()
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Create the UI contained within this QMainWindow object. This is a lean
@@ -641,7 +650,6 @@ class MainWindow(QMainWindow):
         work.setShortcut(QKeySequence.Close)
         work.setToolTip( _TR('File:Close tooltip', 'Close the active book') )
         work.triggered.connect(self._close)
-
         #  Load Find Buttons -> _find_load()
         work = self.file_menu.addAction( _TR('File menu command', 'Load Find Buttons') )
         work.setToolTip( _TR('File:Load Find Buttons tooltip',
@@ -661,10 +669,16 @@ class MainWindow(QMainWindow):
         work = self.file_menu.addMenu( self.recent_menu )
         work.setToolTip( _TR('File:Recent tooltip', 'List of recently-used files to open') )
         self.file_menu.aboutToShow.connect(self._build_recent)
+
+        # Preferences menu action that opens the Preferences dialog.
         #  divider if not Mac
         if not C.PLATFORM_IS_MAC:
             self.file_menu.addSeparator()
-        #  TODO Preferences with the menu role that on mac, moves to the app menu
+        work = self.file_menu.addAction( _TR('Preferences menu item', 'Preferences') )
+        work.setToolTip( _TR( 'Preferences menu item tooltip', 'Open the Preferences dialog to set paths, fonts, and text styles') )
+        work.setMenuRole( QAction.PreferencesRole )
+        work.triggered.connect( self._preferences )
+
         #  Quit with the menu role that moves it to the app menu
         work = QAction( _TR('Quit command','&Quit'), self )
         work.setMenuRole(QAction.QuitRole)
