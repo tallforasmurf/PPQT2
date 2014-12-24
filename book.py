@@ -17,7 +17,7 @@ __license__ = '''
 '''
 __version__ = "2.0.0"
 __author__  = "David Cortesi"
-__copyright__ = "Copyright 2013, 2014 David Cortesi"
+__copyright__ = "Copyright 2013, 2014, 2015 David Cortesi"
 __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
@@ -113,6 +113,7 @@ class Book(QObject):
         self.book_name = ''
         self.book_folder = ''
         self.book_full_path = ''
+        self.last_find_button_path = ''
         # Initialize the metadata-modified flag, see metadata_modified()
         self.md_modified = 0
         # Initialize bookmarks, loaded from metadata later. The bookmarks
@@ -517,6 +518,15 @@ class Book(QObject):
     # give access to the book canonical path
     def get_book_full_path(self):
         return self.book_full_path
+    # give access to the last find-button load/save path
+    def get_last_find_button_path(self):
+        p = self.book_full_path
+        if self.last_find_button_path : # is not null
+            p = self.last_find_button_path
+        return p
+    # note a find-button path actually used to return next time
+    def set_last_find_button_path(self, path):
+        self.last_find_button_path = str(path)
     # give access to the panel dict
     def get_panel_dict(self):
         return self.panel_dict

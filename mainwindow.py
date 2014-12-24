@@ -503,9 +503,10 @@ class MainWindow(QMainWindow):
             _TR('File:Save Find Buttons open dialog',
                 'Choose file to contain find button definitions'),
             self,
-            starting_path=target_book.get_book_full_path(),
+            starting_path=target_book.get_last_find_button_path(),
             encoding='UTF-8')
         if stream : # is not None, file is open
+            target_book.set_last_find_button_path( stream.fullpath() )
             find_panel.user_button_output(stream)
         # else user hit cancel, forget it
 
@@ -516,9 +517,10 @@ class MainWindow(QMainWindow):
             _TR('File:Load Find Buttons open dialog',
                 'Choose a file of find button definitions'),
             self,
-            starting_path=target_book.get_book_full_path(),
+            starting_path=target_book.get_last_find_button_path(),
             encoding='UTF-8')
         if stream :# is not None, we opened it
+            target_book.set_last_find_button_path( stream.fullpath() )
             find_panel.user_button_input(stream)
             target_book.metadata_modified(True,C.MD_MOD_FLAG)
 
