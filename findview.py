@@ -537,7 +537,7 @@ class UserButton(QPushButton):
                 else : # key not in model_dict, ignore it...
                     continue # ...probably 'greedy' or 'insel'..
             # Make sure it included a valid label key
-            if ok_dict['label'] == UserButton.model_dict['label'] :
+            if 'label' not in literal :
                 err = 'no label value in the input'
                 raise ValueError
             # all good, go ahead and use it
@@ -1093,9 +1093,9 @@ class FindPanel(QWidget):
 
     UB_BOILERPLATE = '''# Saved user-buttons from the Find panel. Each button definition starts with
 # a number between 0 (upper left button) and 23 (lower right button) and a
-# colon. This is followed by a Python dictionary { key:value, key:value...}
-# Each key is a string such as 'find' or 'regex' and names a part of the Find
-# panel. A value is either True, False, or a 'quoted string' In any quoted
+# colon. Next comes a Python dictionary { key:value, key:value...} in which
+# each key is a string such as 'find' or 'regex' that names a part of the Find
+# panel. Each value is either True, False, or a 'quoted string' In any quoted
 # string, every backslash must be doubled!
 '''
     def user_button_output(self, stream):
