@@ -1,0 +1,259 @@
+# Search for common problems.
+#
+# Saved user-buttons from the Find panel. Each button definition starts with
+# a number between 0 (upper left button) and 23 (lower right button) and a
+# colon. Next comes a Python dictionary { key:value, key:value...} in which
+# each key is a string such as 'find' or 'regex' that names a part of the Find
+# panel. Each value is either True, False, or a 'quoted string' In any quoted
+# string, every backslash must be doubled!
+#
+# Whitespace preceding punctuation or following a hyphen.
+# regex is: whitespace then punctuation, or hyphen then whitespace
+7: {		'all' : None,
+	'andnext' : None,
+	'andprior' : None,
+	'case' : False,
+	'find' : '(\\s[\\.,;:?!\\-])|(-\\s)',
+	'label' : 'spacep',
+	'regex' : True,
+	'rep1' : None,
+	'rep2' : None,
+	'rep3' : None,
+	'tooltip' : 'Whitespace preceding punctuation or after hyphen',
+	'word' : None
+}
+
+8: {		'all' : None,
+	'andnext' : None,
+	'andprior' : None,
+	'case' : None,
+	'find' : '\\W[01]\\W',
+	'label' : '-01-',
+	'regex' : True,
+	'rep1' : None,
+	'rep2' : None,
+	'rep3' : None,
+	'tooltip' : 'Standalone 0 or 1',
+	'word' : None
+}
+
+9: {		'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : False,
+	'find' : '(\\([^)]+\\()|(\\[[^\\]]+\\[)|(\\{[^}]+\\{)|(<[^>]+<)',
+	'insel' : False,
+	'label' : 'unbalanced',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find open-bracket that is not followed by closing bracket',
+	'word' : False
+}
+
+10: {		'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : True,
+	'find' : '\\.\\s*\\p{Lowercase_Letter}',
+	'insel' : False,
+	'label' : 'dota',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find period, space, lowercase',
+	'word' : False
+}
+
+11: {		'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : True,
+	'find' : ',\\s*\\p{Uppercase_Letter}',
+	'insel' : False,
+	'label' : 'commaA',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find comma, space, uppercase (often valid)',
+	'word' : False
+}
+
+12: {		'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : True,
+	'find' : '(?<=\\n)[^\\n](?=\\n)',
+	'insel' : False,
+	'label' : '1-letter',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find a one-letter line',
+	'word' : False
+}
+
+13: {		'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : True,
+	'find' : '(?<=\\n\\n)\\p{Lowercase_Letter}',
+	'insel' : False,
+	'label' : 'lcpara',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Paragraph (text after two newlines) starts with lowercase',
+	'word' : False
+}
+
+14: {		'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : False,
+	'find' : '[^\\p{InBasic_Latin}\\p{InLatin-1_Supplement}]',
+	'insel' : False,
+	'label' : 'not Latin-1',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find letters not in the Latin-1 set',
+	'word' : False
+}
+
+15: {		'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : False,
+	'find' : '[^\\p{InBasic_Latin}]',
+	'insel' : False,
+	'label' : 'not 7-bit',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find letters not in the 7-bit ascii set',
+	'word' : False
+}
+
+16: {		'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : False,
+	'find' : '\\w[^\\.\\,?;:!\\]\\>\\)\\/]["\'»]?\\n\\n',
+	'insel' : False,
+	'label' : 'para-no-p',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find end of paragraph without punctuation',
+	'word' : False
+}
+
+17: {		'all' : None,
+	'andnext' : None,
+	'andprior' : None,
+	'case' : None,
+	'find' : '[^\\n]{76,}',
+	'label' : 'line>75',
+	'regex' : True,
+	'rep1' : None,
+	'rep2' : None,
+	'rep3' : None,
+	'tooltip' : 'Find line longer than 75 characters',
+	'word' : None
+}
+
+18: {		'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : False,
+	'find' : '[\\u002D\\u2012\\u2013\\u2014]+\\n',
+	'insel' : False,
+	'label' : 'eol-hy',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find hyphen (or minus, en-, em-dash) at end of line',
+	'word' : False
+}
+
+19: {		'all' : False,
+	'andnext' : True,
+	'andprior' : False,
+	'case' : False,
+	'find' : '[\\u0020\\u00A0]+\\n',
+	'insel' : False,
+	'label' : 'eol-sp',
+	'regex' : True,
+	'rep1' : '\\n',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find space (or nonbreaking-space) at end of line',
+	'word' : False
+}
+
+20: {		'all' : None,
+	'andnext' : None,
+	'andprior' : None,
+	'case' : False,
+	'find' : '[^\\.\\,;:?!][\\\'\\"\\»](?=[\\s\\)\\]])',
+	'label' : 'endqnop',
+	'regex' : True,
+	'rep1' : None,
+	'rep2' : None,
+	'rep3' : None,
+	'tooltip' : 'Find end-quote without preceding punctuation',
+	'word' : None
+}
+
+21: {		'all' : None,
+	'andnext' : None,
+	'andprior' : None,
+	'case' : False,
+	'find' : '[\\.\\,;:?!]{2,}',
+	'label' : 'dblpunc',
+	'regex' : True,
+	'rep1' : None,
+	'rep2' : None,
+	'rep3' : None,
+	'tooltip' : 'Find two or more adjacent . , ; : ? !',
+	'word' : None
+}
+
+22: {		'all' : None,
+	'andnext' : None,
+	'andprior' : None,
+	'case' : False,
+	'find' : '/',
+	'label' : '/',
+	'regex' : False,
+	'rep1' : None,
+	'rep2' : None,
+	'rep3' : None,
+	'tooltip' : 'Find any forward slash',
+	'word' : None
+}
+
+23: {		'all' : None,
+	'andnext' : None,
+	'andprior' : None,
+	'case' : None,
+	'find' : '*',
+	'label' : '*',
+	'regex' : False,
+	'rep1' : None,
+	'rep2' : None,
+	'rep3' : None,
+	'tooltip' : 'Find any asterisk',
+	'word' : None
+}
+

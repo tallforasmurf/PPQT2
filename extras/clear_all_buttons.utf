@@ -1,0 +1,298 @@
+# Twenty-four empty buttons, load them to clear the Find panel.
+# Note: when you SAVE find buttons, buttons with the label '(empty)'
+# are not saved. This file was made by hand!
+#
+# Saved user-buttons from the Find panel. Each button definition starts with
+# a number between 0 (upper left button) and 23 (lower right button) and a
+# colon. Next comes a Python dictionary { key:value, key:value...} in which
+# each key is a string such as 'find' or 'regex' that names a part of the Find
+# panel. Each value is either True, False, or a 'quoted string' In any quoted
+# string, every backslash must be doubled!
+0: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+1: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+2: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+3: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+4: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+5: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+6: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+7: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+8: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+9: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+10: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+11: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+12: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+13: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+14: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+15: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+16: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+17: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+18: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+19: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+20: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+21: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+22: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}
+23: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u"",
+	u'label' : u'(empty)',
+	u'regex' : False,
+	u'rep1' : u"",
+	u'rep2' : u"",
+	u'rep3' : u"",
+	u'word' : False
+}

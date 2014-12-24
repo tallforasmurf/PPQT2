@@ -1,0 +1,52 @@
+# Finds most unbalanced <i> markup: 
+#  <i>[^<]+<(?!/i) finds <i> followed by </not-i>
+# [^i]>[^<]+</i> finds not-i> markup followed by </i>
+# Does not find <i> not followed by markup of any kind,
+# Does not find </i> not preceded by markup of any kind
+23: {  'all' : False,
+ 'andnext' : False,
+ 'andprior' : False,
+ 'case' : False,
+ 'find' : '<i>[^<]+<(?!/i)|[^i]>[^<]+</i>',
+ 'label' : 'unbal i',
+ 'tooltip' : 'Find some unbalanced &lt;i> markup',
+ 'regex' : True,
+ 'rep1' : '',
+ 'rep2' : '',
+ 'rep3' : '',
+ 'word' : False
+}
+# Finds most unbalanced <b> markup but not all, same remarks
+# as for unbalanced <i> above
+22: {  'all' : False,
+ 'andnext' : False,
+ 'andprior' : False,
+ 'case' : False,
+ 'find' : '<b>[^<]+<(?!/b)|[^b]>[^<]+</b>',
+ 'label' : 'unbal b',
+ 'tooltip' : 'Find some unbalanced &lt;b> markup',
+ 'regex' : True,
+ 'rep1' : '',
+ 'rep2' : '',
+ 'rep3' : '',
+ 'word' : False
+}
+# Finds SOME unbalanced <sc> markup:
+# <sc>[^<]+<(?!/sc) finds <sc> followed by </not-sc
+# [^c]>[^<]+</sc> finds e.g. <b>asdf</sc>
+# [^s]c>[^<]+</sc> finds e.g. <dc>asdf</sc>
+# Does not find <sc> with no markup following, nor
+# finds </sc> with no markup of any kind preceding
+21: {  'all' : False,
+ 'andnext' : False,
+ 'andprior' : False,
+ 'case' : False,
+ 'find' : '<sc>[^<]+<(?!/sc)|[^c]>[^<]+</sc>|[^s]c>[^<]+</sc>',
+ 'label' : 'unbal sc',
+ 'tooltip' : 'Find some unbalanced &lt;sc> markup',
+ 'regex' : True,
+ 'rep1' : '',
+ 'rep2' : '',
+ 'rep3' : '',
+ 'word' : False
+}

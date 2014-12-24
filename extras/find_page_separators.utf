@@ -1,0 +1,26 @@
+# Find page-separator lines and set up to replace them with either
+# nothing (rep1) or a single newline (rep2).
+#
+# The regex is: '-----File:' followed by anything not a newline,
+# followed by a backslash, zero or more hyphens and a newline.
+#
+# Saved user-buttons from the Find panel. Each button definition starts with
+# a number between 0 (upper left button) and 23 (lower right button) and a
+# colon. Next comes a Python dictionary { key:value, key:value...} in which
+# each key is a string such as 'find' or 'regex' that names a part of the Find
+# panel. Each value is either True, False, or a 'quoted string' In any quoted
+# string, every backslash must be doubled!
+23: {		'all' : False,
+	'andnext' : True,
+	'andprior' : False,
+	'case' : False,
+	'find' : '-----File:[^\\n]*\\\\-*?\\n',
+	'insel' : False,
+	'label' : 'pseps',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '\\n',
+	'rep3' : '',
+	'word' : False
+}
+

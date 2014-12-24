@@ -1,0 +1,90 @@
+# Saved user-buttons from the Find panel. Each button definition starts with
+# a number between 0 (upper left button) and 23 (lower right button) and a
+# colon. This is followed by a Python dictionary { key:value, key:value...}
+# Each key is a string such as 'find' or 'regex' and names a part of the Find
+# panel. A value is either True, False, or a 'quoted string' In any quoted
+# string, every backslash must be doubled!
+18: {		'all' : False,
+	'andnext' : True,
+	'andprior' : False,
+	'case' : False,
+	'find' : '[ \\t]*<tb>[ \\t]*',
+	'label' : 'tb -> *****',
+	'regex' : True,
+	'rep1' : '       *       *       *       *       *',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find &lt;tb>, replace with 5-star string',
+	'word' : False
+}
+
+19: {		'all' : False,
+	'andnext' : True,
+	'andprior' : False,
+	'case' : False,
+	'find' : '\\n(/[CFQRPTUX\\*]|[CFQRPTUX\\*]/).*(?=\\n)',
+	'label' : 'scan /CFQRPTUX*',
+	'regex' : True,
+	'rep1' : '',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Step through block markup codes such as /* or X/',
+	'word' : False
+}
+
+20: {		'all' : False,
+	'andnext' : True,
+	'andprior' : False,
+	'case' : False,
+	'find' : '\\[typo:([^:]+):([^\\]]+)\\]',
+	'label' : 'undo [typo]',
+	'regex' : True,
+	'rep1' : '\\2',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find [typo:original:correct] markup and replace with correct word',
+	'word' : False
+}
+
+21: {		'all' : False,
+	'andnext' : True,
+	'andprior' : False,
+	'case' : False,
+	'find' : '<sc>([^<]+)</sc>',
+	'label' : 'sc convert',
+	'regex' : True,
+	'rep1' : '\\1',
+	'rep2' : '$\\1$',
+	'rep3' : '',
+	'tooltip' : 'Find &lt;sc>stuff&lt;/sc> and change to $stuff$ or stuff',
+	'word' : False
+}
+
+22: {		'all' : False,
+	'andnext' : True,
+	'andprior' : False,
+	'case' : False,
+	'find' : '<b>([^<]+)</b>',
+	'label' : 'b convert',
+	'regex' : True,
+	'rep1' : '\\1',
+	'rep2' : '$\\1$',
+	'rep3' : '',
+	'tooltip' : 'Find &lt;b>stuff&lt;/i> and change to $stuff$ or stuff',
+	'word' : False
+}
+
+23: {		'all' : False,
+	'andnext' : True,
+	'andprior' : False,
+	'case' : False,
+	'find' : '<i>([^<]+)</i>',
+	'label' : 'i convert',
+	'regex' : True,
+	'rep1' : '_\\1_',
+	'rep2' : '\\1',
+	'rep3' : '',
+	'tooltip' : 'Find &lt;i>stuff&lt;/i> and change to _stuff_ or stuff',
+	'word' : False
+}
+

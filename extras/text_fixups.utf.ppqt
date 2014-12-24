@@ -1,0 +1,528 @@
+
+{
+  "VERSION": "2"
+}
+{
+  "FOOTNOTES": []
+}
+{
+  "FIND_RB": {
+    "3": [], 
+    "2": [], 
+    "1": [], 
+    "0": [
+      "-----File:\\s*[^\\.]+\\..*?-*?\\n", 
+      "-----File:\\s*[^\\.]+\\..*?\\\\-*?\\n", 
+      "-----File:[^\\n]*\\\\-*?\\n"
+    ]
+  }
+}
+{
+  "MAINDICT": "en_US"
+}
+{
+  "CURSOR": [
+    0, 
+    0
+  ]
+}
+{
+  "IMAGEZOOM": 0.25
+}
+{
+  "DOCHASH": {
+    "<BYTE>": "f6 5e cc 45 73 43 1e 60 c2 d1 63 97 ea 48 64 c0 12 4d c1 8a "
+  }
+}
+{
+  "FIND_UB": {
+    "20": {
+      "tooltip": "Any forward slash", 
+      "word": null, 
+      "find": "/", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": false, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "/", 
+      "case": false
+    }, 
+    "21": {
+      "tooltip": "Endquote without preceding punctuation", 
+      "word": null, 
+      "find": "[^\\.\\,;:?!][\\'\\\"\\\u00bb](?=[\\s\\)\\]])", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "endqnop", 
+      "case": false
+    }, 
+    "22": {
+      "tooltip": "Two or more of . , ; : ? !", 
+      "word": null, 
+      "find": "[\\.\\,;:?!]{2,}", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "dblpunc", 
+      "case": false
+    }, 
+    "15": {
+      "tooltip": "Characters between x80 and xFF", 
+      "word": null, 
+      "find": "[\\x0080-\\x00FF]", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "non-7-bit", 
+      "case": true
+    }, 
+    "14": {
+      "tooltip": "Characters not in ISO-8859-1", 
+      "word": null, 
+      "find": "[\\x00FF-\\x2028\\x202A-\\xFBFF]", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "non-8859", 
+      "case": null
+    }, 
+    "17": {
+      "tooltip": "Line longer than 75 characters", 
+      "word": null, 
+      "find": "[^\\n]{76,}", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "line>75", 
+      "case": null
+    }, 
+    "16": {
+      "tooltip": "No punctuation at paragraph-end", 
+      "word": null, 
+      "find": "\\w[^\\.\\,?;:!\\]\\>\\)\\/][\\x0022\\x0027\\x00BB]?\\n\\n", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "paranop", 
+      "case": null
+    }, 
+    "11": {
+      "tooltip": "Comma followed by uppercase (latin) letter", 
+      "word": null, 
+      "find": ",\\s*[A-Z]", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "commaA", 
+      "case": true
+    }, 
+    "10": {
+      "tooltip": "Period followed by lowercase (latin) letter", 
+      "word": null, 
+      "find": "\\.\\s*[a-z]", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "dota", 
+      "case": true
+    }, 
+    "13": {
+      "tooltip": "Paragraph starts with (ascii) lowercase", 
+      "word": null, 
+      "find": "\\n\\n[a-z]", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "lcpara", 
+      "case": true
+    }, 
+    "12": {
+      "tooltip": "Single-character line", 
+      "word": null, 
+      "find": "\\n[^\\n]\\n", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "nXn", 
+      "case": null
+    }, 
+    "7": {
+      "tooltip": "Whitespace preceding punctuation or after hyphen", 
+      "word": null, 
+      "find": "(\\s[\\.,;:?!\\-])|(-\\s)", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "spacep", 
+      "case": false
+    }, 
+    "9": {
+      "tooltip": "Unbalanced brackets", 
+      "word": null, 
+      "find": "(\\(([^)]|\\s)+\\()|(\\[([^]]|\\s)+\\[)|(\\{([^}]|\\s)+\\{)", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "unbalanced", 
+      "case": false
+    }, 
+    "8": {
+      "tooltip": "Standalone 0 or 1", 
+      "word": null, 
+      "find": "\\W[01]\\W", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "-01-", 
+      "case": null
+    }, 
+    "19": {
+      "tooltip": "Space at end of line", 
+      "word": null, 
+      "find": "[\\x0020\\x00A0\\x2002-\\x200B\\x202F]+\\n", 
+      "rep1": "\\n", 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": true, 
+      "rep3": null, 
+      "label": "eolsp", 
+      "case": false
+    }, 
+    "18": {
+      "tooltip": "Hyphen at end of line", 
+      "word": null, 
+      "find": "[\\x002D\\x2010\\x2011]+\\n", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": true, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "eolhy", 
+      "case": null
+    }, 
+    "23": {
+      "tooltip": "Any asterisk", 
+      "word": null, 
+      "find": "*", 
+      "rep1": null, 
+      "all": null, 
+      "rep2": null, 
+      "regex": false, 
+      "andprior": null, 
+      "andnext": null, 
+      "rep3": null, 
+      "label": "*", 
+      "case": null
+    }
+  }
+}
+{
+  "GOODWORDS": []
+}
+{
+  "NOTES": ""
+}
+{
+  "WORDCENSUS": []
+}
+{
+  "SCANNOLIST": []
+}
+{
+  "BADWORDS": []
+}
+{
+  "BOOKMARKS": []
+}
+{
+  "EDITSIZE": 13
+}
+{
+  "PAGETABLE": [
+    [
+      27, 
+      "001", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      1, 
+      0, 
+      1
+    ], 
+    [
+      40, 
+      "002", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      2
+    ], 
+    [
+      63, 
+      "003", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      3
+    ], 
+    [
+      495, 
+      "004", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      4
+    ], 
+    [
+      508, 
+      "005", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      5
+    ], 
+    [
+      703, 
+      "006", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      6
+    ], 
+    [
+      1085, 
+      "007", 
+      "\\kchawkins\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      7
+    ], 
+    [
+      1378, 
+      "008", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      8
+    ], 
+    [
+      1490, 
+      "009", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      9
+    ], 
+    [
+      1579, 
+      "010", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      10
+    ], 
+    [
+      2235, 
+      "011", 
+      "\\kchawkins\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      11
+    ], 
+    [
+      2324, 
+      "012", 
+      "\\kchawkins\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      12
+    ], 
+    [
+      3733, 
+      "013", 
+      "\\justinl\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      13
+    ], 
+    [
+      5450, 
+      "014", 
+      "\\kchawkins\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      14
+    ], 
+    [
+      7195, 
+      "015", 
+      "\\kchawkins\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      15
+    ], 
+    [
+      8736, 
+      "016", 
+      "\\kchawkins\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      16
+    ], 
+    [
+      10498, 
+      "017", 
+      "\\Zuza\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      17
+    ], 
+    [
+      12220, 
+      "018", 
+      "\\Zuza\\susanskinner\\TheEileen\\fvandrog", 
+      0, 
+      3, 
+      18
+    ], 
+    [
+      13824, 
+      "019", 
+      "\\Zuza\\susanskinner\\Cimon Avaro\\fvandrog", 
+      0, 
+      3, 
+      19
+    ], 
+    [
+      15439, 
+      "020", 
+      "\\Zuza\\susanskinner\\prishan\\fvandrog", 
+      0, 
+      3, 
+      20
+    ], 
+    [
+      16842, 
+      "021", 
+      "\\Zuza\\susanskinner\\prishan\\fvandrog", 
+      0, 
+      3, 
+      21
+    ], 
+    [
+      18328, 
+      "022", 
+      "\\Zuza\\susanskinner\\prishan\\fvandrog", 
+      0, 
+      3, 
+      22
+    ], 
+    [
+      19740, 
+      "023", 
+      "\\Markham\\susanskinner\\prishan\\fvandrog", 
+      0, 
+      3, 
+      23
+    ], 
+    [
+      21396, 
+      "024", 
+      "\\rajordan\\susanskinner\\prishan\\fvandrog", 
+      0, 
+      3, 
+      24
+    ], 
+    [
+      22898, 
+      "025", 
+      "\\rajordan\\susanskinner\\prishan\\fvandrog", 
+      0, 
+      3, 
+      25
+    ], 
+    [
+      24453, 
+      "026", 
+      "\\rajordan\\susanskinner\\prishan\\fvandrog", 
+      0, 
+      3, 
+      26
+    ], 
+    [
+      25471, 
+      "027", 
+      "\\baughb\\susanskinner\\prishan\\bazongas!", 
+      0, 
+      3, 
+      27
+    ]
+  ]
+}
+{
+  "IMAGELINKING": [
+    true, 
+    false
+  ]
+}
+{
+  "CHARCENSUS": []
+}
