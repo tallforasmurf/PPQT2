@@ -17,7 +17,7 @@ __license__ = '''
 '''
 __version__ = "2.0.0"
 __author__  = "David Cortesi"
-__copyright__ = "Copyright 2013, 2014 David Cortesi"
+__copyright__ = "Copyright 2013, 2014, 2015 David Cortesi"
 __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
@@ -58,9 +58,6 @@ to the builtin QPlainTextEdit slots. Enables that menu on focus-in,
 disables it on focus-out.
 
 TODO: resolve issues re keystrokes in mac os
-TODO: Book to save metadata mods on per-object basis so if Notes backs
-      out its mods, it can clear that status.
-TODO: Propogate that change to Worddata?
 '''
 import constants as C
 import fonts
