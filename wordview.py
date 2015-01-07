@@ -635,6 +635,18 @@ class WordPanel(QWidget) :
         self.view.setColumnWidth(0,180)
         self.view.setColumnWidth(1,50)
 
+    # Two compiled regexes as class variables. Each defines a search
+    # for the visually-ambiguous versions of a character. The regex
+    # is used to find every matching character and replace it with the
+    # search pattern, for use when a word is put in the find panel.
+    #
+    # HYPHEN-MINUS, SOFT HYPHEN, HYPHEN, NON-BREAKING HYPHEN
+    RE_PAT_HYPHEN = '''[\-\u00ad\u2010\u2011]'''
+    RE_HYPHEN = regex.compile(RE_PAT_HYPHEN)
+    # APOSTROPHE, MODIFIER LETTER APOSTROPHE, LEFT and RIGHT SINGLE QUOTATION MARK
+    RE_PAT_APOST = '''['\u02bc\u2018\u2019]'''
+    RE_APOST = regex.compile(RE_PAT_APOST)
+
     # Receive the doubleClicked(modelindex) signal from the table view.
     def do_find(self,index):
         if index.column() != 0 :
@@ -644,23 +656,12 @@ class WordPanel(QWidget) :
         QApplication.clipboard().setText(word)
         sw_rc = self.sw_case.isChecked()
         sw_rx = False # assume not-regex, whole word
-        # Look for ambiguous cases and convert to regexes that will find all
-        # variations of a similar word. Note if a word already contains both
-        # a 'quote' and a unicode apostrophe, only one will be converted. But
-        # if you have that situation, your problems are too big already.
-        if '-' in word :
-            sw_rx = True
-            word = word.replace('-','[\\-\\s]*')
-        if "'" in word :
-            sw_rx = True
-            word = word.replace("'","['\u02bc\u2019]?")
-        elif '\u02bc' in word: # Modifier Letter Apostrophe
-            sw_rx = True
-            word = word.replace('\u02bc',"['\u02bc\u2019]?")
-        elif '\u2019' in word: # Right Single Quotation Mark
-            sw_rx = True
-            word = word.replace('\u2019',"['\u02bc\u2019]?")
-        self.my_book.get_find_panel().find_this(word, case=sw_rc, word=(not sw_rx), regex=sw_rx)
+        # If the word contains quotes and/or apostrophes, replace each with
+        # a regex class that will find any at that position.
+        work = self.RE_HYPHEN.sub(self.RE_PAT_HYPHEN, word)
+        work = self.RE_APOST.sub(self.RE_PAT_APOST, work)
+        self.my_book.get_find_panel().find_this(
+            work, case=sw_rc, word=(not sw_rx), regex=( work != word )
 
     def _uic(self):
         main_layout = QVBoxLayout()
