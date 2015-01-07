@@ -17,7 +17,7 @@ __license__ = '''
 '''
 __version__ = "2.0.0"
 __author__  = "David Cortesi"
-__copyright__ = "Copyright 2014 David Cortesi"
+__copyright__ = "Copyright 2014, 2015 David Cortesi"
 __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
@@ -87,30 +87,36 @@ words. If there are any, the WordFilter is set to display only those words.
 To return to the full list, Select All (or any other choice) in the popup or
 click Refresh.
 
-To the right of the word table is the left member of a vertical splitter which is normally
-all the way right to maximize the word table. When the splitter is drawn left
-it exposes a one-column table, the good-words list. The user can drag one or
-more words (multiple selections are allowed) and drop them on the good-words
-to add a word to it, thus clearing the spell-error flag for those words. The
-user can select words in the good-words list and hit Delete to remove them
-from the list (although not from the document of course).
+To the right of the word table is the left member of a vertical splitter
+which is normally all the way right to maximize the word table. When the
+splitter is drawn left it exposes a one-column table, the good-words list.
+The user can drag one or more words (multiple selections are allowed) from
+the table and drop them on the good-words list. This adds the word(s) to the
+list and clears the spelling-error flag for those words. The user can select
+words in the good-words list and hit Delete to remove them from the list,
+which causes those words in the main table to be re-spell-checked and
+possibly flagged as spelling errors.
 
 The widget implements its own Edit menu with only the following actions:
-  Edit > Copy copies the current selection from the words table to the
-      clipboard as a list of space-separated words.
+  Edit > Copy
+     When the focus is in the good-words list, copies the current selection
+     to the clipboard. When the focus is in the main widget, copies the
+     current selection from the words table to the clipboard. In either
+     case, as a space-separated list of words.
+
   Edit > Paste is disabled unless the focus is in the good-words list
-     table, then it adds words from the clipboard to that table.
+     table, then it adds words from the clipboard to that list.
+
   Edit > Delete is disabled unless the focus is in the good-words list,
      then it deletes words from that table.
 
 Double-clicking a word in the word table puts that word in the paste buffer
 (same as Edit>Copy but only for the one double-clicked word, which may or may
-not be selected) and also in the Find panel, with respect case copied from the
-checkbox above the table, and whole word. If the word contains hyphens or
-apostrophes, the search is made a regex with hyphen converted to [\-\s]*
-(find to-day, to day, to\nday or today) and apostrophe converted to '?, find
-it's or its.
-
+not be selected) and also enters it in the Find text field of the Find panel,
+with respect case copied from the checkbox above the table, and whole word.
+If the word contains hyphens or apostrophes, the search is made a regex with
+hyphen converted to [\-\s]* (find to-day, to day, to\nday or today) and
+apostrophe converted to '?, find it's or its.
 '''
 import logging
 wordview_logger = logging.getLogger(name='wordview')
@@ -637,16 +643,23 @@ class WordPanel(QWidget) :
         word = index.data(Qt.DisplayRole)
         QApplication.clipboard().setText(word)
         sw_rc = self.sw_case.isChecked()
-        sw_rx = False # assume not-regex/whole word
+        sw_rx = False # assume not-regex, whole word
+        # Look for ambiguous cases and convert to regexes that will find all
+        # variations of a similar word. Note if a word already contains both
+        # a 'quote' and a unicode apostrophe, only one will be converted. But
+        # if you have that situation, your problems are too big already.
         if '-' in word :
             sw_rx = True
             word = word.replace('-','[\\-\\s]*')
         if "'" in word :
             sw_rx = True
-            word = word.replace("'","'?")
-        if 'ʼ' in word:
+            word = word.replace("'","['\u02bc\u2019]?")
+        elif '\u02bc' in word: # Modifier Letter Apostrophe
             sw_rx = True
-            word = word.replace('ʼ','ʼ?')
+            word = word.replace('\u02bc',"['\u02bc\u2019]?")
+        elif '\u2019' in word: # Right Single Quotation Mark
+            sw_rx = True
+            word = word.replace('\u2019',"['\u02bc\u2019]?")
         self.my_book.get_find_panel().find_this(word, case=sw_rc, word=(not sw_rx), regex=sw_rx)
 
     def _uic(self):
