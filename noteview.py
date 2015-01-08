@@ -114,20 +114,19 @@ class NotesPanel(QPlainTextEdit):
         # Hook up a slot to notice that the document has changed its
         # modification state.
         self.document().modificationChanged.connect(self.yikes)
-        # Create our edit menu and stow it in the menu bar. Disable it.
-        ed_menu = QMenu(C.ED_MENU_EDIT,self)
-        ed_menu.addAction(C.ED_MENU_UNDO,self.undo,QKeySequence.Undo)
-        ed_menu.addAction(C.ED_MENU_REDO,self.redo,QKeySequence.Redo)
-        ed_menu.addSeparator()
-        ed_menu.addAction(C.ED_MENU_CUT,self.cut,QKeySequence.Cut)
-        ed_menu.addAction(C.ED_MENU_COPY,self.copy,QKeySequence.Copy)
-        ed_menu.addAction(C.ED_MENU_PASTE,self.paste,QKeySequence.Paste)
-        ed_menu.addSeparator()
-        ed_menu.addAction(C.ED_MENU_FIND,self.find_action,QKeySequence.Find)
-        ed_menu.addAction(C.ED_MENU_NEXT,self.find_next_action,QKeySequence.FindNext)
-        self.edit_menu = mainwindow.get_menu_bar().addMenu(ed_menu)
-        self.edit_menu.setVisible(False)
-        # In order to get focus events, we need to set focus policy
+        # Create the list of actions for our edit menu and save it
+        # for use on focus-in.
+        self.ed_action_list = [
+            (C.ED_MENU_UNDO, self.undo, QKeySequence.Undo),
+            (C.ED_MENU_REDO,self.redo,QKeySequence.Redo),
+            (None, None, None),
+            (C.ED_MENU_CUT,self.cut,QKeySequence.Cut),
+            (C.ED_MENU_COPY,self.copy,QKeySequence.Copy),
+            (C.ED_MENU_PASTE,self.paste,QKeySequence.Paste),
+            (None, None, None),
+            (C.ED_MENU_FIND,self.find_action,QKeySequence.Find),
+            (C.ED_MENU_NEXT,self.find_next_action,QKeySequence.FindNext)
+            ]
         self.setFocusPolicy(Qt.StrongFocus)
 
     # Save the current notes text to a metadata file. We write
@@ -156,12 +155,12 @@ class NotesPanel(QPlainTextEdit):
     # Intercept the focus-in and -out events and use them to display
     # and hide our edit menu.
     def focusInEvent(self, event):
-        self.edit_menu.setVisible(True)
-        self.setPalette(self.palette_active)
+        mainwindow.set_up_edit_menu('N',self.ed_action_list)
+        super().focusInEvent(event)
 
     def focusOutEvent(self, event):
-        self.edit_menu.setVisible(False)
-        self.setPalette(self.palette_inactive)
+        mainwindow.hide_edit_menu()
+        super().focusOutEvent(event)
 
     # Get notified of a change in the user's choice of font
     def font_change(self,is_mono):
