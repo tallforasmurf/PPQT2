@@ -32,6 +32,9 @@ Implements all keyboard actions (ctl-F, etc) in the editor.
 Implements the syntax highlighter that colors scannos and spelling errors.
 Calls on a WordData object to identify scannos and spelling errors.
 
+Provides a basic Edit menu with Undo/Redo, Cut/Copy/Paste,
+and Find-action same as our keystrokes: Find Selected/Next/Prior
+
 Provides a context menu with these user commands:
     Mark Scannos
     Mark Spelling
@@ -93,6 +96,7 @@ from PyQt5.QtWidgets import (
     )
 from PyQt5.QtGui import (
     QBrush,
+    QKeySequence,
     QSyntaxHighlighter,
     QTextBlockFormat,
     QTextCursor,
@@ -106,6 +110,7 @@ import logging
 editview_logger = logging.getLogger(name='editview')
 import constants as C
 import utilities
+import mainwindow
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
@@ -171,8 +176,9 @@ class HighLighter(QSyntaxHighlighter):
                     self.setFormat(p,l,spelling_fmt)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Define a custom QPlainTextEdit. This differs from the stock variety only
-# in that it has a keyEvent override to trap numerous special keystrokes.
+# Define a custom QPlainTextEdit. This differs from the stock variety in that
+# it has a keyEvent override to trap and handle numerous special keystrokes,
+# and in using the mainwindow to populate a custom edit menu.
 #
 class PTEditor( QPlainTextEdit ):
 
@@ -181,6 +187,29 @@ class PTEditor( QPlainTextEdit ):
     def __init__(self, parent, my_book):
         super().__init__(parent)
         self.my_book = my_book # Need access to book
+        self.ed_action_list = [
+            (C.ED_MENU_UNDO, self.undo, QKeySequence.Undo),
+            (C.ED_MENU_REDO,self.redo,QKeySequence.Redo),
+            (None, None, None),
+            (C.ED_MENU_CUT,self.cut,QKeySequence.Cut),
+            (C.ED_MENU_COPY,self.copy,QKeySequence.Copy),
+            (C.ED_MENU_PASTE,self.paste,QKeySequence.Paste),
+            (None, None, None),
+            (C.ED_MENU_FIND, lambda:self.emit_key(C.CTL_F) ,QKeySequence.Find),
+            (C.ED_MENU_FIND_SELECTED, lambda:self.emit_key(C.CTL_SHFT_F),0),
+            (C.ED_MENU_NEXT, lambda:self.emit_key(C.CTL_G) ,QKeySequence.FindNext),
+            (C.ED_MENU_PRIOR, lambda:self.emit_key(C.CTL_SHFT_G), QKeySequence.FindPrevious)
+            ]
+
+    def emit_key(self, kkey) :
+        self.editFindKey.emit(kkey)
+
+    def focusInEvent(self, event) :
+        mainwindow.set_up_edit_menu('E',self.ed_action_list)
+        super().focusInEvent(event)
+    def focusOutEvent(self, event) :
+        mainwindow.hide_edit_menu()
+        super().focusOutEvent(event)
 
     def keyPressEvent(self, event):
         #utilities.printKeyEvent(event)
