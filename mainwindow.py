@@ -72,19 +72,42 @@ from PyQt5.QtWidgets import (
 _TR = QCoreApplication.translate
 import os# TODO remove
 import preferences
+import constants as C
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# The menu bar is created by the singleton MainWindow object, but
-# access to it is needed by other modules so a reference is stored
-# here and accessed by a static query function.
-_MENUBAR = None
-def get_menu_bar():
-    return _MENUBAR
-def set_menu_bar(mb):
-    global _MENUBAR
-    _MENUBAR = mb
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Manage the Edit menu for our sub-panels. Not all panels have uses for the
+# Edit menu. A panel that does support Edit actions calls set_up_edit_menu()
+# when it gets a focus-in event. This populates the Edit menu with actions
+# defined by that panel, and makes the Edit menu visible. On focus-out it
+# calls hide_edit_menu() to make it invisible.
+#
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+_EDIT_MENU = None # global reference to the only Edit menu, see _uic.
+_LAST_KEY = None # last panel to populate the edit menu
+
+# Populate the edit menu. The action_list is a list of triples, ('Title',
+# slot, key), as required by QMenu.addAction. The caller can pass
+# (None,None,None) to get a menu separator.
+#
+#The caller passes a unique letter so we can avoid the setup work when, as
+#often happens, one panel gets focus-in multiple times without another panel
+#having changed the menu.
+
+def set_up_edit_menu(key, action_list) :
+    global _EDIT_MENU
+    if key != _LAST_KEY :
+        _EDIT_MENU.clear()
+        for (title, slot, key) in action_list :
+            if title is None :
+                _EDIT_MENU.addSeparator()
+            else :
+                _EDIT_MENU.addAction(title, slot, key)
+    _EDIT_MENU.setEnabled(True)
+
+def hide_edit_menu():
+    _EDIT_MENU.setEnabled(False)
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #
 # Class of the single main window instance. One instance is created by
 # ppqt.py at startup, and the open QSettings object is passed.
@@ -590,6 +613,7 @@ class MainWindow(QMainWindow):
     # TODO: create a custom QTabWidget using a custom QTabBar to implement
     # drag-out-of-tabset behavior, and use those here.
     def _uic(self):
+        global _EDIT_MENU
         # Create the tabset that displays editviews
         self.editview_tabset = QTabWidget()
         self.editview_tabset.setMovable(True) # let user move tabs around
@@ -623,7 +647,6 @@ class MainWindow(QMainWindow):
             self.menu_bar = QMenuBar() # parentless menu bar for Mac OS
         else :
             self.menu_bar = self.menuBar # refer to the default one
-        set_menu_bar(self.menu_bar)
         # Create the File menu, located in our menu_bar.
         self.file_menu = self.menu_bar.addMenu(_TR('Menu name', '&File'))
         # Populate the File menu with actions.
@@ -693,6 +716,10 @@ class MainWindow(QMainWindow):
         # in the not too distant past.
         self.recent_files = self._read_flist('mainwindow/recent_files')
 
+        # Create the Edit menu in the menu_bar, store a reference to it
+        # in a static global, and immediately clear it.
+        _EDIT_MENU = self.menu_bar.addMenu( C.ED_MENU_EDIT )
+        hide_edit_menu()
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Functions related to shutdown and management of settings.
