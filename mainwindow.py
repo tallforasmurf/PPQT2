@@ -93,9 +93,10 @@ _LAST_KEY = None # last panel to populate the edit menu
 #often happens, one panel gets focus-in multiple times without another panel
 #having changed the menu.
 
-def set_up_edit_menu(key, action_list) :
-    global _EDIT_MENU
-    if key != _LAST_KEY :
+def set_up_edit_menu(ident, action_list) :
+    global _EDIT_MENU, _LAST_KEY
+    if ident != _LAST_KEY :
+        _LAST_KEY = ident
         _EDIT_MENU.clear()
         for (title, slot, key) in action_list :
             if title is None :
