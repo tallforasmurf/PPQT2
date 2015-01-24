@@ -511,7 +511,7 @@ def get_find_string(caption, parent, prepared = ''):
 # percents, or call setMaximum() to set a different end-value.
 #
 def make_progress(caption, parent):
-    progress = QProgressDialog( caption, '', 0, 100)
+    progress = QProgressDialog( caption, '', 0, 100, parent)
     progress.setMinimumDuration(250)
     return progress
 
