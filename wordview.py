@@ -104,10 +104,10 @@ The widget implements its own Edit menu with only the following actions:
      current selection from the words table to the clipboard. In either
      case, as a space-separated list of words.
 
-  Edit > Paste is disabled unless the focus is in the good-words list
+  Edit > Paste is available only when the focus is in the good-words list
      table, then it adds words from the clipboard to that list.
 
-  Edit > Delete is disabled unless the focus is in the good-words list,
+  Edit > Delete is available only when the focus is in the good-words list,
      then it deletes words from that table.
 
 Double-clicking a word in the word table puts that word in the paste buffer
@@ -121,7 +121,9 @@ apostrophe converted to '?, find it's or its.
 import logging
 wordview_logger = logging.getLogger(name='wordview')
 import utilities # for make_progress
-import worddata
+import constants as C
+import worddata # our data model
+import mainwindow # for set_up_edit_menu
 import regex
 from PyQt5.QtCore import (
     pyqtSignal,
@@ -137,7 +139,7 @@ _TR = QCoreApplication.translate
 from PyQt5.QtGui import (
     QDragEnterEvent
 )
-
+from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
     QApplication,
     QAbstractItemView,
@@ -315,8 +317,8 @@ class WordTableModel(QAbstractTableModel):
         #print('word mimeTypes - [text/plain]')
         #return ['text/plain'] # never called!
     def supportedDragActions(self):
-        print('word drag actions - copyaction')
-        return Qt.CopyAction # Never called!
+        #print('word drag actions - copyaction')
+        return Qt.CopyAction
     def mimeData(self,ixlist):
         words = []
         for index in ixlist :
@@ -326,7 +328,7 @@ class WordTableModel(QAbstractTableModel):
             md = QMimeData()
             #md.setData('text/plain',' '.join(words))
             md.setText(' '.join(words))
-            print('word mimedata ',md.text(),','.join(md.formats()))
+            #print('word mimedata ',md.text(),','.join(md.formats()))
             return md
         return None
 
@@ -356,7 +358,7 @@ class WordTableView(QTableView):
         # Set up stuff used in our context menu:
         # place for index of the context-click, gives row for column 0
         self.context_index = None
-        # Build the menu of three actions. Don't need to keep a ref
+        # Build the context menu of three actions. Don't need to keep a ref
         # to the actions because they are parented in the menu.
         self.contextMenu = QMenu(self)
         sim_action = self.contextMenu.addAction(
@@ -372,6 +374,76 @@ class WordTableView(QTableView):
         sim_action.triggered.connect( self.similar_words )
         har1_action.triggered.connect(self.first_harmonic)
         har2_action.triggered.connect(self.second_harmonic)
+        # Create the list of actions for our minimal Edit menu.
+        self.ed_action_list = [
+            (C.ED_MENU_COPY,self.copy_action,QKeySequence.Copy),
+            (None,None,None),
+            (C.ED_MENU_FIND,self.find_action,QKeySequence.Find),
+            (C.ED_MENU_NEXT,self.find_next_action,QKeySequence.FindNext)
+        ]
+
+    # Methods to implement the Edit menu actions.
+    #
+    # Copy: collect the word values from each selected item in a list,
+    # join it with spaces, and put it on the clipboard.
+    def copy_action(self):
+        words = []
+        for index in self.selectedIndexes() :
+            words.append( index.data() )
+        if len(words) : # got any?
+            QApplication.clipboard().setText( ' '.join(words) )
+    #
+    # Find: present a find dialog. Take a single word from the returned
+    # string. Run through actual words looking for a match, using clean_word
+    # so that the comparison ignores all hyphens and apostrophes. On hit,
+    # select that word (row n, column 0) and make it visible; and save the
+    # row# and word text. On miss, beep and clear the last-row.
+    #
+    def find_action(self):
+        f_text = utilities.get_find_string(
+            _TR( 'Word panel find dialog', 'Enter a word or the beginning of a word to find.'),
+            self )
+        if f_text : # is neither None nor an empty string
+            # strip spaces, take initial word token in case of multiple words
+            word = f_text.strip().split()[0]
+            self.real_find( 0, worddata.clean_word( word ) )
+    #
+    # Find-next: If the last-row form find_action is valid, continue the
+    # search for that word going forward in the list. Otherwise, just do
+    # find_action. Note there is no danger of an index error using
+    # last_find_row+1 because range(N+1,N) is valid, a null list.
+    #
+    def find_next_action(self):
+        if self.last_find_row :
+            self.real_find( self.last_find_row + 1, self.last_find_word )
+        else :
+            self.find_action()
+    #
+    # The meat of the find and find-next operations. word has been
+    # cleaned of apostrophes and dashes.
+    #
+    def real_find(self, row, word):
+        for j in range( row, self.words.word_count() ) :
+            if worddata.clean_word( self.words.word_at( j ) ).startswith( word ) :
+                self.last_find_word = word
+                self.last_find_row = j
+                ix = self.model().index( j,0 )
+                self.selectRow( j )
+                self.scrollTo( ix, QAbstractItemView.PositionAtCenter )
+                return
+        # no hit
+        utilities.beep()
+        self.last_find_row = None
+
+    # Intercept the focus-in and -out events and use them to display
+    # and hide our edit menu.
+    def focusInEvent(self, event):
+        mainwindow.set_up_edit_menu('W',self.ed_action_list)
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        mainwindow.hide_edit_menu()
+        super().focusOutEvent(event)
 
     # Reimplement the parent QTableView keyPressEvent to implement quick
     # scrolling in what can be a very large table. We only look at data
@@ -409,7 +481,7 @@ class WordTableView(QTableView):
                     lo = mid + 1
                 else :
                     hi = mid
-            self.scrollTo(mp.index(lo,0))
+            self.scrollTo(mp.index(lo,0),QAbstractItemView.PositionAtCenter)
         else :
             super().keyPressEvent(event)
 
@@ -463,8 +535,6 @@ class WordTableView(QTableView):
             hits.add(word)
             self.model().set_word_set(hits)
 
-
-
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #
 # Define the list model and list view for the good-words list. The model
@@ -477,6 +547,9 @@ class GoodModel(QAbstractListModel):
         super().__init__(parent)
         # save access to word database
         self.words = words
+        # save access to parent to position warning message
+        self.save_parent = parent
+        # Load up the list.
         self.get_data()
 
     def get_data(self):
@@ -518,15 +591,37 @@ class GoodModel(QAbstractListModel):
         self.get_data()
         self.endResetModel()
 
-    # Methods related to accepting the drop of plain text. This should
-    # be called from the default list view, but it wasn't.
+    # Function to add a list of words to the good words set. This is called
+    # from both dropMimeData below, and from the view when handling the
+    # Edit>Paste method. We check the count of words being added and if it is
+    # more than 20, we refuse, on the basis that adding that many words at
+    # one time is probably a mistake, the clipboard or the dragged text is
+    # not what the user thinks it is.
+
+    def add_words(self, word_list):
+        if len(word_list) <= 20 :
+            self.beginResetModel()
+            for word in word_list:
+                self.words.add_to_good_set(word)
+            self.get_data()
+            self.endResetModel()
+            return True
+        # Too many words, save user from an ugly mistake.
+        utilities.warning_msg(
+            _TR('Good-word list drop error',
+                'You may not drop more than 20 words at one time on the Good Words list'),
+            _TR('Good-word list drop error explanation',
+                'There are %n words in the clipboard. This is probably a mistake.',n=len(word_list)),
+            self.save_parent)
+        return False
+
+
+    # This method is called at the completion of a drop operation.
+    # The second argument, qmd, is the mimeData whose text is
+    # presumably a list of one or more words.
     def dropMimeData(self, qmd, qda, row, column, parent):
-        self.beginResetModel()
-        for word in qmd.text().split() :
-            self.words.add_to_good_set(word)
-        self.get_data()
-        self.endResetModel()
-        return True
+        word_list = qmd.text().split()
+        return self.add_words( word_list )
 
 # The good-words view implements one behavior besides the default
 # list view. When it has the focus, hitting the delete key causes
@@ -540,11 +635,17 @@ class GoodView(QListView):
         self.setDropIndicatorShown(True)
         self.setMaximumWidth(120)
         self.setMovement(QListView.Free)
+        # Create the list of actions for our minimal Edit menu.
+        self.ed_action_list = [
+            (C.ED_MENU_COPY,self.copy_action,QKeySequence.Copy),
+            (C.ED_MENU_PASTE,self.paste_action, QKeySequence.Paste),
+            (C.ED_MENU_DELETE,self.delete_action, QKeySequence.Delete)
+        ]
 
-    # the dragEnterEvent and dragMoveEvent methods must be implemented and
-    # must set event.accept(). Only then will the model's dropMimeData
-    # method be called. This saves having to write a dropEvent in the
-    # list view, but it sure is confusing.
+    # The dragEnterEvent and dragMoveEvent methods must be implemented here
+    # in the *view* and must set event.accept(). Only then will the
+    # dropMimeData method of the *model* be called. This saves having to
+    # write a dropEvent in the list view, but it sure is confusing.
 
     def dragEnterEvent(self, event):
         if (event.dropAction() == Qt.CopyAction) and (event.mimeData().hasText() ) :
@@ -554,17 +655,52 @@ class GoodView(QListView):
     def dragMoveEvent(self, event):
         event.accept()
 
-    # Handle just one key, Delete (or backspace).
+    # Intercept the focus-in and -out events and use them to display
+    # and hide our edit menu.
+    def focusInEvent(self, event):
+        mainwindow.set_up_edit_menu('G',self.ed_action_list)
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        mainwindow.hide_edit_menu()
+        super().focusOutEvent(event)
+
+    # Methods to implement the Edit menu actions.
+    #
+    # Copy in the good-words list is identical to copy in the Word table.
+    # Get the selection as a string and put it on the clipboard.
+    #
+    def copy_action(self):
+        word_list = []
+        for index in self.selectedIndexes() :
+            word_list.append( index.data() )
+        if len(words) : # got any?
+            QApplication.clipboard().setText( ' '.join(words) )
+    #
+    # Paste gets whatever words are on the clipboard as a list, and
+    # passes them to the model to add. If there are more than 20 it
+    # will give an error but we do not check its return.
+    #
+    def paste_action(self):
+        word_list = QApplication.clipboard().text().strip().split()
+        self.model().add_words( word_list )
+    #
+    # Delete, and also the Delete or Backspace key, removes all
+    # words that are currently selected.
+    #
+    def delete_action(self):
+        word_list = []
+        for index in self.selectedIndexes() :
+            word_list.append( index.data() )
+        if len(word_list) :
+            self.model().remove_words(word_list)
+    #
+    # Event handler for keystrokes handles just one key, Delete (or backspace).
     def keyPressEvent(self, event):
         key = int(event.key())
         if ( key == Qt.Key_Backspace ) or ( key == Qt.Key_Delete ):
             event.accept()
-            ix_list = self.selectedIndexes()
-            word_list = []
-            for index in ix_list :
-                word_list.append( self.model().data(index, Qt.DisplayRole) )
-            if len(word_list) :
-                self.model().remove_words(word_list)
+            self.delete_action()
         else :
             event.ignore()
 
@@ -647,7 +783,9 @@ class WordPanel(QWidget) :
     RE_PAT_APOST = '''['\u02bc\u2018\u2019]'''
     RE_APOST = regex.compile(RE_PAT_APOST)
 
-    # Receive the doubleClicked(modelindex) signal from the table view.
+    # Receive the doubleClicked(modelindex) signal from the table view. This
+    # is handled here in the parent (not in the tableview) mainly because
+    # here we have access to the respect-case switch.
     def do_find(self,index):
         if index.column() != 0 :
             # the double-click wasn't on column 0, so get an index to column 0
@@ -660,8 +798,12 @@ class WordPanel(QWidget) :
         # a regex class that will find any at that position.
         work = self.RE_HYPHEN.sub(self.RE_PAT_HYPHEN, word)
         work = self.RE_APOST.sub(self.RE_PAT_APOST, work)
+        # Invoke the Find panel with the respect-case switch, and when the
+        # word is normal, the whole-word and not-regex switches. If the word
+        # has apostrophes or hyphens, pass not-whole-word and regex True.
         self.my_book.get_find_panel().find_this(
             work, case=sw_rc, word=(not sw_rx), regex=( work != word )
+            )
 
     def _uic(self):
         main_layout = QVBoxLayout()
