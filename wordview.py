@@ -300,7 +300,7 @@ class WordTableModel(QAbstractTableModel):
                 # Column 1, return the count
                 return self.words.word_count_at(index.row())
             else:
-                # Column 2, get the propery set and translate it
+                # Column 2, get the property set and translate it
                 props = self.words.word_props_at(index.row())
                 features = worddata.prop_string(props)
                 return features
@@ -506,6 +506,9 @@ class WordTableView(QTableView):
                 hits.add(wx) # will get 1 hit on the word itself
         if len(hits) > 1 : # did find at least one similar word
             self.model().set_word_set(hits)
+        else: # no matches
+            utilities.beep()
+
 
     # Slot for the "First Harmonic" context menu choice. We implement
     # both first and second harmonic using the "fuzzy match" feature
@@ -521,6 +524,8 @@ class WordTableView(QTableView):
         if len(hits) : # did find at least one fuzzy match
             hits.add(word)
             self.model().set_word_set(hits)
+        else: # no matches
+            utilities.beep()
 
     # Slot for the "Second Harmonic" context menu choice.
     def second_harmonic(self):
@@ -534,6 +539,8 @@ class WordTableView(QTableView):
         if len(hits) : # did find at least one fuzzy match
             hits.add(word)
             self.model().set_word_set(hits)
+        else: # no matches
+            utilities.beep()
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #
@@ -744,13 +751,31 @@ class WordPanel(QWidget) :
     # Receive the clicked() signal from the Refresh button.
     # Do not clear the filter, leave filtering alone over refresh.
     def do_refresh(self):
-        self.model.beginResetModel()
-        self.words.refresh(self.progress)
+        import time
+        self.model.beginResetModel() # 12 use
+        self.words.refresh(self.progress) # 0.2 sec
+
+        t0 = time.process_time() #dbg
         self.model.endResetModel()
+        t1 = time.process_time()    #dbg
+        print('end reset model',t1-t0) # 5.8 sec    #dbg
+
+        t0 = time.process_time()    #dbg
         self.setup_table()
-        self.good_model.beginResetModel()
-        self.good_model.get_data()
-        self.good_model.endResetModel()
+        t1 = time.process_time()    #dbg
+        print('setup table',t1-t0) # 2.8 sec    #dbg
+
+        self.good_model.beginResetModel() # 5 usec
+        self.good_model.get_data() # 10 usec
+        self.good_model.endResetModel() # 35 usec
+
+        #self.model.beginResetModel()
+        #self.words.refresh(self.progress)
+        #self.model.endResetModel()
+        #self.setup_table()
+        #self.good_model.beginResetModel()
+        #self.good_model.get_data()
+        #self.good_model.endResetModel()
 
     # Receive the WordsUpdated signal from the words model, indicating that
     # the display of all words, or good words, may have changed owing to
