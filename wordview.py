@@ -224,6 +224,7 @@ class WordFilter(QSortFilterProxyModel):
     def set_word_set(self, word_set):
         self.filter_set = word_set
         self.setFilterRegExp(QRegExp())
+        self.invalidateFilter()
         self.filterChange.emit()
 
     # Called by the panel when the user selects some filter.
@@ -232,6 +233,7 @@ class WordFilter(QSortFilterProxyModel):
         self.setFilterRegExp(FILTER_REGEXES[choice])
         self.setFilterKeyColumn( 0 if choice == 8 else 2 )
         self.filter_set = None
+        self.invalidateFilter()
         self.filterChange.emit()
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
