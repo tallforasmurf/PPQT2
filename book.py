@@ -271,6 +271,7 @@ class Book(QObject):
         self.metamgr.write_meta(meta_stream)
         self.editm.setModified(False)
         self.md_modified = False
+        self.editv.mod_change_signal(False)
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # The following functions are registered to the metatdata manager to read
