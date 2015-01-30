@@ -67,6 +67,7 @@ DEFAULT_FONT_SIZE = 13
 Names for sections of the metadata file.
 '''
 MD_BW = 'BADWORDS'
+MD_BI = 'BOOKINFO'
 MD_BM = 'BOOKMARKS'
 MD_CC = 'CHARCENSUS'
 MD_CU = 'CURSOR'

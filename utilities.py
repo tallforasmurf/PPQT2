@@ -37,14 +37,20 @@ from PyQt5.QtCore import (
     QTemporaryFile,
     QTextStream,
     QTextCodec,
-    QByteArray)
+    QByteArray
+)
 from PyQt5.QtWidgets import (
     QApplication,
     QDialog,
     QFileDialog,
+    QHBoxLayout,
     QInputDialog,
     QMessageBox,
-    QProgressDialog)
+    QPlainTextEdit,
+    QProgressDialog,
+    QPushButton,
+    QVBoxLayout
+)
 import constants as C # for encoding names
 import logging
 utilities_logger = logging.getLogger(name='utilities')
@@ -514,6 +520,41 @@ def make_progress(caption, parent):
     progress = QProgressDialog( caption, '', 0, 100, parent)
     progress.setMinimumDuration(250)
     return progress
+
+#
+# Create a QDialog containing a PlainTextEdit as its input widget.
+# This is used by the book to display and input book meta-info.
+# Here we display the dialog and if the user clicks OK, we return
+# the text in the editor. If Cancel, we return None.
+#
+# We are not translating the words OK and Cancel.
+#
+def show_info_dialog( caption, parent, initial_text ):
+    dialog = QDialog( parent )
+    dialog.setWindowTitle( caption )
+    # Create OK and Cancel buttons in a horizontal box.
+    ok_button = QPushButton("OK")
+    ok_button.setDefault(True)
+    ok_button.clicked.connect(dialog.accept)
+    cancel_button = QPushButton("Cancel")
+    cancel_button.setDefault(False)
+    cancel_button.clicked.connect(dialog.reject)
+    hbox = QHBoxLayout()
+    hbox.addWidget(cancel_button,0)
+    hbox.addStretch()
+    hbox.addWidget(ok_button,0)
+    # Lay out a Plain Text Edit above the buttons.
+    vbox = QVBoxLayout()
+    pt_editor = QPlainTextEdit()
+    pt_editor.document().setPlainText( initial_text )
+    vbox.addWidget(pt_editor,1)
+    vbox.addLayout(hbox,0)
+    dialog.setLayout(vbox)
+    result = dialog.exec_()
+    if result :
+        return pt_editor.document().toPlainText()
+    else :
+        return None
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Decimal integer to Roman-numeral conversion, used by both pagedata (for
