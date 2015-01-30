@@ -55,10 +55,6 @@ it displays.
 Naming convention: xxxxm is a model, e.g. editm = editdata.Document and
 xxxxxv is a view, e.g. wordv = wordview.WordPanel
 
-provide document ref
-provide metamanager ref
-provide spellcheck ref
-
 '''
 from PyQt5.QtCore import QObject, QCoreApplication,QCryptographicHash
 _TR = QCoreApplication.translate
@@ -120,11 +116,14 @@ class Book(QObject):
         # are indexed 1-9 (from control-1 to control-9 keys) but the list
         # has ten entries, entry 0 not being used.
         self.bookmarks = [None, None, None, None, None, None, None, None, None, None]
+        # Initialize the book-facts dict in case none is read from metadata.
+        self.book_facts = { "Title" : "?", "Author" : "?", "Publication date" : "19??" }
         #
         # Create the metadata manager, then register to read and write the
         # metadata sections that are stored at this level: the last-set main
         # dictionary, the cursor position at save, the edit point size at
-        # save, the bookmarks, and the hash value of the saved document.
+        # save, the bookmarks, the hash value of the saved document, and the
+        # book_facts dictionary.
         #
         self.metamgr = metadata.MetaMgr()
         self.metamgr.register(C.MD_MD, self._read_dict, self._save_dict)
@@ -132,6 +131,7 @@ class Book(QObject):
         self.metamgr.register(C.MD_ES, self._read_size, self._save_size)
         self.metamgr.register(C.MD_BM, self._read_bookmarks, self._save_bookmarks)
         self.metamgr.register(C.MD_DH, self._read_hash, self._save_hash)
+        self.metamgr.register(C.MD_BI, self._read_facts, self._save_facts)
         #
         # Create the data model objects. These are private to the book.
         self.editm = editdata.Document(self) # document, to be initialized later
@@ -416,6 +416,26 @@ class Book(QObject):
         # Calculate an SHA-1 hash over the current document and write it.
         return self._signature()
 
+    # Process {"BOOKINFO": { "Title":"Whatever",... } } The facts about the book
+    # are stored as a dict with user-defined keys and values. On save, just write
+    # the dict.
+
+    def _save_facts(self, section) :
+        return self.book_facts
+    # On load, take some trouble to make sure it is a dict with only string
+    # keys and values.
+    def _read_facts(self, sentinel, value, version) :
+        if type(value) == type(self.book_facts) :
+            self.book_facts = dict()
+            for (key, arg) in value.items() :
+                if type(key) == type('x') and type(arg) == type(key) :
+                    self.book_facts[key] = arg
+                else :
+                    self.logger.error( 'Keys and values in BOOKINFO must be strings,' )
+                    self.logger.error( '  Ignoring {} : {}'.format(key,arg) )
+        else :
+            self.logger.err( 'BOOKINFO is not a dictionary, ignoring it')
+
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # The following methods assist the editview to implement its context menu.
     #
@@ -472,6 +492,33 @@ class Book(QObject):
                           "Dictionary request info")
                 )
         return False
+
+    # User requests to edit facts about the book. Present a dialog containing
+    # a plain text edit primed with what we know about those facts. When edit
+    # completes, if not cancelled, update our book facts dict.
+    def edit_book_facts(self) :
+        starting_text = ''
+        for (key, arg) in self.book_facts.items() :
+            starting_text += '{} : {}\n'.format(key,arg)
+        response = utilities.show_info_dialog(
+                _TR("Edit View Book Facts Dialog Title",
+'''Enter facts about the book such as Title or Author.\n
+Each line must have a key such as Title, a colon, then a value.'''),
+                self.editv, starting_text )
+        if response : # is not None, there is some text
+            self.book_facts = dict()
+            for line in response.split('\n') :
+                if line.strip() : # is not empty,
+                    try :
+                        (key, arg) = line.split(':') # exception if not exactly 1 colon
+                        self.book_facts[key.strip()] = arg.strip()
+                    except :
+                        utilities.warning_msg(
+                            _TR("Edit book-facts dialog warning message",
+                                "Each line must have a key, a colon, and a value. Ignoring:"),
+                            "'{}'".format(line) )
+                # else skip empty line
+        # else Cancel - do nothing
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # When the dicts path changes, recreate our speller. A change in dicts

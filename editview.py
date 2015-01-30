@@ -40,6 +40,7 @@ Provides a context menu with these user commands:
     Mark Spelling
     Choose Dictionary
     Choose Scanno File
+    Edit Metadata
 
 Offers these additional methods:
 
@@ -398,7 +399,7 @@ class EditView( QWidget ):
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 CONTEXT MENU
     #
-    # Define the four actions for our context menu, then make the menu.
+    # Define the five actions for our context menu, then make the menu.
     #
     # The mark-scannos and mark-spelling choices are checkable and their
     # toggled signal is connected to these slots.
@@ -413,6 +414,10 @@ class EditView( QWidget ):
 
     def _start_highlights(self):
         self.highlighter.setDocument(self.document)
+    #
+    # These are called by the triggered signal of the menu items. The first
+    # two toggle the highlighting of scannos and spelling.
+    #
 
     def _act_mark_scannos(self,toggle):
         before = self.scanno_check or self.spelling_check
@@ -432,8 +437,7 @@ class EditView( QWidget ):
         if after :
             self._start_highlights()
     #
-    # These are called by the triggered signal of the menu items. The
-    # choose-scanno and choose-dictionary actions are passed along to the
+    # The choose-scanno and choose-dictionary actions are passed along to the
     # book. It asks the user to choose a file or a dict, and if a new file or
     # dict is selected, it causes the word model to load the new scannos or
     # recheck spelling with the new dict. The highlighter works off the
@@ -454,6 +458,9 @@ class EditView( QWidget ):
             # Turn it off and on again to reset the marks.
             self._act_mark_spelling(False)
             self._act_mark_spelling(True)
+    #
+    # The Edit Metadata action is passed directly to the book for
+    # implementation because it stores that information.
 
     #
     # Create the menu itself. This is part of initialization.
@@ -486,6 +493,12 @@ class EditView( QWidget ):
                                 "context menu tooltip") )
         act4.triggered.connect(self._act_choose_dict)
         m.addAction(act4)
+        act5 = QAction( _TR("EditViewWidget", "Edit Book Facts...", "context menu item"), m )
+        act5.setToolTip( _TR("EditViewWidget",
+                         "Edit the Title, Author and other facts about the book",
+                         "context menu tooltip") )
+        act5.triggered.connect(self.my_book.edit_book_facts)
+        m.addAction(act5)
         return m
     #
     # Override the parent's contextMenuEvent to display and execute the menu.
