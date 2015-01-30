@@ -518,6 +518,7 @@ Each line must have a key such as Title, a colon, then a value.'''),
                                 "Each line must have a key, a colon, and a value. Ignoring:"),
                             "'{}'".format(line) )
                 # else skip empty line
+            self.metadata_modified(True, C.MD_MOD_FLAG)
         # else Cancel - do nothing
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
