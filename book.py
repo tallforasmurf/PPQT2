@@ -117,7 +117,11 @@ class Book(QObject):
         # has ten entries, entry 0 not being used.
         self.bookmarks = [None, None, None, None, None, None, None, None, None, None]
         # Initialize the book-facts dict in case none is read from metadata.
-        self.book_facts = { "Title" : "?", "Author" : "?", "Publication date" : "19??" }
+        self.book_facts = {
+            "Title" : "?",
+            "Author" : "?",
+            "Publication date" : "1???",
+            "Language" : "English" }
         #
         # Create the metadata manager, then register to read and write the
         # metadata sections that are stored at this level: the last-set main
