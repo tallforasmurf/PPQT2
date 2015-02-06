@@ -202,12 +202,11 @@ class WordFilter(QSortFilterProxyModel):
 
     # Override filterAcceptsRow to check for a list filter.
     def filterAcceptsRow( self, row, parent_index ):
-        if self.filter_set is None : # the usual case,
-            # apply the current regex
-            return super().filterAcceptsRow(row,parent_index)
-        model_index = self.index(row, 0, parent_index)
-        word = self.data(model_index,Qt.DisplayRole)
-        return word in self.filter_set
+        if self.filter_set : # is not None,
+            word = self.sourceModel().index(row,0,parent_index).data()
+            return word in self.filter_set
+        # no filter set, just apply the current regex
+        return super().filterAcceptsRow(row,parent_index)
 
     # The following methods control the filtration. After making
     # any filter change, emit a filterChanged signal so the main
@@ -224,15 +223,16 @@ class WordFilter(QSortFilterProxyModel):
     def set_word_set(self, word_set):
         self.filter_set = word_set
         self.setFilterRegExp(QRegExp())
+        self.setFilterKeyColumn( 0 )
         self.invalidateFilter()
         self.filterChange.emit()
 
     # Called by the panel when the user selects some filter.
     # Set the chosen regex and clear the set.
     def set_filter_regex(self,choice):
+        self.filter_set = None
         self.setFilterRegExp(FILTER_REGEXES[choice])
         self.setFilterKeyColumn( 0 if choice == 8 else 2 )
-        self.filter_set = None
         self.invalidateFilter()
         self.filterChange.emit()
 
@@ -517,7 +517,7 @@ class WordTableView(QTableView):
     # of the regex module.
     def first_harmonic(self):
         word = self.contextIndex.data(Qt.DisplayRole)
-        rex = regex.compile('(' + word + '){0<e<2}')
+        rex = regex.compile('^(' + word + '){0<e<2}$',flags=regex.WORD)
         hits = set()
         for j in range(self.words.word_count()) :
             wx = self.words.word_at(j)
@@ -532,7 +532,7 @@ class WordTableView(QTableView):
     # Slot for the "Second Harmonic" context menu choice.
     def second_harmonic(self):
         word = self.contextIndex.data(Qt.DisplayRole)
-        rex = regex.compile('(' + word + '){1<e<3}')
+        rex = regex.compile('^(' + word + '){1<e<3}$',flags=regex.WORD)
         hits = set()
         for j in range(self.words.word_count()) :
             wx = self.words.word_at(j)
@@ -753,31 +753,13 @@ class WordPanel(QWidget) :
     # Receive the clicked() signal from the Refresh button.
     # Do not clear the filter, leave filtering alone over refresh.
     def do_refresh(self):
-        import time
-        self.model.beginResetModel() # 12 use
+        self.model.beginResetModel()
         self.words.refresh(self.progress) # 0.2 sec
-
-        t0 = time.process_time() #dbg
         self.model.endResetModel()
-        t1 = time.process_time()    #dbg
-        print('end reset model',t1-t0) # 5.8 sec    #dbg
-
-        t0 = time.process_time()    #dbg
         self.setup_table()
-        t1 = time.process_time()    #dbg
-        print('setup table',t1-t0) # 2.8 sec    #dbg
-
         self.good_model.beginResetModel() # 5 usec
         self.good_model.get_data() # 10 usec
         self.good_model.endResetModel() # 35 usec
-
-        #self.model.beginResetModel()
-        #self.words.refresh(self.progress)
-        #self.model.endResetModel()
-        #self.setup_table()
-        #self.good_model.beginResetModel()
-        #self.good_model.get_data()
-        #self.good_model.endResetModel()
 
     # Receive the WordsUpdated signal from the words model, indicating that
     # the display of all words, or good words, may have changed owing to
@@ -794,7 +776,7 @@ class WordPanel(QWidget) :
     def setup_table(self):
         self.row_count.setNum(self.proxy.rowCount())
         #self.view.resizeRowsToContents()
-        self.view.sortByColumn(0,Qt.AscendingOrder)
+        #self.view.sortByColumn(0,Qt.AscendingOrder)
         self.view.setColumnWidth(0,180)
         self.view.setColumnWidth(1,50)
 
