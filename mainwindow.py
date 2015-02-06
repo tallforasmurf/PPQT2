@@ -144,6 +144,7 @@ import colors
 import constants as C
 import logging
 import utilities
+import helpview
 import book
 mainwindow_logger = logging.getLogger(name='main_window')
 from PyQt5.QtTest import QTest # dbg
@@ -216,7 +217,8 @@ class MainWindow(QMainWindow):
         self.focus_book = None # seqno of book in focus, see _focus_me
         # Initialize the list of recent files
         self.recent_files = []
-
+        # Initialize the handle of a help display widget
+        self.help_widget = None # later, if at all
         # Create the main window and set up the menus.
         self._uic()
 
@@ -603,6 +605,16 @@ class MainWindow(QMainWindow):
         p = preferences.PreferenceDialog( self )
         r = p.exec_()
 
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Help menu action triggered. If the Help widget has not yet been
+    # created, create it. Otherwise just show it and raise it.
+    def _show_help(self):
+        if self.help_widget is None:
+            self.help_widget = helpview.HelpWidget()
+        self.help_widget.show()
+        self.help_widget.raise_()
+
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Create the UI contained within this QMainWindow object. This is a lean
     # main window indeed. We have no toolbar, no status bar, no dock,
@@ -696,16 +708,22 @@ class MainWindow(QMainWindow):
         work.setToolTip( _TR('File:Recent tooltip', 'List of recently-used files to open') )
         self.file_menu.aboutToShow.connect(self._build_recent)
 
-        # Preferences menu action that opens the Preferences dialog.
-        #  divider if not Mac
-        if not C.PLATFORM_IS_MAC:
-            self.file_menu.addSeparator()
+        # Put in a divider above the Help, Preferences and Quit actions.
+        self.file_menu.addSeparator()
+
+        # Help opens or un-hides the Help viewer
+        work = self.file_menu.addAction( _TR('Help menu item', 'Help') )
+        work.setToolTip( _TR( 'Help menu item tooltip', 'Display the Help/User Manual in a separate window' ) )
+        work.triggered.connect(self._show_help)
+        self.file_menu.addAction(work)
+
+        # Preferences: On the Mac, Preferences is automatically moved to the app menu.
         work = self.file_menu.addAction( _TR('Preferences menu item', 'Preferences') )
         work.setToolTip( _TR( 'Preferences menu item tooltip', 'Open the Preferences dialog to set paths, fonts, and text styles') )
         work.setMenuRole( QAction.PreferencesRole )
         work.triggered.connect( self._preferences )
 
-        #  Quit with the menu role that moves it to the app menu
+        #  Quit choice, with the menu role that moves it to the app menu
         work = QAction( _TR('Quit command','&Quit'), self )
         work.setMenuRole(QAction.QuitRole)
         work.setShortcut(QKeySequence.Quit)
