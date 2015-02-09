@@ -86,6 +86,8 @@ class HelpWidget(QWidget) :
         # Set window title to translated value
         self.setWindowTitle(
             _TR( "title of help viewer window", "PPQT Help Viewer" ) )
+        # Initialize saved geometry, see showEvent()
+        self.last_shape = None
         # Initialize find string, see find_action().
         self.find_text = None
         # Create our complete layout consisting of a web page.
@@ -111,13 +113,14 @@ class HelpWidget(QWidget) :
         if os.access( html_path, os.R_OK ) :
             # it exists, load it and save self.html_path
             try :
-                f = open( 'r', html_path, encoding='UTF-8' )
+                f = None # in case open fails, define f
+                f = open( html_path, 'r', encoding='UTF-8' )
                 self.view.setHtml( f.read() )
                 self.html_path = html_path # show we are good now
             except :
                 pass # just silently fail :-(
             finally :
-                f.close()
+                if f : f.close()
 
     # Slot to receive the pathChanged signal from the paths module. That
     # signal is given when any of the standard paths are changed. If we are
@@ -127,6 +130,16 @@ class HelpWidget(QWidget) :
     def path_change( self, code ) :
         if self.html_path is None :
             self.load_html( paths.get_extras_path() )
+
+    def closeEvent( self, event ) :
+        self.last_shape = self.saveGeometry()
+        event.ignore()
+        self.hide()
+        return super().closeEvent(event)
+
+    def showEvent( self, event ) :
+        if self.last_shape : # is not None
+            self.restoreGeometry( self.last_shape )
 
     # Handle keypress events for ^f ^g
 
