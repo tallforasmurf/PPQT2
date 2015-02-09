@@ -122,6 +122,9 @@ ED_MENU_FIND = _TR('Edit Menu','Find...','Edit menu action')
 ED_MENU_FIND_SELECTED = _TR('Edit Menu', 'Find Selected', 'Edit menu action')
 ED_MENU_NEXT = _TR('Edit Menu','Find Next','Edit menu action')
 ED_MENU_PRIOR = _TR('Edit Menu','Find Previous','Edit menu action')
+ED_MENU_TO_UPPER = _TR('Edit Menu','To Uppercase','Edit menu action')
+ED_MENU_TO_LOWER    = _TR('Edit Menu','To Lowercase','Edit menu action')
+ED_MENU_TO_TITLE    = _TR('Edit Menu','To Titlecase','Edit menu action')
 FIND_BUTTON = _TR('"Find" button','Find')
 
 '''
@@ -167,6 +170,9 @@ CTL_SHFT_G = int(Qt.ShiftModifier) | CTL_G
 CTL_EQUAL = int(Qt.ControlModifier) | Qt.Key_Equal
 CTL_T = int(Qt.ControlModifier) | Qt.Key_T
 CTL_SHFT_T = int(Qt.ShiftModifier) | CTL_T
+CTL_SHFT_L = int(Qt.ShiftModifier) | int(Qt.ControlModifier) | Qt.Key_L
+CTL_SHFT_U = int(Qt.ShiftModifier) | int(Qt.ControlModifier) | Qt.Key_U
+CTL_SHFT_I = int(Qt.ShiftModifier) | int(Qt.ControlModifier) | Qt.Key_I
 CTL_1 = int(Qt.ControlModifier) | Qt.Key_1
 CTL_2 = int(Qt.ControlModifier) | Qt.Key_2
 CTL_3 = int(Qt.ControlModifier) | Qt.Key_3
@@ -233,8 +239,9 @@ KEYS_MARK_SHIFT = {CTL_SHFT_1, CTL_SHFT_2, CTL_SHFT_3,
                    CTL_SHFT_7, CTL_SHFT_8, CTL_SHFT_9 }
 KEYS_BOOKMARKS = KEYS_MARK | KEYS_MARK_SET | KEYS_MARK_SHIFT
 KEYS_ZOOM = {CTL_MINUS, CTL_PLUS, CTL_SHFT_EQUAL, CTL_SHFT_PLUS}
+KEYS_CASE_MOD = {CTL_SHFT_I, CTL_SHFT_L, CTL_SHFT_U }
 # Keys acted on by the edit view
-KEYS_EDITOR = KEYS_FIND | KEYS_BOOKMARKS | KEYS_ZOOM
+KEYS_EDITOR = KEYS_FIND | KEYS_BOOKMARKS | KEYS_ZOOM | KEYS_CASE_MOD
 # Keys acted on by the Notes panel
 KEYS_NOTES = {CTL_M, CTL_SHFT_M, CTL_P, CTL_SHFT_P} | KEYS_ZOOM
 # TODO keys acted on by html panel, others?
