@@ -122,12 +122,13 @@ import mainwindow
 # a word that is hyphenated and/or has an apostrophe. First the word token
 # which may include pgdp-style special characters like [:u] or ['e].
 
-re_word = "(\\w*(\\[..\\])?\\w+)+"
+re_base_word = "(\\w*(\\[..\\])?\\w+)+"
 
-# Now use that in the context of internal (not terminal) apostrophe
+# Now extend that to allow internal (not terminal) apostrophe
 # or hyphen, allowing for both ascii and curly apostrophes.
+# Zero or more base word plus hyphen/apostrophe, then base word.
 
-re_hyap = "(" + re_word + "[\\'\\-\u2019])*" + re_word
+re_hyap = "(" + re_base_word + "[\\'\\-\u2019])*" + re_base_word
 
 re_word = regex.compile(re_hyap, regex.IGNORECASE)
 
@@ -199,7 +200,11 @@ class PTEditor( QPlainTextEdit ):
             (C.ED_MENU_FIND, lambda:self.emit_key(C.CTL_F) ,QKeySequence.Find),
             (C.ED_MENU_FIND_SELECTED, lambda:self.emit_key(C.CTL_SHFT_F),0),
             (C.ED_MENU_NEXT, lambda:self.emit_key(C.CTL_G) ,QKeySequence.FindNext),
-            (C.ED_MENU_PRIOR, lambda:self.emit_key(C.CTL_SHFT_G), QKeySequence.FindPrevious)
+            (C.ED_MENU_PRIOR, lambda:self.emit_key(C.CTL_SHFT_G), QKeySequence.FindPrevious),
+            (None, None, None),
+            (C.ED_MENU_TO_LOWER, lambda:self.case_mod(C.CTL_SHFT_L), QKeySequence( Qt.SHIFT + Qt.CTRL + Qt.Key_L ) ),
+            (C.ED_MENU_TO_UPPER, lambda:self.case_mod(C.CTL_SHFT_U), QKeySequence( Qt.SHIFT + Qt.CTRL + Qt.Key_U ) ),
+            (C.ED_MENU_TO_TITLE, lambda:self.case_mod(C.CTL_SHFT_I), QKeySequence( Qt.SHIFT + Qt.CTRL + Qt.Key_I ) )
             ]
 
     def emit_key(self, kkey) :
@@ -223,6 +228,9 @@ class PTEditor( QPlainTextEdit ):
             elif kkey in C.KEYS_ZOOM :
                 self.setFont( fonts.scale(kkey, self.font()) )
                 self.my_book.save_font_size(self.font().pointSize())
+            elif kkey in C.KEYS_CASE_MOD :
+                # change case of selection if any
+                self.case_mod(kkey)
             elif kkey in C.KEYS_BOOKMARKS :
                 # Something to do with a bookmark. They are kept in the Book
                 # because they are read and written in the metadata.
@@ -246,6 +254,32 @@ class PTEditor( QPlainTextEdit ):
         else: # not a key for the editor, pass it on.
             event.ignore()
             super().keyPressEvent(event)
+
+    # Execute case modification, to upper, to lower, to title, on the current
+    # selection. This was easy in the days of Latin-1. But Python
+    # string.lower/upper/title is Unicode-aware so no problem.
+    #
+    # Use re_word (above) and exploit the implicit match-loop of re.sub()
+    # to apply a nonce function to every word. The lambda for title case
+    # uses a trick documented under str.title in the python docs.
+    #
+    def case_mod(self, kkey) :
+        tc = self.textCursor()
+        if not tc.hasSelection() :
+            return # no selection, nothing to do
+        text = tc.selectedText() # full selection as string
+        start_pos = tc.selectionStart()
+        if kkey == C.CTL_SHFT_L :
+            func = lambda m : m.group(0).lower()
+        elif kkey == C.CTL_SHFT_U :
+            func = lambda m : m.group(0).upper()
+        else:
+            func = lambda m : m.group(0)[0].upper() + m.group(0)[1:].lower()
+        new_text = re_word.sub( func, text ) # do it!
+        tc.insertText( new_text )
+        tc.setPosition( start_pos, QTextCursor.MoveAnchor )
+        tc.setPosition( start_pos + len(new_text), QTextCursor.KeepAnchor )
+        self.setTextCursor(tc)
 
 
 class EditView( QWidget ):
