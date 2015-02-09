@@ -49,10 +49,10 @@ shutdown and startup. So we have to assume that the values in settings could
 be null strings or could be invalid (which will be treated as null strings).
 
 A null string or invalid extras path is "corrected" to the app's folder plus
-'/extras', or to the CWD if that is not readable.
+'/extras' if that exists, or else to the CWD.
 
-A null string for the dicts path is set to extras/dicts if that exists, else
-left as the null string (no dicts available).
+A null string for the dicts path is set to extras/dictionaries if that
+exists, else left as the null string (no dicts available).
 
 
 The following functions are offered:
@@ -133,8 +133,8 @@ def set_defaults():
         # extras folder not found, fall back to CWD
         candidate = os.getcwd()
     _EXTRAS = str(candidate)
-    # Default for dicts path is Extras/dicts, if it exists, else null
-    candidate = os.path.join( _EXTRAS, 'dicts' )
+    # Default for dicts path is Extras/dictionaries, if it exists, else null
+    candidate = os.path.join( _EXTRAS, 'dictionaries' )
     if not check_path( candidate ) :
         candidate = ''
     _DICTS = str(candidate)
@@ -172,7 +172,7 @@ def initialize(settings):
         # Either the saved path is no longer good, or _DICTS was
         # defaulted to null string. But possibly we just set a
         # new _EXTRAS, so try one more time.
-        candidate = os.path.join( _EXTRAS, 'dicts' )
+        candidate = os.path.join( _EXTRAS, 'dictionaries' )
         if not check_path( candidate ) :
             candidate = ''
     _DICTS = str(candidate)
