@@ -39,15 +39,15 @@ when the mod state changes.
 
 Implements a keyEvent method to provide keystrokes for insertion of
 {line#} and [image#] values, and to navigate to a noted line or image.
-    ctl-alt-m inserts {line#}
+    shift-ctl-m inserts {line#}
     ctl-m when cursor is in or next to {line#}, jumps to that line
-    ctl-alt-p inserts {image#}
+    shift-ctl-p inserts {image#}
     clt-p when cursor is in or next to [image#], jumps to that page
+       n.b. not a conflict with "print" because we don't support print at all
 
 Implements a simple (non-regex) Find:
     ctl-f brings up a simple modal dialog for Find text with OK and Cancel
     ctl-g does a find-again for last text
-    ctl-shift-g does a find-again backward
 
 Implements text zoom similarly to the editview:
     ctl-plus zooms larger
