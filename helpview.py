@@ -57,7 +57,7 @@ import utilities # for get_find_string
 import constants as C
 import os # for access, path.join
 # no need for logging
-from PyQt5.QtCore import QCoreApplication
+from PyQt5.QtCore import QCoreApplication, QUrl
 _TR = QCoreApplication.translate
 from PyQt5.QtWidgets import QWidget, QHBoxLayout
 from PyQt5.QtWebKitWidgets import QWebPage, QWebView
@@ -115,7 +115,8 @@ class HelpWidget(QWidget) :
             try :
                 f = None # in case open fails, define f
                 f = open( html_path, 'r', encoding='UTF-8' )
-                self.view.setHtml( f.read() )
+                base_url = QUrl.fromLocalFile( os.path.join(extras_path,'sphinx') + os.path.sep )
+                self.view.setHtml( f.read(), base_url )
                 self.html_path = html_path # show we are good now
             except :
                 pass # just silently fail :-(
