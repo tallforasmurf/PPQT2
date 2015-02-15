@@ -427,7 +427,7 @@ class PagePanel(QWidget):
         # marked skip. If no page info, or all are skip, complain and exit.
         n = 0
         for i in range( self.pdata.page_count() ):
-            if self.pdata.folio_info()[0] != C.FolioRuleSkip :
+            if self.pdata.folio_info(i)[0] != C.FolioRuleSkip :
                 n += 1
         if n == 0 : # page table empty or all rows marked skip
             utilities.warning_msg(
@@ -441,7 +441,7 @@ class PagePanel(QWidget):
         # Get permission to do this significant operation.
         ok = utilities.ok_cancel_msg(
             _TR("Page Table permission request",
-                "OK to insert the following string into %n pages?"),
+                "OK to insert the following string into %n pages?", n=n),
             ins_text, self)
         if ok :
             # get a cursor on the edit document.
