@@ -196,9 +196,11 @@ class WordFilter(QSortFilterProxyModel):
     def __init__(self, parent=None):
         global FILTER_REGEXES
         super().__init__(parent)
-        self.filter_set = None
         # set default filter regex and column and clear filter set
-        self.set_filter_regex(0)
+        self.filter_set = None
+        self.setFilterRegExp(QRegExp())
+        self.setFilterKeyColumn( 0 )
+        self.filtering = False # flag for the Reset action
 
     # Override filterAcceptsRow to check for a list filter.
     def filterAcceptsRow( self, row, parent_index ):
@@ -225,13 +227,24 @@ class WordFilter(QSortFilterProxyModel):
         self.setFilterRegExp(QRegExp())
         self.setFilterKeyColumn( 0 )
         self.invalidateFilter()
+        self.filtering = True
         self.filterChange.emit()
 
     # Called by the panel when the user selects some filter.
-    # Set the chosen regex and clear the set.
+    # If currently filtering on a set e.g. 1st Harmonic, clear that.
+    #
+    # If the regex is 0, meaning All, don't set a regex. Else, set that regex
+    # on the appropriate column, which is 0 (word) for single-letter, else 2
+    # (property flags).
+
     def set_filter_regex(self,choice):
         self.filter_set = None
-        self.setFilterRegExp(FILTER_REGEXES[choice])
+        if choice != 0 :
+            self.setFilterRegExp(FILTER_REGEXES[choice])
+            self.filtering = True
+        else :
+            self.setFilterRegExp(QRegExp()) # null regex for All
+            self.filtering = False
         self.setFilterKeyColumn( 0 if choice == 8 else 2 )
         self.invalidateFilter()
         self.filterChange.emit()
@@ -748,15 +761,34 @@ class WordPanel(QWidget) :
         # double-click of a table row to do_find()
         self.view.doubleClicked.connect(self.do_find)
         # Connect worddata changes due to metadata input
-        self.words.WordsUpdated.connect(self.do_update)
+        # DO NOT do this as it sticks a big delay on file open with metadata
+        #self.words.WordsUpdated.connect(self.do_update)
 
     # Receive the clicked() signal from the Refresh button.
     # Do not clear the filter, leave filtering alone over refresh.
+    #
+    # Performance hack: There is a bad delay of several seconds during
+    # endResetModel() if the model is unfiltered and displaying many rows.
+    # So, if there is no filter, impose a filter before resetting, then clear
+    # it after. There is still a delay going from showing a few rows to
+    # showing all, but it is less than the un-hacked delay.
+
     def do_refresh(self):
+        flag = not self.proxy.filtering
+        if flag :
+            self.proxy.set_filter_regex(8) # filter on single-letter words
         self.model.beginResetModel()
-        self.words.refresh(self.progress) # 0.2 sec
+        self.progress.reset()
+        self.progress.setRange(0,0) # should show a busy indication
+        self.progress.show()
+        self.words.refresh()
         self.model.endResetModel()
         self.setup_table()
+        if flag : # hack in use
+            self.proxy.set_filter_regex(0)
+        self.progress.reset()
+        self.progress.hide()
+        # and reset the good-words list too
         self.good_model.beginResetModel() # 5 usec
         self.good_model.get_data() # 10 usec
         self.good_model.endResetModel() # 35 usec
@@ -881,3 +913,5 @@ class WordPanel(QWidget) :
         self.progress = utilities.make_progress(
             _TR('Word-refresh progress bar title',
                 'Rebuilding the vocabulary' ), self)
+        self.progress.setAutoClose(False) # close it manually
+        self.progress.setAutoReset(False)
