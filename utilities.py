@@ -516,9 +516,9 @@ def get_find_string(caption, parent, prepared = ''):
 # maximum value is set to 100. The user can either call setValue() in integer
 # percents, or call setMaximum() to set a different end-value.
 #
-def make_progress(caption, parent):
-    progress = QProgressDialog( caption, '', 0, 100, parent)
-    progress.setMinimumDuration(250)
+def make_progress(caption,  parent):
+    progress = QProgressDialog( caption, None, 0, 100, parent)
+    progress.setMinimumDuration(500)
     return progress
 
 #
