@@ -579,16 +579,14 @@ class WordData(QObject):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Method to perform a census. This is called from wordview when the
     # user clicks the Refresh button asking for a new scan over all words in
-    # the book. A QProgressDialog is passed, which we load with the maximum
-    # count of rows and update as we go.
+    # the book. Formerly this took a progress bar, but the actual operation
+    # is so fast no progress need be shown.
     #
-    def refresh(self,progress):
+    def refresh(self):
         global re_lang_attr, re_token
 
         count = 0
         end_count = self.document.blockCount()
-        progress.setMaximum(end_count)
-        progress.setValue(0)
 
         # get a reference to the dictionary to use
         self.speller = self.my_book.get_speller()
@@ -607,8 +605,6 @@ class WordData(QObject):
         alt_tag = None
         for line in self.document.all_lines():
             count += 1
-            if 0 == (count % 20):
-                progress.setValue(count)
             j = 0
             m = re_token.search(line,0)
             while m : # while match is not None
@@ -635,7 +631,6 @@ class WordData(QObject):
                 togo.append(self.vocab_kview[j])
         for key in togo:
             del self.vocab[key]
-        progress.reset()
 
     # Internal method for adding a possibly-hyphenated token to the vocabulary,
     # incrementing its count. This is used during the census/refresh scan, and
