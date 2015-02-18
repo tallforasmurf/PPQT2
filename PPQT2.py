@@ -35,3 +35,23 @@ Mac OSX: $HOME/Library/Preferences/com.PGDP.PPQT2.plist
 Windows (registry): HKEY_CURRENT_USER\Software\PGDP\PPQT2
 
 '''
+import logging
+import io
+log_stream = io.StringIO()
+logging.basicConfig( stream=log_stream, level=logging.INFO )
+
+from PyQt5.QtWidgets import QApplication
+import sys
+
+the_app = QApplication( sys.argv )
+the_app.setOrganizationName( "PGDP" )
+the_app.setOrganizationDomain( "pgdp.net" )
+the_app.setApplicationName( "PPQT2" )
+
+from PyQt5.QtCore import QSettings
+the_settings = QSettings()
+
+from mainwindow import MainWindow
+the_main_window = MainWindow( the_settings )
+the_main_window.show()
+the_app.exec_()
