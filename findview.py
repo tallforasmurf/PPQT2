@@ -47,6 +47,8 @@ sw_regex         When checked, the find string is treated as a
                  Whole Word checkbox. Causes any input to the Find
                  input field to be checked for syntax and to get a
                  pink background to show invalid regex syntax.
+                 Input to any Replace field is checked for syntax
+                 and if bad (rare) gets a pink bg.
 
 sw_in_selection  While False, the find range is the whole document.
                  When toggled to True, if the current selection is
@@ -317,26 +319,24 @@ class FindRepValidator(QValidator):
         return QValidator.Acceptable, string, posn
 
 class FindRepEdit(QLineEdit):
-    def __init__(self, my_recall, sw_regex, sw_respect_case, parent=None):
+    def __init__(self, my_recall, ref_to_find, sw_regex, sw_respect_case, parent=None):
         super().__init__(parent)
+        # If this is a Replace, save pointer to the Find string.
+        # If this is the Find string, save None.
+        self.find_ref = ref_to_find
         # save reference to regex and case switches, and hook their
         # toggled signal to our check_regex slot.
-        if sw_regex is not None : # we are the Find edit
-            self.regex = None # last-compiled regex
-            self.match = None # result of last match on regex
-            self.reverse = None # regex compiled with REVERSE
-            self.sw_regex = sw_regex # quick access to regex switch
-            self.sw_respect_case = sw_respect_case # ..and case switch
-            sw_regex.toggled.connect(self.check_regex)
-            sw_respect_case.toggled.connect(self.check_regex)
-        else : # we are a rep edit, disable syntax checks
-            self.sw_regex = QCheckBox()
-            self.sw_regex.setChecked(False)
+        self.regex = None # the compiled regex for the current string
+        self.match = None # result of last match on regex
+        self.reverse = None # regex compiled with REVERSE
+        # in any case, save the switches for quick access
+        self.sw_regex = sw_regex # quick access to regex switch
+        self.sw_respect_case = sw_respect_case # ..and case switch
+        sw_regex.toggled.connect(self.check_regex)
+        sw_respect_case.toggled.connect(self.check_regex)
         # save reference to associated RecallMenuButton and link it to me.
         self.my_recall = my_recall
         my_recall.partner = self
-        # Here we save the compiled regex for the current string
-        self.regex = None
         # hook up to be notified of a change in font choice
         fonts.notify_me(self.font_change)
         self.font_change() # and set the current fixed font
@@ -404,18 +404,20 @@ class FindRepEdit(QLineEdit):
     # Note that when regex.compile raises an error, the str() value of the
     # error is a diagnostic. We put that in our tooltip.
     def check_regex(self):
-        global RE_Compile
-        self.match = None
-        self.reverse = None
-        if self.sw_regex.isChecked():
+        if self.sw_regex.isChecked() and self.find_ref is None :
+            # This is the Find field and regex is on: check and save our regex
+            self.match = None
+            self.reverse = None
             try:
-                rex = RE_Compile( self.text(), self.sw_respect_case )
-                self.regex = rex
+                self.regex = RE_Compile( self.text(), self.sw_respect_case )
                 self.set_background_white()
             except regex.error as whatever:
                 self.regex = None # shows that find text is invalid
                 self.set_background_pink('error: '+str(whatever))
         else:
+            # Regex not on, or this is a Replace field. Unfortunately it
+            # is not possible to check a Replace string until there exists
+            # a match object.
             self.regex = None
             self.set_background_white()
 
@@ -554,20 +556,8 @@ class UserButton(QPushButton):
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
-# Finally, the class of a FindPanel. The methods below are:
+# Finally, the class of a FindPanel itself.
 #
-# .__init__() creates widgets and hooks up all signals.
-# ._uic() subroutine to create all widgets and layouts.
-#
-# ._meta_read() metadata reader for the FINDPANEL section.
-# ._meta_write() metadata writer for the FINDPANEL section.
-#
-# .insel_change() handles a change in the In Selection switch,
-#    clearing or setting the search boundary cursor.
-#
-# .
-
-
 
 class FindPanel(QWidget):
     USER_BUTTON_MAX = 24 # how many user buttons to instantiate
@@ -874,8 +864,8 @@ class FindPanel(QWidget):
     # for andprior.
 
     def start_replace(self, button, and_next, and_prior, do_all ):
-        # First, global-replace is a whole different thing.
         if do_all :
+            # Global-replace is a whole different thing. Go do that.
             self.do_global_replace(button)
             return
         # Single replace: If the current selection is not the result of
@@ -883,8 +873,9 @@ class FindPanel(QWidget):
         if not self.selection_by_find :
             utilities.beep()
             return
-        # The current edit selection is the result of a Find.
+        # The current edit selection is the result of a Find. Proceed.
         tc = self.editv.get_cursor() # access to current selection
+        pa = tc.selectionStart() # save index of start of selection
         rb = self.replace_fields[button] # quick ref to the button
         rb.content_used() # push current value on the recall list
         if not self.sw_regex.isChecked() or (self.find_field.match is None) :
@@ -895,8 +886,33 @@ class FindPanel(QWidget):
             # Current selection was (presumably) created by our current
             # regex. Since the selection hasn't changed, the match object
             # in find_field is still valid, so use it to generate the
-            # replacement string.
-            tc.insertText(self.find_field.match.expand(rb.text()))
+            # replacement string. This is where we find out about a mistake
+            # in the Replacement string syntax.
+            try:
+                new_text = self.find_field.match.expand( rb.text() )
+                tc.insertText()
+            except regex.error as whatever:
+                diagnostic = str(whatever)
+                utilities.warning_msg(
+                    _TR( 'Find panel error in Replace text',
+                         'Error in Replace text' ),
+                    diagnostic, self )
+                # the text was not inserted, so just exit
+                return
+            except IndexError as whatever:
+                diagnostic = str(whatever)
+                utilities.warning_msg(
+                    _TR( 'Find panel error in Replace text',
+                         'Error in Replace text' ),
+                    diagnostic, self)
+                return
+        # Either of those insertText() calls left the cursor
+        # without a selection and positioned at the end of the insert.
+        # Reselect back to start so the inserted text is selected.
+        # Besides being convenient, this properly positions the cursor
+        # in case we are doing and_prior.
+        tc.setPosition(pa, QTextCursor.KeepAnchor)
+        self.editv.set_cursor(tc)
         if and_next :
             self.start_search(0)
         elif and_prior :
@@ -1237,7 +1253,7 @@ class FindPanel(QWidget):
         # Make the edit field for the Find. Its constructor needs access to the
         # related recall button and to switches that affect parsing regexes.
         self.find_field = FindRepEdit(
-            self.recall_buttons[0],self.sw_regex,self.sw_respect_case)
+            self.recall_buttons[0], None, self.sw_regex, self.sw_respect_case )
         self.find_field.setToolTip(
             _TR('Find panel','Enter the text to be matched. Pink color means a "regex" has incorrect syntax.')
             )
@@ -1317,7 +1333,8 @@ class FindPanel(QWidget):
                 _TR('Find panel',
                     'Show the ten most recent entries in Replace field {0}'.format(j),'tooltip')
                 )
-            self.replace_fields[j] = FindRepEdit(self.recall_buttons[j],None,None)
+            self.replace_fields[j] = FindRepEdit(
+                self.recall_buttons[j], self.find_field, self.sw_regex, self.sw_respect_case )
             self.replace_fields[j].setToolTip(
                 _TR('Find panel','Enter text to replace the the last text matched.','tooltip')
                 )
