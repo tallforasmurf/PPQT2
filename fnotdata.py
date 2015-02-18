@@ -598,6 +598,7 @@ class FnoteData(QObject):
         self.zone_cursors = []
         match = self.zone_finder_re.search(doc_text) # start from 0
         while match : # is not None
+            print(match.start(1),match.start(2)) # dbg
             tcA = QTextCursor(self.doc)
             tcA.setPosition(match.start(1))
             tcZ = QTextCursor(self.doc)
@@ -681,17 +682,25 @@ class FnoteData(QObject):
         # Set up the RE that recognizes anchors [A], [xviii], [*] etc
         anchor_finder_string = '\[(' + '|'.join(class_re_strings) + ')\]'
         self.anchor_finder_qre = QRegExp(anchor_finder_string)
+
         # Set up the RE that recognizes the opening of a note "[Footnote K:"
         # Make both QRegExp and regex versions.
         note_finder_string = '\[Footnote\s+(' + '|'.join(class_re_strings) + ')\s*\:'
         self.note_finder_qre = QRegExp( note_finder_string )
         self.note_finder_re = regex.compile( note_finder_string )
-        # set up the RE that finds footnote zones /F..F/. This is applied to
-        # the complete document text in Python, so use regex. Group 1 is (/F)
-        # so start(1) is the character index of the /F line. Group 2 is (F/)
-        # so start(2) is the index of the F/ line. The final group stops with
-        # either \n or $, in case the final F/ is end of document without \n
-        self.zone_finder_re = regex.compile( '\\n(/F)\\n.*(\\nF/)(\\n|$)' )
+
+        # Set up the RE that finds footnote zones /F..F/. This is applied to
+        # the complete document text in Python, so we can use regex.
+        #
+        # Group 1 is (/F), so start(1) is the character index of the /F line.
+        # Group 2 is (\nF/) so start(2) is the index of the newline preceding the
+        # F/ line. Moved notes, with newlines front and back, are inserted at
+        # start(2).
+        #
+        # The final group stops with either \n or $, in case the final
+        # F/ is end of document without \n.
+        #
+        self.zone_finder_re = regex.compile( '\n(\\/F).*?(\nF\\/)(\n|$)', regex.DOTALL )
         # Set up a list of tuples, (class#, re-for-class), ordered from most
         # likely (cap alpha, numeric, lowercase alpha, symbol) but also
         # ordered so that roman numerals are prioritized over alphabetics.
