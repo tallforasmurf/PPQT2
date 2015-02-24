@@ -181,6 +181,7 @@ def initialize(settings):
     _MONO_FAMILY = settings.value( 'fonts/mono_family', _MONO_FAMILY )
     # Read the saved point-sizes, with current defaults
     _GENL_SIZE = settings.value( 'fonts/general_size', _GENL_SIZE )
+    _GENL_SIZE = int(_GENL_SIZE)
     _MONO_SIZE = settings.value( 'fonts/mono_size', _MONO_SIZE )
     # Set fonts for those values. We do not go through set_fixed/_general()
     # because there is no need to trigger a fontChanged signal, this is
