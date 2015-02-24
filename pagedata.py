@@ -189,7 +189,7 @@ object that is private to the calling instance of PageData.
 '''
 
 re_line_sep = regex.compile(
-    '^-+File: ([^\\.]+)\\.png-(-*((\\\\[^\\\\]*)+)\\\\-*|-+)$'
+    '^-+File:\\s+([^\\.]+)\\.png(-+((\\\\[^\\\\]*)*)\\\\)?-*'
     ,regex.IGNORECASE)
 
 class PageData(QObject):
