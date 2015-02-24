@@ -384,7 +384,8 @@ class Book(QObject):
         # it as a string like "b'\\xde\\xad\\xbe\\xef...'"
         cuisineart = QCryptographicHash(QCryptographicHash.Sha1)
         cuisineart.reset()
-        cuisineart.addData( self.editm.full_text() )
+        text = self.editm.full_text()
+        cuisineart.addData( text.encode() )
         return bytes(cuisineart.result())
     # Note in v.1 and Python 2.7, the result of __repr__ on a byte array was
     # a char string like '\xde\xad\xbe\xef...' In v.2 under Python 3, the
