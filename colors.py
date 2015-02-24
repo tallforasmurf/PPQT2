@@ -132,12 +132,16 @@ def initialize(settings):
     set_defaults(False) # set defaults and do not signal
     _SPU_COLOR = QColor( settings.value('colors/spell_color',_SPU_COLOR.name()) )
     _SPU_STYLE = settings.value('colors/spell_style',_SPU_STYLE)
+    _SPU_STYLE = int( _SPU_STYLE )
     _SNO_COLOR = QColor( settings.value('colors/scanno_color',_SNO_COLOR.name()) )
     _SNO_STYLE = settings.value('colors/scanno_style',_SNO_STYLE)
+    _SNO_STYLE = int( _SNO_STYLE )
     _CL_COLOR = QColor( settings.value('colors/current_line',_CL_COLOR.name()) )
     _CL_STYLE = settings.value( 'colors/current_line_style', _CL_STYLE )
+    _CL_STYLE = int( _CL_STYLE )
     _FR_COLOR = QColor( settings.value('colors/find_range',_FR_COLOR.name()) )
     _FR_STYLE = settings.value( 'colors/find_range_style', _FR_STYLE )
+    _FR_STYLE = int( _FR_STYLE )
 
 def shutdown(settings):
     global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE
