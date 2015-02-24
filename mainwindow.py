@@ -659,7 +659,7 @@ class MainWindow(QMainWindow):
         if C.PLATFORM_IS_MAC :
             self.menu_bar = QMenuBar() # parentless menu bar for Mac OS
         else :
-            self.menu_bar = self.menuBar # refer to the default one
+            self.menu_bar = self.menuBar() # refer to the default one
         # Create the File menu, located in our menu_bar.
         self.file_menu = self.menu_bar.addMenu(_TR('Menu name', '&File'))
         # Populate the File menu with actions.
