@@ -230,10 +230,10 @@ PPQT always saves its `Metadata`_ file in UTF-8.
 
 Another common encoding is Latin-1 (also called ISO8859-1).
 PPQT *allows* book files to be encoded in Latin-1.
-If you have a book file encoded Latin-1, you must give it
+Before you open a book file encoded Latin-1, you must give it
 a filename that ends in ``-l`` (for example ``latinbook-l.txt``),
 or ``-ltn`` (``latinbook-ltn.txt``)
-or else use the file suffix ``.ltn`` (``latinbook.ltn``).
+or else give it the file suffix ``.ltn`` (``latinbook.ltn``).
 When PPQT opens or saves a file named in any of these ways, it
 uses the Latin-1 encoding.
 
@@ -245,9 +245,11 @@ There are many other encodings (`here is a list`_),
 such as the "Windows CP1252" encoding
 often found in older Windows files.
 PPQT does not support any encodings except UTF-8 and Latin-1.
-If you open a file and find its special characters are scrambled,
-close it immediately without saving it, and use some other utility
-to convert it to UTF-8.
+
+**If you open a file and find its special characters are scrambled,
+close it immediately without saving it.**
+If it is encoded Latin-1, rename it.
+Otherwise, use some other utility  to convert it to UTF-8.
 
 .. _here is a list: http://en.wikipedia.org/wiki/Character_encoding#Common_character_encodings
 
@@ -906,7 +908,7 @@ This switch is disabled during regular-expression searches.
 When **Regex** is on (✓), the search text is a `regular expression`_.
 When it is off, the search text is compared normally
 
-**In Selection** is used to confine search and replace to a
+**In Range** is used to confine search and replace to a
 limited range of the book text.
   
 .. _Find range:
@@ -914,14 +916,14 @@ limited range of the book text.
 Using a Limited Find Range
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use a limited Find range when you want to make changes to one
+Use a limited Find range when you want to make use search and replace in one
 part of the book.
-
 For example, suppose you are working on the Table of Contents,
-and you want to make changes only in that part of the book.
+and you want to make use find/replace to make changes only in that part of the book.
+
 Select the Table of Contents by clicking at the top of it,
 and shift-clicking at the end.
-Then on the Find panel, click **In Selection**.
+Then on the Find panel, click **In Range**.
 The text selection will be highlighted to show it is now
 a Find Range.
 (The highlight is normally light-blue, but see `Edit highlights`_.)
@@ -931,7 +933,7 @@ A "replace all" will replace all matches but only in the range.
 First will find the first match in the range,
 Last will find the last match in the range, etc.
 
-To remove the limited range, turn off the **In Selection** switch.
+To remove the limited range, turn off the **In Range** switch.
 
 Controls for Replacing
 -----------------------

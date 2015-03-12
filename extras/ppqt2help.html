@@ -203,10 +203,10 @@ PPQT <em>expects</em> book files to be encoded UTF-8.
 PPQT always saves its <a class="reference internal" href="#metadata">Metadata</a> file in UTF-8.</p>
 <p>Another common encoding is Latin-1 (also called ISO8859-1).
 PPQT <em>allows</em> book files to be encoded in Latin-1.
-If you have a book file encoded Latin-1, you must give it
+Before you open a book file encoded Latin-1, you must give it
 a filename that ends in <code class="docutils literal"><span class="pre">-l</span></code> (for example <code class="docutils literal"><span class="pre">latinbook-l.txt</span></code>),
 or <code class="docutils literal"><span class="pre">-ltn</span></code> (<code class="docutils literal"><span class="pre">latinbook-ltn.txt</span></code>)
-or else use the file suffix <code class="docutils literal"><span class="pre">.ltn</span></code> (<code class="docutils literal"><span class="pre">latinbook.ltn</span></code>).
+or else give it the file suffix <code class="docutils literal"><span class="pre">.ltn</span></code> (<code class="docutils literal"><span class="pre">latinbook.ltn</span></code>).
 When PPQT opens or saves a file named in any of these ways, it
 uses the Latin-1 encoding.</p>
 <p>If the text in your book is strictly ASCII, PPQT will handle it correctly
@@ -215,10 +215,11 @@ ASCII is a proper subset of both UTF-8 and Latin-1.</p>
 <p>There are many other encodings (<a class="reference external" href="http://en.wikipedia.org/wiki/Character_encoding#Common_character_encodings">here is a list</a>),
 such as the &#8220;Windows CP1252&#8221; encoding
 often found in older Windows files.
-PPQT does not support any encodings except UTF-8 and Latin-1.
-If you open a file and find its special characters are scrambled,
-close it immediately without saving it, and use some other utility
-to convert it to UTF-8.</p>
+PPQT does not support any encodings except UTF-8 and Latin-1.</p>
+<p><strong>If you open a file and find its special characters are scrambled,
+close it immediately without saving it.</strong>
+If it is encoded Latin-1, rename it.
+Otherwise, use some other utility  to convert it to UTF-8.</p>
 </div>
 </div>
 <div class="section" id="the-main-window">
@@ -740,17 +741,17 @@ This switch is disabled during regular-expression searches.
 (In a regular expression, use <code class="docutils literal"><span class="pre">\b</span></code> to find a word-boundary.)</p>
 <p>When <strong>Regex</strong> is on (✓), the search text is a <a class="reference internal" href="#regular-expression">regular expression</a>.
 When it is off, the search text is compared normally</p>
-<p><strong>In Selection</strong> is used to confine search and replace to a
+<p><strong>In Range</strong> is used to confine search and replace to a
 limited range of the book text.</p>
 <div class="section" id="using-a-limited-find-range">
 <span id="find-range"></span><h3>Using a Limited Find Range<a class="headerlink" href="#using-a-limited-find-range" title="Permalink to this headline">¶</a></h3>
-<p>Use a limited Find range when you want to make changes to one
-part of the book.</p>
-<p>For example, suppose you are working on the Table of Contents,
-and you want to make changes only in that part of the book.
-Select the Table of Contents by clicking at the top of it,
+<p>Use a limited Find range when you want to make use search and replace in one
+part of the book.
+For example, suppose you are working on the Table of Contents,
+and you want to make use find/replace to make changes only in that part of the book.</p>
+<p>Select the Table of Contents by clicking at the top of it,
 and shift-clicking at the end.
-Then on the Find panel, click <strong>In Selection</strong>.
+Then on the Find panel, click <strong>In Range</strong>.
 The text selection will be highlighted to show it is now
 a Find Range.
 (The highlight is normally light-blue, but see <a class="reference internal" href="#edit-highlights">Edit highlights</a>.)</p>
@@ -758,7 +759,7 @@ a Find Range.
 A &#8220;replace all&#8221; will replace all matches but only in the range.
 First will find the first match in the range,
 Last will find the last match in the range, etc.</p>
-<p>To remove the limited range, turn off the <strong>In Selection</strong> switch.</p>
+<p>To remove the limited range, turn off the <strong>In Range</strong> switch.</p>
 </div>
 </div>
 <div class="section" id="controls-for-replacing">
@@ -1080,20 +1081,19 @@ that is not set to &#8220;Omit&#8221;.</dd>
 <dd>The folio is set to a specific number to start a new sequence.</dd>
 </dl>
 <p>Column 3 of the table shows the result of applying these rules.</p>
-<p>The table is initialized when the book is first opened.
-The first page has format Arabic, rule Set to: 1.
-All other pages are set to (same), Add 1.
+<p>When the book is first opened,
+the first page is set to format:Arabic, rule:Set to 1.
+All other pages are set to format:(same), rule:Add 1.
 The result is that the Folio numbers are just the sequence numbers of the scan images.
 These numbers will usually match the image names, that is,
 image 0027 will have Folio 27.</p>
-<p>To change folio values, double-click in column 2 or 3.
-To change the format, double-click in column 2.
+<p>To change the format, double-click in column 2.
 A small pop-up menu appears.
-Select Arabic, roman, ROMAN or (same) for that row.</p>
+Select Arabic, roman, ROMAN or (same) for that page.</p>
 <p>To change the folio rule, double-click in column 3.
 A small pop-up menu appears.
 Select Omit, Add 1, or Set to:.</p>
-<p>If you set the rule to Set to, you can double-click in column 4.
+<p>If you choose the rule Set to, you can double-click in column 4.
 A small numeric entry field appears.
 Use it to set the folio value for this page.</p>
 <p>In each of these menus, you can cancel the action by keying Escape.
@@ -1218,7 +1218,7 @@ below the Note.
 If there is a zone below the Note, the lines of the Note are
 moved to the bottom of that zone.</p>
 <p>To put all Notes at the ends of the chapters, insert a footnote zone
-after the last paragraph of the chapter.
+after the last paragraph of every chapter.
 To put all Notes at the end of the book, put a single zone at the
 end of the final chapter.</p>
 <p>You can insert a level-2 heading or other text into a zone.

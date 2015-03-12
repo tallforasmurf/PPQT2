@@ -50,7 +50,7 @@ sw_regex         When checked, the find string is treated as a
                  Input to any Replace field is checked for syntax
                  and if bad (rare) gets a pink bg.
 
-sw_in_selection  While False, the find range is the whole document.
+sw_in_range  While False, the find range is the whole document.
                  When toggled to True, if the current selection is
                  <100 characters, the user is warned and the switch
                  is set False. Otherwise the selection is set as the
@@ -589,7 +589,7 @@ class FindPanel(QWidget):
         # self.sw_respect_case
         # self.sw_whole_word
         # self.sw_regex
-        # self.sw_in_selection
+        # self.sw_in_range
         # self.sw_and_next
         # self.sw_and_prior
         # self.sw_do_all
@@ -616,7 +616,7 @@ class FindPanel(QWidget):
         self.sw_and_next.stateChanged.connect(self.andnext_change)
         self.sw_and_prior.stateChanged.connect(self.andprior_change)
         # Connect a change of In Selection to insel_change
-        self.sw_in_selection.stateChanged.connect(self.insel_change)
+        self.sw_in_range.stateChanged.connect(self.insel_change)
         # Connect the four do-search buttons to the do_search method
         # passing a 2-bit code to distinguish each.
         self.find_first.clicked.connect(
@@ -729,7 +729,7 @@ class FindPanel(QWidget):
             # selection nonexistent or too small, complain
             utilities.warning_msg(NO_SELECTION,NO_SELECTION_INFO,self)
             # following generates a recursive call to this method
-            self.sw_in_selection.setChecked(False)
+            self.sw_in_range.setChecked(False)
             return
         self.editv.set_find_range()
 
@@ -1063,7 +1063,7 @@ class FindPanel(QWidget):
         d['regex'] = self.sw_regex.isChecked()
         d['andnext'] = self.sw_and_next.isChecked()
         d['andprior'] = self.sw_and_prior.isChecked()
-        d['insel'] = self.sw_in_selection.isChecked()
+        d['insel'] = self.sw_in_range.isChecked()
         d['all'] = self.sw_do_all.isChecked()
         d['find'] = self.find_field.text()
         d['rep1'] = self.replace_fields[1].text()
@@ -1238,11 +1238,11 @@ class FindPanel(QWidget):
             _TR('Find panel checkbox','When checked, the find and replace patterns are treated as regular expressions.','button tooltip')
             )
         # Make the In Selection switch.
-        self.sw_in_selection = QCheckBox(
-            _TR('Find panel checkbox','In Selection')
+        self.sw_in_range = QCheckBox(
+            _TR('Find panel checkbox','In Range')
             )
-        self.sw_in_selection.setToolTip(
-            _TR('Find panel checkbox','When checked, search and replace are restricted to a selected block of text.','button_tooltip')
+        self.sw_in_range.setToolTip(
+            _TR('Find panel checkbox','When checked, search and replace are restricted to a chosen block of text.','button_tooltip')
             )
         # Make the recall button for the Find text. Save its reference as [0] in
         # the list of four recall buttons.
@@ -1290,7 +1290,7 @@ class FindPanel(QWidget):
         box_switches.addWidget(self.sw_respect_case)
         box_switches.addWidget(self.sw_whole_word)
         box_switches.addWidget(self.sw_regex)
-        box_switches.addWidget(self.sw_in_selection)
+        box_switches.addWidget(self.sw_in_range)
         box_switches.addStretch() # compress to the left
         # Arrange the popup and find text in a row with the text maximized.
         box_find_text = QHBoxLayout()
