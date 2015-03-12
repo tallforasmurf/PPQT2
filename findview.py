@@ -1107,12 +1107,20 @@ class FindPanel(QWidget):
             # else doesn't start with "n:{" - blank? comment? just skip it
         # end of file
 
-    UB_BOILERPLATE = '''# Saved user-buttons from the Find panel. Each button definition starts with
-# a number between 0 (upper left button) and 23 (lower right button) and a
-# colon. Next comes a Python dictionary { key:value, key:value...} in which
-# each key is a string such as 'find' or 'regex' that names a part of the Find
-# panel. Each value is either True, False, or a 'quoted string' In any quoted
-# string, every backslash must be doubled!
+    UB_BOILERPLATE = '''#
+# Saved user-buttons from the Find panel. Each button definition starts with
+# a number that says what button to set. The button numbers go from 0 (upper
+# left button) to 23 (lower right button). Or use 99 to mean, the unused
+# button with the highest number. The button number is followed by a colon.
+#
+# Next comes a Python dictionary { key:value, key:value...}. Each key is a
+# string such as 'find' or 'regex' that names a part of the Find panel.
+# Each value is either True, False, or a 'quoted string'. In a quoted string,
+# every backslash must be doubled!
+#
+# The only required key is 'label'. Its value is a string that is the label
+# on the button. Use the 'tooltip' key to give an explanation that pops up
+# when the mouse is over the button.
 '''
     def user_button_output(self, stream):
         # in start_def, {{ is doubled because format() is used on it
