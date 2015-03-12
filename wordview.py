@@ -196,6 +196,7 @@ class WordFilter(QSortFilterProxyModel):
     def __init__(self, parent=None):
         global FILTER_REGEXES
         super().__init__(parent)
+        self.setSortLocaleAware(True)
         # set default filter regex and column and clear filter set
         self.filter_set = None
         self.setFilterRegExp(QRegExp())
