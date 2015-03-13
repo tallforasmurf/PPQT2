@@ -411,6 +411,10 @@ See <a class="reference internal" href="#good-words-list">Good words list</a>.</
 and loads its contents as the list of words that are always wrongly spelled.</p>
 </li>
 </ul>
+<p>Just as with the book file, PPQT <em>assumes</em> the <code class="docutils literal"><span class="pre">good_words</span></code> and <code class="docutils literal"><span class="pre">bad_words</span></code>
+files are encoded UTF-8.
+If they are Latin-1, you need to tell PPQT by making their filenames
+end in <code class="docutils literal"><span class="pre">-ltn</span></code> or giving them the <code class="docutils literal"><span class="pre">.ltn</span></code> suffix: <code class="docutils literal"><span class="pre">good_words.ltn</span></code>.</p>
 <p>The good- and bad-word files are only read on this occasion.
 Their contents are saved in the metadata file.
 You can edit the good-words list in the <a class="reference internal" href="#words-panel">Words panel</a>.</p>

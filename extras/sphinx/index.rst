@@ -497,6 +497,11 @@ In this case it does the following things:
 * It also looks for ``bad_words*.*``
   and loads its contents as the list of words that are always wrongly spelled.
 
+Just as with the book file, PPQT *assumes* the ``good_words`` and ``bad_words``
+files are encoded UTF-8.
+If they are Latin-1, you need to tell PPQT by making their filenames
+end in ``-ltn`` or giving them the ``.ltn`` suffix: ``good_words.ltn``.
+
 The good- and bad-word files are only read on this occasion.
 Their contents are saved in the metadata file.
 You can edit the good-words list in the `Words panel`_.
