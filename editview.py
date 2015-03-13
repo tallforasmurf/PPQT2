@@ -614,11 +614,11 @@ class EditView( QWidget ):
     def get_actual_editor(self):
         return self.Editor
 
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     #                 Cursor positioning
     #
-    # Go to line number string: called from the _line_number_enter slot and
-    # also from the Notes panel. Given a supposed line number as a string
+    # Go to line number as a string: called from the _line_number_enter slot
+    # and also from the Notes panel. Given a supposed line number as a string
     # 'nnn'; does not assume an integer string value or a valid line number;
     # if invalid, beep and do nothing.
 
@@ -630,9 +630,9 @@ class EditView( QWidget ):
             utilities.beep()
             editview_logger.error('Request to show invalid line number {0}'.format(lnum_string))
 
-    # Go to line number: called from the Footnotes panel. Position at
-    # a particular text block by number (origin-0). Allows -1 to mean
-    # end of file.
+    # Go to line number as an integer: called from above, and from the
+    # Footnotes and Bookloupe panels. Position at a particular text block by
+    # number (origin-0). Allows -1 to mean end of file.
 
     def go_to_line(self, line_number):
         try:
@@ -647,6 +647,7 @@ class EditView( QWidget ):
 
     # Position the cursor at the head of a given QTextBlock (line)
     # and get the focus. Does not assume tb is a valid textblock.
+    # Currently only called from above but could be called directly.
 
     def go_to_block(self, tb):
         if not tb.isValid():
@@ -654,9 +655,9 @@ class EditView( QWidget ):
             tb = self.document.lastBlock()
         self.show_position(tb.position())
 
-    # Position the document to show a given character position.
-    # Breaks the current selection if any. Does not necessarily
-    # center the new position. Does not assume the position is valid.
+    # Position the document to show a given character position. Called from
+    # imageview and loupeview. Breaks the current selection if any. Does not
+    # assume the position is valid.
 
     def show_position(self, pos):
         try:
@@ -666,23 +667,28 @@ class EditView( QWidget ):
         except:
             utilities.beep()
             editview_logger.error('Request to show invalid position {0}'.format(pos))
-            pos = self.document.characterCount()
+            pos = self.document.characterCount()-1
         tc = QTextCursor(self.Editor.textCursor())
         tc.setPosition(pos)
         self.show_this(tc)
 
-    # Make a selection visible. Breaks the current selection if any.
-    # Does not necessarily center the new selection.
+    # Make a selection visible. Breaks the current selection if any. Called
+    # only from above, but could be called directly. Centers the desired
+    # position.
 
     def show_this(self, tc):
         self.Editor.setTextCursor(tc)
-        self.Editor.ensureCursorVisible()
+        self.Editor.centerCursor()
         self.Editor.setFocus(Qt.TabFocusReason)
 
     # Center a position or text selection in the middle of the window. Called
-    # e.g. from Find to display the found selection. If a selection is taller
-    # than 1/2 the window height, put the top of the selection higher, but in
-    # no case off the top of the window.
+    # e.g. from Find to display the found selection.
+    #
+    # This differs from show_this in that it expects a current selection and
+    # does not break that selection; also allows for the chance that the
+    # selection could be bigger (much bigger) than the current viewport. If
+    # is is taller than 1/2 the window height, put the top of the selection
+    # higher than centered, but in no case off the top of the window.
     #
     # Calculations are mostly in terms of lines (textblocks).
     # Let VX be the viewport height (pixels)
