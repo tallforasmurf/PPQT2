@@ -55,7 +55,8 @@ from PyQt5.QtCore import (
     QByteArray,
     QCoreApplication,
     QPoint,
-    QSize
+    QSize,
+    QTimer
     )
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
@@ -219,9 +220,21 @@ class MainWindow(QMainWindow):
         self.recent_files = []
         # Initialize the handle of a help display widget
         self.help_widget = None # later, if at all
+        # Finished initializing after the app is running
+        QTimer.singleShot(500,self.finish_init)
         # Create the main window and set up the menus.
         self._uic()
 
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # As part of setup we often need to show the user a dialog, but when our
+    # __init__ is first called, our window has not been shown and the
+    # app.exec_() call has not been made. If ok_cancel_msg() is used in that
+    # condition, there is a big delay and spinning cursor on the mac. So this
+    # code is called from a one-shot timer 500ms after the window has been
+    # created, so we are sure the app is processing events etc.
+    def finish_init(self):
+        print('finish started')
+        self.finish_init = False # never do this again
         # Initialize the set of files actually open when we shut down.
         last_session = self._read_flist('mainwindow/open_files')
         if len(last_session) : # there were some files open
@@ -231,7 +244,7 @@ class MainWindow(QMainWindow):
                 msg = _TR('Start-up dialog', '%n books were open at the end of the last session.',
                           n=len(last_session) )
             info = _TR("Start-up dialog", "Click OK to re-open all")
-            if utilities.ok_cancel_msg( msg, info) :
+            if utilities.ok_cancel_msg( msg, info, parent=self) :
                 for file_path in last_session :
                     ftbs = utilities.path_to_stream(file_path)
                     if ftbs :
@@ -240,6 +253,8 @@ class MainWindow(QMainWindow):
             # We did not re-open any books, either because there were
             # none, or the user said No, or perhaps they were not found.
             self._new() # open one, new, book.
+        print('finish over')
+
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Slot to receive the currentChanged signal from the editview tabset.
@@ -253,6 +268,7 @@ class MainWindow(QMainWindow):
                     self.focus_me(seqno)
                     return
             mainwindow_logger.error('cannot relate editview tab index to book')
+
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Make a selected book the focus of all panels. This is called explicitly
     # when a book is first created, and when the editview tabset changes the
@@ -375,7 +391,7 @@ class MainWindow(QMainWindow):
                 m1 = _TR('File:Open','Cannot open a metadata file alone')
                 m2 = _TR('File:Open','There is no book file matching ',
                          'filename follows this') + fbts.filename()
-                utilities.warning_msg(m1, m2)
+                utilities.warning_msg(m1, m2, parent=self)
                 return
             # we see foo.txt with foo.txt.META, silently open it
             fbts = fb2
@@ -443,12 +459,14 @@ class MainWindow(QMainWindow):
                 if not meta_stream:
                     utilities.warning_msg(
                         _TR('File:Save', 'Unable to open metadata file for writing.'),
-                        _TR('File:Save', 'Use loglevel=error for details.') )
+                        _TR('File:Save', 'Use loglevel=error for details.'),
+                        parent=self )
                     return False
             else:
                 utilities.warning_msg(
                     _TR('File:Save', 'Unable to open book file for writing.'),
-                    _TR('File:Save', 'Use loglevel=error for details.') )
+                    _TR('File:Save', 'Use loglevel=error for details.'),
+                    parent=self )
                 return False
             return active_book.save_book(doc_stream, meta_stream)
 
@@ -489,8 +507,8 @@ class MainWindow(QMainWindow):
             ret = utilities.save_discard_cancel_msg(
                 msg,
                 info = _TR('File Close dialog',
-                           'Save it, Discard changes, or Cancel Closing?')
-                )
+                           'Save it, Discard changes, or Cancel Closing?'),
+                parent=self )
             if ret is None : # Cancel
                 return
             if ret : # True==Save
