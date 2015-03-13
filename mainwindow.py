@@ -584,29 +584,30 @@ class MainWindow(QMainWindow):
     # accessible. If one is on a volume (e.g. USB stick) and you unmount the
     # volume, the path should not appear in the menu until the volume is
     # mounted again.
-    def _open_recent(self, path):
+    def _open_recent(self):
+        path = self.sender().data()
         fbts = utilities.path_to_stream(path)
         if fbts :
             self._open(fbts)
 
     def _build_recent(self):
         active_files = []
+        self.recent_menu.clear()
+        self.recent_menu.setEnabled(False)
         for path in self.recent_files:
             seq = self._is_already_open(path)
             if (seq is None) and utilities.file_is_accessible(path) :
-                active_files.append( (utilities.file_split(path),path) )
+                active_files.append( path )
         if 0 == len(active_files):
-            self.recent_menu.setEnabled(False)
             return
         self.recent_menu.setEnabled(True)
-        self.recent_menu.clear()
-        i = 1
-        for ((fname, folder), path) in active_files:
+        for ( i, path ) in enumerate( active_files, start=1 ) :
+            ( folder, fname ) = os.path.split( path )
             act = self.recent_menu.addAction(
-                '{0} {1} {2}'.format(i,fname,folder)
+                '{0} {1} {2}'.format( i, fname, folder )
                 )
-            act.triggered.connect( lambda: self._open_recent(path) )
-            i += 1
+            act.setData( path )
+            act.triggered.connect( self._open_recent )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # User has chosen a different font; if it is the general font, set
@@ -796,7 +797,9 @@ class MainWindow(QMainWindow):
             else :
                 msg = _TR('Shutdown message', 'There are %n unsaved files', n=len(unsaved))
             ret = utilities.save_discard_cancel_msg(
-                msg, _TR('Shutdown message', 'Save, Discard changes, or Cancel Quit?') )
+                msg,
+                _TR('Shutdown message', 'Save, Discard changes, or Cancel Quit?'),
+                parent=self )
             if ret is None :
                 # user wants to cancel shutdown
                 event.ignore()
