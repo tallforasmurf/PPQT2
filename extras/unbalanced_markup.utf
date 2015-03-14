@@ -1,8 +1,26 @@
-# Finds most unbalanced <i> markup: 
-#  <i>[^<]+<(?!/i) finds <i> followed by </not-i>
-# [^i]>[^<]+</i> finds not-i> markup followed by </i>
-# Does not find <i> not followed by markup of any kind,
-# Does not find </i> not preceded by markup of any kind
+#
+# Saved user-buttons from the Find panel. Each button definition starts with
+# a number that says what button to set. The button numbers go from 0 (upper
+# left button) to 23 (lower right button). Or use 99 to mean, the unused
+# button with the highest number. The button number is followed by a colon.
+#
+# Next comes a Python dictionary { key:value, key:value...}. Each key is a
+# string such as 'find' or 'regex' that names a part of the Find panel.
+# Each value is either True, False, or a 'quoted string'. In a quoted string,
+# every backslash must be doubled!
+#
+# The only required key is 'label'. Its value is a string that is the label
+# on the button. Use the 'tooltip' key to give an explanation that pops up
+# when the mouse is over the button.
+#
+#
+# Finds most unbalanced <i> markup:
+#    <i>[^<]+<(?!/i) finds <i> followed by </not-i>
+#    [^i]>[^<]+</i> finds not-i> markup followed by </i>
+#
+# Does not find <i> when not followed by markup of any kind.
+# Does not find </i> when not preceded by markup of any kind.
+#
 23: {  'all' : False,
  'andnext' : False,
  'andprior' : False,
