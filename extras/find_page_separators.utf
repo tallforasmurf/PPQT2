@@ -1,20 +1,40 @@
 # Find page-separator lines and set up to replace them with either
 # nothing (rep1) or a single newline (rep2).
 #
-# The regex is: '-----File:' followed by anything not a newline,
-# followed by a backslash, zero or more hyphens and a newline.
+# The regex allows for the many cases possible: a variable number of
+# proofer names (possibly zero), and a proofer name can include any
+# character including dash and space (but not backslash thank goodness).
 #
-# Saved user-buttons from the Find panel. Each button definition starts with
-# a number between 0 (upper left button) and 23 (lower right button) and a
-# colon. Next comes a Python dictionary { key:value, key:value...} in which
-# each key is a string such as 'find' or 'regex' that names a part of the Find
-# panel. Each value is either True, False, or a 'quoted string' In any quoted
-# string, every backslash must be doubled!
-23: {		'all' : False,
+# Match the initial --File:, allow for spaces, and the name of the image
+# file as group 1 (you could use \1 in a replace to get the filename).
+#
+# -+File:\s+([^\.]+)
+#
+# then a literal dot, png, dashes:
+# \.png-+
+#
+# Proofer names as a group are optional: (...)? so the complete
+# list of proofer names is \2
+#
+# One proofer name is \ then anything except a \ or a newline.
+# This pattern repeats at least once, followed by a final \
+#
+# (
+# (\\[^\\\n]+)+\\
+# )?
+#
+# Proofer names or not, the line ends in zero or more dashes
+# and a newline is next.
+#
+# -*(?=\n)
+#
+# So with every backslash doubled to make a Python literal string:
+#
+99: {		'all' : False,
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
-	'find' : '-----File:[^\\n]*\\\\-*?\\n',
+	'find' : '(?<=\\n)-+File:\\s+([^\\.]+)\\.png-+((\\\\[^\\\\\\n]+)+\\\\)?-*(?=\\n)',
 	'insel' : False,
 	'label' : 'pseps',
 	'regex' : True,
@@ -23,4 +43,3 @@
 	'rep3' : '',
 	'word' : False
 }
-
