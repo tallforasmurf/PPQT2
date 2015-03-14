@@ -1075,22 +1075,74 @@ Saving and loading the buttons
 
 To save all defined buttons into a file, select File > Save Find Buttons.
 Choose the name and location for the small file.
-You might save it with the book, or in Extras, or anywhere you like.
+You might save it with the book, or in the Extras folder, or anywhere you like.
 The file that is created is a text file encoded UTF-8.
 It contains definitions of all the non-empty buttons.
 Buttons marked "(empty)" are not saved.
 
 You may edit a file of saved buttons.
 (PPQT is not a good editor for this. Use some other simple text editor.)
-In the Extras folder is a file named "Syntax of find buttons".
 One reason to edit a file of buttons is to add "tooltip" strings to them.
 
 To load a file of buttons, select File > Load Find Buttons.
 Choose a file of saved buttons.
+
+Buttons distributed with PPQT
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Several files of saved buttons are located in the Extras folder.
-One is called "Clear all buttons".
-It loads "(empty)" definitions for all 24 buttons.
-The other files of buttons are described in the file "Suggested Workflow".
+They define some interested regular-expression search and replace operations.
+You can edit these files (in some other text editor).
+They contain comments documenting the regular expressions.
+
+``clear_all_buttons.utf``
+  This file loads "(empty)" definitions for all 24 buttons.
+  Normally when you save the buttons, only the non-empty ones are saved.
+  So this file was made by hand.
+
+``find_page_separators.utf``
+  This defines button 23 to find any page-separator line.
+  The regular expression is quite complex and is documented in the file.
+
+``common_errors.utf``
+  This loads buttons 7-23 with expressions that search for common errors.
+  Some of the regular expressions are documented.
+  
+  7. Whitespace before punctuation or after a hyphen
+  8. Stand-alone 0 or 1
+  9. Some unbalanced delimiters
+  10. Dot followed by space followed by lowercase letter
+  11. Comma followed by space and uppercase letter
+  12. Single-letter line
+  13. Paragraph starting with lowercase
+  14. Non-Latin-1 letters
+  15. Non-7-bit letters
+  16. End of paragraph without punctuation
+  17. Line longer than 75 characters
+  18. Dash at end of line
+  19. Space at end of line
+  20. Closing quote without preceding punctuation
+  21. Multiple punctuation characters
+  22. Any forward slash
+  23. Any asterisk
+  
+``review_text_markup.utf``
+
+  This loads buttons 18-23 with convenient operations on markup:
+  
+  18. Find &lt;tb>, replace with 5-star string
+  19. Find open and close block markup lines such as /\*, /Q, P/, etc.
+  20. Find "[typo:orig:fixed]" and replace with "fixed"
+  21. Find &lt;sc> markup and replace
+  22. Find &lt;b> markup and replace
+  23. Find &lt;i> markup and replace
+
+``unbalanced_markup.utf``
+
+  This loads buttons 21-23 with searches that find most cases of
+  unbalanced italic, bold, and smallcap markup.
+
+See the file "Suggested Workflow" for how to use these buttons.
 
 .. _Characters panel:
 

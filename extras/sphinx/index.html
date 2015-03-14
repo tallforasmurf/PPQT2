@@ -872,20 +872,71 @@ The button will be shown as (empty).</p>
 <h3>Saving and loading the buttons<a class="headerlink" href="#saving-and-loading-the-buttons" title="Permalink to this headline">¶</a></h3>
 <p>To save all defined buttons into a file, select File &gt; Save Find Buttons.
 Choose the name and location for the small file.
-You might save it with the book, or in Extras, or anywhere you like.
+You might save it with the book, or in the Extras folder, or anywhere you like.
 The file that is created is a text file encoded UTF-8.
 It contains definitions of all the non-empty buttons.
 Buttons marked &#8220;(empty)&#8221; are not saved.</p>
 <p>You may edit a file of saved buttons.
 (PPQT is not a good editor for this. Use some other simple text editor.)
-In the Extras folder is a file named &#8220;Syntax of find buttons&#8221;.
 One reason to edit a file of buttons is to add &#8220;tooltip&#8221; strings to them.</p>
 <p>To load a file of buttons, select File &gt; Load Find Buttons.
-Choose a file of saved buttons.
-Several files of saved buttons are located in the Extras folder.
-One is called &#8220;Clear all buttons&#8221;.
-It loads &#8220;(empty)&#8221; definitions for all 24 buttons.
-The other files of buttons are described in the file &#8220;Suggested Workflow&#8221;.</p>
+Choose a file of saved buttons.</p>
+</div>
+<div class="section" id="buttons-distributed-with-ppqt">
+<h3>Buttons distributed with PPQT<a class="headerlink" href="#buttons-distributed-with-ppqt" title="Permalink to this headline">¶</a></h3>
+<p>Several files of saved buttons are located in the Extras folder.
+They define some interested regular-expression search and replace operations.
+You can edit these files (in some other text editor).
+They contain comments documenting the regular expressions.</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">clear_all_buttons.utf</span></code></dt>
+<dd>This file loads &#8220;(empty)&#8221; definitions for all 24 buttons.
+Normally when you save the buttons, only the non-empty ones are saved.
+So this file was made by hand.</dd>
+<dt><code class="docutils literal"><span class="pre">find_page_separators.utf</span></code></dt>
+<dd>This defines button 23 to find any page-separator line.
+The regular expression is quite complex and is documented in the file.</dd>
+<dt><code class="docutils literal"><span class="pre">common_errors.utf</span></code></dt>
+<dd><p class="first">This loads buttons 7-23 with expressions that search for common errors.
+Some of the regular expressions are documented.</p>
+<ol class="last arabic simple" start="7">
+<li>Whitespace before punctuation or after a hyphen</li>
+<li>Stand-alone 0 or 1</li>
+<li>Some unbalanced delimiters</li>
+<li>Dot followed by space followed by lowercase letter</li>
+<li>Comma followed by space and uppercase letter</li>
+<li>Single-letter line</li>
+<li>Paragraph starting with lowercase</li>
+<li>Non-Latin-1 letters</li>
+<li>Non-7-bit letters</li>
+<li>End of paragraph without punctuation</li>
+<li>Line longer than 75 characters</li>
+<li>Dash at end of line</li>
+<li>Space at end of line</li>
+<li>Closing quote without preceding punctuation</li>
+<li>Multiple punctuation characters</li>
+<li>Any forward slash</li>
+<li>Any asterisk</li>
+</ol>
+</dd>
+</dl>
+<p><code class="docutils literal"><span class="pre">review_text_markup.utf</span></code></p>
+<blockquote>
+<div><p>This loads buttons 18-23 with convenient operations on markup:</p>
+<ol class="arabic simple" start="18">
+<li>Find &amp;lt;tb&gt;, replace with 5-star string</li>
+<li>Find open and close block markup lines such as /*, /Q, P/, etc.</li>
+<li>Find &#8220;[typo:orig:fixed]&#8221; and replace with &#8220;fixed&#8221;</li>
+<li>Find &amp;lt;sc&gt; markup and replace</li>
+<li>Find &amp;lt;b&gt; markup and replace</li>
+<li>Find &amp;lt;i&gt; markup and replace</li>
+</ol>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">unbalanced_markup.utf</span></code></p>
+<blockquote>
+<div>This loads buttons 21-23 with searches that find most cases of
+unbalanced italic, bold, and smallcap markup.</div></blockquote>
+<p>See the file &#8220;Suggested Workflow&#8221; for how to use these buttons.</p>
 </div>
 </div>
 </div>
@@ -1448,6 +1499,7 @@ Then just save (ctl-s) in PPQT and click the refresh button on the browser.</li>
 <li><a class="reference internal" href="#using-the-find-buttons">Using the Find buttons</a><ul>
 <li><a class="reference internal" href="#programming-a-button">Programming a button</a></li>
 <li><a class="reference internal" href="#saving-and-loading-the-buttons">Saving and loading the buttons</a></li>
+<li><a class="reference internal" href="#buttons-distributed-with-ppqt">Buttons distributed with PPQT</a></li>
 </ul>
 </li>
 </ul>
