@@ -890,7 +890,7 @@ class FindPanel(QWidget):
             # in the Replacement string syntax.
             try:
                 new_text = self.find_field.match.expand( rb.text() )
-                tc.insertText()
+                tc.insertText(new_text)
             except regex.error as whatever:
                 diagnostic = str(whatever)
                 utilities.warning_msg(
