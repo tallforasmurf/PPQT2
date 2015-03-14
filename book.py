@@ -415,7 +415,8 @@ class Book(QObject):
                     'Book object',
                     'Page breaks and other metadata may be wrong! Strongly recommend you not edit or save this book.',
                     'Warning during File:Open'
-                    )
+                    ),
+                parent= self.mainwindow
             )
 
     def _save_hash(self, section) :
