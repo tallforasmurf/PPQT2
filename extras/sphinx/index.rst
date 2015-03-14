@@ -1517,24 +1517,23 @@ Moving footnotes is a single-undo operation.
 Bookloupe Panel
 =================
 
-The `Bookloupe`_ program is a program that reads a DP book file
+The `Bookloupe`_ program is a utility that reads a DP book file
 and looks for many different types of common errors.
 
 .. _Bookloupe: http://www.juiblex.co.uk/pgdp/bookloupe/
 
-Using the Bookloupe panel you run Bookloupe,
-and its many diagnostic messages are displayed in a convenient table.
+Using the Bookloupe panel you run Bookloupe against the book being edited.
+The many diagnostic messages are displayed in a convenient table.
 
-Before you use the Bookloupe panel you must install `Bookloupe`_.
+Before you can use the Bookloupe panel you must install `Bookloupe`_.
 Then you must tell PPQT where the executable program is.
 Do that with the `Bookloupe path`_ part of the Preferences panel.
 
 Click Refresh to run Bookloupe.
 The current book text is copied to a temporary file.
 Bookloupe is started and reads the temporary file.
-The messages it prints are captured and displayed in the table.
-
-The table has three columns:
+The messages it prints are captured and displayed in a table
+with three columns:
 
 Line#
   The line number mentioned in the error message.
@@ -1545,12 +1544,39 @@ Diagnostic message
 
 You can sort the table by clicking in the column headings.
 Sort on Line# if you want to deal with the messages line by line.
-Sort on Message text if you want to deal with (or ignore) all messages
-of one kind.
+Sort on Message text if you want to deal with (or ignore)
+each group of similar messages.
 
 Double-click any line.
 The edit cursor jumps to the line and column for that message.
 
+At the top of the panel are five checkboxes.
+Use these to control five of the Bookloupe command-line options
+as described in the Bookloupe documentation file.
+
+**Quotes**
+  Pass the ``-p`` option that requires any open-quote
+  to be closed in the same paragraph, even if the next paragraph
+  begins with an open-quote.
+
+**SQuotes**
+  Pass the ``-s`` option that causes single-quote
+  (apostrophe) characters to be treated the same as double-quote
+  characters.
+
+**Verbose**
+  Pass the ``-v`` option so that all errors are 
+  reported. When this is off, common errors that occur a large
+  number of times are not reported.
+
+**Relaxed**
+  Pass the ``-x`` option which turns off some
+  less-important diagnostics.
+
+**No-CR**
+  Do not pass the ``-l`` option. As a result, any line
+  that terminates in LF only will be get a "No CR?" diagnostic.
+  Useful for Windows text files; do not use with Linux or Mac.
 
 .. _Translators:
 

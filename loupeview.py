@@ -34,8 +34,8 @@ sort/filter proxy.
 Double-clicking a row causes the edit panel to jump to the line and column
 of the message.
 
-Above the table is a Refresh button. No other controls for now (although
-some type of filtration may be added).
+Above the table is a Refresh button. Beside it are four checkboxes that
+control the -p, -l, -s and -v command line switches.
 
 The real Table Model is in this module (there is no loupedata.py, unlike
 other panels) because it is quite simple.
@@ -72,6 +72,7 @@ from PyQt5.QtCore import (
     QSortFilterProxyModel
     )
 from PyQt5.QtWidgets import (
+    QCheckBox,
     QHBoxLayout,
     QVBoxLayout,
     QPushButton,
@@ -119,6 +120,12 @@ MSGREX = regex.compile('Line\s(\d+)(\s+column\s+(\d+))?\s+-\s+(\w.+)')
 class LoupeModel(QAbstractTableModel):
     def __init__(self, my_book, parent):
         super().__init__(parent)
+        # save access to parent's four command line switches
+        self.sw_l = parent.switch_l
+        self.sw_p = parent.switch_p
+        self.sw_s = parent.switch_s
+        self.sw_v = parent.switch_v
+        self.sw_x = parent.switch_x
         self.my_book = my_book # for access to edit data
         self.message_tuples = list() # where we keep messages
 
@@ -189,7 +196,15 @@ class LoupeModel(QAbstractTableModel):
         fbts << self.my_book.get_edit_model().full_text()
         fbts.rewind() # forces a flush()
         # create the bookloupe command
-        command = [bl_path,'-d','-e','-s','-t','-l','-m', fbts.fullpath()]
+        command = [bl_path,'-d','-e','-t','-m']
+        # line-end check is disabled by -l
+        if not self.sw_l.isChecked() : command.append( '-l' )
+        if self.sw_p.isChecked() : command.append( '-p' )
+        if self.sw_s.isChecked() : command.append( '-s' )
+        if self.sw_v.isChecked() : command.append( '-v' )
+        if self.sw_x.isChecked() : command.append( '-x' )
+        command.append( fbts.fullpath() )
+        loupeview_logger.info('executing'+' '.join(command))
         # run it, capturing the output as a byte stream
         try:
             bytesout = subprocess.check_output( command, stderr=subprocess.STDOUT )
@@ -217,6 +232,7 @@ class LoupeModel(QAbstractTableModel):
                 cno = 0 if m.group(3) is None else int(m.group(3))
                 msg = m.group(4)
                 self.message_tuples.append( (lno, cno, msg) )
+        loupeview_logger.info('loupeview total of {} items'.format(len(self.message_tuples)))
         # and that's refresh. On exit, fbts is trashed which closes
         # and deletes the temporary file.
 
@@ -230,6 +246,7 @@ class LoupeView(QWidget):
         #  self.view QTableView
         #  self.model LoupeModel
         #  self.proxy QSortFilterProxyModel
+        #  self.switch_l, switch_p, switch_s, switch_v
         #
         self._uic()
         # hook up the Refresh signal
@@ -270,7 +287,32 @@ class LoupeView(QWidget):
         self.refresh = QPushButton(
             _TR('Loupe refresh button','Refresh') )
         top_hbox.addWidget(self.refresh,0)
-        top_hbox.addStretch(1)
+        top_hbox.addStretch()
+        self.switch_l = QCheckBox("No-CR")
+        self.switch_l.setToolTip(
+            _TR( "Loupeview command switch tooltip",
+                 "Permit the 'No CR' message." ) )
+        self.switch_p = QCheckBox("Quotes")
+        self.switch_p.setToolTip(
+            _TR( "Loupeview command switch tooltip",
+                 "Require quotes to be closed in the same paragraph." ) )
+        self.switch_s = QCheckBox("SQuotes")
+        self.switch_s.setToolTip(
+            _TR( "Loupeview command switch tooltip",
+                 "Treat single-quote (apostrophes) like double quotes." ) )
+        self.switch_v = QCheckBox("Verbose")
+        self.switch_v.setToolTip(
+            _TR( "Loupeview command switch tooltip",
+                 "Enable many detailed messages." ) )
+        self.switch_x = QCheckBox("Relaxed")
+        self.switch_x.setToolTip(
+            _TR( "Loupeview command switch tooltip",
+                 "Omit some detailed tests." ) )
+        top_hbox.addWidget(self.switch_p)
+        top_hbox.addWidget(self.switch_s)
+        top_hbox.addWidget(self.switch_v)
+        top_hbox.addWidget(self.switch_x)
+        top_hbox.addWidget(self.switch_l)
         # create the table model
         self.model = LoupeModel(self.my_book,self)
         # create the minimal sort proxy

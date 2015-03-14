@@ -1240,18 +1240,18 @@ The moved notes go to the end of the zone, above the <code class="docutils liter
 </div>
 <div class="section" id="bookloupe-panel">
 <span id="id25"></span><h1>Bookloupe Panel<a class="headerlink" href="#bookloupe-panel" title="Permalink to this headline">¶</a></h1>
-<p>The <a class="reference external" href="http://www.juiblex.co.uk/pgdp/bookloupe/">Bookloupe</a> program is a program that reads a DP book file
+<p>The <a class="reference external" href="http://www.juiblex.co.uk/pgdp/bookloupe/">Bookloupe</a> program is a utility that reads a DP book file
 and looks for many different types of common errors.</p>
-<p>Using the Bookloupe panel you run Bookloupe,
-and its many diagnostic messages are displayed in a convenient table.</p>
-<p>Before you use the Bookloupe panel you must install <a class="reference external" href="http://www.juiblex.co.uk/pgdp/bookloupe/">Bookloupe</a>.
+<p>Using the Bookloupe panel you run Bookloupe against the book being edited.
+The many diagnostic messages are displayed in a convenient table.</p>
+<p>Before you can use the Bookloupe panel you must install <a class="reference external" href="http://www.juiblex.co.uk/pgdp/bookloupe/">Bookloupe</a>.
 Then you must tell PPQT where the executable program is.
 Do that with the <a class="reference internal" href="#bookloupe-path">Bookloupe path</a> part of the Preferences panel.</p>
 <p>Click Refresh to run Bookloupe.
 The current book text is copied to a temporary file.
 Bookloupe is started and reads the temporary file.
-The messages it prints are captured and displayed in the table.</p>
-<p>The table has three columns:</p>
+The messages it prints are captured and displayed in a table
+with three columns:</p>
 <dl class="docutils">
 <dt>Line#</dt>
 <dd>The line number mentioned in the error message.</dd>
@@ -1262,10 +1262,34 @@ The messages it prints are captured and displayed in the table.</p>
 </dl>
 <p>You can sort the table by clicking in the column headings.
 Sort on Line# if you want to deal with the messages line by line.
-Sort on Message text if you want to deal with (or ignore) all messages
-of one kind.</p>
+Sort on Message text if you want to deal with (or ignore)
+each group of similar messages.</p>
 <p>Double-click any line.
 The edit cursor jumps to the line and column for that message.</p>
+<p>At the top of the panel are five checkboxes.
+Use these to control five of the Bookloupe command-line options
+as described in the Bookloupe documentation file.</p>
+<dl class="docutils">
+<dt><strong>Quotes</strong></dt>
+<dd>Pass the <code class="docutils literal"><span class="pre">-p</span></code> option that requires any open-quote
+to be closed in the same paragraph, even if the next paragraph
+begins with an open-quote.</dd>
+<dt><strong>SQuotes</strong></dt>
+<dd>Pass the <code class="docutils literal"><span class="pre">-s</span></code> option that causes single-quote
+(apostrophe) characters to be treated the same as double-quote
+characters.</dd>
+<dt><strong>Verbose</strong></dt>
+<dd>Pass the <code class="docutils literal"><span class="pre">-v</span></code> option so that all errors are
+reported. When this is off, common errors that occur a large
+number of times are not reported.</dd>
+<dt><strong>Relaxed</strong></dt>
+<dd>Pass the <code class="docutils literal"><span class="pre">-x</span></code> option which turns off some
+less-important diagnostics.</dd>
+<dt><strong>No-CR</strong></dt>
+<dd>Do not pass the <code class="docutils literal"><span class="pre">-l</span></code> option. As a result, any line
+that terminates in LF only will be get a &#8220;No CR?&#8221; diagnostic.
+Useful for Windows text files; do not use with Linux or Mac.</dd>
+</dl>
 </div>
 <div class="section" id="translators">
 <span id="id26"></span><h1>Translators<a class="headerlink" href="#translators" title="Permalink to this headline">¶</a></h1>
