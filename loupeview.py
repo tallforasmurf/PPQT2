@@ -28,8 +28,10 @@ Define a class LoupePanel(QWidget) to implement the Loupe panel.
 
 The panel's central feature is LoupeTableView(QTableView) drawing its data
 from a LoupeTableModel(QAbstractTableModel). The table has three columns,
-Line#, Column#, and Message. The table can be sorted but requires no special
-sort/filter proxy.
+Line#, Column#, and Message. The table can be sorted by clicking on the
+heading of column 1 (Line#) or column 3 (message); clicking on the head of
+column 2 is treated the same as column 1. The sort is done locally, not
+using a QSortFilterProxyModel.
 
 Double-clicking a row causes the edit panel to jump to the line and column
 of the message.
@@ -50,7 +52,9 @@ empty. When the Refresh button is clicked, the table model is reset and then:
    temporary file. subprocess.popen is used to launch bookloupe with the
    temp file as input.
 
-3, the bookloupe output is captured as a list of tuples (line#, col#, message).
+3, the bookloupe output is captured as a list of tuples (line#, col#, message),
+   where line# and col# are formatted strings, right-justified with leading
+   spaces -- instead of ints. This facilitates display and making sort keys.
 
 The table model reset completes and the rowcount() and data() methods allow
 the table to be built. The default sort is by line# descending, that is, the
@@ -63,10 +67,12 @@ import logging
 loupeview_logger = logging.getLogger(name='loupeview')
 import subprocess
 import regex
+from sortedcontainers import SortedDict
 import utilities
 import paths
 from PyQt5.QtCore import (
     Qt,
+    QAbstractItemModel,
     QAbstractTableModel,
     QCoreApplication,
     QSortFilterProxyModel
@@ -128,6 +134,9 @@ class LoupeModel(QAbstractTableModel):
         self.sw_x = parent.switch_x
         self.my_book = my_book # for access to edit data
         self.message_tuples = list() # where we keep messages
+        self.sort_col = 0 # default sort on column 1..
+        self.sort_dir = Qt.DescendingOrder # ..descending
+        self.sort_vector = [] # sort indirection list
 
     def rowCount(self, index):
         if index.isValid() : return 0 # we don't have a tree here
@@ -153,19 +162,53 @@ class LoupeModel(QAbstractTableModel):
     def data(self, index, role ):
         global COL_ALIGNMENT, COL_TOOLTIPS
         if role == Qt.DisplayRole : # wants actual data
-            (line_no, col_no, msg) = self.message_tuples[index.row()]
-            if 0 == index.column() :
-                return format(line_no,' >5')
-            elif 1 == index.column() :
-                return format(col_no,' >3')
-            else:
-                return msg
+            col = index.column()
+            sort_row = self.sort_vector[ index.row() ]
+            line_col_msg_tuple = self.message_tuples[ sort_row ]
+            return line_col_msg_tuple[ col ]
         elif (role == Qt.TextAlignmentRole) :
             return COL_ALIGNMENT[index.column()]
         elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
             return COL_TOOLTIPS[index.column()]
         # don't support other roles
         return None
+
+    # Instead of using a QSortFilterProxyModel, which has a fatal performance
+    # bug that makes sorting a table of more than a few hundred rows just
+    # impossibly slow, we do our own sort. When the table view detects a
+    # click on a column head, it calls its model's sort() method passing
+    # a column number and a direction.
+    #
+    # We use a SortedDict to achieve sorting. The dict key is a sort key,
+    # and the value is the index in self.message_tuples. When the values
+    # are read out in sorted order, they give us the indexes of the data in
+    # sort sequence.
+    #
+    # When col==0 or 1, line # sort, the key is "line#+col#". When col==2,
+    # the key is "msg+line#".
+    #
+    # When the sort order is descending, we have to read out the vector
+    # reversed() to make a list of indexes in descending order.
+
+    def sort( self, col, order ) :
+        self.sort_vector = []
+        if 0 == len(self.message_tuples) : # nothing to do
+            return
+        self.layoutAboutToBeChanged.emit([],QAbstractItemModel.VerticalSortHint)
+        sorted_dict = SortedDict()
+        for j in range( len( self.message_tuples ) ) :
+            line_col_msg_tuple = self.message_tuples[ j ]
+            if col==2 :
+                key = line_col_msg_tuple[2]+line_col_msg_tuple[0]
+            else :
+                key = line_col_msg_tuple[0]+line_col_msg_tuple[1]
+            sorted_dict[key] = j
+        if order == Qt.AscendingOrder :
+            self.sort_vector = sorted_dict.values()
+        else :
+            self.sort_vector = [ j for j in reversed( sorted_dict.values() ) ]
+        self.layoutChanged.emit([],QAbstractItemModel.VerticalSortHint)
+
     # OK, the money method. Generate the data to show by invoking bookloupe
     # in a subprocess. Actual refresh in a subroutine so on any error we just
     # return, and the endResetModel will still happen.
@@ -175,6 +218,8 @@ class LoupeModel(QAbstractTableModel):
         self.message_tuples = list()
         self._real_refresh()
         self.endResetModel()
+        self.sort( self.sort_col, self.sort_dir )
+
     def _real_refresh(self):
         # Make sure we have access to the bookloupe executable
         bl_path = paths.get_loupe_path()
@@ -227,9 +272,10 @@ class LoupeModel(QAbstractTableModel):
         # process the lines into tuples in our list.
         for line in linesout :
             m = MSGREX.search(line)
-            if m : # was matched
-                lno = int(m.group(1))
-                cno = 0 if m.group(3) is None else int(m.group(3))
+            if m : # was matched, so is not None,
+                lno = format( int(m.group(1)), ' >6' )
+                c = 0 if m.group(3) is None else int(m.group(3))
+                cno = format( c, ' >3' )
                 msg = m.group(4)
                 self.message_tuples.append( (lno, cno, msg) )
         loupeview_logger.info('loupeview total of {} items'.format(len(self.message_tuples)))
@@ -315,19 +361,14 @@ class LoupeView(QWidget):
         top_hbox.addWidget(self.switch_l)
         # create the table model
         self.model = LoupeModel(self.my_book,self)
-        # create the minimal sort proxy
-        self.proxy = QSortFilterProxyModel()
-        self.proxy.setSourceModel(self.model)
-        # create the table view and connect it to the proxy-model.
+        # create the table view, initialized for sorting
         self.view = QTableView(self)
-        self.view.setModel(self.proxy)
-        # Table view has simple column sorting enabled, no proxy
-        # needed. If we add filtering we must use a sortfilterproxy
-        # instead, see charview for an example.
         self.view.setSortingEnabled(True)
         self.view.setCornerButtonEnabled(False)
         self.view.setWordWrap(False)
         self.view.setAlternatingRowColors(False)
+        # connect the view to the model
+        self.view.setModel(self.model)
         # Add view to the layout with all stretch
         vbox = QVBoxLayout()
         vbox.addLayout(top_hbox,0)
