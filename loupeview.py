@@ -134,9 +134,12 @@ class LoupeModel(QAbstractTableModel):
         self.sw_x = parent.switch_x
         self.my_book = my_book # for access to edit data
         self.message_tuples = list() # where we keep messages
+        # stuff related to sorting
         self.sort_col = 0 # default sort on column 1..
-        self.sort_dir = Qt.DescendingOrder # ..descending
-        self.sort_vector = [] # sort indirection list
+        self.sort_dir = Qt.AscendingOrder # ..ascending
+        self.active_sort_vector = [] # active sort indirection list
+        self.sort_vectors_ascending = [None, None]
+        self.sort_vectors_descending = [None, None]
 
     def rowCount(self, index):
         if index.isValid() : return 0 # we don't have a tree here
@@ -163,7 +166,8 @@ class LoupeModel(QAbstractTableModel):
         global COL_ALIGNMENT, COL_TOOLTIPS
         if role == Qt.DisplayRole : # wants actual data
             col = index.column()
-            sort_row = self.sort_vector[ index.row() ]
+            row = index.row()
+            sort_row = self.active_sort_vector[ row ]
             line_col_msg_tuple = self.message_tuples[ sort_row ]
             return line_col_msg_tuple[ col ]
         elif (role == Qt.TextAlignmentRole) :
@@ -175,38 +179,51 @@ class LoupeModel(QAbstractTableModel):
 
     # Instead of using a QSortFilterProxyModel, which has a fatal performance
     # bug that makes sorting a table of more than a few hundred rows just
-    # impossibly slow, we do our own sort. When the table view detects a
-    # click on a column head, it calls its model's sort() method passing
-    # a column number and a direction.
+    # impossibly slow, we do our own sort.
     #
-    # We use a SortedDict to achieve sorting. The dict key is a sort key,
-    # and the value is the index in self.message_tuples. When the values
-    # are read out in sorted order, they give us the indexes of the data in
-    # sort sequence.
+    # When the table view detects a click on a column head, it calls its
+    # model's sort() method passing a column number and a direction. At that
+    # point we apply a sort vector, that is, a list of indices into
+    # self.message_tuples that will return those tuples in the desired order.
     #
-    # When col==0 or 1, line # sort, the key is "line#+col#". When col==2,
-    # the key is "msg+line#".
+    # In order to create a sort vector we use a SortedDict. The dict key is a
+    # sort key, and the value is the index in self.message_tuples for that
+    # key. When col==0 or 1, line # sort, the key is "line#+col#". When
+    # col==2, the key is "msg+line#". When the values are read out in sorted
+    # order, they give us the indexes of the data in sort sequence: a sort
+    # vector. When the sort order is descending, we have to read out the
+    # vector reversed() to make a list of indexes in descending order.
     #
-    # When the sort order is descending, we have to read out the vector
-    # reversed() to make a list of indexes in descending order.
+    # Vectors are expensive to make and we anticipate the user will sort
+    # and re-sort the table multiple times, so we cache the sort vectors
+    # and reuse them when possible.
 
     def sort( self, col, order ) :
-        self.sort_vector = []
-        if 0 == len(self.message_tuples) : # nothing to do
+        self.active_sort_vector = []
+        if 0 == len(self.message_tuples) : # nothing to display
             return
         self.layoutAboutToBeChanged.emit([],QAbstractItemModel.VerticalSortHint)
-        sorted_dict = SortedDict()
-        for j in range( len( self.message_tuples ) ) :
-            line_col_msg_tuple = self.message_tuples[ j ]
-            if col==2 :
-                key = line_col_msg_tuple[2]+line_col_msg_tuple[0]
-            else :
-                key = line_col_msg_tuple[0]+line_col_msg_tuple[1]
-            sorted_dict[key] = j
-        if order == Qt.AscendingOrder :
-            self.sort_vector = sorted_dict.values()
-        else :
-            self.sort_vector = [ j for j in reversed( sorted_dict.values() ) ]
+        # treat columns 0 and 1 the same
+        if col : # is 1 or 2
+            col -= 1 # make it 0 or 1
+        # we need an ascending vector in all cases.
+        vector = self.sort_vectors_ascending[ col ]
+        if vector is None : # we need to create the ascending vector
+            sorted_dict = SortedDict()
+            for j in range( len( self.message_tuples ) ) :
+                line_col_msg_tuple = self.message_tuples[ j ]
+                if col : # is 1, meaning sort on messages
+                    key = line_col_msg_tuple[2]+line_col_msg_tuple[0]
+                else : # col is 0, sort on line#+col#
+                    key = line_col_msg_tuple[0]+line_col_msg_tuple[1]
+                sorted_dict[key] = j
+                vector = self.sort_vectors_ascending[ col ] = sorted_dict.values()
+        # vector now has an ascending sort vector which is cached..
+        if order == Qt.DescendingOrder : # ..but we need the descending one
+            if self.sort_vectors_descending[ col ] is None : # we need to make it
+                self.sort_vectors_descending[ col ] = [ j for j in reversed( vector ) ]
+            vector = self.sort_vectors_descending[ col ]
+        self.active_sort_vector = vector
         self.layoutChanged.emit([],QAbstractItemModel.VerticalSortHint)
 
     # OK, the money method. Generate the data to show by invoking bookloupe
@@ -217,8 +234,10 @@ class LoupeModel(QAbstractTableModel):
         # Clear out existing data so if the call fails, table is empty
         self.message_tuples = list()
         self._real_refresh()
-        self.endResetModel()
+        self.sort_vectors_ascending = [None, None]
+        self.sort_vectors_descending = [None, None]
         self.sort( self.sort_col, self.sort_dir )
+        self.endResetModel()
 
     def _real_refresh(self):
         # Make sure we have access to the bookloupe executable
