@@ -233,7 +233,6 @@ class MainWindow(QMainWindow):
     # code is called from a one-shot timer 500ms after the window has been
     # created, so we are sure the app is processing events etc.
     def finish_init(self):
-        print('finish started')
         self.finish_init = False # never do this again
         # Initialize the set of files actually open when we shut down.
         last_session = self._read_flist('mainwindow/open_files')
@@ -253,8 +252,6 @@ class MainWindow(QMainWindow):
             # We did not re-open any books, either because there were
             # none, or the user said No, or perhaps they were not found.
             self._new() # open one, new, book.
-        print('finish over')
-
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Slot to receive the currentChanged signal from the editview tabset.
