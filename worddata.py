@@ -128,11 +128,11 @@ The properties of a token are coded as a set comprising these values:
 (Properly speaking the above names should be defined as an Enum type, but the
 official Enum type doesn't arrive until 3.4, and the pypi enum lib yields not
 ints, but enum value objects. So we just do it C-style, defining these as
-module globals with int values. See also prop_encode and prop_decode dicts.)
+module globals with int values. See also PROP_ENCODE and PROP_DECODE dicts.)
 
 Spelling is checked only when a word is first added to the vocabulary or when
-recheck_spelling() is called. Later queries just return "XX in" the token's
-property set.
+recheck_spelling() is called. Later queries (from the edit
+syntax-highlighter) merely return "XX in" the token's property set.
 
 If a word or hyphenated member is in the good-words set it gets GW. If it is
 all-numeric it is also assumed correctly spelled. If it is in the bad-words
@@ -149,23 +149,36 @@ phrase.) "1985-89" will have ND from its parts and HY for itself.
 
     Interrogation Methods
 
-The Words panel calls word_count() to get the count of words for table
-sizing. It calls word_at(n) to get the text of the n'th word (by way of a
-sorteddict KeysView) and word_props_at(n) to get a list [count, propset] for
-the n'th word (by way of a sorteddict ValuesView). Use KeysView and
-ValuesView of the sorteddict supposedly get us O(1) retrieval time.
+Called by the edit panel syntax highlighter:
 
-The Edit syntax highlighter, when misspelled highlights are requested, calls
-spelling_test(token_string) and gets back "XX in" that token's properties
-(that is, False means correctly spelled). If the token is not in the table,
-for example the user typed in a new word since the last refresh, we return
-False. So newly entered words are not highlighted as misspellings until after
-a refresh.
+* spelling_test(token_string) returns "XX in" that token's properties
+  (that is, False means correctly spelled)
 
-When scanno highlighting is on, the syntax highlighter calls scanno_test() to
-see if a token is in the scanno set. The return is True when the given token
-is in the scanno list. Thus when no scannos have been loaded, none will be
-found.
+If the token is not in the table (perhaps the user typed in a new word since
+the last refresh) we return False. So newly entered words are not highlighted
+as misspellings until after a refresh.
+
+* scanno_test(token) returns True when the given token is in the scanno
+  set. Thus when no scannos have been loaded, none will be found.
+
+Called by the wordview module:
+
+* word_count() returns the count of words for the rowCount method
+* word_at(n) returns the text of the n'th word
+* word_props_at(n) returns a list [count, propset] for the n'th word
+
+These functions operate in O(1) retrieval time thanks to SortedDict.
+
+* get_good_set() returns the good-words set.
+* add_to_good_set(word) adds a word to the good-words set, and updates
+  the vocabulary appropriately.
+* del_from_good_set(word) removes a word from the good-words set, and
+  updates the vocabulary appropriately.
+
+* get_sort_vector( col, order, key_func = None, filter_func = None )
+
+Returns a list of indices to the vocabulary SortedDict that will return
+its keys or values in some sort sequence. See comments over that method.
 
 '''
 import constants as C
@@ -204,19 +217,19 @@ GW = 8 # token appears also in the good_words set
 XX = 9 # token fails spellcheck
 AD = 10 # token is spell-checked against an alternate dictionary
 
-prop_encode = {
+PROP_ENCODE = {
     UC:'UC', LC:'LC', MC:'MC', HY:'HY', AP:'AP',
     ND:'ND', BW:'BW', GW:'GW', XX:'XX', AD:'AD'
     }
 
-prop_decode = {
+PROP_DECODE = {
     'UC':UC, 'LC':LC, 'MC':MC, 'HY':HY, 'AP':AP,
     'ND':ND, 'BW':BW, 'GW':GW, 'XX':XX, 'AD':AD
     }
 # set of all properties for checking metadata
-prop_all = set([UC,LC,MC,HY,AP,ND,BW,GW,XX,AD])
+PROP_ALL = set([UC,LC,MC,HY,AP,ND,BW,GW,XX,AD])
 # set to test lack of spell-check-ability
-prop_bgh = set([BW,GW,HY])
+PROP_BGH = set([BW,GW,HY])
 # set used to clear XX from a set of properties -- set.remove(XX) raises an
 # exception if no XX but set & prop_nox ensures it is gone.
 prop_nox = set([UC,LC,MC,HY,AP,ND,BW,GW,AD])
@@ -268,14 +281,15 @@ xp_end = '''(</(\w+)>)'''
 # Put it all together: a token is any of those three things:
 xp_any = '|'.join([xp_hyap,xp_start,xp_end])
 
-re_token = regex.compile(xp_any, regex.IGNORECASE)
+RE_TOKEN = regex.compile(xp_any, regex.IGNORECASE)
 
-# When re_token.search returns a match object its groups are:
+# When RE_TOKEN.search returns a match object its groups are:
 #   a word-like token,
 #       0 is the token string
 #       6 and 9 are None
 #   an HTML start tag,
 #       6 is the tag, e.g. "div" or "i"
+#       7 is its attributes e.g. "class='x' lang='en_GB'"
 #   an HTML end tag,
 #       9 is the tag, e.g. "div" or "i"
 #
@@ -284,23 +298,19 @@ re_token = regex.compile(xp_any, regex.IGNORECASE)
 # We are selecting and recognizing isolated HTML productions which
 # *are* regular and hence, parseable by regular expressions.
 #
-# For a start tag (group(6) is not None), group(7) is its attribute string,
-# e.g. "class='x' lang='en_GB'"
-#
 # According to W3C (www.w3.org/TR/html401/struct/dirlang.html) you can put
 # lang= into any tag, esp. span, para, div, td, and so forth. We scan an
 # attribute string for lang='value' allowing for single, double, or no quotes
 # on the value.
 
 xp_lang = '''lang=[\\'\\"]*([\\w\\-]+)[\\'\\"]*'''
-re_lang_attr = regex.compile(xp_lang, regex.IGNORECASE)
+RE_LANG_ATTR = regex.compile(xp_lang, regex.IGNORECASE)
 
-# The value string matched by re_lang_attr.group(0) is a language designation
+# The value string matched by RE_LANG_ATTR.group(0) is a language designation
 # but we require it to be a dictionary tag such as 'en_US' or 'fr_FR'. It is
-# not clear from the W3C docs whether all (or any) of our dic tags really
-# qualify as language designations. Nevertheless, during the refresh() we
-# save the dict tag as an alternate dictionary for all words until the
-# matching close tag is seen.
+# not clear from the W3C docs whether our dic tags really qualify as language
+# designations. Nevertheless, during the refresh() we save the dict tag as an
+# alternate dictionary for all words until the matching close tag is seen.
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
@@ -456,7 +466,7 @@ class WordData(QObject):
     # Before adding a word make sure to unicode-flatten it.
     #
     def word_read(self, section, value, version) :
-        global prop_all, prop_nox
+        global PROP_ALL, prop_nox
         # get a new speller in case the Book read a different dict already
         self.speller = self.my_book.get_speller()
         # if value isn't a list, bail out now
@@ -485,7 +495,7 @@ class WordData(QObject):
                 if not isinstance(alt_tag,str) : raise ValueError
                 if alt_tag == '' : alt_tag = None
                 prop_set = set(wlist[3]) # exception if not iterable
-                if len( prop_set - prop_all ) : raise ValueError #bogus props
+                if len( prop_set - PROP_ALL ) : raise ValueError #bogus props
             except :
                 worddata_logger.error(
                     'WORDCENSUS item {} is invalid, ignoring it'.format(wlist)
@@ -564,11 +574,11 @@ class WordData(QObject):
     # NOTE IF THIS IS A PERFORMANCE BURDEN, KILL IT AND REQUIRE REFRESH
     #
     def recheck_spelling(self, speller):
-        global prop_bgh, prop_nox
+        global PROP_BGH, prop_nox
         self.speller = speller
         for i in range(len(self.vocab)) :
             (c, p) = self.vocab_vview[i]
-            if not( prop_bgh & p ) : # then p lacks BW, GW and HY
+            if not( PROP_BGH & p ) : # then p lacks BW, GW and HY
                 p = p & prop_nox # and now it also lacks XX
                 w = self.vocab_kview[i]
                 t = self.alt_tags.get(w,None)
@@ -583,7 +593,7 @@ class WordData(QObject):
     # is so fast no progress need be shown.
     #
     def refresh(self):
-        global re_lang_attr, re_token
+        global RE_LANG_ATTR, RE_TOKEN
 
         count = 0
         end_count = self.document.blockCount()
@@ -606,10 +616,10 @@ class WordData(QObject):
         for line in self.document.all_lines():
             count += 1
             j = 0
-            m = re_token.search(line,0)
+            m = RE_TOKEN.search(line,0)
             while m : # while match is not None
                 if m.group(6) : # start-tag; has it lang= ?
-                    d = re_lang_attr.search(m.group(8))
+                    d = RE_LANG_ATTR.search(m.group(8))
                     if d :
                         alt_dict = d.group(1)
                         alt_tag = m.group(7)
@@ -621,10 +631,10 @@ class WordData(QObject):
                 else :
                     self._add_token(m.group(0),alt_dict)
                 j = m.end()
-                m = re_token.search(line,j)
-        # look for zero counts and delete those items. In order not to
-        # confuse the value and keys views, make a list of the actual word
-        # tokens to be deleted, then use del.
+                m = RE_TOKEN.search(line,j)
+        # Look for zero counts and delete those items. It is forbidden to
+        # alter the dict contents while iterating over values or keys views,
+        # so make a list of the word tokens to be deleted, then use del.
         togo = []
         for j in range(len(self.vocab)) :
             if self.vocab_vview[j][0] == 0 :
@@ -728,7 +738,7 @@ class WordData(QObject):
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #
-    # The following methods are used by the Words panel.
+    # The following methods are called from the Words panel.
     #
     #  Get the count of words in the vocabulary.
     #
@@ -811,15 +821,13 @@ class WordData(QObject):
     # will be in the list. And for performance, we want to respond in as little
     # code as possible! So if we know the word, reply at once.
     #
-    # If the word in the document is not normalized it might seem not to be.
-    # Try again, normalized.
+    # 2. If the word in the document isn't in the vocab, perhaps it is not
+    # a normalized string, so try again, normalized.
     #
-    # If the token is not in the list, return False, meaning it is not
-    # misspelled. This because otherwise, if the user turns on spellcheck
-    # hilites in a new book before a census is done, adding all the words
-    # would lock the program up for a long time. We will document that you
-    # have to do a Refresh from the Words panel before spellcheck hilites
-    # work.
+    # 3 If the token is not in the list, add it to the vocabulary with null
+    # properties (to speed up repeat calls) and return False, meaning it is
+    # not misspelled. The opposite, returning True for misspelled, in a new
+    # book before Refresh is done, would highlight everything.
     #
     def spelling_test(self, tok_str) :
         count, prop_set = self.vocab.get(tok_str,[0,set()])
