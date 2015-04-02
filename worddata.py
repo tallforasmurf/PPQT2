@@ -166,6 +166,7 @@ Called by the wordview module:
 * word_count() returns the count of words for the rowCount method
 * word_at(n) returns the text of the n'th word
 * word_props_at(n) returns a list [count, propset] for the n'th word
+* prop_string(s) returns set of properties s converted to a string
 
 These functions operate in O(1) retrieval time thanks to SortedDict.
 
@@ -189,7 +190,7 @@ import unicodedata # for NFKC
 import ast # for literal_eval
 import logging
 worddata_logger = logging.getLogger(name='worddata')
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import Qt, QObject, pyqtSignal
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Global function to strip all types of apostrophe and dash from a word.
@@ -312,6 +313,12 @@ RE_LANG_ATTR = regex.compile(xp_lang, regex.IGNORECASE)
 # designations. Nevertheless, during the refresh() we save the dict tag as an
 # alternate dictionary for all words until the matching close tag is seen.
 
+# Compile a simple regex to find if a token contains ANY digits. This is
+# because the Python str.isalpha() method returns false for word containing a
+# digit OR a DP ligatur['e] code, so "not word.isalpha()" doesn't imply ND.
+
+ANY_DIGIT = regex.compile( '\\d' )
+
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # Class to implement saving all the census data related to one book. Created
@@ -339,6 +346,8 @@ class WordData(QObject):
         # Key and Values views on the vocab list for indexing by table row.
         self.vocab_kview = self.vocab.keys()
         self.vocab_vview = self.vocab.values()
+        # The count of available words based on the latest sort
+        self.active_word_count = 0
         # The good- and bad-words sets and the scannos set.
         self.good_words = set()
         self.bad_words = set()
@@ -346,6 +355,10 @@ class WordData(QObject):
         # A dict of words that use an alt-dict tag. The key is a word and the
         # value is the alt-dict tag string.
         self.alt_tags = SortedDict()
+        # Cached sort vectors, see get_sort_vector()
+        self.sort_up_vectors = [None, None, None]
+        self.sort_down_vectors = [None, None, None]
+        self.sort_key_funcs = [None, None, None]
         # Register metadata readers and writers.
         self.metamgr.register(C.MD_GW, self.good_read, self.good_save)
         self.metamgr.register(C.MD_BW, self.bad_read, self.bad_save)
@@ -522,6 +535,8 @@ class WordData(QObject):
                 self.alt_tags[word] = alt_tag
             self.vocab[word] = [count, prop_set]
         # end of "for wlist in value"
+        # note the current word count
+        self.active_word_count = len(self.vocab)
         # Tell wordview that the display might need to change
         self.WordsUpdated.emit()
     # end of word_read()
@@ -602,6 +617,10 @@ class WordData(QObject):
         self.speller = self.my_book.get_speller()
         # clear the alt-dict list.
         self.alt_tags = SortedDict()
+        # clear the sort vectors
+        self.sort_up_vectors = [None, None, None]
+        self.sort_down_vectors = [None, None, None]
+        self.sort_key_funcs = [None, None, None]
         # Zero out all counts and property sets that we have so far. We will
         # develop new properties when each word is first seen. Properties
         # such as HY will not have changed, but both AD and XX might have
@@ -641,6 +660,8 @@ class WordData(QObject):
                 togo.append(self.vocab_kview[j])
         for key in togo:
             del self.vocab[key]
+        # Update possibly modified word count
+        self.active_word_count = len(self.vocab)
 
     # Internal method for adding a possibly-hyphenated token to the vocabulary,
     # incrementing its count. This is used during the census/refresh scan, and
@@ -710,8 +731,8 @@ class WordData(QObject):
             prop_set.add(HY)
             work = work.replace('-','')
         # With the hyphens and apostrophes out, check letter case
-        if not work.isalpha() :
-            # word has at least some numerics
+        if ANY_DIGIT.search( work ) :
+            # word has at least one numeric
             prop_set.add(ND)
         if not work.isnumeric() :
             # word is not all-numeric, determine case of letters
@@ -740,10 +761,11 @@ class WordData(QObject):
     #
     # The following methods are called from the Words panel.
     #
-    #  Get the count of words in the vocabulary.
+    #  Get the count of words in the vocabulary, as selected by the
+    #  latest sort vector.
     #
     def word_count(self):
-        return len(self.vocab)
+        return self.active_word_count
     #
     # Get the word at position n in the vocabulary, using the SortedDict
     # KeysView for O(1) lookup time. Guard against invalid indices.
@@ -776,6 +798,81 @@ class WordData(QObject):
         except Exception as whatever:
             worddata_logger.error('bad call to word_props_at({0})'.format(n))
             return (set())
+
+    #
+    # Return a sort vector to implement column-sorting and/or filtering. The
+    # returned value is a list of index numbers to self.vocab_vview and
+    # vocab_kview such that iterating over the list selects vocabulary items
+    # in some order. The parameters are:
+    #
+    # col is the number of the table column, 0:word, 1:count, 2:properties.
+    # The sort key is formed based on the column:
+    #   0: key is the word-token
+    #   1: key is nnnnnnword-token so that words with the same count are
+    #      in sequence.
+    #   2: fffffffword-token so that words with the same props are in sequence.
+    #
+    # order is Qt.AscendingOrder or Qt.DescendingOrder
+    #
+    # key_func is a callable used to extract or condition the key value when
+    # a new key is added to a SortedDict, usually created by natsort.keygen()
+    # and used to implement locale-aware and case-independent sorting.
+    #
+    # filter_func is a callable that examines a vocab entry and returns
+    # True or False, meaning include or omit this entry from the vector.
+    # Used to implement property filters or harmonic-sets.
+    #
+    # To implement Descending order we return a reversed() version of the
+    # matching Ascending order vector.
+    #
+    # Because vectors are expensive to make, we cache them, so that to
+    # return to a previous sort order takes near zero time. However we can't
+    # cache every variation of a filtered vector, so when a filter_func is
+    # passed we make the vector every time.
+    #
+    def _make_key_getter(self, col) :
+        if col == 0 :
+            return lambda j : self.vocab_kview[j]
+        elif col == 1 :
+            return lambda j : '{:05}:{}'.format( self.vocab_vview[j][0], self.vocab_kview[j] )
+        else : # col == 2
+            return lambda j : prop_string(self.vocab_vview[j][1]) + self.vocab_kview[j]
+
+    def get_sort_vector( self, col, order, key_func = None, filter_func = None ) :
+        if filter_func : # is not None,
+            # create a sort vector from scratch, filtered
+            getter_func = self._make_key_getter( col )
+            sorted_dict = SortedDict( key_func )
+            for j in range( len( self.vocab ) ) :
+                if filter_func( self.vocab_kview[j], self.vocab_vview[j][1] ) :
+                    k = getter_func( j )
+                    sorted_dict[ k ] = j
+            vector = sorted_dict.values()
+            if order != Qt.AscendingOrder :
+                vector = [j for j in reversed( vector ) ]
+        else : # no filter_func, try to reuse a cached vector
+            vector = self.sort_up_vectors[ col ]
+            if not vector or key_func is not self.sort_key_funcs[ col ] :
+                # there is no ascending vector for this column, or there
+                # is one but it was made with a different key_func.
+                getter_func = self._make_key_getter( col )
+                sorted_dict = SortedDict( key_func )
+                for j in range( len( self.vocab ) ) :
+                    k = getter_func( j )
+                    sorted_dict[ k ] = j
+                vector = self.sort_up_vectors[ col ] = sorted_dict.values()
+                self.sort_key_funcs[ col ] = key_func
+            if order != Qt.AscendingOrder :
+                # what is wanted is a descending order vector, do we have one?
+                if self.sort_down_vectors[ col ] is None :
+                    # no, so create one from the asc. vector we now have
+                    self.sort_down_vectors[ col ] = [ j for j in reversed( vector ) ]
+                # yes we do (now)
+                vector = self.sort_down_vectors[ col ]
+        # one way or another, vector is a sort vector
+        # note the actual word count available through that vector
+        self.active_word_count = len(vector)
+        return vector
 
     # Return a reference to the good-words set
     def get_good_set(self):
