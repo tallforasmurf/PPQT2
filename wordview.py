@@ -28,13 +28,7 @@ Define a class WordPanel(QWidget) to implement the Words panel.
 
 The panel's central feature is WordTableView(QTableView) drawing its data
 from a WordTableModel(QAbstractTableModel) which in turn gets its data from
-worddata.py. The table is sorted and filtered by a custom
-WordFilter(QSortFilterProxyModel) which applies various filters to select
-subsets of the word census.
-
-Note the table "model" is actually integral with the "view" as it provides
-not merely data for the table, but formatted data as well as translated
-column heads and tooltips. The real MVC data model is in worddata.
+worddata.py.
 
 Above the table are four items, from left to right:
  * a Refresh button that invokes the worddata.refresh() method, and
@@ -58,19 +52,11 @@ column has a sequence of six characters to indicate:
  * p if the word has any apostrophe else -
  * X if the word fails spellcheck else -
 
-The filter regexes invoked from the filter popup test the property flags (or
-for single-letter, the word itself) to implement:
+This string is prepared from the actual word property set by the
+prop_string method of worddata.py.
 
- 0 All when flag == ......
- 1 UPPERCASE when flag = A--...
- 2 lowercase when flag = -a-...
- 3 mixedcase when flag start Aa-... (no digits allowed here)
- 4 numeric when flag starts --9...
- 5 alphanumeric when flag is (A-9|-a9|Aa9)...
- 6 hyphen-ated when flag is ...h..
- 7 apostrophe when flag is ....p.
- 8 single letter when word matches ^.$
- 9 misspelt when flag is .....X
+The popup sets up a filter_func to test properties in the property
+set and then calls the model set_filter() method.
 
 When the table view has the focus (and is currently sorted ascending on the
 first column), keying a letter causes it to scroll to words starting with
@@ -82,10 +68,10 @@ choices:
  * First harmonic  words in a Levenshtein distance of 1 edit
  * Second harmonic words in a Levenshtein distance of 2 edits
 
-Each menu action searches the words database and makes a set of matching
-words. If there are any, the WordFilter is set to display only those words.
-To return to the full list, Select All (or any other choice) in the popup or
-click Refresh.
+Each of these menu actions searches the words database and makes a set of
+matching words. If there are any, it sets up a filter_func that tests a word
+for membership in that set, and calls the model set_filter() method. To return to
+the unfiltered list select All in the popup.
 
 To the right of the word table is the left member of a vertical splitter
 which is normally all the way right to maximize the word table. When the
@@ -125,13 +111,16 @@ import constants as C
 import worddata # our data model
 import mainwindow # for set_up_edit_menu
 import regex
+import natsort
 from PyQt5.QtCore import (
     pyqtSignal,
     Qt,
+    QAbstractItemModel,
     QAbstractListModel,
     QAbstractTableModel,
     QCoreApplication,
     QMimeData,
+    QModelIndex,
     QRegExp,
     QSortFilterProxyModel
     )
@@ -157,111 +146,61 @@ from PyQt5.QtWidgets import (
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #
-# Class of our custom Sort/Filter Proxy. We define the regexes used in the
-# class and provide set_regex(n) to set a new one. Also a member filter_set
-# is either None or a set of accepted words. When filter_set is None,
-# filterAcceptsRow defers to the parent class to apply the regex. When the
-# set has been given, filterAcceptsRow accepts only words in the set. (Python
-# "in set" is much faster than "in list".)
-#
+# Filtration items stored as static globals.
 # The following static globals obviously should be kept in parallel.
+# The actual menu strings of the popup filter menu.
+#
 FILTER_MENU_TEXT = [
     _TR('Word filter menu choice','All'),
     _TR('Word filter menu choice','UPPERCASE'),
     _TR('Word filter menu choice','lowercase'),
     _TR('Word filter menu choice','MiXedCaSe'),
     _TR('Word filter menu choice','Numeric'),
-    _TR('Word filter menu choice','Alpha-Num'),
+    _TR('Word filter menu choice','Alphanumeric'),
     _TR('Word filter menu choice','Hyphenated'),
     _TR('Word filter menu choice','Apostrophe'),
     _TR('Word filter menu choice','Single-letter'),
     _TR('Word filter menu choice','Misspelled')
     ]
-FILTER_REGEXES = {
-            0: QRegExp('......'),
-            1: QRegExp('^A--'),
-            2: QRegExp('^-a-'),
-            3: QRegExp('^Aa-'),
-            4: QRegExp('^--9'),
-            5: QRegExp('^(A-|-a|Aa)9'),
-            6: QRegExp('^...h'),
-            7: QRegExp('^....p'),
-            8: QRegExp('^.$'),
-            9: QRegExp('X$')
-            }
-
-class WordFilter(QSortFilterProxyModel):
-    filterChange = pyqtSignal()
-
-    def __init__(self, parent=None):
-        global FILTER_REGEXES
-        super().__init__(parent)
-        self.setSortLocaleAware(True)
-        # set default filter regex and column and clear filter set
-        self.filter_set = None
-        self.setFilterRegExp(QRegExp())
-        self.setFilterKeyColumn( 0 )
-        self.filtering = False # flag for the Reset action
-
-    # Override filterAcceptsRow to check for a list filter.
-    def filterAcceptsRow( self, row, parent_index ):
-        if self.filter_set : # is not None,
-            word = self.sourceModel().index(row,0,parent_index).data()
-            return word in self.filter_set
-        # no filter set, just apply the current regex
-        return super().filterAcceptsRow(row,parent_index)
-
-    # The following methods control the filtration. After making
-    # any filter change, emit a filterChanged signal so the main
-    # panel can adjust the table view and the row count.
-
-    # Slot called when the respect case switch changes state:
-    def set_case(self, state):
-        self.setSortCaseSensitivity(
-                Qt.CaseSensitive if state else Qt.CaseInsensitive )
-        self.filterChange.emit()
-
-    # Called to instantiate a set of selected words such as the
-    # first-harmonic set.
-    def set_word_set(self, word_set):
-        self.filter_set = word_set
-        self.setFilterRegExp(QRegExp())
-        self.setFilterKeyColumn( 0 )
-        self.invalidateFilter()
-        self.filtering = True
-        self.filterChange.emit()
-
-    # Called by the panel when the user selects some filter.
-    # If currently filtering on a set e.g. 1st Harmonic, clear that.
-    #
-    # If the regex is 0, meaning All, don't set a regex. Else, set that regex
-    # on the appropriate column, which is 0 (word) for single-letter, else 2
-    # (property flags).
-
-    def set_filter_regex(self,choice):
-        self.filter_set = None
-        if choice != 0 :
-            self.setFilterRegExp(FILTER_REGEXES[choice])
-            self.filtering = True
-        else :
-            self.setFilterRegExp(QRegExp()) # null regex for All
-            self.filtering = False
-        self.setFilterKeyColumn( 0 if choice == 8 else 2 )
-        self.invalidateFilter()
-        self.filterChange.emit()
+#
+# The matching filter_func lambdas in the same sequence. Each filter_func
+# is called with two arguments, w the word token and p the property set.
+#
+FILTER_MENU_FUNCS = [
+    None,
+    lambda w, p : worddata.UC in p,
+    lambda w, p : worddata.LC in p and not worddata.UC in p,
+    lambda w, p : worddata.UC in p and worddata.LC in p,
+    lambda w, p : worddata.ND in p and not worddata.UC in p and not worddata.LC in p,
+    lambda w, p : worddata.ND in p and (worddata.UC in p or worddata.LC in p),
+    lambda w, p : worddata.HY in p,
+    lambda w, p : worddata.AP in p,
+    lambda w, p : 1 == len(w),
+    lambda w, p : worddata.XX in p
+    ]
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #
 # Class of our table model. Connects to the real database in worddata.py
 # to return info from and about the word table.
-# flags : return Qt.itemIsEnabled plus for column 0 only, itemIsSelectable
-# columnCount : return the number of columns (6, but not hard-coded)
-# rowCount : return number of words in the database
-# headerData : return the column header name or tooltip string.
-# data : return the actual data, or various helpful info about a column.
+# flags() : return Qt.itemIsEnabled for all; for column 0 also return
+#  itemIsSelectable and itemIsDragEnabled.
+# columnCount() : return the number of columns, 3
+# rowCount() : return number of words in the database
+# headerData() : return the column header name or tooltip string.
+# data() : return the actual data, or various helpful info about a column.
 #
-# mimeTypes : return the mime type we support (text/plain)
-# mimeData  : given a list of dragged words return a QMimeData object.
+# mimeTypes() : return the mime type we support (text/plain)
+# mimeData()  : given a list of dragged words return a QMimeData object.
+#
+# set_filter() : Not a standard MVC method, apply or clear filtering
+# by calling sort with the current filter, sort column and sort order.
+#
+# set_sort_key() : set the key_func used to sort.
+#
+# sort() : implement column sorting and filtering including locale-aware
+# and case-blind sorting.
+#
 
 COL_HEADERS = {
     0: _TR('Word table column head', 'Word' ),
@@ -282,6 +221,11 @@ class WordTableModel(QAbstractTableModel):
     def __init__(self, words, parent):
         super().__init__(parent)
         self.words = words
+        self.current_sort_vector = []
+        self.current_sort_col = 0
+        self.current_sort_order = Qt.AscendingOrder
+        self.current_filter = None
+        self.current_sort_key = None
 
     def flags(self,index):
         if 0 == index.column():
@@ -309,17 +253,18 @@ class WordTableModel(QAbstractTableModel):
     def data(self, index, role ):
         global COL_ALIGNMENT, COL_TOOLTIPS
         if role == Qt.DisplayRole : # wants actual data
-            if 0 == index.column() :
+            col = index.column()
+            row = self.current_sort_vector[ index.row() ]
+            if 0 == col :
                 # Column 0, return the word text
-                return self.words.word_at(index.row())
-            elif 1 == index.column() :
+                return self.words.word_at( row )
+            elif 1 == col :
                 # Column 1, return the count
-                return self.words.word_count_at(index.row())
+                return self.words.word_count_at( row )
             else:
                 # Column 2, get the property set and translate it
-                props = self.words.word_props_at(index.row())
-                features = worddata.prop_string(props)
-                return features
+                props = self.words.word_props_at( row )
+                return worddata.prop_string(props)
         elif (role == Qt.TextAlignmentRole) :
             return COL_ALIGNMENT[index.column()]
         elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
@@ -327,13 +272,45 @@ class WordTableModel(QAbstractTableModel):
         # don't support other roles
         return None
 
+    # Implement a filter method by storing a new filter_func and
+    # calling the sort() method. Called with either:
+    # filter_func=None, filter_set=None to clear all filters
+    # filter_func as lambda selected by the filter popup menu
+    # filter_set as a set of words to be selected
+    def set_filter( self, filter_func = None, filter_set = None ):
+        new_filter = filter_func
+        if new_filter is None : # caller did not pass a function,
+            if filter_set is not None :
+                # create a filter_func that tests word membership
+                new_filter = lambda w, p : w in filter_set
+        # whatever the result, perform a sort
+        self.current_filter = new_filter
+        self.sort( self.current_sort_col, self.current_sort_order )
+
+    # Note what key-translation to use when sorting, and re-sort.
+    def set_sort_key(self, key_func ) :
+        self.current_sort_key = key_func
+        self.sort( self.current_sort_col, self.current_sort_order )
+
+    # Implement the sort() method of an Abstract Table Model. Most of the
+    # work is done by the worddata method get_sort_vector(). It returns an
+    # indirection vector that lets our data() show things in the requested
+    # order. Emit the layoutAboutToChange and layoutChanged signals so the
+    # view knows to refresh.
+    def sort(self, col, order):
+        self.current_sort_col = col
+        self.current_sort_order = order
+        self.layoutAboutToBeChanged.emit([],QAbstractItemModel.VerticalSortHint)
+        self.current_sort_vector = self.words.get_sort_vector(
+            col, order, key_func=self.current_sort_key,
+            filter_func=self.current_filter )
+        self.layoutChanged.emit([],QAbstractItemModel.VerticalSortHint)
+
     # Methods related to initiating a drag -- see also the methods
     # related to receiving a drop in GoodModel.
     #def mimeTypes(self):
-        #print('word mimeTypes - [text/plain]')
         #return ['text/plain'] # never called!
     def supportedDragActions(self):
-        #print('word drag actions - copyaction')
         return Qt.CopyAction
     def mimeData(self,ixlist):
         words = []
@@ -342,9 +319,7 @@ class WordTableModel(QAbstractTableModel):
                 words.append( self.data(index,Qt.DisplayRole) )
         if len(words) :
             md = QMimeData()
-            #md.setData('text/plain',' '.join(words))
             md.setText(' '.join(words))
-            #print('word mimedata ',md.text(),','.join(md.formats()))
             return md
         return None
 
@@ -436,14 +411,19 @@ class WordTableView(QTableView):
             self.find_action()
     #
     # The meat of the find and find-next operations. word has been
-    # cleaned of apostrophes and dashes.
+    # cleaned of apostrophes and dashes. We have to use our model().data()
+    # method to cycle through words in sequence because it knows how to
+    # use the sort-vector.
     #
     def real_find(self, row, word):
-        for j in range( row, self.words.word_count() ) :
-            if worddata.clean_word( self.words.word_at( j ) ).startswith( word ) :
+        for j in range( row, self.model().rowCount( QModelIndex() ) ) :
+            ix = self.model().index( j, 0 )
+            raw_target = self.model().data( ix, Qt.DisplayRole )
+            clean_target = worddata.clean_word( raw_target )
+            if clean_target.startswith( word ) :
                 self.last_find_word = word
                 self.last_find_row = j
-                ix = self.model().index( j,0 )
+                self.clearSelection()
                 self.selectRow( j )
                 self.scrollTo( ix, QAbstractItemView.PositionAtCenter )
                 return
@@ -487,17 +467,21 @@ class WordTableView(QTableView):
             # Do a binary search over the (sorted) data for initial char
             mp = self.model()
             rc = self.sw_case.isChecked()
-            hi = mp.rowCount()
+            hi = mp.rowCount( QModelIndex() )
             lo = 0
             while (lo < hi) :
                 mid = (lo + hi) // 2
-                cc = mp.data(mp.index(mid,0))[0]
+                cc = mp.data(mp.index(mid,0), Qt.DisplayRole )[0]
                 if not rc : cc = cc.upper()
                 if char > cc :
                     lo = mid + 1
                 else :
                     hi = mid
             self.scrollTo(mp.index(lo,0),QAbstractItemView.PositionAtCenter)
+        elif key == Qt.Key_Home :
+            self.scrollToTop()
+        elif key == Qt.Key_End :
+            self.scrollToBottom()
         else :
             super().keyPressEvent(event)
 
@@ -521,7 +505,7 @@ class WordTableView(QTableView):
             if wd == worddata.clean_word(wx).upper() :
                 hits.add(wx) # will get 1 hit on the word itself
         if len(hits) > 1 : # did find at least one similar word
-            self.model().set_word_set(hits)
+            self.model().set_filter( filter_set = hits )
         else: # no matches
             utilities.beep()
 
@@ -539,7 +523,7 @@ class WordTableView(QTableView):
                 hits.add(wx)
         if len(hits) : # did find at least one fuzzy match
             hits.add(word)
-            self.model().set_word_set(hits)
+            self.model().set_filter( filter_set = hits )
         else: # no matches
             utilities.beep()
 
@@ -554,7 +538,7 @@ class WordTableView(QTableView):
                 hits.add(wx)
         if len(hits) : # did find at least one fuzzy match
             hits.add(word)
-            self.model().set_word_set(hits)
+            self.model().set_filter( filter_set = hits )
         else: # no matches
             utilities.beep()
 
@@ -740,7 +724,6 @@ class WordPanel(QWidget) :
         # Go create all the layout stuff. This creates the members:
         # self.view the WordTableView object
         # self.model the WordTableModel object
-        # self.proxy the WordFilter object
         # self.refresh the Refresh button
         # self.sw_case the Respect Case toggle
         # self.popup the filter popup
@@ -749,16 +732,19 @@ class WordPanel(QWidget) :
         # self.good_model good words model
         # self.good_view good words list view
         self._uic()
+        # Set up locale-aware sort key functions from natsort
+        self.case_yes_func = natsort.natsort_keygen( alg = ( natsort.ns.LOCALE ) )
+        self.case_no_func = natsort.natsort_keygen( alg = ( natsort.ns.IGNORECASE | natsort.ns.LOCALE ) )
         # Connect all the various signals to their slots:
         # Refresh button to do_refresh()
         self.refresh.clicked.connect(self.do_refresh)
-        # Popup choice to filter set_filter_regex(n)
-        self.popup.activated.connect(self.proxy.set_filter_regex)
-        # change of Respect Case to filter.set_case
-        self.sw_case.stateChanged.connect(self.proxy.set_case)
+        # Popup choice changes filtering of table
+        self.popup.activated.connect(self.do_filter)
+        # change of Respect Case changes sorting of table
+        self.sw_case.stateChanged.connect(self.do_set_case)
         self.sw_case.setChecked(True) # start out case-sensitive
-        # change of filtration to setup_table()
-        self.proxy.filterChange.connect(self.setup_table)
+        # Change of model to be reflected in row_count label
+        self.model.layoutChanged.connect(self.do_row_count)
         # double-click of a table row to do_find()
         self.view.doubleClicked.connect(self.do_find)
         # Connect worddata changes due to metadata input
@@ -766,29 +752,18 @@ class WordPanel(QWidget) :
         #self.words.WordsUpdated.connect(self.do_update)
 
     # Receive the clicked() signal from the Refresh button.
-    # Do not clear the filter, leave filtering alone over refresh.
-    #
-    # Performance hack: There is a bad delay of several seconds during
-    # endResetModel() if the model is unfiltered and displaying many rows.
-    # So, if there is no filter, impose a filter before resetting, then clear
-    # it after. There is still a delay going from showing a few rows to
-    # showing all, but it is less than the un-hacked delay.
+    # Clear any filtering being used in the model, but leave the
+    # current sort column and order alone.
 
     def do_refresh(self):
-        flag = not self.proxy.filtering
-        if flag :
-            self.proxy.set_filter_regex(8) # filter on single-letter words
-        self.model.beginResetModel()
-        self.progress.reset()
-        self.progress.setRange(0,0) # should show a busy indication
-        self.progress.show()
+        #self.progress.reset()
+        #self.progress.setRange(0,0) # should show a busy indication
+        #self.progress.show()
         self.words.refresh()
-        self.model.endResetModel()
-        self.setup_table()
-        if flag : # hack in use
-            self.proxy.set_filter_regex(0)
-        self.progress.reset()
-        self.progress.hide()
+        #self.setup_table()
+        self.model.set_filter() # which performs sort, which updates layout
+        #self.progress.reset()
+        #self.progress.hide()
         # and reset the good-words list too
         self.good_model.beginResetModel() # 5 usec
         self.good_model.get_data() # 10 usec
@@ -801,17 +776,35 @@ class WordPanel(QWidget) :
         self.good_model.beginResetModel()
         self.good_model.get_data()
         self.good_model.endResetModel()
-        self.model.beginResetModel()
-        self.model.endResetModel()
+        self.model.set_filter()
 
-    # When the contents of the table have changed (refresh or a
-    # change of filter) set up table display parameters.
-    def setup_table(self):
-        self.row_count.setNum(self.proxy.rowCount())
-        #self.view.resizeRowsToContents()
-        #self.view.sortByColumn(0,Qt.AscendingOrder)
-        self.view.setColumnWidth(0,180)
-        self.view.setColumnWidth(1,50)
+    ## When the contents of the table have changed (refresh or a
+    ## change of filter) set up table display parameters.
+    #def setup_table(self):
+        #self.row_count.setNum(self.model.rowCount())
+        ##self.view.resizeRowsToContents()
+        ##self.view.sortByColumn(0,Qt.AscendingOrder)
+        #self.view.setColumnWidth(0,180)
+        #self.view.setColumnWidth(1,50)
+
+    # Tap into the layoutChanged signal from the model as a cue
+    # to update the rowcount label.
+    def do_row_count(self) :
+        self.row_count.setNum( self.model.rowCount( QModelIndex() ) )
+
+    # Receive the activated signal from the filter combobox. The argument
+    # is the index of the selected item. Use that to select one of the
+    # FILTER_MENU_FUNCS and set that as the current filter_func on the
+    # table model. When the select is "All", the filter_func is None.
+    def do_filter(self, fnumber) :
+        self.model.set_filter( FILTER_MENU_FUNCS[ fnumber ] )
+
+    # Receive the stateChanged signal from the Respect Case switch
+    # and call the model's set_sort_key() with an appropriate key_func.
+    def do_set_case(self, state ) :
+        new_key_func = self.case_no_func
+        if state : new_key_func = self.case_yes_func
+        self.model.set_sort_key( new_key_func )
 
     # Two compiled regexes as class variables. Each defines a search
     # for the visually-ambiguous versions of a character. The regex
@@ -882,13 +875,11 @@ class WordPanel(QWidget) :
         self.view.setCornerButtonEnabled(False)
         self.view.setWordWrap(False)
         self.view.setAlternatingRowColors(True)
+        self.view.sortByColumn( 0, Qt.AscendingOrder )
         self.view.setSortingEnabled(True)
-        # Set up the table model/view. Interpose a sort filter proxy
-        # between the view and the model.
+        # Set up the table model/view.
         self.model = WordTableModel(self.words, self)
-        self.proxy = WordFilter(self)
-        self.proxy.setSourceModel(self.model)
-        self.view.setModel(self.proxy)
+        self.view.setModel(self.model)
         self.view.setSortingEnabled(True)
         # put completed table view in layout
         mid_layout.addWidget(self.view,1) # View gets all stretch
