@@ -845,41 +845,54 @@ class WordPanel(QWidget) :
     def _uic(self):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
-        # Lay out the top row of controls
+        # Lay out the top row of controls: Refresh button, Respect Case
+        # checkbox, filter popup, and row-count display label.
         top_layout = QHBoxLayout()
         main_layout.addLayout(top_layout,0) # top row, no stretch
         self.refresh = QPushButton(
             _TR('Word panel refresh button',
                 'Refresh') )
+        self.refresh.setToolTip(
+            _TR('Word panel refresh tooltip',
+                'Clear the table and count all the words in the book again.' ) )
         top_layout.addWidget(self.refresh,0) # refresh hard left
         self.sw_case = QCheckBox(
-            _TR('Word panel checkbox',
+            _TR('Word panel case switch name',
                 'Respect &Case' ) )
+        self.sw_case.setToolTip(
+            _TR('Word panel case switch tooltip',
+                'Sort uppercase and lowercase letters apart (ON) or together (OFF)' ) )
         top_layout.addWidget(self.sw_case,0) # checkbox next left
         self.popup = QComboBox()
         self.popup.addItems(FILTER_MENU_TEXT)
+        self.popup.setToolTip(
+            _TR('Word panel filter popup tooltip',
+                'Choose special groups of words to show' ) )
         top_layout.addStretch(1) # central space left of popup
         top_layout.addWidget(self.popup,0)
         top_layout.addStretch(1) # push label hard right
         self.row_count = QLabel('0')
+        self.row_count.setToolTip(
+            _TR('Words panel row-count tooltip',
+                'Number of rows in the table at this time' ) )
         top_layout.addWidget(self.row_count)
         row_count_label = QLabel(
             _TR('Words panel legend on row-count',
                 'rows' ) )
+        row_count_label.setToolTip( self.row_count.toolTip() )
         row_count_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         top_layout.addWidget(row_count_label)
         # That completes the top row. Lay out the bottom with the
         # word table left and good-word list right.
         mid_layout = QHBoxLayout()
         main_layout.addLayout(mid_layout,1) # with all the stretch
-        #
+        # Create the table view
         self.view = WordTableView(self, self.words, self.sw_case)
         self.view.setCornerButtonEnabled(False)
         self.view.setWordWrap(False)
         self.view.setAlternatingRowColors(True)
         self.view.sortByColumn( 0, Qt.AscendingOrder )
-        self.view.setSortingEnabled(True)
-        # Set up the table model/view.
+        # Create the table model and connect to the view
         self.model = WordTableModel(self.words, self)
         self.view.setModel(self.model)
         self.view.setSortingEnabled(True)
@@ -891,6 +904,9 @@ class WordPanel(QWidget) :
         self.good_view = GoodView(self)
         self.good_view.setModel(self.good_model)
         self.good_view.setWordWrap(False)
+        self.good_view.setToolTip(
+            _TR( 'Good-words column tooltip',
+                 'The good_words list: words that are always correctly spelled' ) )
         # Put the good-list in a VBox with a label over it
         gw_label = QLabel(
                 _TR('Word panel good word list heading',
