@@ -733,8 +733,10 @@ class WordPanel(QWidget) :
         # self.good_view good words list view
         self._uic()
         # Set up locale-aware sort key functions from natsort
-        self.case_yes_func = natsort.natsort_keygen( alg = ( natsort.ns.LOCALE ) )
-        self.case_no_func = natsort.natsort_keygen( alg = ( natsort.ns.IGNORECASE | natsort.ns.LOCALE ) )
+        self.case_yes_func = natsort.natsort_keygen(
+            alg = ( natsort.ns.LOCALE | natsort.ns.TYPESAFE ) )
+        self.case_no_func = natsort.natsort_keygen(
+            alg = ( natsort.ns.IGNORECASE | natsort.ns.LOCALE | natsort.ns.TYPESAFE ) )
         # Connect all the various signals to their slots:
         # Refresh button to do_refresh()
         self.refresh.clicked.connect(self.do_refresh)
