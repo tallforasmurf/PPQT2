@@ -135,12 +135,14 @@ from PyQt5.QtWidgets import (
     QWidget,
     QCheckBox,
     QComboBox,
+    QGroupBox,
     QHBoxLayout,
     QVBoxLayout,
     QLabel,
     QListView,
     QMenu,
     QPushButton,
+    QSplitter,
     QTableView
     )
 
@@ -640,7 +642,6 @@ class GoodView(QListView):
         self.setFocusPolicy(Qt.ClickFocus)
         self.setAcceptDrops(True)
         self.setDropIndicatorShown(True)
-        self.setMaximumWidth(120)
         self.setMovement(QListView.Free)
         # Create the list of actions for our minimal Edit menu.
         self.ed_action_list = [
@@ -883,9 +884,9 @@ class WordPanel(QWidget) :
         row_count_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         top_layout.addWidget(row_count_label)
         # That completes the top row. Lay out the bottom with the
-        # word table left and good-word list right.
-        mid_layout = QHBoxLayout()
-        main_layout.addLayout(mid_layout,1) # with all the stretch
+        # word table left and good-word list right in a splitter.
+        mid_layout = QSplitter()
+        main_layout.addWidget(mid_layout,1) # with all the stretch
         # Create the table view
         self.view = WordTableView(self, self.words, self.sw_case)
         self.view.setCornerButtonEnabled(False)
@@ -896,28 +897,33 @@ class WordPanel(QWidget) :
         self.model = WordTableModel(self.words, self)
         self.view.setModel(self.model)
         self.view.setSortingEnabled(True)
-        # put completed table view in layout
-        mid_layout.addWidget(self.view,1) # View gets all stretch
+        # put completed table view in splitter with max stretch
+        mid_layout.addWidget(self.view)
+        mid_layout.setStretchFactor(0,2)
         # Set up the gw list model/view. It doesn't need sorting
         # or alternating colors.
         self.good_model = GoodModel(self.words, self)
         self.good_view = GoodView(self)
         self.good_view.setModel(self.good_model)
         self.good_view.setWordWrap(False)
-        self.good_view.setToolTip(
-            _TR( 'Good-words column tooltip',
-                 'The good_words list: words that are always correctly spelled' ) )
-        # Put the good-list in a VBox with a label over it
-        gw_label = QLabel(
+        # Put the good-list in a group-box so as to group it with its label.
+        # The splitter doesn't accept layouts, only widgets, but the groupbox
+        # doesn't accept widgets, only layouts. Sigh.
+        gw_box = QGroupBox(
                 _TR('Word panel good word list heading',
                     'Good Words')
                 )
-        gw_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        gw_layout = QVBoxLayout()
-        gw_layout.addWidget(gw_label)
-        gw_layout.addWidget(self.good_view)
-        mid_layout.addStretch(0)
-        mid_layout.addLayout(gw_layout,0)
+        gw_box.setToolTip(
+            _TR( 'Good-words column tooltip',
+                 'The good_words list: words that are always correctly spelled' ) )
+        gw_vbox = QVBoxLayout()
+        gw_vbox.addWidget(self.good_view,1)
+        gw_box.setLayout( gw_vbox )
+        # Add the good-words box to the splitter
+        mid_layout.addWidget(gw_box)
+        mid_layout.setStretchFactor(1,1)
+        # Divide the space 3:1
+        mid_layout.setSizes( [ 300, 150 ] )
 
         # Make a progress dialog
         self.progress = utilities.make_progress(
