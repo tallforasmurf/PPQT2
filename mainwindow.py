@@ -670,6 +670,8 @@ class MainWindow(QMainWindow):
         self.resize(self.settings.value("mainwindow/size", C.STARTUP_DEFAULT_SIZE))
         self.splitter.restoreState(
            self.settings.value("mainwindow/splitter",C.STARTUP_DEFAULT_SPLITTER) )
+        self.restoreState(
+            self.settings.value("mainwindow/windowstate", QByteArray() ) )
         # Store a reference to the application menubar. In Mac OS this
         # is a parentless menubar; other platforms it is the default.
         if C.PLATFORM_IS_MAC :
@@ -831,5 +833,6 @@ class MainWindow(QMainWindow):
         self.settings.setValue("mainwindow/size",self.size())
         self.settings.setValue("mainwindow/position",self.pos())
         self.settings.setValue("mainwindow/splitter",self.splitter.saveState())
+        self.settings.setValue("mainwindow/windowstate",self.saveState())
         # and that's it, we are done finished, over & out.
         event.accept()
