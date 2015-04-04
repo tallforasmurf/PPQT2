@@ -42,8 +42,12 @@ logging.basicConfig( stream=log_stream, level=logging.INFO )
 
 from PyQt5.QtWidgets import QApplication
 import sys
+args = []
+if sys.platform == 'linux' :
+    # avoid a GTK bug in Ubuntu Unity
+    args = ['','-style','Cleanlooks']
 
-the_app = QApplication( sys.argv )
+the_app = QApplication( args )
 the_app.setOrganizationName( "PGDP" )
 the_app.setOrganizationDomain( "pgdp.net" )
 the_app.setApplicationName( "PPQT2" )
