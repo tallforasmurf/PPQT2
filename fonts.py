@@ -183,6 +183,7 @@ def initialize(settings):
     _GENL_SIZE = settings.value( 'fonts/general_size', _GENL_SIZE )
     _GENL_SIZE = int(_GENL_SIZE)
     _MONO_SIZE = settings.value( 'fonts/mono_size', _MONO_SIZE )
+    _MONO_SIZE = int(_MONO_SIZE)
     # Set fonts for those values. We do not go through set_fixed/_general()
     # because there is no need to trigger a fontChanged signal, this is
     # happening before any visible widget is initializing.
