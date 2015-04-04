@@ -751,8 +751,7 @@ class WordPanel(QWidget) :
         # double-click of a table row to do_find()
         self.view.doubleClicked.connect(self.do_find)
         # Connect worddata changes due to metadata input
-        # DO NOT do this as it sticks a big delay on file open with metadata
-        #self.words.WordsUpdated.connect(self.do_update)
+        self.words.WordsUpdated.connect(self.do_update)
 
     # Receive the clicked() signal from the Refresh button.
     # Clear any filtering being used in the model, but leave the
@@ -776,10 +775,10 @@ class WordPanel(QWidget) :
     # the display of all words, or good words, may have changed owing to
     # metadata input. Force a model reset of both models.
     def do_update(self):
+        self.model.set_filter() # which performs sort, which updates layout
         self.good_model.beginResetModel()
         self.good_model.get_data()
         self.good_model.endResetModel()
-        self.model.set_filter()
 
     ## When the contents of the table have changed (refresh or a
     ## change of filter) set up table display parameters.
