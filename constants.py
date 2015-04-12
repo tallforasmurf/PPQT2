@@ -33,8 +33,8 @@ from PyQt5.QtCore import PYQT_VERSION_STR
 from PyQt5.QtCore import QT_VERSION_STR
 from PyQt5.QtCore import QSize, QCoreApplication
 _TR = QCoreApplication.translate
-import os
-PLATFORM_NAME_STR = os.uname().sysname # e.g 'Darwin', 'Windows'
+import platform
+PLATFORM_NAME_STR = platform.uname().system # e.g 'Darwin', 'Windows'
 PLATFORM_IS_MAC = PLATFORM_NAME_STR.startswith('Darw')
 PLATFORM_IS_WIN = PLATFORM_NAME_STR.startswith('Win')
 
