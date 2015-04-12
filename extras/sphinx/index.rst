@@ -171,10 +171,6 @@ along with PPQT. Here are the things you can find there:
 
 * The "dictionaries" folder contains spell-check dictionaries for several languages.
 
-* Two monospaced fonts, Liberation Mono and Cousine, are stored here.
-  They are especially well suited to post-processing. PPQT loads these
-  fonts when it starts up, if it can find them.
-
 * Several sets of saved Find/Replace operations are here.
   You can load them into the `Find panel`_ to do complex searches.
   For example, "common_errors.utf"
@@ -184,6 +180,25 @@ along with PPQT. Here are the things you can find there:
 
 * "Translator_API.utf" tells Python programmers how to write a 
   translator to work with PPQT.
+
+You can move the Extras folder anywhere you like.
+You would do that if you changed or added any files in it, 
+because it would be replaced when you downloaded a new version of the program.
+If you move it, tell PPQT where it is using the `Preferences`_ dialog.
+
+Settings
+---------
+
+PPQT remembers the size and position of the window and other
+important preference choices from one run to the next.
+It saves these items in a settings file.
+The location of the settings depends on your operating system:
+
+* In Mac OS X, it is a file in $HOME/Library/Preferences/com.PGDP.PPQT2.
+
+* In Linux it is a file in $HOME/.config/PGDP/PPQT2.
+
+* In Windows it is in the Registry under HKEY_CURRENT_USER\\Software\\PGDP\\PPQT2.
 
 Files and Folders
 =================
@@ -211,8 +226,9 @@ PPQT can only display characters that are defined in the
 font you select (see `Edit font`_).
 For example the DPCustomMono2 font familiar to DP proofers
 lacks Greek and Cyrillic.
-The Liberation Mono and Cousine fonts have characters from several languages
-and many symbols.
+The Liberation Mono and Cousine fonts,
+which are embedded in PPQT,
+have characters from several languages and many symbols.
 
 Second, although it can display alphabets such as Arabic and Hebrew
 if they are in the current font,
@@ -225,17 +241,16 @@ File Encodings and File Names
 Characters in a file are encoded somehow.
 The preferred encoding for modern text files is UTF-8.
 This encoding can store any Unicode character.
-PPQT *expects* book files to be encoded UTF-8.
+**PPQT expects book and other files to be encoded UTF-8**.
 PPQT always saves its `Metadata`_ file in UTF-8.
 
 Another common encoding is Latin-1 (also called ISO8859-1).
-PPQT *allows* book files to be encoded in Latin-1.
-Before you open a book file encoded Latin-1, you must give it
-a filename that ends in ``-l`` (for example ``latinbook-l.txt``),
-or ``-ltn`` (``latinbook-ltn.txt``)
-or else give it the file suffix ``.ltn`` (``latinbook.ltn``).
-When PPQT opens or saves a file named in any of these ways, it
-uses the Latin-1 encoding.
+PPQT **allows** files to be encoded in Latin-1.
+Before you open a file encoded Latin-1, you must give it
+a file *name* that ends in ``-l`` (for example ``latinbook-l.txt``),
+or ends in ``-ltn`` (``latinbook-ltn.txt``).
+Or, you may give the file a *suffix* of ``.ltn`` (``latinbook.ltn``).
+PPQT uses the Latin-1 encoding when it opens or saves a file named in any of these ways.
 
 If the text in your book is strictly ASCII, PPQT will handle it correctly
 no matter how the book is named.
@@ -287,6 +302,7 @@ The Preferences dialog lets you choose three different file paths,
 a default spell-check dictionary,
 the font for the editor,
 and four kinds of text highlighting used in the editor.
+These choices are explained below.
 
 Your choices are saved when the PPQT ends and restored when it next starts up.
 
@@ -392,7 +408,7 @@ Choose a monospaced font that clearly distinguishes similar letters
 (1/l, O/0, B/8) and has a good repertoire of characters.
 
 The pop-up list contains all monospaced fonts known in your system.
-It includes Liberation Mono and Cousine if those fonts are in the Extras folder.
+It always includes Liberation Mono and Cousine which are embedded in the program.
 
 .. _Edit highlights:
 
@@ -497,14 +513,16 @@ In this case it does the following things:
 * It also looks for ``bad_words*.*``
   and loads its contents as the list of words that are always wrongly spelled.
 
-Just as with the book file, PPQT *assumes* the ``good_words`` and ``bad_words``
-files are encoded UTF-8.
-If they are Latin-1, you need to tell PPQT by making their filenames
-end in ``-ltn`` or giving them the ``.ltn`` suffix: ``good_words.ltn``.
+Just as with the book file,
+PPQT *expects* the ``good_words`` and ``bad_words`` files to be encoded UTF-8.
+If they are actually encoded Latin-1,
+you need to tell PPQT by making their filenames end in ``-ltn`` (``good_words-ltn.txt``)
+or by giving them the ``.ltn`` suffix (``good_words.ltn``).
 
-The good- and bad-word files are only read on this occasion.
+The good- and bad-word files are only read on this occasion, and never again.
 Their contents are saved in the metadata file.
 You can edit the good-words list in the `Words panel`_.
+You can only change the bad-words list by editing the metadata file.
 
 File: Recent Files
 ^^^^^^^^^^^^^^^^^^^
@@ -548,7 +566,7 @@ It does not diagnose errors.
 The Save action displays a save dialog.
 The dialog is initialized to start in the folder for the active book.
 The file you specify is written as a UTF-8 text file containing definitions
-of all defined custom buttons.
+of all custom Find buttons that are not empty.
 
 .. _Edit panel:
 
@@ -580,7 +598,8 @@ Image:
 Line#:
   Shows the number of the line under the cursor.
   Line numbers start at 1.
-  To see the count of lines, move the cursor to the last line.
+  To see the how many lines are in the book,
+  move the cursor to the last line (ctl-down arrow).
   
   You can type a new line number in this field.
   When you press Enter the cursor moves to that line.
@@ -588,7 +607,8 @@ Line#:
 Col:
   Shows the index of the character to the left of the cursor.
   Position 0 is at the left margin.
-  Move the cursor to the end of the line to see how many characters are in the line.
+  To see how many characters are in the line,
+  move the cursor to the end of the line (ctl-right arrow).
 
 Editing
 ---------
@@ -921,11 +941,11 @@ limited range of the book text.
 Using a Limited Find Range
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use a limited Find range when you want to make use search and replace in one
+Use a limited Find range when you want to use search and replace in one
 part of the book.
+
 For example, suppose you are working on the Table of Contents,
 and you want to make use find/replace to make changes only in that part of the book.
-
 Select the Table of Contents by clicking at the top of it,
 and shift-clicking at the end.
 Then on the Find panel, click **In Range**.
@@ -934,9 +954,11 @@ a Find Range.
 (The highlight is normally light-blue, but see `Edit highlights`_.)
 
 Now searches and replaces will take place in that range only.
-A "replace all" will replace all matches but only in the range.
 First will find the first match in the range,
-Last will find the last match in the range, etc.
+Last will find the last match in the range,
+Next and Prior will stop at the ends of the range.
+Especially useful, a "replace all" will replace only the
+matching text in the range.
 
 To remove the limited range, turn off the **In Range** switch.
 
@@ -1046,6 +1068,8 @@ Using the Find buttons
 
 At the bottom of the Find panel is an array of 24 buttons.
 You use these to save find/replace operations for use later.
+These are especially useful when you have with great effort worked
+out a complicated regular expression. 
 
 Programming a button
 ^^^^^^^^^^^^^^^^^^^^^
@@ -1059,7 +1083,7 @@ To program one button,
 
 * Enter a word to remind you of the operation you are saving.
 
-* When you click OK, all the settings of the Find and Replace controls are saved
+* When you click OK, all the Find and Replace controls are saved
   in this button. The Find text, the Respect Case, Whole Word, and Regex switches,
   all three Replace texts, and the +Next, +Prior and ALL! switches are recorded.
 
@@ -1130,12 +1154,12 @@ They contain comments documenting the regular expressions.
 
   This loads buttons 18-23 with convenient operations on markup:
   
-  18. Find &lt;tb>, replace with 5-star string
+  18. Find \<tb>, replace with 5-star string
   19. Find open and close block markup lines such as /\*, /Q, P/, etc.
   20. Find "[typo:orig:fixed]" and replace with "fixed"
-  21. Find &lt;sc> markup and replace
-  22. Find &lt;b> markup and replace
-  23. Find &lt;i> markup and replace
+  21. Find \<sc> markup and replace
+  22. Find \<b> markup and replace
+  23. Find \<i> markup and replace
 
 ``unbalanced_markup.utf``
 
@@ -1163,10 +1187,10 @@ The table shows you
 
 Click on any column heading to sort the table on that column.
 
-Double-click on the first column.
-That character is placed in the Find panel as the Find text.
-The Respect Case switch is on, 
-and the first occurrence of that character is selected in the Edit panel.
+Double-click on some character in the first column.
+That character is placed in the `Find panel`_ as the Find text.
+The **Respect Case** switch is on, 
+and the Edit panel scrolls to show first occurrence of that character.
 
 If you double-click on the HTML entity column,
 the Entity value is also put into the first Replace string field.
@@ -1193,19 +1217,27 @@ Words Panel
 The Words panel displays all the words in the book.
 Use it to find words that are often errors.
 In particular the Words panel is your best tool for correcting spelling.
+The file "Suggested Workflow" in the Extras folder describes 
+the procedure for correcting spelling errors and other ways to use the Words panel.
 
 Click the **Refresh** button to update the words and their counts after editing.
+When a book has more than a few thousand unique words, the Refresh
+operation may take a few seconds.
 
 Click on any column heading to sort the table on that column.
+The sort is "locale-aware" and Unicode aware.
+As a result, all forms of a letter sort near each other.
 
-**Note**: at this time, the Refresh operation takes several seconds.
-It may also take several seconds to sort the table when you click on a column heading.
-This is apparently due to a problem in Qt table sorting.
+When the **Respect Case** switch is on, words that have initial capital letters
+sort together.
+This makes it easy to view proper nouns and acronyms.
+Turn **Respect Case** off to make all forms of a letter sort together.
 
 The table shows three items about each word:
 
 * The word itself.
-  PPQT defines a "word" rather loosely.
+
+  Be aware that PPQT defines "word" rather loosely.
   A "word" may include digits, hyphens and apostrophes.
   "Mother-in-law's" is a word, as is "1925ʼs" (note the curly apostrophe).
 
@@ -1220,34 +1252,33 @@ The table shows three items about each word:
   * 'p' if the word contains an apostrophe
   * 'X' if the word fails spellcheck
 
-The uppercase and lowercase features are Unicode-aware.
+The uppercase, lowercase and digit tests are Unicode-aware.
 
 A word has the hyphen feature if it contains the Latin-1 hyphen (\\u002d)
 or the Unicode hyphen (\\u2010).
-(See also the "Similar words" feature below.)
+(For other types of hyphen, see the "Similar words" feature below.)
 
-, non-breaking hyphen (\\u2011), figure dash (\\u2012),
-en-dash, (\\u2013), small figure dash (\\ufe58),
-small hyphen-minus (\\ufe63), and fullwidth hyphen-minus (\\uff0d).
-
-The check for apostrophe allows the (Latin-1 quote \\u0027)
-and the Unicode modifier letter apostrophe (\\u02bc)
-and right single quote (\\u2019). 
-
-Set the **Respect Case** switch on or off to change the way the
-table sorts the first column.
+The check for apostrophe recognizes the Latin-1 quote (\\u0027),
+the Unicode modifier letter apostrophe (\\u02bc)
+and the right single quote (\\u2019). 
 
 With the focus in the Word panel, key any letter.
 The table scrolls to put the first word starting with that letter in the middle of the window.
 
-Searching for a word
-------------------------
+You can search for words within the table using the Edit>Find menu command or by 
+keying control-f (command-f).
+Enter some letters and press Return.
+The table scrolls to the first word that starts with those letters.
+Key control-g (command-g) to search for the next match.
 
-Double-click any word.
-The Find panel is displayed.
-The text of that word is in the find text field.
+Searching for a word in the text of the book
+---------------------------------------------
+
+Double-click any word in the table.
+The `Find panel`_ is displayed.
+The text of that word is in the Find text field.
 **Respect Case** and **Whole Word** are checked.
-The first occurrence of the word is in the middle of the edit panel.
+The Edit panel scrolls to show the first occurrence of the word.
 
 Filtering the words
 ------------------------
@@ -1264,8 +1295,7 @@ You can filter the table to show only:
 * Words containing an apostrophe
 * Words that fail spellcheck
 
-The file "Suggested Workflow" in the Extras folder describes 
-the procedure for correcting spelling errors.
+To return to the full list, select the **All** choice from the pop-up menu.
 
 Context Menu
 ------------------------
@@ -1273,16 +1303,16 @@ Context Menu
 Right-click on a row to open a context menu with three actions.
 
 Words Similar to This
-  Filters the table to show only words that are like the clicked word,
-  ignoring hyphens, apostrophes, and letter case.
-  
+  Filters the table to show only words that are like the clicked word
+  if letter case, apostrophes, and all types of hyphens are ignored.
   If the word is "to-day", similar words include "To-Day" and "today".
+  
   Use this to find inconsistent usage of hyphens and apostrophes.
-  In particular this filter skips all Unicode characters that
+  This filter ignores all Unicode characters that
   are hyphen-like, including non-breaking hyphen (\\u2011),
   figure dash (\\u2012), en-dash, (\\u2013), small figure dash (\\ufe58),
   small hyphen-minus (\\ufe63), and fullwidth hyphen-minus (\\uff0d).
-  So if a word looks similar to a hyphenated word, but does not show an
+  So if a word is similar to a hyphenated word, but does not show an
   "h" in the features column, it may contain one of these "faux hyphens". 
 
 First Harmonic
@@ -1291,22 +1321,23 @@ First Harmonic
   or one change.
   
   If the word is "dog" other words might include
-  "doe" and "do" and "dogs", but not "Dow" because that needs
-  two changes (d to D and g to w).
+  "doe" (one change), "do" (one deletion) and "dogs"
+  (one insertion), but not "Do" because that needs
+  two changes (d to D and delete the g).
 
 Second Harmonic
   Filters the table to show words that are the same as that word
   except for exactly two edit changes.
   
   If the word is "dog" other
-  words might include "Dow" or "foe" (two changes) or "doggy" (two
+  words might include "Dow" or "foe" (two changes), "doggy" (two
   insertions) or "dang" (one insertion, one change).
 
-The First Harmonic is a good tool for finding format keywords that
+First and Second Harmonics are good tools for finding keywords that
 proofers might misspell, such as Footnote or Illustration.
-For example the First Harmonic of the word `Footnote` would include
-`Footnotes` and `footnote`.
-The Second harmonic would include `footnotes` and `Footntoe`.
+For example, the First Harmonic of the word `Footnote` would include
+`Footnotes` and `footnote`; and the Second harmonic would include
+`footnotes` and `Footntoe`.
 
 .. _Good words list:
 
@@ -1348,12 +1379,11 @@ that page.
 The second, third and fourth columns are used to control the Folio, or visible page number
 value for this page.
 You use these columns to make the folio numbers agree with the folios printed in the book.
-For example, a book might begin with four scanned images
-pages that have no number.
+For example, a book might begin with four pages that have no number.
 Then might come several pages that are numbered in lowercase Roman numerals,
 i, ii, ... xvi.
 After this, the main part of the book begins with Arabic page number 1 and
-continues to the end, perhaps 278.
+continues to the end, perhaps numbered 278.
 
 Column 1 of the table shows the format of the folio for this page.
 This column may have any of four values:
