@@ -47,9 +47,10 @@ Each time the user selects File>Show Help, the main window calls the
 object's setVisible(True) method, making it appear if it was hidden.
 It reappears at the same place and size as when it was 'closed'.
 
-The widget traps key events only to look for the Find, Find-Next, and
-Find-prior keys. It implements a simple Find dialog using
-utilities.get_find_string.
+The widget traps key events only to look for Find, Find-Next, and Find-prior
+keys to implement a simple Find dialog using utilities.get_find_string. It
+also traps the control-[, control-b, and control-leftarrow keys to implement
+"back" and control-] and control-rightarrow to implement "forward".
 
 '''
 import paths # for extras path
@@ -70,13 +71,13 @@ The <i>real</i> Help text is very helpful.
 It is stored in a file named <b><tt>ppqt2help.html</tt></b>.
 That file should be in the "Extras" folder distributed with PPQT.
 </p><p>
-Please choose <b>File : Preferences...</b> to open the Preferences dialog.
+Also required: a folder named "sphinx" in the Extras folder.</p>
+<p>
+Please use the Preferences dialog to set the correct path to the "Extras" folder
+where ppqt2help.html and sphinx/ are found.
 </p><p>
-In that dialog, set the correct path to the "Extras" folder.
-If the ppqt2help file is in that folder, it will appear here.
-</p><p>
-If the ppqt2help file is not in the Extras folder, you need to find it
-and put it there.
+If those items are not not in the Extras folder, you need to find them
+and put them there.
 </p>
 '''
 class HelpWidget(QWidget) :
@@ -90,47 +91,41 @@ class HelpWidget(QWidget) :
         self.last_shape = None
         # Initialize find string, see find_action().
         self.find_text = None
+        # Initialize local link list
+        self.link_list = []
         # Create our complete layout consisting of a web page.
         self.view = QWebView()
         hb = QHBoxLayout()
         hb.addWidget(self.view)
         self.setLayout(hb)
         # Look for the help text file and load it if found.
-        self.html_path = None # assume the worst
-        self.load_html( paths.get_extras_path() )
-        if self.html_path is None :
-            # The first try to load the help text failed. Load default text
-            # and set up for a signal when the Extras path changes.
-            self.view.setHtml( DEFAULT_HTML )
-            paths.notify_me( self.path_change )
-
-    # Called during initialization and, if not successful then, called when
-    # the extras path changes to try again. Sets self.html_path when
-    # successful.
-
-    def load_html( self, extras_path ) :
-        html_path = os.path.join( extras_path , 'ppqt2help.html' )
-        if os.access( html_path, os.R_OK ) :
-            # it exists, load it and save self.html_path
-            try :
-                f = None # in case open fails, define f
-                f = open( html_path, 'r', encoding='UTF-8' )
-                base_url = QUrl.fromLocalFile( os.path.join(extras_path,'sphinx') + os.path.sep )
-                self.view.setHtml( f.read(), base_url )
-                self.html_path = html_path # show we are good now
-            except :
-                pass # just silently fail :-(
-            finally :
-                if f : f.close()
+        paths.notify_me( self.path_change )
+        self.help_url = None
+        self.path_change( ) # force a load now
 
     # Slot to receive the pathChanged signal from the paths module. That
-    # signal is given when any of the standard paths are changed. If we are
-    # still looking for ppqt2help.html, try again to load the file. Don't
-    # bother testing to see if it was extras that changed, just do it.
+    # signal is given when any of the standard paths are changed. Use the
+    # extras path to (re)load the help file.
+    #
+    # This is also called from __init__ to do the initial load, and from
+    # keyEvent processing to implement Back when the history stack is empty.
+    #
+    # The file we need to load is not actually ppqt2help.html but the
+    # file sphinx/index.html. QWebView only shows the nice trimmings if we
+    # open that.
 
-    def path_change( self, code ) :
-        if self.html_path is None :
-            self.load_html( paths.get_extras_path() )
+    def path_change( self, code='extras' ) :
+        if code == 'extras' :
+            extras_path = paths.get_extras_path()
+            help_path = os.path.join( extras_path , 'ppqt2help.html' )
+            sphinx_path = os.path.join( extras_path, 'sphinx', 'index.html' )
+            if os.access( help_path, os.R_OK ) and os.access( sphinx_path, os.R_OK ) :
+                # the help file exists. Save a QUrl describing it, and load it.
+                self.help_url = QUrl.fromLocalFile( sphinx_path )
+                self.view.load( self.help_url )
+            else :
+                self.help_url = None
+                self.view.setHtml( DEFAULT_HTML )
 
     def closeEvent( self, event ) :
         self.last_shape = self.saveGeometry()
@@ -142,7 +137,13 @@ class HelpWidget(QWidget) :
         if self.last_shape : # is not None
             self.restoreGeometry( self.last_shape )
 
-    # Handle keypress events for ^f ^g
+    def link_clicked(self, url):
+        target = url.toString
+        if target.startswith('file:') :
+            self.link_list.append( target )
+        self.view.load(url)
+
+    # Handle keypress events
 
     def keyPressEvent( self, event ) :
         kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key() )
@@ -155,6 +156,17 @@ class HelpWidget(QWidget) :
         elif kkey == C.CTL_SHFT_G :
             event.accept()
             self.find_prior_action()
+        elif kkey in C.KEYS_WEB_BACK :
+            event.accept()
+            if self.view.history().canGoBack() :
+                self.view.history().back()
+            elif len( self.link_list ) :
+                back_item = self.link_list.pop()
+                self.view.load( QUrl( back_item ) )
+            elif self.help_url is not None:
+                self.view.load( self.help_url )
+            else:
+                self.path_change() # reload the default text if need be
         else :
             super().keyPressEvent(event)
 
