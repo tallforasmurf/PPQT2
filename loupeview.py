@@ -136,7 +136,7 @@ class LoupeModel(QAbstractTableModel):
         self.message_tuples = list() # where we keep messages
         # stuff related to sorting
         self.sort_col = 0 # default sort on column 1..
-        self.sort_dir = Qt.AscendingOrder # ..ascending
+        self.sort_dir = Qt.DescendingOrder # ..Descending
         self.active_sort_vector = [] # active sort indirection list
         self.sort_vectors_ascending = [None, None]
         self.sort_vectors_descending = [None, None]
@@ -230,14 +230,14 @@ class LoupeModel(QAbstractTableModel):
     # in a subprocess. Actual refresh in a subroutine so on any error we just
     # return, and the endResetModel will still happen.
     def refresh(self):
-        self.beginResetModel()
+        #self.beginResetModel()
         # Clear out existing data so if the call fails, table is empty
         self.message_tuples = list()
         self._real_refresh()
         self.sort_vectors_ascending = [None, None]
         self.sort_vectors_descending = [None, None]
         self.sort( self.sort_col, self.sort_dir )
-        self.endResetModel()
+        #self.endResetModel()
 
     def _real_refresh(self):
         # Make sure we have access to the bookloupe executable
