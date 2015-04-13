@@ -225,11 +225,15 @@ CTL_SHFT_M = int(Qt.ShiftModifier) | CTL_M
 CTL_P = int(Qt.ControlModifier) | Qt.Key_P
 CTL_SHFT_P = int(Qt.ShiftModifier) | CTL_P
 CTL_LEFT = int(Qt.ControlModifier) | Qt.Key_Left
+CTL_RIGHT = int(Qt.ControlModifier | Qt.Key_Right)
 CTL_LEFT_PAD = CTL_LEFT | int(Qt.KeypadModifier)
+CTL_RIGHT_PAD = CTL_RIGHT | int(Qt.KeypadModifier)
 CTL_LEFT_BRACKET = int(Qt.ControlModifier) | Qt.Key_BracketLeft
+CTL_RIGHT_BRACKET = int(Qt.ControlModifier) | Qt.Key_BracketRight
 CTL_B = int(Qt.ControlModifier) | Qt.Key_B
 # Groups of keys by function
-KEYS_BACK = {CTL_B, CTL_LEFT, CTL_LEFT_BRACKET, CTL_LEFT_PAD}
+KEYS_WEB_BACK = {CTL_B, CTL_LEFT, CTL_LEFT_BRACKET, CTL_LEFT_PAD}
+KEYS_WEB_FORWARD = {CTL_RIGHT, CTL_RIGHT_PAD, CTL_RIGHT_BRACKET}
 KEYS_FIND = {CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F, CTL_T, CTL_EQUAL, CTL_SHFT_T}
 KEYS_MARK = {CTL_1, CTL_2, CTL_3, CTL_4, CTL_5, CTL_6, CTL_7, CTL_8, CTL_9 }
 KEYS_MARK_SET = {CTL_ALT_1, CTL_ALT_2, CTL_ALT_3, CTL_ALT_4,
