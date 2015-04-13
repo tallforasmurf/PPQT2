@@ -122,10 +122,10 @@ COL_TOOLTIPS = {
 COL_ALIGNMENT = {
     0 : Qt.AlignCenter,
     1 : Qt.AlignCenter,
-    2 : Qt.AlignRight,
-    3 : Qt.AlignRight,
-    4 : Qt.AlignRight,
-    5 : Qt.AlignLeft
+    2 : (Qt.AlignRight | Qt.AlignVCenter),
+    3 : (Qt.AlignRight | Qt.AlignVCenter),
+    4 : (Qt.AlignRight | Qt.AlignVCenter),
+    5 : (Qt.AlignRight | Qt.AlignVCenter)
     }
 # Amount of text to display in the last column
 # TODO: can we compute this from the header???
