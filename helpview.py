@@ -91,9 +91,6 @@ class HelpWidget(QWidget) :
         self.last_shape = None
         # Initialize find string, see find_action().
         self.find_text = None
-        # Initialize local link list
-        self.link_list = []
-        # Create our complete layout consisting of a web page.
         self.view = QWebView()
         hb = QHBoxLayout()
         hb.addWidget(self.view)
@@ -137,14 +134,6 @@ class HelpWidget(QWidget) :
         if self.last_shape : # is not None
             self.restoreGeometry( self.last_shape )
 
-    def link_clicked(self, url):
-        target = url.toString
-        if target.startswith('file:') :
-            self.link_list.append( target )
-        self.view.load(url)
-
-    # Handle keypress events
-
     def keyPressEvent( self, event ) :
         kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key() )
         if kkey == C.CTL_F :
@@ -160,13 +149,15 @@ class HelpWidget(QWidget) :
             event.accept()
             if self.view.history().canGoBack() :
                 self.view.history().back()
-            elif len( self.link_list ) :
-                back_item = self.link_list.pop()
-                self.view.load( QUrl( back_item ) )
             elif self.help_url is not None:
                 self.view.load( self.help_url )
+            else: # try to reload the default text
+                self.path_change()
+        elif kkey in C.KEYS_WEB_FORWARD :
+            if self.view.history().canGoForward() :
+                self.view.history().forward()
             else:
-                self.path_change() # reload the default text if need be
+                utilities.beep()
         else :
             super().keyPressEvent(event)
 
