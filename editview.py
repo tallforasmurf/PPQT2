@@ -298,6 +298,7 @@ class EditView( QWidget ):
         self.highlighter = HighLighter(self,my_book)
         self.scanno_check = False
         self.spelling_check = False
+        self.my_book.get_meta_manager().register(C.MD_EH, self._read_switches, self._save_switches)
         #
         # Take our UI setup out of line. self._uic creates and
         # initializes all the sub-widgets under self. :
@@ -357,6 +358,24 @@ class EditView( QWidget ):
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
 
         # End of __init__()
+
+    # Metadata load and save of the scanno/spelling highlight switches
+    def _save_switches(self, section):
+        return (self.scanno_check, self.spelling_check)
+
+    def _read_switches(self, sentinel, value, version):
+        # check that value is a tuple of two ints and ignore it if not
+        try:
+            (sc, sp) = value
+            sc = int(sc)
+            sp = int(sp)
+        except:
+            sc = False
+            sp = False
+        self.scanno_check = sc
+        self.scanno_action.setChecked( sc )
+        self.spelling_check = sp
+        self.spelling_action.setChecked( sp )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     #                 INTERNAL METHODS
@@ -498,6 +517,8 @@ class EditView( QWidget ):
 
     #
     # Create the menu itself. This is part of initialization.
+    # Save references to the Toggle actions Mark Scannos/Mark Spelling
+    # so their toggles can be tripped externally.
     #
     def _make_context_menu(self):
         m = QMenu(self)
@@ -507,6 +528,7 @@ class EditView( QWidget ):
                                 "Turn on or off marking of words from the scanno file",
                                 "context menu tooltip") )
         act1.toggled.connect(self._act_mark_scannos)
+        self.scanno_action = act1
         m.addAction(act1)
         act2 = QAction( _TR("EditViewWidget","Mark Spelling","context menu item"), m )
         act2.setCheckable(True)
@@ -514,6 +536,7 @@ class EditView( QWidget ):
                                 "Turn on or off marking words that fail spellcheck",
                                 "context menu tooltip") )
         act2.toggled.connect(self._act_mark_spelling)
+        self.spelling_action = act2
         m.addAction(act2)
         act3 = QAction( _TR("EditViewWidget","Scanno File...","context menu item"), m )
         act3.setToolTip( _TR("EditViewWidget",
