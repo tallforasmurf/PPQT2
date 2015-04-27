@@ -681,67 +681,14 @@ class EditView( QWidget ):
         self.Editor.centerCursor()
         self.Editor.setFocus(Qt.TabFocusReason)
 
-    # Center a position or text selection in the middle of the window. Called
-    # e.g. from Find to display the found selection.
-    #
-    # This differs from show_this in that it expects a current selection and
-    # does not break that selection; also allows for the chance that the
-    # selection could be bigger (much bigger) than the current viewport. If
-    # is is taller than 1/2 the window height, put the top of the selection
-    # higher than centered, but in no case off the top of the window.
-    #
-    # Calculations are mostly in terms of lines (textblocks).
-    # Let VX be the viewport height (pixels)
-    # Let VL be the viewport height in lines (VX/self.one_line_height)
-    # Let VL2 be half the viewport height in lines
-    # Let FV be the first visible block number
-    # Let CL = FV+VL2 be the block number now on the center line of the port
-    # Let PN be the block number of the top of the desired selection
-    # Let MP = CL-P be the count of lines to move up or down to put P
-    #       P in the center, where negative means "up"
-    # Let SH be the height of the selection, typically 1 but possibly SH > VL2
-    # Adjust MP to bring all the selection into the viewport if possible.
-    # MP = CL - P - min(VL2, max(0, SH - VL2))
-    # Let ADJ = MP / total lines in the document
-    # Adjust the vertical scroll bar position by ADJ
-
     def center_position(self, pos):
         tc = self.Editor.textCursor()
         tc.setPosition(pos)
         self.center_this(tc)
 
-    def _top_pixel_of_pos(self, pos):
-        xc = QTextCursor(self.document)
-        xc.setPosition(pos)
-        return self.Editor.cursorRect(xc).y()
-
     def center_this(self, tc):
-        # The selection in tc might be the current edit cursor, or it might
-        # be a different selection e.g. from a Find operation. Establish it
-        # as the selection. This does not move the visible image.
         self.Editor.setTextCursor(QTextCursor(tc))
-        # Let VX be the viewport height (pixels)
-        # Let VL be the viewport height in lines (VX/self.one_line_height)
-        # Let VL2 be half the viewport height in lines
-        VL2 = int(self.Editor.viewport().height() / (2 * self.one_line_height))
-        # Let FV be the first visible block number
-        # Let CL = FV+VL2 be the block number now on the center line of the port
-        CL = self.Editor.firstVisibleBlock().blockNumber() + VL2
-        # Let PN be the block number of the top of the desired selection
-        PN = self.document.findBlock(tc.selectionStart()).blockNumber()
-        # Let SH be the height of the selection, typically 1 but possibly SH > VL2
-        SH = self.document.findBlock(tc.selectionEnd()).blockNumber() - PN + 1
-        # Let MP = CL-P be the count of lines to move up or down to put P
-        #       P in the center, where negative means "up"
-        # Adjust MP to bring all the selection into the viewport if possible.
-        # MP = CL - P - min(VL2, max(0, SH - VL2))
-        MP = CL - PN - min( VL2, max( 0, SH - VL2 ) )
-        # Let ADJ = MP / total lines in the document
-        # Adjust the vertical scroll bar position by ADJ
-        ADJ = MP / self.document.lastBlock().blockNumber()
-        vsb = self.Editor.verticalScrollBar()
-        vsb.setValue( vsb.value() - int( ADJ * (vsb.maximum()-vsb.minimum()) ) )
-        #self._cursor_moved()
+        self.Editor.centerCursor()
         self.Editor.setFocus(Qt.TabFocusReason)
 
     # Lots of other code needs a textcursor for the current document.
