@@ -108,7 +108,6 @@ import types # for FunctionType validation in register
 metadata_logger = logging.getLogger(name='metadata')
 
 import json
-from io import StringIO
 
 # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # The json objects don't retain any state between uses, and PPQT is
@@ -218,9 +217,8 @@ class MetaMgr(object):
         # Thanks Frank Zago for shortening this code.
         # Pull the VERSION section and process it first if it is present.
         json_string = qts.readAll()
-        strio = StringIO(json_string)
         try:
-            bookconf = json.load( strio, object_hook=_json_object_hook )
+            bookconf = json.loads( json_string, object_hook=_json_object_hook )
         except ValueError as json_error_object :
             json_error_str = str(json_error_object)
             metadata_logger.error('JSON error:'+json_error_str)
