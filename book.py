@@ -217,7 +217,8 @@ class Book(QObject):
         self.md_modified = 0
         self.editm.setModified(False)
         # Set the edit cursor to a saved location
-        self.editv.set_cursor(self.editv.make_cursor(self.edit_cursor[0],self.edit_cursor[1]))
+        tc = self.editv.make_cursor(self.edit_cursor[0],self.edit_cursor[1])
+        self.editv.center_this( tc )
 
     # FILE>OPEN a document that lacks an accompanying .meta file. Given:
     #
@@ -342,7 +343,7 @@ class Book(QObject):
             self.logger.error('Ignoring invalid cursor position {}'.format(value))
 
     def _save_cursor(self, section):
-        return self.edit_cursor # json converts tuple to list
+        return self.editv.get_cursor_val() # json converts tuple to list
 
     # Process {"MAINDICT": <dictag>}. Look for dictag in the available tags
     # starting with the book path (if we are reading metadata, a book path
