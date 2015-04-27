@@ -131,7 +131,9 @@ class NotesPanel(QPlainTextEdit):
 
     # Save the current notes text to a metadata file. We write
     # the whole text as one string, so the JSON is {"NOTES":"humongous string..."}
+    # At this point we are no longer "modified" so clear that state.
     def _save_meta(self, section):
+        self.document().setModified(False)
         return self.toPlainText()
 
     # Read notes text from a metadata file. Clear our internal document just
