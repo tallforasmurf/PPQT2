@@ -122,10 +122,10 @@ def _json_object_hook(object_dict):
         [(key, value)] = object_dict.items()
         if key == '<SET>' :
              # instead of the dict, return the value of the encoded set
-            object_dict = set(value)
+            return set(value)
         if key == '<BYTE>' :
             # instead of the dict, return the value of the encoded bytestring
-            object_dict = bytes.fromhex(value)
+            return bytes.fromhex(value)
     return object_dict
 
 # Now we create a custom decoder object passing the name of our hook.
