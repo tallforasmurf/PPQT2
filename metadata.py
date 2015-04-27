@@ -246,11 +246,8 @@ class MetaMgr(object):
     def write_meta(self, qts) :
         global _Extended_Encoder
         bookconf = dict()
-        for section in sections:
-            if section in self.section_dict :
-                metadata_logger.debug('collecting metadata section {}'.format(section) )
-                # make a one-entry dict of section : value
-                bookconf[section] = self.section_dict[section][1](section)
-            else:
-                metadata_logger.error('No writer registered for section {}'.format(section))
+        for section in self.section_dict.keys():
+            metadata_logger.debug('collecting metadata section {}'.format(section) )
+            # make a one-entry dict of section : value
+            bookconf[section] = self.section_dict[section][1](section)
         qts << json.dumps(bookconf, indent=2, cls=_Extended_Encoder )
