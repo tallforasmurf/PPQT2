@@ -144,7 +144,7 @@ class _Extended_Encoder(json.JSONEncoder):
     def default(self,obj):
         if isinstance(obj, bytes) :
             # Thanks Frank Zago for this code!
-            return { '<BYTE>' : "".join("{:02x} ".format(c) for c in obj) }
+            return { '<BYTE>' : " ".join("{:02x} ".format(c) for c in obj) }
         if isinstance(obj, set) :
             return { '<SET>' : list(obj) }
         return super().default(obj)
