@@ -200,7 +200,14 @@ class Book(QObject):
         self.book_folder = doc_stream.folderpath()
         self.book_full_path = doc_stream.fullpath()
         self.editm.setPlainText(doc_stream.readAll())
-        self.metamgr.load_meta(meta_stream)
+        meta_message = self.metamgr.load_meta(meta_stream)
+        if meta_message :
+            # Problem with json decoding of metadata file, warn the user
+            m1 = _TR('error opening book',
+                     'Error decoding the metadata file, metadata lost')
+            m2 = _TR('error opening book, details',
+                     'Recommend you close the book without saving and investigate the following:')
+            utilities.warning_msg( m1, m2+'\n'+meta_message, parent= self.mainwindow )
         if self.pagem.active():
             # we have a book with page info, wake up the image viewer
             self.imagev.set_path(self.book_folder)

@@ -101,10 +101,14 @@ a dict {"<BYTE>":"string_of_hex_chars"}.
 '''
 
 import constants as C
+import utilities # for warning message
 import logging
 import types # for FunctionType validation in register
 
 metadata_logger = logging.getLogger(name='metadata')
+
+import json
+from io import StringIO
 
 # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # The json objects don't retain any state between uses, and PPQT is
@@ -113,8 +117,6 @@ metadata_logger = logging.getLogger(name='metadata')
 # DEcoding, we define an object-hook function. It will be called during
 # decoding to inspect each decoded JSON object as a dict {"key":value} and it
 # may return either the input dict, or a replacement object.
-
-import json
 
 def _json_object_hook(object_dict):
     if 1 == len(object_dict):
@@ -127,10 +129,6 @@ def _json_object_hook(object_dict):
             # instead of the dict, return the value of the encoded bytestring
             return bytes.fromhex(value)
     return object_dict
-
-# Now we create a custom decoder object passing the name of our hook.
-
-_metadata_decoder = json.JSONDecoder(object_hook=_json_object_hook)
 
 # Then we can use that decoder object's .raw_decode() method for decoding,
 # see MetaMger.load_meta.
@@ -208,81 +206,53 @@ class MetaMgr(object):
             metadata_logger.error('Registered rdr/wtr not function types section '+section)
 
     # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    # Load the contents of a metadata file stream by decoding each section in
-    # turn, and passing the decoded section value to its registered reader.
-    # If there is no registered reader, log it.
+    # Load the contents of a metadata file stream. If there is any error in
+    # the decoding, document it return an error to our caller (Book).
 
     def load_meta(self, qts) :
-        global _metadata_decoder
-        # Get the whole stream of encodes as a single string value. (Remember
-        # the good old days when we didn't have gigs of RAM and this kind of
-        # thing would be unthinkable?)
+        global _json_object_hook
+        # Get the whole stream of encodes as a single string value.
+        # JSON then decodes it all into a single dict whose keys are the
+        # section names and values the section values (possibly large).
+        # Pass each section value to the registered reader (section_dict[section][0])
+        # Thanks Frank Zago for shortening this code.
+        # Pull the VERSION section and process it first if it is present.
         json_string = qts.readAll()
-        # In the following, object_start is the index of where we see the
-        # next "\n{" and object_end is the index returned by raw_encode().
-        object_start = 0
-        object_end = 0
-        while True:
-            # get the index of the next encoded {item and quit if no more.
-            object_start = json_string.find('\n{',object_end) + 1
-            if 0 >= object_start : break # no more objects
-            try:
-                (decoded_value, object_end) = _metadata_decoder.raw_decode(
-                    json_string, idx=object_start)
-                if isinstance(decoded_value,dict) and \
-                   1 == len(decoded_value) :
-                    [(section, value)] = decoded_value.items()
-                    if section in self.section_dict :
-                        metadata_logger.debug('loading section '+section)
-                        self.section_dict[section][0](section,value,self.version_read)
-                    else:
-                        # Nobody has registered for this section (or it is a user typo)
-                        # so log the problem.
-                        metadata_logger.error(
-                            'No reader registered for {}, ignoring it'.format(section))
-                else :
-                    # Decoded JSON object is not a simple {"key":value}. Don't know
-                    # what to do, just log it and go on.
-                    metadata_logger.error(
-                        'Unexpected JSON object type in metadata file between {} and {}, ignoring it'.format(object_start,object_end))
-            except ValueError as error_object :
-                # Log the error. A typical msg would be "Expecting property
-                # name enclosed in double quotes: line n column n (char n)"
-                error_msg = str(error_object)
-                text_end = min(object_start+100, len(json_string))
-                metadata_logger.error("Error decoding metadata: "+error_msg)
-                metadata_logger.error("Text reads: "+json_string[object_start:text_end])
-                # Advance the pointers so we don't loop on the same error.
-                object_end = object_start
-                # and continue the loop on the next section.
-            # end of while True
-        # end of load_meta
+        strio = StringIO(json_string)
+        try:
+            bookconf = json.load( strio, object_hook=_json_object_hook )
+        except ValueError as json_error_object :
+            json_error_str = str(json_error_object)
+            metadata_logger.error('JSON error:'+json_error_str)
+            return json_error_str
 
-    # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    # Write the contents of a single metadata section. This is a subroutine
-    # for write_meta(), and also called from unit-test code and from the
-    # code that clones a book.
-
-    def write_section(self, qts, section) :
-        if section in self.section_dict :
-            metadata_logger.debug('writing metadata section {}'.format(section) )
-            # make a one-entry dict of section : value
-            _d = { section : self.section_dict[section][1](section) }
-            qts << '\n' # start every section-object on a new line
-            qts << json.dumps(_d, indent=2, cls=_Extended_Encoder )
-        else :
-            metadata_logger.error('No writer registered for section {}'.format(section))
+        received_sections = [ _s for _s in bookconf.keys() ]
+        if C.MD_V in received_sections :
+            # VERSION is there, make sure it comes first in the list
+            received_sections.remove(C.MD_V)
+            received_sections.insert(0,C.MD_V)
+        for section in received_sections:
+            if section in self.section_dict :
+                metadata_logger.debug('loading section '+section)
+                self.section_dict[section][0](section, bookconf[section], self.version_read)
+            else:
+                # Nobody has registered for this section (or it is a user typo)
+                # so log the problem.
+                metadata_logger.error(
+                    'No reader registered for {}, ignoring it'.format(section))
 
     # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Write the contents of a metadata file by calling the writer for each
-    # registered section, and encoding the value it returns. Start the file
-    # with a newline. Write the VERSION section first, others in whatever
-    # order the dictionary hash gives them.
-
+    # registered section saving each value returned in a dict keyed by
+    # section-name. Dump that whole dict via JSON as the metadata file.
     def write_meta(self, qts) :
         global _Extended_Encoder
-        sections = [_s for _s in self.section_dict.keys() ]
-        sections.remove(C.MD_V)
-        sections.insert(0,C.MD_V)
+        bookconf = dict()
         for section in sections:
-            self.write_section(qts, section)
+            if section in self.section_dict :
+                metadata_logger.debug('collecting metadata section {}'.format(section) )
+                # make a one-entry dict of section : value
+                bookconf[section] = self.section_dict[section][1](section)
+            else:
+                metadata_logger.error('No writer registered for section {}'.format(section))
+        qts << json.dumps(bookconf, indent=2, cls=_Extended_Encoder )
