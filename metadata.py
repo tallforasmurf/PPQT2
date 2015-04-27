@@ -55,7 +55,7 @@ we have to permit:
       rearranges the order of dict entries, and the user might rearrange
       items of a list.
 
-We want to encapsulate knowledge of the content and format of of each type of
+We want to encapsulate knowledge of the content and format of each type of
 metadata in the classes that create and use that type of metadata. We do not
 want that knowledge to leak into the load/save logic as it did in version 1.
 So we set up a level of indirection in the form of a dict that relates
