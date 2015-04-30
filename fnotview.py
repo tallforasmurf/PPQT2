@@ -145,7 +145,7 @@ class FnoteTableModel(QAbstractTableModel):
     def __init__(self, model, parent):
         super().__init__(parent)
         # save access to FnoteData database
-        self.data = model
+        self.data_model = model
         # items of last row requested in data()
         self.last_row = None # index of row
         self.brush_for_row = None # background color brush
@@ -172,7 +172,7 @@ class FnoteTableModel(QAbstractTableModel):
 
     def rowCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
-        return self.data.count()
+        return self.data_model.count()
 
     def headerData(self, column, axis, role):
         global COL_HEADS, COL_TOOLTIPS
@@ -198,9 +198,9 @@ class FnoteTableModel(QAbstractTableModel):
         if row != self.last_row :
             self.last_row = row
             self.brush_for_row = self.white_brush # be optimistic
-            self.note_line = self.data.note_line(row)
-            self.anchor_line = self.data.anchor_line(row)
-            self.note_size = self.data.note_size(row)
+            self.note_line = self.data_model.note_line(row)
+            self.anchor_line = self.data_model.anchor_line(row)
+            self.note_size = self.data_model.note_size(row)
             if (self.anchor_line is None) or (self.note_line is None) :
                 # unmatched anchor or note, show in pink
                 self.brush_for_row = self.pink_brush
@@ -210,12 +210,12 @@ class FnoteTableModel(QAbstractTableModel):
                 self.brush_for_row = self.green_brush
         # Now, what was it you wanted?
         if role == Qt.DisplayRole : # wants actual data
-            if   col == 0 : return self.data.key(row)
-            elif col == 1 : return key_class_names[self.data.key_class(row)]
+            if   col == 0 : return self.data_model.key(row)
+            elif col == 1 : return key_class_names[self.data_model.key_class(row)]
             elif col == 2 : return self.anchor_line
             elif col == 3 : return self.note_line
             elif col == 4 : return self.note_size
-            else : return self.data.note_text(row, MAX_NOTE_TEXT)
+            else : return self.data_model.note_text(row, MAX_NOTE_TEXT)
         elif (role == Qt.TextAlignmentRole) :
             return COL_ALIGNMENT[col]
         elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
@@ -235,7 +235,7 @@ class FnotePanel(QWidget):
         # save reference to my book.
         self.book = my_book
         # set up access to the fnotdata object
-        self.data = my_book.get_fnot_model()
+        self.data_model = my_book.get_fnot_model()
         # set up access to the edit panel for our book
         self.edit_view = my_book.get_edit_view()
         # The lengthy process of setting up this moderately complicated
@@ -291,7 +291,7 @@ class FnotePanel(QWidget):
         self.renumber_button.clicked.connect(self.do_renumber)
         self.move_button.clicked.connect(self.do_move)
         # Connect FootNotesLoaded from the model to our table_reset
-        self.data.FootNotesLoaded.connect(self.table_reset)
+        self.data_model.FootNotesLoaded.connect(self.table_reset)
 
     #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Slots that handle signals from UI elements.
@@ -342,12 +342,12 @@ class FnotePanel(QWidget):
         row = index.row()
         col = index.column()
         if col > 2 : # column 3 4 or 5
-            target_line = self.data.note_line( row )
+            target_line = self.data_model.note_line( row )
         else : # column 0 1 or 2
-            target_line = self.data.anchor_line( row )
+            target_line = self.data_model.anchor_line( row )
         if col < 2 and target_line == self.edit_view.get_line() :
             # cannot get here if target_line is None
-            target_line = self.data.note_line( row ) # but now it might be
+            target_line = self.data_model.note_line( row ) # but now it might be
         if target_line is None : # unmatched Anchor
             utilities.beep()
             return
@@ -357,7 +357,7 @@ class FnotePanel(QWidget):
     # will emit a FootNotesLoaded signal which we handle in table_reset.
 
     def do_refresh(self):
-        self.data.refresh(
+        self.data_model.refresh(
             utilities.make_progress(
                 _TR('Title of footnote refresh progress bar',
                     'Finding all footnotes'),self)
@@ -399,7 +399,7 @@ class FnotePanel(QWidget):
 
     def _can_we_do_this(self):
         self.do_refresh()
-        m = self.data.mismatches()
+        m = self.data_model.mismatches()
         if (m) :
             emsg = _TR(
                 'Footnote panel error message',
@@ -427,9 +427,9 @@ class FnotePanel(QWidget):
         # Do the actual work inside a try-except block so as to be sure that
         # the EditBlock is ultimately closed.
         try :
-            for j in range(self.data.count()):
-                old_key = self.data.key(j)
-                old_class = self.data.key_class(j)
+            for j in range(self.data_model.count()):
+                old_key = self.data_model.key(j)
+                old_class = self.data_model.key_class(j)
                 # Get the index of the stream that has been chosen for
                 # this class of key
                 stream_index = self.stream_menus[old_class].currentIndex()
@@ -449,7 +449,7 @@ class FnotePanel(QWidget):
                 # If new_key is None, we make no change to this note.
                 # Otherwise, make the change.
                 if new_key is not None :
-                    self.data.set_key(j, new_key, worktc)
+                    self.data_model.set_key(j, new_key, worktc)
             # end of for j in range of keys
         except Exception as whatever:
             fnotview_logger.error(
@@ -469,7 +469,7 @@ class FnotePanel(QWidget):
 
     def do_move(self):
         if not self._can_we_do_this() : return
-        nzones = self.data.find_zones()
+        nzones = self.data_model.find_zones()
         if nzones == 0 :
             emsg = _TR(
                 'Footnote panel error message',
@@ -485,7 +485,7 @@ class FnotePanel(QWidget):
         # Do the actual work inside a try-finally block so as to be sure
         # that the Edit Block is ultimately closed.
         try :
-            self.data.move_notes(worktc)
+            self.data_model.move_notes(worktc)
         except Exception as whatever:
             fnotview_logger.error(
                 'Unexpected error moving footnotes: {}'.format(whatever.args)
@@ -544,7 +544,7 @@ class FnotePanel(QWidget):
         # Put that row of buttons at the top of the panel
         main_layout.addLayout(top_box,0)
         # Create the table, a very basic one, no sorting etc.
-        self.model = FnoteTableModel(self.data, self)
+        self.model = FnoteTableModel(self.data_model, self)
         self.view = QTableView()
         self.view.setModel(self.model)
         self.view.setCornerButtonEnabled(False)
