@@ -930,9 +930,9 @@ class FindPanel(QWidget):
     # of matches to show the user.)
     #
     # When the user says go, we run backward through the list (from end of
-    # document toward the top converting each match to cursor, and replacing
-    # the selected text with the expanded match. This is all done under an
-    # undo macro so it is a single undo.
+    # document toward the top) converting each match to a cursor, and
+    # replacing the selected text with the expanded match. This is all done
+    # under an undo macro so it is a single undo.
 
     def do_global_replace(self, button):
         r_pattern = self.replace_fields[button].text()
