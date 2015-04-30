@@ -356,8 +356,25 @@ class EditView( QWidget ):
         # Create and install our context menu
         self.context_menu = self._make_context_menu()
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
+        # Hideous hack: the Book calls center_this with the cursor value
+        # read from the metadata. However at that time the editor is
+        # (apparently) not fully initialized and although the cursor is
+        # set, it is not in the center of the window. We looked and looked
+        # for some event that reliably means the editor is ready to display
+        # and settled on paintEvent. If center_this has been called before
+        # the first paint event, the call is repeated.
+        self.first_paint_event = True
+        self.first_center_tc = None
 
         # End of __init__()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if self.first_paint_event :
+            self.first_paint_event = False
+            if self.first_center_tc is not None :
+                self.center_this( self.first_center_tc )
+                self.first_center_tc = None
 
     # Metadata load and save of the scanno/spelling highlight switches
     def _save_switches(self, section):
@@ -710,6 +727,8 @@ class EditView( QWidget ):
         self.center_this(tc)
 
     def center_this(self, tc):
+        if self.first_paint_event :
+            self.first_center_tc = tc
         self.Editor.setTextCursor(QTextCursor(tc))
         self.Editor.centerCursor()
         self.Editor.setFocus(Qt.TabFocusReason)
