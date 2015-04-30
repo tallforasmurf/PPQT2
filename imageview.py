@@ -148,6 +148,7 @@ class ImageDisplay(QWidget):
         self.image_to_cursor.setEnabled(True)
         self.zoom_to_width.setEnabled(True)
         self.zoom_to_height.setEnabled(True)
+        self.image_display.setToolTip('')
         #self.image_display.setToolTip(
             #_TR('Image view tooltip',
                 #'Display of one scanned page from the book')
