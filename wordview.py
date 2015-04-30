@@ -286,7 +286,7 @@ class WordTableModel(QAbstractTableModel):
                 # create a filter_func that tests word membership
                 new_filter = lambda w, p : w in filter_set
         # whatever the result, perform a sort
-        self.current_filter = new_filter
+        self.current_filter = new_filter # =None for no filter
         self.sort( self.current_sort_col, self.current_sort_order )
 
     # Note what key-translation to use when sorting, and re-sort.
@@ -762,8 +762,10 @@ class WordPanel(QWidget) :
         #self.progress.setRange(0,0) # should show a busy indication
         #self.progress.show()
         self.words.refresh()
-        #self.setup_table()
-        self.model.set_filter() # which performs sort, which updates layout
+        #self.setup_table
+        # fake a selection of our popup menu, which sets (or clears)
+        # the current filter, which performs sort, which updates layout
+        self.do_filter( self.popup.currentIndex() )
         #self.progress.reset()
         #self.progress.hide()
         # and reset the good-words list too
