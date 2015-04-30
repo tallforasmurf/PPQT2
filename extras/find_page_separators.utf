@@ -34,7 +34,7 @@
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
-	'find' : '(?<=\\n)-+File:\\s+([^\\.]+)\\.png-+((\\\\[^\\\\\\n]+)+\\\\)?-*(?=\\n)',
+	'find' : '(?<=\\n)-+File:\\s+([^\\.]+)\\.png-+((\\\\[^\\\\\\n]+)+\\\\)?-*?\\n',
 	'insel' : False,
 	'label' : 'pseps',
 	'regex' : True,

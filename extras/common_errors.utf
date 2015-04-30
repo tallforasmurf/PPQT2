@@ -11,7 +11,7 @@
 # Regex is: whitespace then punctuation, or hyphen then whitespace
 # Note whitespace includes newline, and this finds lines that start
 # with punctuation or that end with a hyphen.
-7: {		'all' : None,
+8: {		'all' : None,
 	'andnext' : None,
 	'andprior' : None,
 	'case' : False,
@@ -25,7 +25,7 @@
 	'word' : None
 }
 
-8: {		'all' : None,
+9: {		'all' : None,
 	'andnext' : None,
 	'andprior' : None,
 	'case' : None,
@@ -38,16 +38,18 @@
 	'tooltip' : 'Standalone 0 or 1',
 	'word' : None
 }
-# Find some unbalanced punctuation. Does not find an orphan right-delimiter )]}>.
-# regex is: left-paren, any amount of not-right-paren, left-paren or end of file
-# or, left-bracket, any amount of not-right-bracket, left-bracket or end of file
-# or, left-brace, any amount of not-right-brace, left-brace or end of file
-# or, less-than, any amount of not-greater-than, less-than or end of file
-9: {		'all' : False,
+# Find some unbalanced punctuation.
+# regex is: left-paren, any amount of not-right-paren, left-paren;
+# or, left-bracket, any amount of not-right-bracket, left-bracket;
+# or, left-brace, any amount of not-right-brace, left-brace;
+# or, less-than, any amount of not-greater-than, less-than.
+# Does not find an orphan right-delimiter )]}> nor an orphan
+# left-delimiater ([{< at the end of the file.
+10: {		'all' : False,
 	'andnext' : False,
 	'andprior' : False,
 	'case' : False,
-	'find' : '(\\([^)]+(\\(|$))|(\\[[^\\]]+(\\[|$))|(\\{[^}]+(\\{|$))|(<[^>]+(<|$))',
+	'find' : '(\\([^)]+\\()|(\\[[^\\]]+\\[)|(\\{[^}]+\\{)|(<[^>]+<)',
 	'label' : 'unbalanced',
 	'regex' : True,
 	'rep1' : '',
@@ -58,7 +60,7 @@
 }
 # Find dot followed by lowercase letter. Use Unicode-property test so as
 # not to be dependent on Latin-1.
-10: {		'all' : False,
+11: {		'all' : False,
 	'andnext' : False,
 	'andprior' : False,
 	'case' : True,
@@ -73,7 +75,7 @@
 }
 # Find comma followed by uppercase letter. Use Unicode-property test.
 # Note this finds many false positives, I think (", I").
-11: {		'all' : False,
+12: {		'all' : False,
 	'andnext' : False,
 	'andprior' : False,
 	'case' : True,
@@ -91,7 +93,7 @@
 # lookbehind and lookahead assertions to say, "find one not-a-newline
 # which is preceded by a newline and followed by a newline, but do
 # not select those newlines."
-12: {		'all' : False,
+13: {		'all' : False,
 	'andnext' : False,
 	'andprior' : False,
 	'case' : True,
@@ -107,7 +109,7 @@
 # Find a lowercase letter that follows two newlines, therefore the start
 # of a paragraph. Use a lookbehind assertion so as not to select the
 # newlines, and a Unicode property test.
-13: {		'all' : False,
+14: {		'all' : False,
 	'andnext' : False,
 	'andprior' : False,
 	'case' : True,
@@ -123,7 +125,7 @@
 # Find any character that is not in Latin-1. The regex looks for the class
 # consisting of anything that is not in Basic Latin and not in the
 # Latin-1 special characters, so including all Unicode except those blocks.
-14: {		'all' : False,
+15: {		'all' : False,
 	'andnext' : False,
 	'andprior' : False,
 	'case' : False,
@@ -138,7 +140,7 @@
 }
 # Find any non-7-bit character: the class of letters that are not
 # in the Basic Latin Unicode block.
-15: {		'all' : False,
+16: {		'all' : False,
 	'andnext' : False,
 	'andprior' : False,
 	'case' : False,
@@ -154,7 +156,7 @@
 # Find the end of a paragraph (two newlines) when it is preceded
 # by a "word" character and possibly a close-quote but not some
 # punctuation. Single quote is escaped.
-16: {		'all' : False,
+17: {		'all' : False,
 	'andnext' : False,
 	'andprior' : False,
 	'case' : False,
@@ -169,7 +171,7 @@
 }
 # Find a line that is more than 75 characters. Regex is
 # the class of not-a-newline characters, 76 or more of them.
-17: {		'all' : None,
+18: {		'all' : None,
 	'andnext' : None,
 	'andprior' : None,
 	'case' : None,
@@ -183,7 +185,7 @@
 	'word' : None
 }
 # Find any kind of dash at the end of a line.
-18: {		'all' : False,
+19: {		'all' : False,
 	'andnext' : False,
 	'andprior' : False,
 	'case' : False,
@@ -197,7 +199,7 @@
 	'word' : False
 }
 # Find any amount of spaces preceding a newline.
-19: {		'all' : False,
+20: {		'all' : False,
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
@@ -213,7 +215,7 @@
 # Find a closing quote with no preceding punctuation. Regex is, find
 # some kind of quote, such that it is preceded by a non-punctuation and
 # followed by a space, right-paren, or right-bracket.
-20: {		'all' : None,
+21: {		'all' : None,
 	'andnext' : None,
 	'andprior' : None,
 	'case' : False,
@@ -227,7 +229,7 @@
 	'word' : None
 }
 # Find double punctuation.
-21: {		'all' : None,
+22: {		'all' : None,
 	'andnext' : None,
 	'andprior' : None,
 	'case' : False,
@@ -240,32 +242,22 @@
 	'tooltip' : 'Find two or more adjacent . , ; : ? !',
 	'word' : None
 }
-# Find any forward slash, why is this an error?
-22: {		'all' : None,
-	'andnext' : None,
-	'andprior' : None,
-	'case' : False,
-	'find' : '/',
-	'label' : '/',
-	'regex' : False,
-	'rep1' : None,
-	'rep2' : None,
-	'rep3' : None,
-	'tooltip' : 'Find any forward slash',
-	'word' : None
-}
-# Find any asterisk, presumably proofer note.
+
+# Find any asterisk, presumably proofer note. Regex uses 
+# negative lookbehind (?<!) and negative lookahead (?!)
+# to reject asterisks that are preceded or followed by slash
+# (\x2f because using literal \\slash doesn't seem to work)
 23: {		'all' : None,
 	'andnext' : None,
 	'andprior' : None,
 	'case' : None,
-	'find' : '*',
+	'find' : '(?<!\\x2f)\\*(?!\\x2f)',
 	'label' : '*',
-	'regex' : False,
+	'regex' : True,
 	'rep1' : None,
 	'rep2' : None,
 	'rep3' : None,
-	'tooltip' : 'Find any asterisk',
+	'tooltip' : 'Find non-formatting asterisk',
 	'word' : None
 }
 
