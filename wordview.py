@@ -170,11 +170,11 @@ FILTER_MENU_TEXT = [
 #
 FILTER_MENU_FUNCS = [
     None,
-    lambda w, p : worddata.UC in p,
-    lambda w, p : worddata.LC in p and not worddata.UC in p,
-    lambda w, p : worddata.UC in p and worddata.LC in p,
-    lambda w, p : worddata.ND in p and not worddata.UC in p and not worddata.LC in p,
-    lambda w, p : worddata.ND in p and (worddata.UC in p or worddata.LC in p),
+    lambda w, p : worddata.UC in p and not (worddata.ND in p),
+    lambda w, p : worddata.LC in p and not (worddata.ND in p),
+    lambda w, p : worddata.MC in p,
+    lambda w, p : (worddata.ND in p) and not (worddata.UC in p or worddata.LC in p or worddata.MC in p),
+    lambda w, p : (worddata.ND in p) and (worddata.UC in p or worddata.LC in p or worddata.MC in p),
     lambda w, p : worddata.HY in p,
     lambda w, p : worddata.AP in p,
     lambda w, p : 1 == len(w),
