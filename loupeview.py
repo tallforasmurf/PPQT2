@@ -216,6 +216,7 @@ class LoupeModel(QAbstractTableModel):
                     key = line_col_msg_tuple[2]+line_col_msg_tuple[0]
                 else : # col is 0, sort on line#+col#
                     key = line_col_msg_tuple[0]+line_col_msg_tuple[1]
+                key += str(j) # ensure uniqueness
                 sorted_dict[key] = j
                 vector = self.sort_vectors_ascending[ col ] = sorted_dict.values()
         # vector now has an ascending sort vector which is cached..
