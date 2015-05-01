@@ -163,10 +163,29 @@ as misspellings until after a refresh.
 
 Called by the wordview module:
 
-* word_count() returns the count of words for the rowCount method
-* word_at(n) returns the text of the n'th word
-* word_props_at(n) returns a list [count, propset] for the n'th word
-* prop_string(s) returns set of properties s converted to a string
+* get_sort_vector( col, order, key_func = None, filter_func = None )
+
+  Returns a list of indices to the vocabulary SortedDict that will return
+  its keys or values in some sort sequence. See comments over that method.
+
+* word_count()
+  Returns the count of words for the rowCount method, the count of words
+  indexed by the current sort vector, which may be filtered and hence
+  less than the full vocabulary
+
+* vocab_count()
+  Returns the count of words in the vocabulary, which may differ from the
+  length of the current sort vector.
+
+* word_at(n)
+  Returns the text of the n'th word in physical sequence in the vocabulary,
+  for a different sort sequence, get n by indexing a sort vector.
+
+* word_props_at(n)
+  Returns a list [count, propset] for the n'th word in the vocabulary
+
+* prop_string(s)
+  Returns set of properties s converted to a string
 
 These functions operate in O(1) retrieval time thanks to SortedDict.
 
@@ -175,11 +194,6 @@ These functions operate in O(1) retrieval time thanks to SortedDict.
   the vocabulary appropriately.
 * del_from_good_set(word) removes a word from the good-words set, and
   updates the vocabulary appropriately.
-
-* get_sort_vector( col, order, key_func = None, filter_func = None )
-
-Returns a list of indices to the vocabulary SortedDict that will return
-its keys or values in some sort sequence. See comments over that method.
 
 '''
 import constants as C
@@ -766,6 +780,10 @@ class WordData(QObject):
     #
     def word_count(self):
         return self.active_word_count
+    #
+    # Get the actual size of the vocabulary, for searching it all.
+    def vocab_count(self):
+        return len(self.vocab)
     #
     # Get the word at position n in the vocabulary, using the SortedDict
     # KeysView for O(1) lookup time. Guard against invalid indices.

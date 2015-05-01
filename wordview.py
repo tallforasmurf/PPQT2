@@ -499,10 +499,10 @@ class WordTableView(QTableView):
 
     # Slot for the "Similar words" context menu choice.
     def similar_words(self) :
-        # get clicked word uppercase, all hyphens and apostrophes stripped
+        # get clicked word in uppercase with hyphens and apostrophes stripped
         wd = worddata.clean_word(self.contextIndex.data(Qt.DisplayRole)).upper()
         hits = set()
-        for j in range(self.words.word_count()) :
+        for j in range(self.words.vocab_count()) :
             wx = self.words.word_at(j)
             if wd == worddata.clean_word(wx).upper() :
                 hits.add(wx) # will get 1 hit on the word itself
@@ -519,7 +519,7 @@ class WordTableView(QTableView):
         word = self.contextIndex.data(Qt.DisplayRole)
         rex = regex.compile('^(' + word + '){0<e<2}$',flags=regex.WORD)
         hits = set()
-        for j in range(self.words.word_count()) :
+        for j in range(self.words.vocab_count()) :
             wx = self.words.word_at(j)
             if rex.match(wx) :
                 hits.add(wx)
@@ -534,7 +534,7 @@ class WordTableView(QTableView):
         word = self.contextIndex.data(Qt.DisplayRole)
         rex = regex.compile('^(' + word + '){1<e<3}$',flags=regex.WORD)
         hits = set()
-        for j in range(self.words.word_count()) :
+        for j in range(self.words.vocab_count()) :
             wx = self.words.word_at(j)
             if rex.match(wx) :
                 hits.add(wx)
