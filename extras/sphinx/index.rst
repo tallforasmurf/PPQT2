@@ -677,19 +677,23 @@ Bookmarks
 You may set 9 bookmarks or saved cursor positions.
 The bookmarks are saved in the metadata file.
 
-Key ctl-alt-1 through ctl-alt-9 to set bookmark 1-9 to the cursor position.
-If text is selected, that fact is saved with the bookmark.
+To set a bookmark, on Windows or Linux
+key ctl-alt-1 through ctl-alt-9 to set bookmark 1-9 to the cursor position.
 
-Key ctl-1 through ctl-9 to jump to bookmark 1-9.
-This clears any text selection.
-However, if the bookmark included a selection, it is restored.
+On Mac OS, use control-command-1 to control-command-9.
+
+If text is selected, the length of the selection is saved with the bookmark.
+
+Key ctl-1 through ctl-9 to jump to bookmark 1-9
+(Mac: command-1 to command-9).
+This clears any text selection, and if the bookmark included a selection,
+it is restored.
 
 Key shift-ctl-1 through shift-ctl-9 to extend the current selection to 
 the position of bookmark 1-9.
-
-(Note to Mac users: under Mac OS X,
-cmd-shift-3 is "capture screen" and cmd-shift-4 is "capture selection".
-You cannot use these keys extend a selection to bookmark 3 or 4,
+(Mac: shift-command-1 to 9. However under Mac OS X,
+shift-command-3 is "capture screen" and shift-command-4 is "capture selection".
+You cannot use these keys to extend a selection to bookmark 3 or 4,
 unless you use System Preferences to disable these two keys.)
 
 Context Menu
