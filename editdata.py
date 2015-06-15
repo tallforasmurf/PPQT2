@@ -54,6 +54,9 @@ Externally-available functions, some from QTextDocument, some unique
     cursor_lines(c)      iterator returning the text of each line spanned
                          by the selection of a QTextCursor c.
 
+    line_start(a)        character offset of the start of line number a,
+                         used by the translator.
+
 '''
 from PyQt5.QtGui import (
     QTextBlock,
@@ -136,10 +139,12 @@ class Document(QTextDocument):
                 tb = tb.next()
                 if not tb.isValid() : break
 
-    # The following functions create iterators over sequences of QTextBlocks,
+    # The following functions create generators over sequences of QTextBlocks,
     # but return the Python string of the contents of each. They gives read
     # access to sequences of lines, as for a census or when parsing text for
-    # reflow.
+    # reflow. Usage of a generator is:
+    #    line_iterator = editdata.all_lines()
+    #    for line in line_iterator:
     #
     # 1. The whole document from top to bottom, as for a census.
     #
@@ -195,3 +200,12 @@ class Document(QTextDocument):
         a = self.findBlock(ca).blockNumber()
         z = self.findBlock(cz).blockNumber()
         return self.a_to_z_lines( a+1, z+1 )
+
+    #
+    # 5. Return the start position of the text of a given line number.
+    # If the line number is invalid, return -1.
+    def line_starts(self, a):
+        tb = self.findBlockByLineNumber( a - 1 )
+        if tb.isValid() :
+            return tb.position()
+        return -1
