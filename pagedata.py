@@ -460,7 +460,7 @@ class PageData(QObject):
         try :
             self.cursor_list[R].setPosition(pos)
         except :
-            pagedata_logger.error('Problem setting position of page {) to {}'.format(R,pos))
+            pagedata_logger.error('Problem setting position of page {} to {}'.format(R,pos))
 
     def proofers(self, R):
         try :
