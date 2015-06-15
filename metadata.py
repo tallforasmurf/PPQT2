@@ -251,3 +251,12 @@ class MetaMgr(object):
             # make a one-entry dict of section : value
             bookconf[section] = self.section_dict[section][1](section)
         qts << json.dumps(bookconf, indent=2, cls=_Extended_Encoder )
+
+    # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Primarily for the use of the translator code, write the contents of a
+    # a single section by name.
+    def write_section( self, qts, section ) :
+        global _Extended_Encoder
+        if section in self.section_dict :
+            out = { section : self.section_dict[section][1](section) }
+            qts << json.dumps(out, indent=2, cls=_Extended_Encoder )
