@@ -412,9 +412,11 @@ class MainWindow(QMainWindow):
         meta_stream = utilities.related_suffix(fbts, C.METAFILE_SUFFIX, encoding=C.ENCODING_UTF)
         if meta_stream is None :
             # opening book without metadata; look for .bin which is always LTN1
-            bin_stream = utilities.related_suffix(fbts,'bin',encoding=C.ENCODING_LATIN)
-            if bin_stream :
-                gg_stream = metadata.translate_bin(bin_stream,fbts)
+            # This is no longer supported - somebody who cares, can write a
+            # .bin-to-JSON utility if they want.
+            #bin_stream = utilities.related_suffix(fbts,'bin',encoding=C.ENCODING_LATIN)
+            #if bin_stream :
+                #gg_stream = metadata.translate_bin(bin_stream,fbts)
             # Look for good_words.txt, bad_words.txt.
             gw_stream = utilities.related_file( fbts, 'good_words*.*' )
             bw_stream = utilities.related_file( fbts, 'bad_words*.*' )
