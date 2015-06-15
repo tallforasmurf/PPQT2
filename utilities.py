@@ -123,6 +123,8 @@ class MemoryStream(QTextStream):
     def pos(self):
         self.flush()
         return super().pos()
+    def cpos(self) :
+        return int( self.pos()/2 )
     def rewind(self):
         self.flush()
         self.seek(0)
