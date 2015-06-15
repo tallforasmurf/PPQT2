@@ -860,5 +860,9 @@ class MainWindow(QMainWindow):
         self.settings.setValue("mainwindow/position",self.pos())
         self.settings.setValue("mainwindow/splitter",self.splitter.saveState())
         self.settings.setValue("mainwindow/windowstate",self.saveState())
+        # If the Help window is open, close it -- as a modeless widget,
+        # it won't close just because we do.
+        if self.help_widget : # is not None,
+            self.help_widget.close()
         # and that's it, we are done finished, over & out.
         event.accept()
