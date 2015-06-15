@@ -1,9 +1,9 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1344\cocoasubrtf720
+{\rtf1\ansi\ansicpg1252\cocoartf1347\cocoasubrtf570
 \cocoascreenfonts1{\fonttbl\f0\froman\fcharset0 Palatino-Roman;\f1\fmodern\fcharset0 Courier;\f2\fswiss\fcharset0 Helvetica;
 \f3\fnil\fcharset0 LucidaGrande;\f4\fmodern\fcharset0 CourierNewPSMT;\f5\fnil\fcharset0 Monaco;
 \f6\fmodern\fcharset0 Courier-Bold;}
 {\colortbl;\red255\green255\blue255;}
-\margl1440\margr1440\vieww13100\viewh16580\viewkind0
+\margl1440\margr1440\vieww13100\viewh21840\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\qc
 
 \f0\b\fs28 \cf0 A Post-Processing Workflow\
@@ -662,7 +662,9 @@ The DP formatting guidelines support only two types of block markup:
 \f1 /*..*/
 \f0  for any other block that should not be "reflowed". The latter includes formatted front matter, tables, indexes, and poetry. The markup styles into which you will eventually translate your book--for example, HTML or EPUB--support much more precise types of formatting, with centering, right-aligning, and control of margins.\
 \
-In the following steps you supplement the DP markup with more information. These steps are optional. If you are going to Translate the book to Ppgen or Fpgen markup, you could go to step 29 and do so now. Then you can work in the translated document to use its markup codes to complete the book layout.\
+In the following steps you supplement the DP markup with more information. 
+\i These steps are optional
+\i0 . If you are going to Translate the book to some other markup convention such as Ppgen or Fpgen, you could go to step 29 and do so now. Then you can work in the translated document to use its markup codes to complete the book layout.\
 \
 The following markups accept 
 \f1 First:
@@ -675,7 +677,7 @@ The following markups accept
 \f0\i n
 \i0  parameters to control margins. In each case 
 \i n
-\i0  represents a count of ASCII spaces, relative to the standard ASCII etext line length of 72 characters. 
+\i0  represents a count of ASCII spaces, relative to the standard ASCII etext line of 72 characters. 
 \f1 First:
 \f0  specifies the indent for the first line of a paragraph, or for each line of a poem. 
 \f1 Left:
@@ -718,7 +720,9 @@ When
 \f1 Left
 \f0  indent is only used when a long line has to be "folded".)\
 \
-In a poem, stanza breaks are indicated by single blank lines and are part of the poem. However a poem title, or a canto or stanza number, is a heading. Put it outside the markup (i.e. insert 
+In a poem, stanza breaks are indicated by single blank lines and are part of the poem. A poem title, or a canto or stanza number, is a heading. Put it 
+\i outside
+\i0  the markup (i.e. insert 
 \f1 P/
 \f0 , two blank lines to indicate a heading, the canto number, one blank line, 
 \f1 /P
@@ -743,9 +747,7 @@ If the poem has line numbers, make sure that each line number is separated from 
 \i0 , and/or 
 \f1 RIGHT:
 \f0\i n
-\i0  values as desired. If a list has a sublist, use a nested 
-\f1 /U..U/
-\f0  markup.\
+\i0  values as desired.\
 \
 
 \b 27. Centered lines.
@@ -759,9 +761,11 @@ A block of centered lines, like the typical book title page, is now surrounded w
 \f1 First:
 \f0  is 2 and 
 \f1 Right:
-\f0  is 0. So in the output, the longest line will be indented by 2 spaces (as is standard for no-reflow sections in an etext), and shorter lines will be centered on it. In the ASCII translation, if the longest line exceeds 70 characters (so the total exceeds 72) there will be a diagnostic message in the translated book. Other Translators will convert 
+\f0  is 0. So in the output, the longest line will be indented by 2 spaces (as is standard for no-reflow sections in an etext), and shorter lines will be centered on it. In the ASCII translation, if the longest line exceeds 70 characters (so the total exceeds 72) there will be a diagnostic message in the translated book. Other Translators may convert 
 \f1 /C..C/
-\f0  into their equivalent markup.\
+\f0  into their equivalent markup or treat it like 
+\f1 /X..X/
+\f0 .\
 \
 
 \b 28. Right-aligned sections.\
@@ -787,7 +791,7 @@ A block quote is a section of one or more paragraphs that can be reflowed but wh
 \f1 Right
 \f0  is 2,2,4 (for a total line length of 70-2-4=64 characters in ASCII).\
 \
-Block quotes may include other quotes, poems, footnote anchors (but not the footnotes themselves), centered and right-aligned sections. Having a table, illustration, or sidenote in a block quote is probably not a good idea. Here is an example:\
+Block quotes may include other quotes, poems, footnote anchors (but not the footnotes themselves), centered and right-aligned sections. Here is an example:\
 \
 
 \f1 /Q\
@@ -857,11 +861,9 @@ Each line of text in a table has the contents of one table row. The contents of 
 T/
 \f0 \
 \
-Sometimes the contents of one cell are too long for convenient editing on a single line. In that case, just break the cell content with newlines. Text is assigned to columns based on the stile characters and newlines between stiles are treated as spaces. (The Fpgen translator will make each such row into one long line. The Ppgen translator will "escape" the newlines.)\
-\
 All Translators support "reflowing" the contents of a cell that are too long for the width of its column.\
 \
-This table markup has no provision for spanned columns or rows, or for making the alignment of one cell different from the default for the column, or for stylings such as borders. After you Translate it into some other markup style you can add spanning and other features.\
+This table markup has no provision for continuing a long cell on multiple lines. It also has no provision for spanned columns or rows, or for making the alignment of one cell different from the default for the column, or for stylings such as borders. After you Translate it into some other markup style you can add spanning and other features.\
 \
 
 \b 29. Translate to other formats.
@@ -873,56 +875,10 @@ Open the File>Translate menu and select one of the translators in the sub-menu. 
 \
 The translated document appears as a new document with its own Edit panel and other panels. (The original book is still open and unchanged.) The name of the new document is 
 \i Untitled-n
-\i0 . \
+\i0 . It has the Notes, good-word, bad-words, and Find panel values from the source book. It may or may not have the Page panel data and display scan images in the Images panel (this depends on the Translator).\
 \
 Examine the new document. If there is some problem, you can simply close it without saving it, and return to the original for more editing before you Translate again.\
 \
-When the translation appears complete and correct, save it under a new name. You may continue editing the translated book in PPQT2. The content of the Notes panel should have been copied to the new book. If the Translator is written correctly, you will still see the scanned images in the Images panel and the correct folios in the Pages panel. You can use the Find panel for search and replace. The Footnotes panel will not work and the Words and Characters panels have limited use in a Translated book.\
-\
-The available Translators are documented next.\
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\qc
-
-\b\fs32 \cf0 Ppgen Translator
-\b0\fs28 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural
-\cf0 \
-TBS\
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\qc
-
-\b \cf0 Fpgen Translator\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural
-
-\b0 \cf0 TBS\
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\qc
-
-\b \cf0 ETEXT Translator\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural
-
-\b0 \cf0 TBS\
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\qc
-
-\b \cf0 HTML Translator\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural
-
-\b0 \cf0 TBS\
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\qc
-
-\b \cf0 EPUB Translator\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural
-
-\b0 \cf0 TBS\
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\qc
-
-\b \cf0 AsciiDoc Translator\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural
-
-\b0 \cf0 TBS\
-\
+When the translation appears complete and correct, save it under a new name. You may continue editing the translated book in PPQT2, or change to a different editor to finish it.\
 \
 }
