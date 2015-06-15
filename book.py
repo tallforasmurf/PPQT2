@@ -208,11 +208,7 @@ class Book(QObject):
             m2 = _TR('error opening book, details',
                      'Recommend you close the book without saving and investigate the following:')
             utilities.warning_msg( m1, m2+'\n'+meta_message, parent= self.mainwindow )
-        if self.pagem.active():
-            # we have a book with page info, wake up the image viewer
-            self.imagev.set_path(self.book_folder)
-            # Connect the editor's cursor to the slot in the imageviewer.
-            self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
+        self.hook_images()
         # Everything loaded from a file, clear any mod status
         self.md_modified = 0
         self.editm.setModified(False)
@@ -252,12 +248,18 @@ class Book(QObject):
         else :
             # develop page info from separator lines in text
             self.pagem.scan_pages()
+        self.hook_images()
+        self.editv.set_cursor(self.editv.make_cursor(0,0))
+        self._speller = dictionaries.Speller( self.dict_tag, self.book_folder )
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # A wee bit of code factored out of new_book and old_book so the
+    # translator can use it.
+    def hook_images(self) :
         if self.pagem.active():
             # we have a book with page info, wake up the image viewer
             self.imagev.set_path(self.book_folder)
             self.editv.Editor.cursorPositionChanged.connect(self.imagev.cursor_move)
-        self.editv.set_cursor(self.editv.make_cursor(0,0))
-        self._speller = dictionaries.Speller( self.dict_tag, self.book_folder )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Give the book a new name and/or file path. Input is a
@@ -640,3 +642,6 @@ Each line must have a key such as Title, a colon, then a value.'''),
     # give access to the Footnotes panel mostly for test
     def get_fnot_panel(self):
         return self.panel_dict['Fnote']
+    # give access to the book_facts, for translators
+    def get_book_facts(self):
+        return self.book_facts
