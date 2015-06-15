@@ -113,7 +113,9 @@ class ImageDisplay(QWidget):
         # image_to_cursor pushbuttons.
         self._uic()
         # set defaults in case no metadata
+        self.cursor_to_image.toggled.connect( self.toggle_cursor_to_image )
         self.cursor_to_image.setChecked(True)
+        self.image_to_cursor.toggled.connect( self.toggle_image_to_cursor )
         self.image_to_cursor.setChecked(False)
         self.zoom_factor = 0.25
         self.png_path = None
@@ -424,6 +426,34 @@ class ImageDisplay(QWidget):
         self.scroll_area.verticalScrollBar().setValue(
                          int( top_row * self.zoom_factor ) )
         # and that completes zoom-to-height
+
+    # Two tiny slots to receive the "toggled(bool)" signal of the grippy
+    # hands icons. All we do is swap out the tooltip text to reflect
+    # what they are set to do. Note that during __init__ there is a
+    # setChecked() call on both, which causing a call to these.
+
+    def toggle_cursor_to_image(self, bool):
+        if bool :
+            self.cursor_to_image.setToolTip(
+                _TR( 'imageview edit-to-image button tooltip',
+                     'Images change when the edit cursor moves.' )
+                )
+        else:
+            self.cursor_to_image.setToolTip(
+                _TR( 'imageview edit-to-image button tooltip',
+                     'Images do NOT change when the edit cursor moves.' )
+                )
+    def toggle_image_to_cursor(self, bool):
+        if bool :
+            self.image_to_cursor.setToolTip(
+                _TR( 'imageview image-to-cursor button tooltip',
+                     'The edit cursor moves when you use Page Up/Down to change images.' )
+                )
+        else:
+            self.image_to_cursor.setToolTip(
+                _TR( 'imageview image-to-cursor button tooltip',
+                     'The edit cursor does NOT move when you use Page Up/Down to change images.' )
+                )
 
     # Build the widgetary contents. The widget consists mostly of a vertical
     # layout with two items: A scrollArea containing a QLabel used to display
