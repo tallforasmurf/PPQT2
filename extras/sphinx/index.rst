@@ -1669,25 +1669,77 @@ as described in the Bookloupe documentation file.
 Translators
 =================
 
-TBS!
+A Translator is a sub-program that knows how to convert
+text in *guidelines format* to some other markup format.
 
-Guidelines Format
--------------------
+First you use PPQT to bring a book to complete agreement
+with the DP formatting guidelines
+Then you apply a Translator to change the book to another format,
+for example, `PPGEN format`_ or `FPGEN format`_ or HTML, to name a
+few possibilities.
 
-Format Extensions
-------------------
+The translated document appears as a new document with its own edit panel.
+Its name is Untitled-n.
+It has some of the metadata from the source document, for example
+it has a copy of your notes from the Notes panel and the same
+good-words and bad-words lists.
 
-Block Markup
-^^^^^^^^^^^^^
+You inspect the translated book.
+If you do not approve the translation, you can simply close it without saving it.
+If the translation is satisfactory, you save it under its own name.
+You can continue to edit it using PPQT, or work on it using a different editor.
 
-Table Markup
-^^^^^^^^^^^^^
+.. _PPGEN format: http://www.pgdp.net/wiki/PPTools/Ppgen/Manual
 
-ASCII Translator
-------------------
+.. _FPGEN format: http://www.pgdpcanada.net/wiki/index.php/Fpgen
 
-HTML Translator
------------------
+Using and Installing Translators
+----------------------------------
+
+The available Translators are named in the File>Translators... menu.
+PPQT builds this menu by inspecting the files in the Translators folder
+in the `Extras`_ folder.
+
+A Translator is a module of Python code in a file with the suffix ``.py``.
+To install a Translator, just put its file in the Translators folder
+in Extras, and re-start PPQT.
+A statement inside the file defines the name it will have in the File>Translators menu.
+Usually the name of the file will also reflect its target language.
+
+PPQT recommends that each Translator have a matching documentation file,
+with the same filename and a different suffix.
+For example a translator ``html.py`` might come with a file ``html.rtf``
+in which the author of the translator explains what the Translator 
+can and cannot do.
+These documentation files can be stored in the Translators folder along
+with the Translators themselves.
+
+A Translator can be written by anyone with some Python programming experience.
+The interface between PPQT and a Translator is documented in the
+TranslatorAPI.html file in the Extras folder.
+
+Translation of Extended DP Format
+-----------------------------------
+
+The DP Formatting Guidelines only support two types of block markup,
+``/#..#/`` for block quotes, and ``/*..*/`` for everything else.
+PPQT supports additional block markers:
+
+* ``/Q..Q/`` for block quotes,
+* ``/X..X/`` for general no-reflow text,
+* ``/C..C/`` for text to be centered
+* ``/R..R/`` for text to be right-aligned
+* ``/P..P/`` for poetry
+* ``/T..T/`` for tables
+
+The use of these codes is described in the *Suggested Workflow*
+document in the Extras folder.
+
+It is up to the writer of each Translator to support these extra
+types of formatting.
+If the Translator does not support a format, the Translator may
+put an error message in the translated book.
+Consult the author of the Translator module.
 
 .. _Metadata:
 
