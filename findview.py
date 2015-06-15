@@ -843,8 +843,8 @@ class FindPanel(QWidget):
                     fp.match = re.search(text,start_tc.position())
                 if fp.match : # is not None, we have a match
                     (a, z) = fp.match.span()
-                    find_tc.setPosition(a)
-                    find_tc.setPosition(z, QTextCursor.KeepAnchor)
+                    find_tc.setPosition(z)
+                    find_tc.setPosition(a, QTextCursor.KeepAnchor)
         return find_tc
 
     # Execute one of the three do-replace buttons. Sample the current
