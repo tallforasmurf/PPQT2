@@ -7,6 +7,35 @@
 # panel. Each value is either True, False, or a 'quoted string' In any quoted
 # string, every backslash must be doubled!
 #
+
+# Find "faux hyphens" -- Unicode characters that look like hyphens but
+# are not. Offer replacement with standard \u002d ascii hyphen.
+# \u02d7 = Modifier letter minus sign
+# \u2010 = Hyphen
+# \u2011 = Non-breaking Hyphen
+# \u2012 = Figure Dash
+# \u2013 = En Dash
+# \u2014 = Em Dash
+# \u2053 = Swung Dash
+# \u2212 = Minus sign (math)
+# \uFE58 = Small Em Dash
+# \uFE63 = Small Hyphen-minus
+# \uFF0D = Fullwidth Hyphen-minus
+
+7: {	'all' : False,
+	'andnext' : False,
+	'andprior' : False,
+	'case' : False,
+	'find' : '[\\u02d7\\u2012\\u2013\\u2014\\u2053\\u2212\\ufe58\\ufe63\\uff0d]+',
+	'label' : 'faux-hy',
+	'regex' : True,
+	'rep1' : '-',
+	'rep2' : '',
+	'rep3' : '',
+	'tooltip' : 'Find hyphen-shaped Unicode characters other than ascii hyphen',
+	'word' : False
+}
+
 # Whitespace preceding punctuation or following a hyphen.
 # Regex is: whitespace then punctuation, or hyphen then whitespace
 # Note whitespace includes newline, and this finds lines that start
@@ -243,7 +272,7 @@
 	'word' : None
 }
 
-# Find any asterisk, presumably proofer note. Regex uses 
+# Find any asterisk, presumably proofer note. Regex uses
 # negative lookbehind (?<!) and negative lookahead (?!)
 # to reject asterisks that are preceded or followed by slash
 # (\x2f because using literal \\slash doesn't seem to work)
