@@ -62,14 +62,19 @@
 # Note the following three swallow any whitespace following the
 # markup start and preceding the markup end. This is so that
 # if the text is wrongly marked "<i> word </i>" we will not leave
-# it as "_ word _" but rather "_word_".
+# it as "_ word _" but rather "_word_". The regex is:
+#  <i|b|sc>
+#  optional whitespace not included in \1
+#  ( anything but '<' with the '?' non-greedy qualifier ) == \1
+#  optional whitespace not in \1 because of '?' qualifier
+#  </i|b|sc>
 #
 
 21: {		'all' : False,
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
-	'find' : '<sc>\\s*([^<]+)\\s*</sc>',
+	'find' : '<sc>\\s*([^<]+?)\\s*</sc>',
 	'label' : 'sc convert',
 	'regex' : True,
 	'rep1' : '\\1',
@@ -83,7 +88,7 @@
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
-	'find' : '<b>\\s*([^<]+)\\s*</b>',
+	'find' : '<b>\\s*([^<]+?)\\s*</b>',
 	'label' : 'b convert',
 	'regex' : True,
 	'rep1' : '\\1',
@@ -97,7 +102,7 @@
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
-	'find' : '<i>\\s*([^<]+)\\s*</i>',
+	'find' : '<i>\\s*([^<]+?)\\s*</i>',
 	'label' : 'i convert',
 	'regex' : True,
 	'rep1' : '_\\1_',
