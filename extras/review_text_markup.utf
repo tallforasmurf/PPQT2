@@ -58,11 +58,18 @@
 	'word' : False
 }
 
+#
+# Note the following three swallow any whitespace following the
+# markup start and preceding the markup end. This is so that
+# if the text is wrongly marked "<i> word </i>" we will not leave
+# it as "_ word _" but rather "_word_".
+#
+
 21: {		'all' : False,
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
-	'find' : '<sc>([^<]+)</sc>',
+	'find' : '<sc>\\s*([^<]+)\\s*</sc>',
 	'label' : 'sc convert',
 	'regex' : True,
 	'rep1' : '\\1',
@@ -76,7 +83,7 @@
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
-	'find' : '<b>([^<]+)</b>',
+	'find' : '<b>\\s*([^<]+)\\s*</b>',
 	'label' : 'b convert',
 	'regex' : True,
 	'rep1' : '\\1',
@@ -90,7 +97,7 @@
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
-	'find' : '<i>([^<]+)</i>',
+	'find' : '<i>\\s*([^<]+)\\s*</i>',
 	'label' : 'i convert',
 	'regex' : True,
 	'rep1' : '_\\1_',
