@@ -147,6 +147,7 @@ import logging
 import utilities
 import helpview
 import book
+import translators
 mainwindow_logger = logging.getLogger(name='main_window')
 from PyQt5.QtTest import QTest # dbg
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -340,7 +341,13 @@ class MainWindow(QMainWindow):
                 _TR('Tooltip of edit of new unsaved file',
                     'this file has not been saved') )
         self.focus_me(seq)
+    #
+    # For use from translators, do the New operation and return the Book
+    # that is created so it can be loaded with translated text.
 
+    def do_new(self) :
+        self._new()
+        return self.open_books[self.focus_book]
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Quick check to see if a file path is already open. Called from _open
@@ -483,6 +490,9 @@ class MainWindow(QMainWindow):
             self.editview_tabset.setTabText(
                 self.editview_tabset.currentIndex(),
                 fbts.filename() )
+            self.editview_tabset.setTabToolTip(
+                self.editview_tabset.currentIndex(),
+                active_book.get_book_folder() )
             self._add_to_recent(fbts.fullpath())
             fbts = None # discard that object
             return self._save()
@@ -533,6 +543,17 @@ class MainWindow(QMainWindow):
         # following assignment should remove the last reference to the book,
         # and schedule the book and associated objects for garbage collect.
         target_book = None
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Implement a Translate... submenu command. Call translators.xlt_book
+    # with the book object that is currently in focus. If the process works
+    # xlt_book will create a new book by calling do_new() and load it.
+    #
+    def _xlt_a_book( self ):
+        book = self.open_books[ self.focus_book ]
+        datum = self.sender().data()
+        translators.xlt_book( book, datum, self )
+
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Implement loading and saving find panel user buttons. Start the search
     # for files in the active book's folder. User can navigate to extras
@@ -718,6 +739,11 @@ class MainWindow(QMainWindow):
                               'Save definitions of the custom buttons in the Find panel' )
                          )
         work.triggered.connect(self._find_save)
+
+        # Translate... gets a submenu with an entry for every Translator
+        # in extras/Translators (if any). The actions connect to _xlt_a_book.
+        self.translate_submenu = translators.build_xlt_menu( self, self._xlt_a_book )
+        self.file_menu.addMenu( self.translate_submenu )
 
         # Open Recent gets a submenu that is added to the File menu.
         # The aboutToShow signal is connected to our _build_recent slot.
