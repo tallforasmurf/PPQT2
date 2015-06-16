@@ -35,10 +35,34 @@ Mac OSX: $HOME/Library/Preferences/com.PGDP.PPQT2.plist
 Windows (registry): HKEY_CURRENT_USER\Software\PGDP\PPQT2
 
 '''
-import logging
-import io
-log_stream = io.StringIO()
-logging.basicConfig( stream=log_stream, level=logging.INFO )
+import sys
+import os
+import logging, logging.handlers
+import datetime
+import constants as C
+
+# Set up logging to a rotating set of files in a writable location
+
+if C.PLATFORM_IS_MAC :
+    log_path = os.path.expanduser( '~/Library/Logs' )
+elif C.PLATFORM_IS_WIN :
+    log_path = '/Windows/Temp'
+else: # Linux
+    log_path = '/var/tmp'
+log_path = os.path.join( log_path, 'PPQT2.log' )
+
+log_handler = logging.handlers.RotatingFileHandler(
+    log_path, mode='a', maxBytes=100000, backupCount=5 )
+
+logging.basicConfig( handlers=[log_handler], level=logging.INFO )
+
+now = datetime.datetime.now()
+
+logging.info( '==========================================' )
+logging.info( 'PPQT2 starting up on {} with Qt {} and PyQt {}'.format(
+    now.ctime(), C.QT_VERSION_STR, C.PYQT_VERSION_STR ) )
+
+# Create the application and open the settings object.
 
 from PyQt5.QtWidgets import QApplication
 import sys
@@ -59,3 +83,9 @@ from mainwindow import MainWindow
 the_main_window = MainWindow( the_settings )
 the_main_window.show()
 the_app.exec_()
+
+# Annotate the log file for shutdown.
+now = datetime.datetime.now()
+
+logging.info( 'PPQT2 shutting down at {}'.format( now.ctime() ) )
+logging.info( '==========================================' )
