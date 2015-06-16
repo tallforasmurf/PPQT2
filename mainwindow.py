@@ -407,7 +407,7 @@ class MainWindow(QMainWindow):
         # start collecting auxiliary streams
         gw_stream = None
         bw_stream = None
-        gg_stream = None
+        #gg_stream = None
         # open the metadata stream, which is always UTF-8
         meta_stream = utilities.related_suffix(fbts, C.METAFILE_SUFFIX, encoding=C.ENCODING_UTF)
         if meta_stream is None :
@@ -441,7 +441,7 @@ class MainWindow(QMainWindow):
         if meta_stream : # opening a book we previously saved
             a_book.old_book( fbts, meta_stream )
         else :
-            a_book.new_book( fbts, gg_stream, gw_stream, bw_stream )
+            a_book.new_book( fbts, gw_stream, bw_stream )
         index = self.editview_tabset.addTab(
             a_book.get_edit_view(), a_book.get_book_name())
         self.editview_tabset.setTabToolTip(index,

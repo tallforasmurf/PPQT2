@@ -219,7 +219,6 @@ class Book(QObject):
     # FILE>OPEN a document that lacks an accompanying .meta file. Given:
     #
     #   doc_stream,  a FileBasedTextStream with the document data
-    #   meta_stream, None, or a memory stream derived from a Guiguts .bin file
     #   good_stream, None, or a text stream of a good_words file
     #   bad_stream,  None, or a text stream of a bad_words file
     #
@@ -229,7 +228,7 @@ class Book(QObject):
     # just in the unlikely case that this new book folder has a local copy of
     # the same dictionary tag as the global default we already set up.
 
-    def new_book(self, doc_stream, meta_stream, good_stream, bad_stream) :
+    def new_book(self, doc_stream, good_stream, bad_stream) :
         self.book_name = doc_stream.filename()
         self.editv.book_renamed(self.book_name)
         self.book_folder = doc_stream.folderpath()
@@ -242,14 +241,9 @@ class Book(QObject):
             self.wordm.good_file(good_stream)
         if bad_stream :
             self.wordm.bad_file(bad_stream)
-        if meta_stream :
-            # Process the Guiguts metadata for page info
-            self.metamgr.load_meta(meta_stream)
-        else :
-            # develop page info from separator lines in text
-            self.pagem.scan_pages()
-        self.hook_images()
-        self.editv.set_cursor(self.editv.make_cursor(0,0))
+        self.pagem.scan_pages() # develop page metadata if possible
+        self.hook_images() # set up display of scan images if possible
+        self.editv.set_cursor(self.editv.make_cursor(0,0)) # cursor to top
         self._speller = dictionaries.Speller( self.dict_tag, self.book_folder )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
