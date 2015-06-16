@@ -227,6 +227,14 @@ class Book(QObject):
     # position to zero, in absence of metadata. Make a new speller dictionary
     # just in the unlikely case that this new book folder has a local copy of
     # the same dictionary tag as the global default we already set up.
+    #
+    # Finally, check to see if the loaded document has any Unicode
+    # Replacement characters. If so, it is very likely a Latin-1 doc loaded
+    # as UTF-8. We could try to fix that, e.g. by rewinding the doc_stream
+    # and re-reading it with a different codec, but (a) at this point we
+    # don't know what codec was used; (b) maybe it's not Latin-1 either, maybe
+    # it's windows codepage crap; (c) the same problem likely affects the
+    # good- and bad-words files too. So just warn.
 
     def new_book(self, doc_stream, good_stream, bad_stream) :
         self.book_name = doc_stream.filename()
@@ -245,6 +253,19 @@ class Book(QObject):
         self.hook_images() # set up display of scan images if possible
         self.editv.set_cursor(self.editv.make_cursor(0,0)) # cursor to top
         self._speller = dictionaries.Speller( self.dict_tag, self.book_folder )
+        # Check the loaded text for \ufffd "replacement" chars indicating
+        # mis-decoding of the file.
+        findtc = self.editm.find( C.UNICODE_REPL, position=0 )
+        if not findtc.isNull() :
+            m1 = _TR( 'File:Open finds bad encoding',
+                      'This document contains at least one Unicode Replacement Character!'
+                      )
+            m2 = _TR( 'File: Open finds bad encoding',
+'''This indicates it was read with the wrong encoding!
+See the Help file under "File Encodings and File Names"
+The first bad character is at ''',
+                        'integer follows this') + str( findtc.position() )
+            utilities.warning_msg( m1, m2, self.mainwindow )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # A wee bit of code factored out of new_book and old_book so the

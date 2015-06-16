@@ -261,8 +261,8 @@ such as the "Windows CP1252" encoding
 often found in older Windows files.
 PPQT does not support any encodings except UTF-8 and Latin-1.
 
-**If you open a file and find its special characters are scrambled,
-close it immediately without saving it.**
+**If you open a file and PPQT warns you that it contains Unicode
+Replacement Characters, you should close the file immediately without saving it.**
 If it is encoded Latin-1, rename it.
 Otherwise, use some other utility  to convert it to UTF-8.
 
