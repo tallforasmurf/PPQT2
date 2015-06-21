@@ -868,6 +868,8 @@ class DocScanner( dpdocsyntax.DPDOCScanner ) :
                 hob = self.ilrex.match(line)
                 open_unit.stuff['image'] = hob.group(2) # filename or None
                 open_unit.stuff['hires'] = hob.group(4) # filename or None
+                # Illustration only: put line text in I unit for use in alt=
+                open_unit.text = line[ hob.end(): ].replace(']','')
             else : # tok == 'S'
                 hob = self.snrex.match(line)
             # remove whatever boilerplate was matched above
@@ -997,7 +999,8 @@ def event_generator( page_model, edit_model ) :
         # there are multiple pages with the same offset. If we run off the
         # end of the list, position() returns None, and the >= returns False.
         while edit_model.line_starts( lnum ) >= next_scan_starts :
-            yield ( XU.Events.PAGE_BREAK, '', {'page':next_scan}, lnum )
+            yield ( XU.Events.PAGE_BREAK, '',
+                    {'page':next_scan, 'folio':page_model.folio_string(next_scan) }, lnum )
             next_scan += 1
             next_scan_starts = page_model.position( next_scan ) if next_scan < scan_limit else int( 2**31 )
 
