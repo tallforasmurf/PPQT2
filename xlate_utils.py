@@ -147,7 +147,7 @@ class TokenCodes ( object ) :
     DICT_OFF  = 'DICT_OFF' # ( DICT_OFF, "" ) always follows ITAL_OFF or SPAN_OFF
     SUP       = 'SUP'      # ( SUP, "r" or "bt" ) Y^r O^bt^
     SUB       = 'SUB'      # ( SUB, "2" or "maj" ) H_2_O
-    FNKEY     = 'FNKEY'    # ( FNKEY, 'A' ) from [A]
+    FNKEY     = 'FNKEY'    # ( FNKEY, 'A' or '17' ) from [A] or [17]
     LINK      = 'LINK'     # ( LINK, "idtarget|visible" eg "Page_255|255")
     TARGET    = 'TARGET'   # ( TARGET, "target" ) <id='target'>
     PLINE     = 'PLINE'    # ( PLINE, '25' ) poem line number
@@ -163,9 +163,6 @@ class TokenCodes ( object ) :
 # Order matters here, the regexes are applied in sequence. For example
 # the SUB text \w_(\w+)_ must come before the fallback SUB1.
 
-# regex to pick off poem line number
-POEM_LNUM_EXPR = r'\ {2,}(\d+)$'
-POEM_LNUM_XP = regex.compile( POEM_LNUM_EXPR )
 # regex to select a word including hyphenated and possessives
 WORD_EXPR = r"(\w*(\[..\])?\w+)+"
 WORDHY_EXPR = "(" + WORD_EXPR + r"[\'\-\u2019])*" + WORD_EXPR
@@ -173,6 +170,10 @@ WORDHY_EXPR = "(" + WORD_EXPR + r"[\'\-\u2019])*" + WORD_EXPR
 # the value of a lang= property.
 LANG_EXPR = r'\<(\w+).+lang=[\'\"]([\w\u21af]+)[\'\"]'
 LANG_XP = regex.compile( LANG_EXPR )
+
+# regex to pick off poem line number
+POEM_LNUM_EXPR = r'\ {2,}(\d+)$'
+POEM_LNUM_XP = regex.compile( POEM_LNUM_EXPR )
 
 TOKEN_RXS = [
 ( TokenCodes.WORD,     WORDHY_EXPR ),
@@ -271,11 +272,17 @@ def tokenize( string ) :
         text = text.replace( '\u21af', '_' ) # in case any get through
         yield ( code, text )
 
-def poem_line_strip( string ) :
-    pass
-
 def poem_line_number( string ) :
-    pass
+    mob = POEM_LNUM_XP.search( string )
+    if mob : # is not None,
+        return mob.group(1)
+    return None
+
+def poem_line_strip( string ) :
+    mob = POEM_LNUM_XP.search( string )
+    if mob : # is not None,
+        return string[:mob.start()]
+    return string
 
 EV_NAMES = {
     Events.LINE          : 'Line',
