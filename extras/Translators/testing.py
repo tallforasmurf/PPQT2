@@ -158,14 +158,14 @@ def translate( event_giver ) :
         for key, value in stuff.items() :
             BODY << ' {}:{}'.format(key,value)
         BODY << '\n'
-        if code == XU.Events.LINE :
-            if OD_CHECKBOX.result :
-                izer = XU.tokenize( text )
-                for (tok, en) in izer :
-                    BODY << ' {}({})'.format( tok, en )
-                BODY << '\n'
-            else :
-                BODY.writeLine( 'text: ' + text )
+        #if code == XU.Events.LINE :
+        if OD_CHECKBOX.result :
+            izer = XU.tokenize( text )
+            for (tok, en) in izer :
+                BODY << ' {}({})'.format( tok, en )
+            BODY << '\n'
+        else :
+            BODY.writeLine( 'text: ' + text )
         if code == XU.Events.PAGE_BREAK :
             PAGES[ stuff['page'] ] = BODY.cpos()
         EVENT_COUNT += 1
