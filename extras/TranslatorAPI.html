@@ -558,8 +558,9 @@ was present.</p>
 <h2 id="the-page-boundary-event">The page boundary event</h2>
 <p>When PPQT notes that the a LINE event falls into a new page, it inserts a
 <code>XU.Events.PAGE_BREAK</code> event. The text value is empty.
-<code>stuff['page']</code> is an index to the pages list.
-The Translator should assign the current offset in the body
+<code>stuff['page']</code> is an index to the pages list,
+and <code>stuff['folio']</code> is the folio value for that page.</p>
+<p>The Translator should assign the current offset in the body
 output file to the pages list at that index.</p>
 <p>The PAGE_BREAK can (likely will) be seen in the middle of a paragraph.
 If the translator is collecting text to be reflowed at paragraph-end,
@@ -622,14 +623,18 @@ The content of an illustration block can contain one or more paragraphs,
 poems, tables or quotes.</p>
 <p>PPQT allows
 the user to code image filenames in the opening markup, for example:</p>
-<pre><code>[Illustration:fig55.png|fig55.jpg &lt;sc&gt;Fig. 55&lt;/sc&gt;...
+<pre><code>[Illustration:fig55.png|fig55.jpg &lt;sc&gt;Fig. 55&lt;/sc&gt; A widget.]
 </code></pre>
 <p>The optional first and second filenames are stripped out and
 stored in the stuff dict as <code>stuff['image']</code> for the
 first filename, and <code>stuff['hires']</code> for the second.
-If they are omitted from the Illustration markup, these stuff values will be null strings.</p>
-<p>An Illustration section will contain at least one paragraph.
-Like a Footnote, it can also contain poems, tables, and quotes.</p>
+If the filenames are omitted from the Illustration markup, these stuff values are null strings.</p>
+<p>The <code>text</code> value that accompanies the OPEN_ILLO event is 
+the text that followed the markup. In the example above, the text is 
+<code>A widget.</code> The same text will be delivered as a LINE event
+in the first paragraph of the Illustration block. This "preview" allows
+the HTML translator to use the first line text to make an <code>alt=</code>
+attribute before the paragraph is delivered.</p> 
 <h2 id="tables">Tables</h2>
 <p>A table (OPEN_TABLE, CLOSE_TABLE) is a special kind of no-reflow section.
 PPQT performs the service of breaking up the table markup into rows and cells
@@ -658,9 +663,9 @@ one LINE event will come per cell.</p>
 </code></pre>
 <p>This string can be found in the <code>text</code> value of the OPEN_TABLE event.
 However, PPQT also tries to parse it out and encode it in the <code>stuff['columns']</code> item.
-This will be a possibly-empty list of triples: <code>(</code> <em>width</em><code>,</code> <em>h-letter</em><code>,</code> <em>v-letter</em> <code>)</code>,
-with None where the user omitted a value.</p>
-<p>The above example would yield <code>stuff['columns']</code> containing</p>
+This will be a possibly-empty list composed of triples: <code>(</code> <em>width</em><code>,</code> <em>h-letter</em><code>,</code> <em>v-letter</em> <code>)</code>,
+with None where the user omitted a value.
+The above example would yield <code>stuff['columns']</code> containing</p>
 <pre><code>[(5,'r',None), (50,None,None), (8,'r','B')]
 </code></pre>
 <p>Note that if the user doesn't code it exactly as shown, for example if she writes
