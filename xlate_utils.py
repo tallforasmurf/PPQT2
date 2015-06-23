@@ -163,12 +163,19 @@ class TokenCodes ( object ) :
 # Order matters here, the regexes are applied in sequence. For example
 # the SUB text \w_(\w+)_ must come before the fallback SUB1.
 
-# regex to select a word including hyphenated and possessives
-WORD_EXPR = r"(\w*(\[..\])?\w+)+"
+# regex to select a word including hyphenated and possessives.
+#
+# One wee problem: In the DP format, the only valid use for underscore is to
+# show a subscript as in H_2_O. However, to a PCRE regular expression, the
+# "word character" (\w) set includes the underscore. However, the most
+# excellent regex module allows character class arithmetic! So we look for \w
+# minus underscore, which is written [\w--_].
+
+WORD_EXPR = r"([\w--_]*(\[..\])?[\w--_]+)+"
 WORDHY_EXPR = "(" + WORD_EXPR + r"[\'\-\u2019])*" + WORD_EXPR
 # regex to parse an html opener to pick up both the verb and
-# the value of a lang= property.
-LANG_EXPR = r'\<(\w+).+lang=[\'\"]([\w\u21af]+)[\'\"]'
+# the value of a lang= property. Underscores ok here: fr_FR
+LANG_EXPR = r'\<(\w+).+lang=[\'\"]([\w]+)[\'\"]'
 LANG_XP = regex.compile( LANG_EXPR )
 
 # regex to pick off poem line number
@@ -186,13 +193,13 @@ TOKEN_RXS = [
 ( TokenCodes.SCAP_OFF, r'\</(sc)\s*>' ),
 ( TokenCodes.SPAN_ON,  r'\<span\s*([^>]*)>' ),
 ( TokenCodes.SPAN_OFF, r'\</(span)\s*>' ),
-( TokenCodes.SUB,      r'\u21af(\w+)\u21af' ),
-( TokenCodes.SUB,      r'\u21af(.)' ),
+( TokenCodes.SUB,      r'_([\w--_]+)_' ),
+( TokenCodes.SUB,      r'_(.)' ),
 ( TokenCodes.SUP,      r'\^(\w+)\^' ),
 ( TokenCodes.SUP,      r'\^(.)' ),
 ( TokenCodes.FNKEY,    r'\[(.)\]' ),
 ( TokenCodes.LINK,     r'\#(\d+)\#' ),
-( TokenCodes.LINK,     r'\#(\w+)\:(\w+)\#' ),
+( TokenCodes.LINK,     r'\#(\w+)\:([^#]+)\#' ),
 ( TokenCodes.PLINE,    POEM_LNUM_EXPR ),
 ( TokenCodes.PUNCT,    r'\p{P}+' ),
 ( TokenCodes.SPACE,    r' +' ),
@@ -207,18 +214,7 @@ TOKEN_RXS = [
 TOKEN_EXPR = '|'.join(
     '(?P<{0}>{1})'.format(*pair) for pair in TOKEN_RXS
 )
-TOKEN_XP = regex.compile( TOKEN_EXPR )
-
-# One wee problem solved with a kludge. In the DP format, the only valid use
-# for underscore is to show a subscript as in H_2_O. However, to a PCRE
-# regular expression, the "word character" set includes the underscore.
-# (Actually, per http://unicode.org/reports/tr18/#Compatibility_Properties,
-# it includes [\p{alpha}\p{gc=Mark}\p{digit}\p{gc=Connector_Punctuation}] and
-# the latter class includes the underscore. I do not want to complicate the
-# already-complicated WORDHY_EXPR above by replacing all \w's with
-# "[\p{alpha}\p{gc=Mark}\p{digit}]" so as a kludge, we replace all
-# underscores in the string with \u21af, the Downwards Zigzag Arrow. Someday
-# this will come back as an issue, but hopefully not soon.
+TOKEN_XP = regex.compile( TOKEN_EXPR, flags=regex.V1 )
 
 def tokenize( string ) :
     global TOKEN_XP, LANG_XP
@@ -230,7 +226,6 @@ def tokenize( string ) :
     condense = lambda glist : [gp for gp in glist if gp is not None]
     dict_start = None
     j = 0
-    string = string.replace('_', '\u21af')
     while j < len( string ) :
         mob = TOKEN_XP.search( string, j )
         assert mob is not None
@@ -242,7 +237,7 @@ def tokenize( string ) :
             if mob2 : # is not none..
                 # ..this html verb has a lang= property. yield the current
                 # event and set up to yield the DICT_ON event next.
-                yield ( code, text.replace( '\u21af', '_' ) )
+                yield ( code, text )
                 code = TokenCodes.DICT_ON
                 text = mob2.group(2)
                 dict_start = mob2.group(1) # the verb, e.g. 'span'
@@ -268,8 +263,7 @@ def tokenize( string ) :
         elif code == 'SUP' :
             text = text.replace( '^', '' )
         elif code == 'SUB' :
-            text = text.replace( '\u21af', '' )
-        text = text.replace( '\u21af', '_' ) # in case any get through
+            text = text.replace( '_', '' )
         yield ( code, text )
 
 def poem_line_number( string ) :
@@ -394,3 +388,9 @@ class Dialog_Item(object) :
             else : self.result = 0 # need one choice checked
         # and that completes validity checking. See translators.py for the
         # implementation of the dialog based on this info.
+
+if __name__ == '__main__':
+    s = 'Sub_xy_ ubs'
+    izer = tokenize( s )
+    for (tok, en ) in izer :
+        print( tok, en )
