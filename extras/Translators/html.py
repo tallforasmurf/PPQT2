@@ -325,10 +325,12 @@ def translate( eventizer ) :
     def open_list( ) :
         global PARA_TEXT
         PARA_TEXT = 'li'
+        BODY.writeLine( '<ul>' )
 
     def close_list( ) :
         global PARA_TEXT
         PARA_TEXT = 'p'
+        BODY.writeLine( '</ul>' )
 
     # open_poem starts a poem with appropriate margins. We are discarding the
     # old Guiguts LYNX-compatible span-per-line markup and just making each
@@ -345,9 +347,9 @@ def translate( eventizer ) :
 
         L = pct( stuff['L'] )
         F = L - pct( stuff['F'] )
-        css = 'margin-left:{};text-indent:{};'.format( L, F )
+        css = 'margin-left:{}%;text-indent:{}%;'.format( L, F )
         if stuff['R'] :
-            css += 'margin-right:{};'.format( pct( stuff['R'] ) )
+            css += 'margin-right:{}%;'.format( pct( stuff['R'] ) )
         BODY << '\n<div class="poetry" style="{}">\n'.format( css )
         IN_STANZA_DIV = False
         IN_POEM = True
@@ -384,17 +386,17 @@ def translate( eventizer ) :
             if plnum :
                 BODY << '<span class="linenum">{}</span>'.format( plnum )
                 text = XU.poem_line_strip( text )
-            ems = round( (len( text ) - len( text.lstrip )) / 2 )
+            ems = round( (len( text ) - len( text.lstrip() )) / 2 )
             if ems > 0 :
                 POEM_EMS.add( ems )
                 BODY << '<p class="i{}">'.format(ems)
             else :
                 BODY << '<p>'
-            trans_line( text.strip, lnum, linebreak='</p>\n' )
+            trans_line( text.strip(), lnum, linebreak='</p>\n' )
     #
     # close_poem: close stanza if any, close poem div, set IN_POEM.
     def close_poem( ) :
-        global IN_STANZA_DIV
+        global IN_STANZA_DIV, IN_POEM
 
         if IN_STANZA_DIV :
             BODY << '</div>'
@@ -441,7 +443,7 @@ def translate( eventizer ) :
         if stuff['image'] :
             if stuff['hires'] :
                 BODY << '  <a href="images/{}">\n  '.format( stuff['hires'] )
-            BODY << '  <img src="images/{}"\n    alt="ALT?"\n    title="TITLE?" />\n'.format( stuff['image'] )
+            BODY << '  <img src="images/{}"\n    alt="ALT?" title="TITLE?"\n'.format( stuff['image'] )
             if stuff['hires'] :
                 BODY << '    />\n</a>\n'
             else :
