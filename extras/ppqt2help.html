@@ -158,8 +158,10 @@ For example, &#8220;common_errors.utf&#8221;
 has regular-expression searches for common text errors such as
 whitespace preceding punctuation or a paragraph that starts with
 a lowercase letter.</li>
-<li>&#8220;Translator_API.utf&#8221; tells Python programmers how to write a
-translator to work with PPQT.</li>
+<li>The &#8220;Translators&#8221; folder contains the <a class="reference internal" href="#translators">Translators</a> you can apply.
+You can obtain other Translator modules and put them there.</li>
+<li>The &#8220;xlt_dev&#8221; folder contains files that enable a Python programmer
+to write a new Translator module.</li>
 </ul>
 <p>You can move the Extras folder anywhere you like.
 You would do that if you changed or added any files in it,
@@ -1381,7 +1383,7 @@ Useful for Windows text files; do not use with Linux or Mac.</dd>
 <p>A Translator is a sub-program that knows how to convert
 text in <em>guidelines format</em> to some other markup format.</p>
 <p>First you use PPQT to bring a book to complete agreement
-with the DP formatting guidelines
+with the DP formatting guidelines.
 Then you apply a Translator to change the book to another format,
 for example, <a class="reference external" href="http://www.pgdp.net/wiki/PPTools/Ppgen/Manual">PPGEN format</a> or <a class="reference external" href="http://www.pgdpcanada.net/wiki/index.php/Fpgen">FPGEN format</a> or HTML, to name a
 few possibilities.</p>
@@ -1397,23 +1399,19 @@ You can continue to edit it using PPQT, or work on it using a different editor.<
 <div class="section" id="using-and-installing-translators">
 <h2>Using and Installing Translators<a class="headerlink" href="#using-and-installing-translators" title="Permalink to this headline">¶</a></h2>
 <p>The available Translators are named in the File&gt;Translators... menu.
-PPQT builds this menu by inspecting the files in the Translators folder
+PPQT builds this menu when it first starts up,
+by inspecting the files in the Translators folder
 in the <a class="reference internal" href="#extras">Extras</a> folder.</p>
 <p>A Translator is a module of Python code in a file with the suffix <code class="docutils literal"><span class="pre">.py</span></code>.
 To install a Translator, just put its file in the Translators folder
-in Extras, and re-start PPQT.
-A statement inside the file defines the name it will have in the File&gt;Translators menu.
-Usually the name of the file will also reflect its target language.</p>
+in Extras, and re-start PPQT.</p>
 <p>PPQT recommends that each Translator have a matching documentation file,
 with the same filename and a different suffix.
-For example a translator <code class="docutils literal"><span class="pre">html.py</span></code> might come with a file <code class="docutils literal"><span class="pre">html.rtf</span></code>
+For example a translator <code class="docutils literal"><span class="pre">html.py</span></code> might come with a file <code class="docutils literal"><span class="pre">html.txt</span></code>
 in which the author of the translator explains what the Translator
-can and cannot do.
+can and cannot do, and how it handles PPQT extensions to DP markup.
 These documentation files can be stored in the Translators folder along
 with the Translators themselves.</p>
-<p>A Translator can be written by anyone with some Python programming experience.
-The interface between PPQT and a Translator is documented in the
-TranslatorAPI.html file in the Extras folder.</p>
 </div>
 <div class="section" id="translation-of-extended-dp-format">
 <h2>Translation of Extended DP Format<a class="headerlink" href="#translation-of-extended-dp-format" title="Permalink to this headline">¶</a></h2>
@@ -1433,8 +1431,31 @@ document in the Extras folder.</p>
 <p>It is up to the writer of each Translator to support these extra
 types of formatting.
 If the Translator does not support a format, the Translator may
-put an error message in the translated book.
-Consult the author of the Translator module.</p>
+simply ignore the feature (for example, it can treat all these
+forms of markup as if they were <code class="docutils literal"><span class="pre">/*..*/</span></code>),
+or it may put an error message in the translated book.</p>
+</div>
+<div class="section" id="writing-or-editing-a-translator">
+<h2>Writing or Editing a Translator<a class="headerlink" href="#writing-or-editing-a-translator" title="Permalink to this headline">¶</a></h2>
+<p>A Translator can be written by anyone with some Python programming experience
+and a good understanding of the DP markup format and the target markup format.</p>
+<p>Anyone with even minimal Python programming skills can edit an existing Translator
+to make it work differently.
+Make a copy of the translator module; edit it to have a different MENU_NAME
+value; and restart PPQT.
+The edited Translator will show up in the File&gt;Translators menu.</p>
+<p>The following files are in the <code class="docutils literal"><span class="pre">xlt_dev</span></code> folder of the Extras folder:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">TranslatorAPI.html</span></code> documents the interface between PPQT and a Translator.</li>
+<li><code class="docutils literal"><span class="pre">skeleton.py</span></code> is the minimal skeleton of a Translator. Copy it and
+use it as the basis of a new Translator.</li>
+<li><code class="docutils literal"><span class="pre">testing.py</span></code> is a simple Translator that makes a document
+showing all the &#8220;events&#8221; that PPQT passed to it. When in doubt about how
+PPQT handles some particular feature, make a small test document and
+translate it using the <code class="docutils literal"><span class="pre">Testing</span></code> translator.</li>
+<li><code class="docutils literal"><span class="pre">testing.utf</span></code> is a document that exercises all the DP formatting features
+and all the PPQT extensions.</li>
+</ul>
 </div>
 </div>
 <div class="section" id="metadata-file">
@@ -1597,6 +1618,7 @@ Then just save (ctl-s) in PPQT and click the refresh button on the browser.</li>
 <li><a class="reference internal" href="#translators">Translators</a><ul>
 <li><a class="reference internal" href="#using-and-installing-translators">Using and Installing Translators</a></li>
 <li><a class="reference internal" href="#translation-of-extended-dp-format">Translation of Extended DP Format</a></li>
+<li><a class="reference internal" href="#writing-or-editing-a-translator">Writing or Editing a Translator</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#metadata-file">Metadata File</a></li>

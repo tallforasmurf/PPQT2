@@ -178,8 +178,11 @@ along with PPQT. Here are the things you can find there:
   whitespace preceding punctuation or a paragraph that starts with
   a lowercase letter.
 
-* "Translator_API.utf" tells Python programmers how to write a 
-  translator to work with PPQT.
+* The "Translators" folder contains the Translators_ you can apply.
+  You can obtain other Translator modules and put them there.
+
+* The "xlt_dev" folder contains files that enable a Python programmer
+  to write a new Translator module.
 
 You can move the Extras folder anywhere you like.
 You would do that if you changed or added any files in it, 
@@ -1673,7 +1676,7 @@ A Translator is a sub-program that knows how to convert
 text in *guidelines format* to some other markup format.
 
 First you use PPQT to bring a book to complete agreement
-with the DP formatting guidelines
+with the DP formatting guidelines.
 Then you apply a Translator to change the book to another format,
 for example, `PPGEN format`_ or `FPGEN format`_ or HTML, to name a
 few possibilities.
@@ -1697,26 +1700,21 @@ Using and Installing Translators
 ----------------------------------
 
 The available Translators are named in the File>Translators... menu.
-PPQT builds this menu by inspecting the files in the Translators folder
+PPQT builds this menu when it first starts up,
+by inspecting the files in the Translators folder
 in the `Extras`_ folder.
 
 A Translator is a module of Python code in a file with the suffix ``.py``.
 To install a Translator, just put its file in the Translators folder
 in Extras, and re-start PPQT.
-A statement inside the file defines the name it will have in the File>Translators menu.
-Usually the name of the file will also reflect its target language.
 
 PPQT recommends that each Translator have a matching documentation file,
 with the same filename and a different suffix.
-For example a translator ``html.py`` might come with a file ``html.rtf``
+For example a translator ``html.py`` might come with a file ``html.txt``
 in which the author of the translator explains what the Translator 
-can and cannot do.
+can and cannot do, and how it handles PPQT extensions to DP markup.
 These documentation files can be stored in the Translators folder along
 with the Translators themselves.
-
-A Translator can be written by anyone with some Python programming experience.
-The interface between PPQT and a Translator is documented in the
-TranslatorAPI.html file in the Extras folder.
 
 Translation of Extended DP Format
 -----------------------------------
@@ -1738,8 +1736,36 @@ document in the Extras folder.
 It is up to the writer of each Translator to support these extra
 types of formatting.
 If the Translator does not support a format, the Translator may
-put an error message in the translated book.
-Consult the author of the Translator module.
+simply ignore the feature (for example, it can treat all these
+forms of markup as if they were ``/*..*/``),
+or it may put an error message in the translated book.
+
+Writing or Editing a Translator
+---------------------------------
+
+A Translator can be written by anyone with some Python programming experience
+and a good understanding of the DP markup format and the target markup format.
+
+Anyone with even minimal Python programming skills can edit an existing Translator
+to make it work differently.
+Make a copy of the translator module; edit it to have a different MENU_NAME
+value; and restart PPQT.
+The edited Translator will show up in the File>Translators menu.
+
+The following files are in the ``xlt_dev`` folder of the Extras folder:
+
+* ``TranslatorAPI.html`` documents the interface between PPQT and a Translator.
+
+* ``skeleton.py`` is the minimal skeleton of a Translator. Copy it and
+  use it as the basis of a new Translator.
+
+* ``testing.py`` is a simple Translator that makes a document
+  showing all the "events" that PPQT passed to it. When in doubt about how
+  PPQT handles some particular feature, make a small test document and
+  translate it using the ``Testing`` translator.
+
+* ``testing.utf`` is a document that exercises all the DP formatting features
+  and all the PPQT extensions.
 
 .. _Metadata:
 
