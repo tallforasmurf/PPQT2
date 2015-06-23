@@ -16,8 +16,14 @@ It puts the title and author values from the book facts into the HTML header.
 Right-click in the Edit panel and select Edit Book Facts to set these before
 doing the Translation.
 
+The DP format permits a Chapter Head to have multiple paragraphs. This is
+almost never done, but if a Chapter Head does have two or more paragraphs,
+all the paragraphs in the head will be marked with <h2>. This should be
+obvious when the document is displayed in a browser. Manually change the
+second paragraph of a Chapter head to something else.
+
 HTML header lines and CSS definitions are installed at the top of the output
-document. To customize a particular book, edit these lines in the new
-document. If you want to change these definitions for all future translations,
-edit the file Translators/html.py. The HTML and CSS values are coded at the
-end of that file as constants.
+document. To customize one particular book, edit these lines in the new
+document. If you want to change these definitions for all future
+translations, edit the file Translators/html.py. The HTML and CSS values are
+coded at the end of that file as constants.
