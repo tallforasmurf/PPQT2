@@ -1,0 +1,23 @@
+The HTML translator converts DP Format (with all PPQT extensions as described
+in the Suggested Workflow document) into HTML.
+
+It puts a page-break anchor and visible page number at each page boundary.
+The visible number is the folio value as set in the Pages panel. It also
+updates the PPQT metadata for page boundaries, so scan images should still
+display correctly while you are editing the HTML document.
+
+It checks that all footnote keys are unique. If a non-unique key is used, it
+puts an error message in the HTML file. Also, it checks that the key in a
+Footnote has previously been used as a footnote anchor, and if not, it puts
+an error message in the HTML file. These errors can be prevented by using the
+Footnotes panel to renumber all footnotes.
+
+It puts the title and author values from the book facts into the HTML header.
+Right-click in the Edit panel and select Edit Book Facts to set these before
+doing the Translation.
+
+HTML header lines and CSS definitions are installed at the top of the output
+document. To customize a particular book, edit these lines in the new
+document. If you want to change these definitions for all future translations,
+edit the file Translators/html.py. The HTML and CSS values are coded at the
+end of that file as constants.
