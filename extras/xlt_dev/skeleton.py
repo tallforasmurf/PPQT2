@@ -22,8 +22,6 @@ PROLOG = None
 BODY = None
 EPILOG = None
 PAGES = []
-# Instead of saving the whole facts dict, you could analyze the fact items in
-# initialize() and just save the relevant parts. See html.py for an example.
 FACTS = dict()
 
 def initialize( prolog, body, epilog, facts, pages ) :
@@ -32,6 +30,10 @@ def initialize( prolog, body, epilog, facts, pages ) :
     BODY = body
     EPILOG = epilog
     FACTS = facts
+    # Instead of saving the whole facts dict, you could analyze the fact items
+    # here and save the relevant parts as globals, or deal with them entirely
+    # at this point. See html.py for an example.
+
     PAGES = pages
 
     # analyze the book facts dict and save relevant items in globals.
