@@ -440,10 +440,14 @@ def translate( eventizer ) :
 
         PARA_CLASS = 'caption'
         BODY << '<div class="image">\n'
+        preview = text
+        if len(preview) > 40 :
+            preview = preview[1:40] + '...'
         if stuff['image'] :
             if stuff['hires'] :
                 BODY << '  <a href="images/{}">\n  '.format( stuff['hires'] )
-            BODY << '  <img src="images/{}"\n    alt="ALT?" title="TITLE?"\n'.format( stuff['image'] )
+            BODY << '  <img src="images/{}"\n    alt="{}" title="{}"\n'.format(
+                stuff['image'], preview, preview )
             if stuff['hires'] :
                 BODY << '    />\n</a>\n'
             else :
@@ -788,12 +792,12 @@ blockquote {
 /* the following style the look of the sidenote box: */
 	width: 5em;			/* ..fixed width, */
 	float: right;		/* ..float to the right, */
-	margin-right: -6em;	/* ..exdented into body margin */
+	margin-right: -4%;	/* ..exdented into body margin of 5% */
 	margin-top: 0;		/* top even with following <p>'s top */
 	margin-left: 6px;	/* ..ensure space away from body text */
 	border: 1px dotted black; /* ..thin dotted border */
 	padding: 0 0 0 4px; /* ..ease content out from left border */
-	/*background-color: #ddd;  ..optional pale tint */
+	background-color: #ddd; /* ..optional pale tint */
 }
 /* the following style the look of the text inside the box: */
 .sidenote p {
