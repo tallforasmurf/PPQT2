@@ -95,9 +95,9 @@ _LAST_MENU = None # id of last action list to populate the edit menu
 #having changed the menu.
 
 def set_up_edit_menu(action_list) :
-    global _EDIT_MENU, _LAST_KEY
+    global _EDIT_MENU, _LAST_MENU
     if id(action_list) != _LAST_MENU :
-        _LAST_KEY = id(action_list)
+        _LAST_MENU = id(action_list)
         _EDIT_MENU.clear()
         for (title, slot, key) in action_list :
             if title is None :
