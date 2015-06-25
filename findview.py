@@ -688,7 +688,7 @@ class FindPanel(QWidget):
                 # However if regex is set, and the text contains regex
                 # magic characters, they need to be escaped.
                 if self.sw_regex.isChecked() :
-                    txt = FindPanel.RE_MAGIC_CHARS.sub('\\\\\\1',txt)
+                    txt = FindPanel.RE_MAGIC_CHARS.sub(r'\\\1',txt)
                 self.find_field.setText(txt)
         elif kkey == C.CTL_G : # ^g == find Next
             self.start_search(0) # find forward
