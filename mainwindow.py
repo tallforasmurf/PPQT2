@@ -84,7 +84,7 @@ import constants as C
 #
 
 _EDIT_MENU = None # global reference to the only Edit menu, see _uic.
-_LAST_KEY = None # last panel to populate the edit menu
+_LAST_MENU = None # id of last action list to populate the edit menu
 
 # Populate the edit menu. The action_list is a list of triples, ('Title',
 # slot, key), as required by QMenu.addAction. The caller can pass
@@ -94,10 +94,10 @@ _LAST_KEY = None # last panel to populate the edit menu
 #often happens, one panel gets focus-in multiple times without another panel
 #having changed the menu.
 
-def set_up_edit_menu(ident, action_list) :
+def set_up_edit_menu(action_list) :
     global _EDIT_MENU, _LAST_KEY
-    if ident != _LAST_KEY :
-        _LAST_KEY = ident
+    if id(action_list) != _LAST_MENU :
+        _LAST_KEY = id(action_list)
         _EDIT_MENU.clear()
         for (title, slot, key) in action_list :
             if title is None :
@@ -222,7 +222,7 @@ class MainWindow(QMainWindow):
         # Initialize the handle of a help display widget
         self.help_widget = None # later, if at all
         # Finished initializing after the app is running
-        QTimer.singleShot(500,self.finish_init)
+        QTimer.singleShot(300,self.finish_init)
         # Create the main window and set up the menus.
         self._uic()
 
@@ -231,10 +231,10 @@ class MainWindow(QMainWindow):
     # __init__ is first called, our window has not been shown and the
     # app.exec_() call has not been made. If ok_cancel_msg() is used in that
     # condition, there is a big delay and spinning cursor on the mac. So this
-    # code is called from a one-shot timer 500ms after the window has been
+    # code is called from a one-shot timer 300ms after the window has been
     # created, so we are sure the app is processing events etc.
     def finish_init(self):
-        self.finish_init = False # never do this again
+        #self.finish_init = False # never do this again
         # Initialize the set of files actually open when we shut down.
         last_session = self._read_flist('mainwindow/open_files')
         if len(last_session) : # there were some files open

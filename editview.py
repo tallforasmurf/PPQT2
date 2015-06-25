@@ -211,7 +211,7 @@ class PTEditor( QPlainTextEdit ):
         self.editFindKey.emit(kkey)
 
     def focusInEvent(self, event) :
-        mainwindow.set_up_edit_menu('E',self.ed_action_list)
+        mainwindow.set_up_edit_menu(self.ed_action_list)
         super().focusInEvent(event)
     def focusOutEvent(self, event) :
         mainwindow.hide_edit_menu()

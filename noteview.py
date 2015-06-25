@@ -157,7 +157,7 @@ class NotesPanel(QPlainTextEdit):
     # Intercept the focus-in and -out events and use them to display
     # and hide our edit menu.
     def focusInEvent(self, event):
-        mainwindow.set_up_edit_menu('N',self.ed_action_list)
+        mainwindow.set_up_edit_menu(self.ed_action_list)
         super().focusInEvent(event)
 
     def focusOutEvent(self, event):
