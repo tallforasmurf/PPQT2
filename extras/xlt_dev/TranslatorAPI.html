@@ -3,10 +3,10 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="Content-Style-Type" content="text/css" />
     <title>
-      The Project Gutenberg eBook of !BOOK!TITLE!HERE! by !AUTHOR!HERE!.
+      The Translator API to PPQT2
     </title>
     <style type="text/css">
 body { margin-left:4%; width:90%; /* == margin-right:6% */ }
@@ -39,32 +39,39 @@ h2 {
 	/* text-align:center;  left-aligned by default. */
 	/* font-weight: bold;  match the original */
 }
-code { background-color:#EEE; }
+code { background-color:#EEE; font:monospaced }
 pre { margin-left:2em; }
     </style>
   </head>
 <body>
 
 <h1 id="what-is-a-translator">What Is a Translator?</h1>
-<p>A translator is a module of Python code that translates the text of a PG
-etext into some other markup form.
-Some demonstration Translators are included with PPQT.
-They are described later.</p>
+<p>This page documents the programming interface between PPQT2 and 
+any document <i>Translator</i>.
+A Translator is a module of Python code that converts an etext in DP
+format into some other markup form.
+</p>
 
 <h2 id="how-are-translators-used">How Are Translators Used?</h2>
-<p>The PPQT user finds Translators are listed in a submenu of the File menu, File&gt;Translate...
-When the user selects a Translator by name from this submenu,
+<p>The PPQT user prepares a book until it is in full agreement with the
+DP formatting guidelines, with a few optional extensions supported by PPQT.
+Then the user selects a Translator from a submenu of the File menu, File&gt;Translate...
+When the user selects a Translator from this submenu,
 that Translator is called.
 It receives the contents of the active document, and it writes a new version of the document.
-This translated material appears as a <em>new</em> document.
-The user inspects it.
-If it is satisfactory, the user saves the translated document, and can edit it or process it
+</p><p>
+This translated material appears as a new document in its own Edit panel.
+The user inspects it and,
+if it is satisfactory, saves the translated document under its own name.
+The user may then edit it in PPQT or another editor, or process it
 in other ways.</p>
 
 <h2 id="how-are-translators-installed">How Are Translators Installed?</h2>
-<p>The File&gt;Translate submenu is populated only when PPQT starts up.
-At that time it looks for translator modules in the Translators folder in the Extras folder.
+<p>
 A Translator is a single module of Python code with a file suffix of <code>.py</code>.
+When PPQT starts up it looks in the Translators folder and populates
+the File&gt;Translate submenu based on the modules that appear to conform
+to this API.
 To add or modify a Translator you put a file in the Extras/Translators folder and restart PPQT.</p>
 <p>A Translator should come with a documentation file to explain in detail
 what conversions it makes between DP format and its target markup language.
@@ -75,13 +82,13 @@ It can also be stored in the Translators folder for convenient access.</p>
 <p>The logic of a translator is completely contained in a single Python module.
 It has no connection to the rest of PPQT except by virtue of being located in
 the Translators folder.</p>
-<p>When PPQT starts up it tests each file in extras/Translators that has a <code>.py</code>
+<p>PPQT tests each file in extras/Translators that has a <code>.py</code>
 suffix by loading it into a Python namespace.
-At that moment that file's statements are processed,
+At that moment the file's statements are processed,
 including code to define functions and classes
-and to assign values to global variables (exactly as if it had been imported).
+and to assign values to global variables&mdash;exactly as if it had been imported.
 If any exceptions occur, the errors are
-logged to stdout and that module is not put in the submenu.</p>
+logged and that module is not put in the submenu.</p>
 <p>To be valid a translator module must declare the following at the
 global level:</p>
 <pre><code>MENU_NAME = "menuname" # e.g MENU_NAME="HTML"
@@ -111,6 +118,24 @@ Note that there is nothing wrong with a Translator embedding a sizable
 text file in itself with Python triple-quoting.
 The example HTML Translator, for instance, embeds its HTML header data this way.
 </p>
+<h2 id='what-programming-materials-are-provided'>What Programming Materials Are Provided?</h2>
+<p>The following files are distributed in the <code>xlt_dev</code> folder
+of the PPQT Extras folder.</p>
+<ul>
+<li><code>TranslatorAPI.html</code> is this file, documenting how PPQT interfaces 
+to a Translator module.</li>
+<li><code>testing.py</code> is a simple Translator that dumps the events it receives
+in readable form to its output document. Move it to the Translators folder
+and restart PPQT. Then you can write a simple test case and Translate it
+using Testing. The new document shows what PPQT passed for that input text.</li>
+<li><code>testing.utf</code> is a document with one of every DP format markup
+including PPQT extensions. Use it to test your Translator's code.</li>
+<li><code>skeleton.py</code> is a minimal skeleton for a Translator module.
+It shows the recommended way to structure the code for best performance and
+readability.</li>
+</ul>
+<p>In addition, <code><a href='https://github.com/tallforasmurf/PPQT2/blob/master/xlate_utils.py'>xlate_utils.py</a></code>
+is the source code of the support module that every Translator needs to import.</p>
 <h1 id="what-happens-when-the-user-requests-translation">What happens when the user requests translation?</h1>
 <p>First, if the translator defines an OPTION_DIALOG, that dialog is built and
 presented to the user.
@@ -177,10 +202,11 @@ is defined in xlate_utils. If the Translator does <code>import xlate_utils as XU
 the class is <code>XU.Dialog_Item</code>.</p>
 <p>Each Dialog_Item in the OPTION_DIALOG list specifies one query widget:
 a checkbox, a string input, a number input, or a "radio set" of choices.
-Each Dialog_Item also contains a current value.</p>
+Each Dialog_Item also contains a current value in its <code>result</code> member.</p>
 <p>When the user requests translation, PPQT creates a widget for each
 Dialog_Item in the list and displays them as a single dialog, with OK and
-Cancel buttons.</p>
+Cancel buttons.
+Each item is initialized from its current <code>result</code> member.</p>
 <p>The signature for creating one Dialog_Item is:</p>
 <pre><code>XU.Dialog_Item( kind, label, tooltip='', result=None,
                minimum=None, maximum=None, choices=None )
@@ -209,13 +235,13 @@ are errors, a null item is created and a message is written to the
 log. That item will be omitted in the displayed dialog.</p>
 <p>After the dialog is displayed and the user clicks "OK", the values entered
 by the user
-are placed in the result member of the item. The Translator can query the
-values during the initialize() call, or later. The result of a checkbox is
-True or False. The result of a number is an integer, and of a string is a
-string. The result of a choice is the index of the chosen radio button
-starting at 0.</p>
+are placed back in the <code>result</code> member of the item.
+The Translator can query the values during the initialize() call, or later.
+The result of a checkbox is True or False.
+The result of a number is an integer, and of a string is a string.
+The result of a choice is the index of the chosen radio button starting at 0.</p>
 <p>The result values remain in the Dialog_Items, and they will appear as
-defaults when the same Translator is invoked again.</p>
+defaults if the same Translator is invoked again.</p>
 <p>The example Translator <code>testing.py</code> has an OPTION_DIALOG.
 It uses a checkbox to ask whether it should display LINE text as tokens.
 It uses a choice to ask if it should succeed, or should return false from
@@ -226,7 +252,8 @@ one of its three functions.</p>
 </code></pre>
 <p>All these values should be saved in globals for use from the <code>translate()</code> and
 <code>finalize()</code> functions.
-The <code>initialize()</code> function also may inspect the results in an OPTION_DIALOG.</p>
+The <code>initialize()</code> function will also likely want to
+inspect the results of an OPTION_DIALOG, if one is defined.</p>
 <p>The <code>initialize()</code> method should return True for success.
 If it returns False or None, the translation will be abandoned.
 In that event, it would be a good idea to write a log message explaining the problem.
@@ -250,13 +277,14 @@ the object:</p>
 <p>A MemoryStream object also supports a <code>cpos()</code> method that returns the
 count of characters written into it at that point.</p>
 <p>When the translation is done, the contents of the prolog, body, and epilog
-files, in that order, are installed as the new book's contents.</p>
+files, in that order, are installed as the contents of the new book.</p>
 <p>The prolog file is for any "boilerplate" material that the translator wants
 to put at the head of the new book.
 An example of boilerplate is the opening lines of an HTML file.
 Material can be written to the prolog during <code>initialize()</code>, but
 possibly also during <code>finalize()</code>.
-For example, <code>finalize()</code> could add CSS definitions for poetry indents
+For example, the <code>finalize()</code> function of the HTML Translator
+adds CSS definitions to the prolog to support poetry indents,
 based on the actual indents used in the document.</p>
 <p>The body file is for the main output of the translation.
 It would usually receive material from the <code>translate()</code> method.</p>
@@ -266,7 +294,7 @@ It would typically be written during the call to <code>finalize()</code>.</p>
 <h2 id="the-facts-dict">The facts dict</h2>
 <p>The facts argument is a dict which the user may or may not have filled in.
 The user edits the "book facts" (sometimes called metadata) by right-clicking in the edit
-panel and selecting Book Facts from the context menu.
+panel and selecting Edit Book Facts from the context menu.
 PPQT checks that the user enters
 <em>key</em>:<em>value</em> pairs in this dialog.
 However, PPQT places no restrictions on the form of the key or the value.
@@ -292,8 +320,8 @@ eccentric capitalization.</p>
 <p>The pages argument is a Python list of integers. It will be an empty list if
 PPQT has no page-boundary data for this book. Otherwise it is a list of
 integer -1, one for each page-boundary (and scan image).
-At various times the translate() function will receive an event code
-XU.Events.PAGE_BREAK. This event includes an index to the pages list.
+At various times the <code>translate()</code> function will receive an event code
+<code>XU.Events.PAGE_BREAK</code>. This event includes an index to the pages list.
 The Translator should update that entry of the list to the current count
 of characters written to the body file, <code>body.cpos()</code>.</p>
 <p>During the finalize call, if anything has been written to the prolog file,
@@ -309,10 +337,11 @@ no page images are shown for the new book.</p>
 <p>PPQT breaks the document up into many Events. The Events represent
 transitional points where a Translator might need to prepare or write output.
 There will be approximately 1.25 times as many Events as there are lines in
-the document (in other words, quite a lot). The Translator handles the events
-based on their code, and generates output accordingly.</p>
-<p>You can find out exactly what sequence of events are produced by any contents.
-Just install the Testing translator and translate a sample of text using it.
+the document (in other words, quite a lot). The <code>translate()</code> function
+handles the events
+based on their code, and generates output to the body stream accordingly.</p>
+<p>You can find out exactly what sequence of events are produced from any contents.
+Install the Testing translator and translate a sample of text using it.
 It writes a dump of its input Events to the output document.
 (You can also modify the Testing translator to display data differently.)</p>
 <p>PPQT calls the <code>translate()</code> method with one argument:</p>
@@ -352,9 +381,12 @@ Within a <code>/Q</code> block quote, <code>stuff['F']</code>, <code>stuff['L']<
 The 'F', 'L' and 'R' values will reflect these user-supplied values.</p>
 <p>The stuff dict may have other items depending on the code as described below.</p>
 <h2 id="line-number">Line number</h2>
-<p>The only use of the <code>lnum</code> value of an event is to give the user feedback about errors or problems.
-The Translator can put diagnostic messages in the output stream
-(perhaps in the prolog or epilog).
+<p>The <code>lnum</code> element of an event is the source document line
+number that produced the event.
+The only use of the <code>lnum</code> value is to give the user feedback about
+errors or problems.
+The Translator can put diagnostic messages in the output stream,
+either intermixed with normal output or clustered at the end of the epilog.
 These messages can contain a line number value to tell the user approximately
 where the problem occurred.</p>
 <h2 id="processing-tips">Processing Tips</h2>
@@ -384,6 +416,8 @@ if isinstance( action, str ) :
 else
     action()
 </code></pre>
+<p>The <code>skeleton.py</code> file in the <code>xlt_dev</code> folder
+contains the code for such an action dict.</p>
 <h1 id="what-are-the-events">What Are the Events?</h1>
 <p>The complete list of event codes is:</p>
 <pre><code>class Events( object ) :
@@ -467,7 +501,7 @@ The complete list of tokens is:</p>
     SUP       = 'SUP'      # ( SUP, "r" or "bt" ) Y^r O^bt^
     SUB       = 'SUB'      # ( SUB, "2" or "maj" ) H_2_O
     FNKEY     = 'FNKEY'    # ( FNKEY, 'A' ) from [A]
-    LINK      = 'LINK'     # ( LINK, "idtarget|visible" eg "Page_255|255")
+    LINK      = 'LINK'     # ( LINK, "idtarget:visible" eg "Page_255:Africa")
     TARGET    = 'TARGET'   # ( TARGET, "target" )
     PLINE     = 'PLINE'    # ( PLINE, '25' ) poem line number
     SPACE     = 'SPACE'    # ( SPACE, " ")
@@ -489,10 +523,11 @@ for (toktype, token) in izer :
         body &lt;&lt; '&lt;a id="' + token + '"&gt;&lt;/a&gt;'
     ...
 </code></pre>
+<p>To see exactly what is returned as <code>toktype</code> and <code>token</code>
+in that loop, use the Testing Translator with the Tokenize option.</p>
 <h2 id="the-paragraph">The Paragraph</h2>
 <p>A paragraph is a group of lines that, if the output is "reflowed", should be
-reflowed as a group. This includes body paragraphs but also includes headings
-and table cells.</p>
+reflowed as a group. This includes body paragraphs but also includes headings.</p>
 <p>The start of a paragraph is signalled by an OPEN_PARA event.
 This is always followed by at least one LINE event.
 The end of the paragraph is signalled by a CLOSE_PARA event.
@@ -561,11 +596,15 @@ was present.</p>
 <code>stuff['page']</code> is an index to the pages list,
 and <code>stuff['folio']</code> is the folio value for that page.</p>
 <p>The Translator should assign the current offset in the body
-output file to the pages list at that index.</p>
+output file to the pages list at that index, for example:</p>
+<pre><code>PAGES[ stuff[ 'page' ] ] = BODY.cpos()</code></pre>
 <p>The PAGE_BREAK can (likely will) be seen in the middle of a paragraph.
 If the translator is collecting text to be reflowed at paragraph-end,
 then <code>body.cpos()</code> under-estimates the position of the page break.
 The length of collected text should be added to the position.</p>
+<p>If the Translator wants to insert some notation of the page, 
+the value in <code>stuff['folio']</code> is the value that the user has
+set up for this page's folio (visible page number) using the PPQT Pages panel.</p>
 <h2 id="block-quotes">Block quotes</h2>
 <p>PPQT recommends its users mark block quotes with <code>/Q..Q/</code>, and allows First:,
 Left: and Right: values on them. So a block quote (OPEN_QUOTE, CLOSE_QUOTE)
@@ -575,7 +614,7 @@ It can contain right-aligned and center-aligned no-flow blocks, and poems.
 It can contain another quote (quotes can be nested).
 A quote cannot contain any other blocks than these;
 for example it cannot contain a footnote,
-illustration, or a <code>\X..X</code> block.</p>
+illustration, or a <code>\X..X\</code> block.</p>
 <p>Blocks nested inside a quote have F/L/R margins as well.
 These are <em>not</em> automatically adjusted for nesting.
 When the target markup language specifies margins relative to their container
@@ -587,7 +626,7 @@ and add margins together.</p>
 <h2 id="unsigned-lists">Unsigned Lists</h2>
 <p>PPQT permits the user to mark an unsigned list with <code>/U..U/</code>.
 This produces OPEN_LIST and CLOSE_LIST events.</p>
-<p>Within this markup each paragraph is a list item.
+<p>Within this markup each paragraph is meant to be a list item.
 The list format is produced by the default F/L/R values of 2/4/0,
 that is, the first line of each paragraph is indented 2
 (this prevents a e-reader such as the Kindle from reflowing
@@ -603,6 +642,9 @@ if the output language supports it.</p>
 normally contains only one or two lines of text, but there is no rule that
 says it cannot have a paragraph break in it, so for consistency its content
 is presented as one or more paragraphs. The F/L/R margins are not relevant.</p>
+<p>PPQT does not support sidenotes within paragraphs.
+If the target markup language does, the user must edit them
+into the translated document.</p>
 <h2 id="footnotes-and-footnote-zones">Footnotes and Footnote Zones</h2>
 <p>Footnotes are marked with OPEN_FNOTE, CLOSE_FNOTE.
 The value of <code>stuff['key']</code> is the footnote key value.</p>
@@ -623,18 +665,14 @@ The content of an illustration block can contain one or more paragraphs,
 poems, tables or quotes.</p>
 <p>PPQT allows
 the user to code image filenames in the opening markup, for example:</p>
-<pre><code>[Illustration:fig55.png|fig55.jpg &lt;sc&gt;Fig. 55&lt;/sc&gt; A widget.]
+<pre><code>[Illustration:fig55.png|fig55.jpg &lt;sc&gt;Fig. 55&lt;/sc&gt;...
 </code></pre>
 <p>The optional first and second filenames are stripped out and
 stored in the stuff dict as <code>stuff['image']</code> for the
 first filename, and <code>stuff['hires']</code> for the second.
-If the filenames are omitted from the Illustration markup, these stuff values are null strings.</p>
-<p>The <code>text</code> value that accompanies the OPEN_ILLO event is 
-the text that followed the markup. In the example above, the text is 
-<code>A widget.</code> The same text will be delivered as a LINE event
-in the first paragraph of the Illustration block. This "preview" allows
-the HTML translator to use the first line text to make an <code>alt=</code>
-attribute before the paragraph is delivered.</p> 
+If they are omitted from the Illustration markup, these stuff values will be null strings.</p>
+<p>An Illustration section will contain at least one paragraph.
+Like a Footnote, it can also contain poems, tables, and quotes.</p>
 <h2 id="tables">Tables</h2>
 <p>A table (OPEN_TABLE, CLOSE_TABLE) is a special kind of no-reflow section.
 PPQT performs the service of breaking up the table markup into rows and cells
@@ -663,9 +701,9 @@ one LINE event will come per cell.</p>
 </code></pre>
 <p>This string can be found in the <code>text</code> value of the OPEN_TABLE event.
 However, PPQT also tries to parse it out and encode it in the <code>stuff['columns']</code> item.
-This will be a possibly-empty list composed of triples: <code>(</code> <em>width</em><code>,</code> <em>h-letter</em><code>,</code> <em>v-letter</em> <code>)</code>,
-with None where the user omitted a value.
-The above example would yield <code>stuff['columns']</code> containing</p>
+This will be a possibly-empty list of triples: <code>(</code> <em>width</em><code>,</code> <em>h-letter</em><code>,</code> <em>v-letter</em> <code>)</code>,
+with None where the user omitted a value.</p>
+<p>The above example would yield <code>stuff['columns']</code> containing</p>
 <pre><code>[(5,'r',None), (50,None,None), (8,'r','B')]
 </code></pre>
 <p>Note that if the user doesn't code it exactly as shown, for example if she writes
@@ -686,9 +724,11 @@ and put the table out in whatever the target format requires.
 </p>
 <h1 id="finalizing">Finalizing</h1>
 <p>When the translate() function returns True, PPQT calls the finalize() function.
-It may write material to any of the files, prolog, body, or epilog.
-If the Translator has been updating the page break list with
-the positions of the body file, now is the time to also update the
+It may write material to any of the files, prolog, body, or epilog.</p>
+<p>If the Translator has been updating the page break list with
+the positions of the body file, this is the place to also update the
 list with the length of data in the prolog file.</p>
+<p>If the Translator has been collecting diagnostics, this would be the place
+to write them to the epilog file.</p>
 </body>
 </html>
