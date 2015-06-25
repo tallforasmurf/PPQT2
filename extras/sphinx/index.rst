@@ -1740,6 +1740,40 @@ simply ignore the feature (for example, it can treat all these
 forms of markup as if they were ``/*..*/``),
 or it may put an error message in the translated book.
 
+Checking Document Format
+--------------------------
+
+Before calling a Translator, PPQT checks the document format to make sure
+that every markup section is properly closed, and that
+sections are only nested in the permitted ways; for example
+a Footnote can contain a Quote but not another Footnote.
+These checks are needed in order to give the Translator a
+predictable document format.
+
+The first time you try to run a Translator, this check is likely to stop
+with an error message "Document Structure Error around line `number`".
+Below this it displays the name of the document element it was 
+processing, and the names of the document elements that it would
+accept at this point, but has not found.
+
+Some of these errors will have an obvious cause, for example that you
+have omitted the closing ``Q/`` on a Quote section.
+Others will not be so obvious.
+One common issue is that the algorithm that analyzes the document expects
+any paragraph to end with a blank line.
+This will cause an error:
+
+|    ``...last line of a paragraph in a quote.``
+|    ``Q/``
+
+The error will say "Processing PARA, Trying to find one of EMPTY, END, LINE".
+Just add a blank line after the paragraph:
+
+|    ``...last line of a paragraph in a quote.``
+|
+|    ``Q/``
+
+
 Writing or Editing a Translator
 ---------------------------------
 

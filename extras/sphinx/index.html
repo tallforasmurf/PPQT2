@@ -1435,6 +1435,37 @@ simply ignore the feature (for example, it can treat all these
 forms of markup as if they were <code class="docutils literal"><span class="pre">/*..*/</span></code>),
 or it may put an error message in the translated book.</p>
 </div>
+<div class="section" id="checking-document-format">
+<h2>Checking Document Format<a class="headerlink" href="#checking-document-format" title="Permalink to this headline">¶</a></h2>
+<p>Before calling a Translator, PPQT checks the document format to make sure
+that every markup section is properly closed, and that
+sections are only nested in the permitted ways; for example
+a Footnote can contain a Quote but not another Footnote.
+These checks are needed in order to give the Translator a
+predictable document format.</p>
+<p>The first time you try to run a Translator, this check is likely to stop
+with an error message &#8220;Document Structure Error around line <cite>number</cite>&#8221;.
+Below this it displays the name of the document element it was
+processing, and the names of the document elements that it would
+accept at this point, but has not found.</p>
+<p>Some of these errors will have an obvious cause, for example that you
+have omitted the closing <code class="docutils literal"><span class="pre">Q/</span></code> on a Quote section.
+Others will not be so obvious.
+One common issue is that the algorithm that analyzes the document expects
+any paragraph to end with a blank line.
+This will cause an error:</p>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">...last</span> <span class="pre">line</span> <span class="pre">of</span> <span class="pre">a</span> <span class="pre">paragraph</span> <span class="pre">in</span> <span class="pre">a</span> <span class="pre">quote.</span></code></div>
+<div class="line"><code class="docutils literal"><span class="pre">Q/</span></code></div>
+</div>
+<p>The error will say &#8220;Processing PARA, Trying to find one of EMPTY, END, LINE&#8221;.
+Just add a blank line after the paragraph:</p>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">...last</span> <span class="pre">line</span> <span class="pre">of</span> <span class="pre">a</span> <span class="pre">paragraph</span> <span class="pre">in</span> <span class="pre">a</span> <span class="pre">quote.</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal"><span class="pre">Q/</span></code></div>
+</div>
+</div>
 <div class="section" id="writing-or-editing-a-translator">
 <h2>Writing or Editing a Translator<a class="headerlink" href="#writing-or-editing-a-translator" title="Permalink to this headline">¶</a></h2>
 <p>A Translator can be written by anyone with some Python programming experience
@@ -1618,6 +1649,7 @@ Then just save (ctl-s) in PPQT and click the refresh button on the browser.</li>
 <li><a class="reference internal" href="#translators">Translators</a><ul>
 <li><a class="reference internal" href="#using-and-installing-translators">Using and Installing Translators</a></li>
 <li><a class="reference internal" href="#translation-of-extended-dp-format">Translation of Extended DP Format</a></li>
+<li><a class="reference internal" href="#checking-document-format">Checking Document Format</a></li>
 <li><a class="reference internal" href="#writing-or-editing-a-translator">Writing or Editing a Translator</a></li>
 </ul>
 </li>
