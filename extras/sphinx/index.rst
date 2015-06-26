@@ -1024,6 +1024,8 @@ The count of matching strings `n` is shown.
 If the count agrees with what you expect, click OK.
 If it seems too many or too few, click Cancel.
 
+You can Undo a global replace with Edit>Undo or ^z.
+
 .. _regular expression:
 
 Regular Expression Support
@@ -1137,25 +1139,25 @@ They contain comments documenting the regular expressions.
 
 ``common_errors.utf``
   This loads buttons 7-23 with expressions that search for common errors.
-  Some of the regular expressions are documented.
-  
-  7. Whitespace before punctuation or after a hyphen
-  8. Stand-alone 0 or 1
-  9. Some unbalanced delimiters
-  10. Dot followed by space followed by lowercase letter
-  11. Comma followed by space and uppercase letter
-  12. Single-letter line
-  13. Paragraph starting with lowercase
-  14. Non-Latin-1 letters
-  15. Non-7-bit letters
-  16. End of paragraph without punctuation
-  17. Line longer than 75 characters
-  18. Dash at end of line
-  19. Space at end of line
-  20. Closing quote without preceding punctuation
-  21. Multiple punctuation characters
-  22. Any forward slash
-  23. Any asterisk
+  Some of the regular expressions are documented in the file.
+
+  7. "Faux hyphens", Unicode characters that look like hyphens 
+  8. Whitespace before punctuation or after a hyphen
+  9. Stand-alone 0 or 1
+  10. Some unbalanced delimiters
+  11. Dot followed by space followed by lowercase letter
+  12. Comma followed by space and uppercase letter
+  13. Single-letter line
+  14. Paragraph starting with lowercase
+  15. Non-Latin-1 letters
+  16. Non-7-bit letters
+  17. End of paragraph without punctuation
+  18. Line longer than 75 characters
+  19. Dash at end of line
+  20. Space at end of line
+  21. Closing quote without preceding punctuation
+  22. Multiple punctuation characters
+  23. Any asterisk (e.g. proofer notes)
   
 ``review_text_markup.utf``
 
@@ -1589,8 +1591,7 @@ after the last paragraph of every chapter.
 To put all Notes at the end of the book, put a single zone at the
 end of the final chapter.
 
-You can insert a level-2 heading or other text into a zone.
-The moved notes go to the end of the zone, above the ``F/`` line.
+You can insert a heading into a zone: 
 
 |  ``/F``
 |
@@ -1598,6 +1599,10 @@ The moved notes go to the end of the zone, above the ``F/`` line.
 |  ``FOOTNOTES``
 |
 |  ``F/``
+
+The moved notes go to the end of the zone, above the ``F/`` line.
+Anything other than headings and footnotes in a footnote zone will
+cause a "document structure error".
 
 Moving footnotes is a single-undo operation.
 

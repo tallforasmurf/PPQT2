@@ -840,6 +840,7 @@ It displays a warning saying</p>
 <p>The count of matching strings <cite>n</cite> is shown.
 If the count agrees with what you expect, click OK.
 If it seems too many or too few, click Cancel.</p>
+<p>You can Undo a global replace with Edit&gt;Undo or ^z.</p>
 </div>
 </div>
 <div class="section" id="regular-expression-support">
@@ -925,8 +926,9 @@ So this file was made by hand.</dd>
 The regular expression is quite complex and is documented in the file.</dd>
 <dt><code class="docutils literal"><span class="pre">common_errors.utf</span></code></dt>
 <dd><p class="first">This loads buttons 7-23 with expressions that search for common errors.
-Some of the regular expressions are documented.</p>
+Some of the regular expressions are documented in the file.</p>
 <ol class="last arabic simple" start="7">
+<li>&#8220;Faux hyphens&#8221;, Unicode characters that look like hyphens</li>
 <li>Whitespace before punctuation or after a hyphen</li>
 <li>Stand-alone 0 or 1</li>
 <li>Some unbalanced delimiters</li>
@@ -942,8 +944,7 @@ Some of the regular expressions are documented.</p>
 <li>Space at end of line</li>
 <li>Closing quote without preceding punctuation</li>
 <li>Multiple punctuation characters</li>
-<li>Any forward slash</li>
-<li>Any asterisk</li>
+<li>Any asterisk (e.g. proofer notes)</li>
 </ol>
 </dd>
 </dl>
@@ -1312,8 +1313,7 @@ moved to the bottom of that zone.</p>
 after the last paragraph of every chapter.
 To put all Notes at the end of the book, put a single zone at the
 end of the final chapter.</p>
-<p>You can insert a level-2 heading or other text into a zone.
-The moved notes go to the end of the zone, above the <code class="docutils literal"><span class="pre">F/</span></code> line.</p>
+<p>You can insert a heading into a zone:</p>
 <div class="line-block">
 <div class="line"><code class="docutils literal"><span class="pre">/F</span></code></div>
 <div class="line"><br /></div>
@@ -1322,6 +1322,9 @@ The moved notes go to the end of the zone, above the <code class="docutils liter
 <div class="line"><br /></div>
 <div class="line"><code class="docutils literal"><span class="pre">F/</span></code></div>
 </div>
+<p>The moved notes go to the end of the zone, above the <code class="docutils literal"><span class="pre">F/</span></code> line.
+Anything other than headings and footnotes in a footnote zone will
+cause a &#8220;document structure error&#8221;.</p>
 <p>Moving footnotes is a single-undo operation.</p>
 </div>
 </div>
