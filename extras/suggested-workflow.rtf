@@ -795,12 +795,10 @@ Block quotes may include other quotes, poems, footnote anchors (but not the foot
 \
 
 \f1 /Q\
-\
 /R R:4\
 London\
 5th May, 1890\
 R/\
-\
 <sc>My Dear Holmes</sc>,\
 etc, etc\
 \
@@ -808,6 +806,7 @@ Sincerely,\
 \
 /Q F:12\
 Moriarty\
+\
 Q/\
 Q/\
 
@@ -871,11 +870,19 @@ This table markup has no provision for continuing a long cell on multiple lines.
 \
 The book is now 100% complete according to the DP Formatting Guidelines, possibly augmented with markup of block sections. Now it needs to be converted into other formats such as HTML, EPUB, and plain text. This is done by a Translator. A Translator converts the book as it is now, into a new document with the same contents but a different format.\
 \
-Open the File>Translate menu and select one of the translators in the sub-menu.  The chosen Translator starts. It may present a dialog with options. Then it reads the book text and writes a new version.\
+Open the File>Translate menu and select one of the translators in the sub-menu.  The chosen Translator starts. It may present a dialog with options.\
+\
+Next, PPQT performs a document structure check of the entire document. The purpose is to ensure that all block markups are properly closed, and where block markup is nested, the nesting is legitimate.\
+\
+The document structure check is quite the robot bureaucrat. The first few times you attempt a Translation you are likely to see instead an error message "Document structure error around line 
+\i n
+\i0 " followed by some cryptic notes about "Processing XXXX trying to find one of YYYY ZZZZ...". The first all-cap name is a clue to what element the parser was trying to finish, for example QUOTE, PARA or FNOTE. The others tell you what type of element could legally follow, for example EMPTY (blank line), LINE (non-empty line), BCLOSE (right-bracket to end a Footnote or Illustration) and so on.\
+\
+When PPQT finds the document structure correct, it feeds the book's contents into the Translator. The Translator writes a new version of the document using a different markup scheme.\
 \
 The translated document appears as a new document with its own Edit panel and other panels. (The original book is still open and unchanged.) The name of the new document is 
 \i Untitled-n
-\i0 . It has the Notes, good-word, bad-words, and Find panel values from the source book. It may or may not have the Page panel data and display scan images in the Images panel (this depends on the Translator).\
+\i0 . It has copies of the Notes, the good-word and bad-word lists, and Find panel values from the source book. It may or may not have the Page panel data and display scan images in the Images panel (this depends on the Translator).\
 \
 Examine the new document. If there is some problem, you can simply close it without saving it, and return to the original for more editing before you Translate again.\
 \
