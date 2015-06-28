@@ -147,12 +147,12 @@ def do_fnkey( ttext, lnum ) :
     # Footnote anchor-point[x] markup per Guiguts, except we require keys to
     # be unique (that's what the Footnotes panel is *for*).
 
-    fnanchor = '''<a id="FNanchor_{}"></a><a href="#Footnote_{}" class="fnanchor"><sup>{}</sup></a>'''
+    fnanchor = '''<a id="FNanchor_{0}"></a><a href="#Footnote_{0}" class="fnanchor"><sup>{0}</sup></a>'''
 
     if ttext in FNKEYS :
         BODY << '\n<b>!!Duplicate footnote key at line {}!!</b>\n'.format(lnum)
     FNKEYS.add( ttext )
-    BODY << fnanchor.format( ttext, ttext, ttext )
+    BODY << fnanchor.format( ttext )
 
 def do_link( ttext, lnum ) :
     global BODY
@@ -253,7 +253,7 @@ def translate( eventizer ) :
         global PAGES
 
         PAGES[ stuff[ 'page' ] ] = BODY.cpos()
-        BODY << '\n<span class="pagenum"><a id="Page_{}">[{}]</a></span>\n'.format( stuff['folio'], stuff['folio'] )
+        BODY << '\n<span class="pagenum"><a id="Page_{0}">[{0}]</a></span>\n'.format( gstuff['folio'] )
 
     def open_para( ):
         global STARTING_FNOTE, PARA_TEXT, PARA_CLASS
@@ -446,8 +446,8 @@ def translate( eventizer ) :
         if stuff['image'] :
             if stuff['hires'] :
                 BODY << '  <a href="images/{}">\n  '.format( stuff['hires'] )
-            BODY << '  <img src="images/{}"\n    alt="{}" title="{}"\n'.format(
-                stuff['image'], preview, preview )
+            BODY << '  <img src="images/{0}"\n    alt="{1}" title="{1}"\n'.format(
+                stuff['image'], preview )
             if stuff['hires'] :
                 BODY << '    />\n</a>\n'
             else :
@@ -477,9 +477,9 @@ def translate( eventizer ) :
         BODY << '<div class="footnote">\n'
         key = stuff['key']
         if not key in FNKEYS :
-            BODY << '\n<b>!!Undefined Footnote key {} at line {}!!</b>\n'.format(key,lnum)
+            BODY << '\n<b>!!Undefined Footnote key {} at line {}!!</b>\n'.format( key, lnum )
         BODY << '<p><a id="Footnote_{}"></a>'.format( key )
-        BODY << '<a href="#FNanchor_{}"><span class="label">[{}]</span></a>\n'.format(key, key)
+        BODY << '<a href="#FNanchor_{0}"><span class="label">[{0}]</span></a>\n'.format( key )
 
     # open_table starts a table including figuring out column WIDTHS and
     # alignments. stuff['columns'] has some info for us. We save CSS width
@@ -601,7 +601,7 @@ def finalize() :
     if len( POEM_EMS ) :
         # Some poetry indents were noted. Generate matching CSS.
         for em in sorted( POEM_EMS ) :
-            PROLOG.writeLine( '.stanza .i{} {{margin-left:{}em;}}'.format( em, em ) )
+            PROLOG.writeLine( '.stanza .i{0} {{margin-left:{0}em;}}'.format( em ) )
     PROLOG << CSS_CLOSE # finish the prolog
 
     if PAGES :
