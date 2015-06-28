@@ -40,6 +40,7 @@ import os
 import logging, logging.handlers
 import datetime
 import constants as C
+import resources # make available fonts and images encoded by pyrcc5
 
 # Set up logging to a rotating set of files in a writable location
 
