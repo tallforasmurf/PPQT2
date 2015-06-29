@@ -223,9 +223,11 @@ class ImageDisplay(QWidget):
             if im_name :
                 # pagedata has a filename; of course there is no guarantee
                 # such a file exists now or ever did.
-                im_name += '.png'
-                if self.png_dir.exists(im_name) :
-                    self.image = QImage(self.png_dir.absoluteFilePath(im_name))
+                f_name = im_name + '.png'
+                if not self.png_dir.exists( f_name ) :
+                    f_name = im_name + '.jpg'
+                if self.png_dir.exists(f_name) :
+                    self.image = QImage(self.png_dir.absoluteFilePath(f_name))
                     if not self.image.isNull():
                         # we loaded it ok, make a full-scale pixmap for display
                         self.pix_map = QPixmap.fromImage(self.image,Qt.ColorOnly)
