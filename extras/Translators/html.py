@@ -253,7 +253,9 @@ def translate( eventizer ) :
         global PAGES
 
         PAGES[ stuff[ 'page' ] ] = BODY.cpos()
-        BODY << '\n<span class="pagenum"><a id="Page_{0}">[{0}]</a></span>\n'.format( gstuff['folio'] )
+        folio = stuff['folio'] # null string if action is OMIT
+        if folio : # is not omitted
+            BODY << '\n<span class="pagenum"><a id="Page_{0}">[{0}]</a></span>\n'.format( folio )
 
     def open_para( ):
         global STARTING_FNOTE, PARA_TEXT, PARA_CLASS
@@ -440,9 +442,7 @@ def translate( eventizer ) :
 
         PARA_CLASS = 'caption'
         BODY << '<div class="image">\n'
-        preview = text
-        if len(preview) > 40 :
-            preview = preview[1:40] + '...'
+        preview = XU.flatten_line(text)
         if stuff['image'] :
             if stuff['hires'] :
                 BODY << '  <a href="images/{}">\n  '.format( stuff['hires'] )
