@@ -419,6 +419,8 @@ The Translators for HTML and Ppgen both support including the Unicode for the or
 \b 16. Illustrations\
 
 \b0 \
+This step ensures that illustrations are marked properly. We work on the images themselves in step 22.\
+\
 In the Word panel, display All. Click in the table and key ctl-f for the find dialog. Find the word Illustration. Right-click on the word and select Second Harmonic to see if there are versions with different capitalization or spelling errors. Examine these (double-click each one to see it in context). If any are miscoded illustration markups, fix them.\
 \
 Enter this in the Find field: 
@@ -428,8 +430,6 @@ Enter this in the Find field:
 Click First and use ctl-g to step through all the Illustration markups. Make sure each is properly located above or below the paragraph that mentions it. Make sure that the search has selected all of, but only, the Illustration markup. If it selects too much or not enough, the closing bracket is missing or is not at the end of its line.\
 \
 It is ok for an Illustration to contain formatted text such as poetry or tables. It is even ok for it to have a footnote reference such as[A]. However, the footnote itself must be outside the Illustration because a footnote, also, must end with a right-bracket at the end of a line.\
-\
-This step ensures that illustrations are marked properly. We work on the images themselves in step 22.\
 \
 
 \b 17. Sidenotes\
@@ -496,7 +496,7 @@ Decide whether to have in-line footnotes (as they are now, located after their p
 \
 Select File>Load Find Buttons. Choose 
 \f1 extras/unbalanced_markup.utf
-\f0 . This loads Find buttons 23, 24 and 25 with regular expressions that search for some cases of unbalanced italic, bold, and small-cap markup. They will find the common error where the slash is omitted from the closing 
+\f0 . This loads the last three Find buttons with regular expressions that search for some cases of unbalanced italic, bold, and small-cap markup. They will find the common error where the slash is omitted from the closing 
 \f1 <b>
 \f0 markup
 \f1 <b>
@@ -666,7 +666,7 @@ The DP formatting guidelines support only two types of block markup:
 \
 In the following steps you supplement the DP markup with more information. 
 \i These steps are optional
-\i0 . If you are going to Translate the book to some other markup convention such as Ppgen or Fpgen, you could go to step 29 and do so now. Then you can work in the translated document to use its markup codes to complete the book layout.\
+\i0 . If you are going to Translate the book to some other markup convention such as Ppgen or Fpgen, you could go to step 32 and do so now. Then you can work in the translated document to use its markup codes to complete the book layout.\
 \
 The following markups accept 
 \f1 First:
@@ -702,14 +702,52 @@ When they are converted to HTML or other formats that do not have fixed widths, 
 \f0  parameter translates to a 10% right margin, achieved in HTML by setting line width to 90%.\
 \
 
-\b 25. Poetry.
+\b 25. No-reflow sections.\
+
+\b0 \
+No-reflow sections are sections of highly-formatted text that need to be left as-is, and will probably require individual attention when the book is translated to some other format such as HTML. Mark these with 
+\f1 /X..X/
+\f0 , or just leave them marked with  
+\f1 /*..*/
+\f0  as the proofers marked them. Examples of no-reflow sections are equations, and small tables with odd layouts.\
+\
+
+\b 26. Centered lines.
+\b0 \
+\
+A block of centered lines, like the typical book title page, is now surrounded with 
+\f1 /*..*/
+\f0 . Mark it instead with 
+\f1 /C..C/
+\f0 . The default 
+\f1 First:
+\f0  is 2 and 
+\f1 Right:
+\f0  is 0. So in the output, the longest line will be indented by 2 spaces (as is standard for no-reflow sections in an etext), and shorter lines will be centered on it. In the ASCII translation, if the longest line exceeds 70 characters (so the total exceeds 72) there will be a diagnostic message in the translated book. Other Translators may convert 
+\f1 /C..C/
+\f0  into their equivalent markup or treat it like 
+\f1 /X..X/
+\f0 .\
+\
+
+\b 27. Right-aligned sections.\
+
+\b0 \
+A right-aligned section is like a Centered section: it is one or more no-reflow lines that are justified against a right margin. Right-aligned lines are useful as quote attributions and when duplicating old letterhead styles. The default for 
+\f1 Right
+\f0  is 2; specify a larger number for a deeper indent, or 0 to right-align on the normal right margin.\
+\
+
+\b 28. Poetry.
 \b0 \
 \
 When 
 \f1 /*..*/
 \f0  encloses poetry, change it to 
 \f1 /P..P/
-\f0 . Default First, Left and Right indents for poetry are 2, 12 and 0. You can add explicit 
+\f0 . The difference between lines of poetry is that a poem's lines can be wrapped on an individual basis, that is, a very long line can be "broken" and indented under the start of that line. Also, poems are assumed to have stanzas, groups of lines separated by a blank line; and they may have line numbers.\
+\
+Default First, Left and Right indents for poetry are 2, 12 and 0. You can add explicit 
 \f1 FIRST:
 \f0\i n
 \i0 , 
@@ -718,9 +756,11 @@ When
 \i0 , and/or 
 \f1 RIGHT:
 \f0\i n
-\i0  values for special cases. (Remember, the 
+\i0  values for special cases. The 
 \f1 Left
-\f0  indent is only used when a long line has to be "folded".)\
+\f0  indent is only used when a long line has to be "folded"; the folded part(s) of the long line are indented to the 
+\f1 Left
+\f0  indent.\
 \
 In a poem, stanza breaks are indicated by single blank lines and are part of the poem. A poem title, or a canto or stanza number, is a heading. Put it 
 \i outside
@@ -733,7 +773,7 @@ In a poem, stanza breaks are indicated by single blank lines and are part of the
 If the poem has line numbers, make sure that each line number is separated from the text of its line by at least two spaces.\
 \
 
-\b 26. Lists.
+\b 29. Lists.
 \b0  When 
 \f1 /*..*/
 \f0  encloses a list, change it to 
@@ -752,33 +792,7 @@ If the poem has line numbers, make sure that each line number is separated from 
 \i0  values as desired.\
 \
 
-\b 27. Centered lines.
-\b0 \
-\
-A block of centered lines, like the typical book title page, is now surrounded with 
-\f1 /*..*/
-\f0 . Mark it instead with 
-\f1 /C..C/
-\f0 . The default 
-\f1 First:
-\f0  is 2 and 
-\f1 Right:
-\f0  is 0. So in the output, the longest line will be indented by 2 spaces (as is standard for no-reflow sections in an etext), and shorter lines will be centered on it. In the ASCII translation, if the longest line exceeds 70 characters (so the total exceeds 72) there will be a diagnostic message in the translated book. Other Translators may convert 
-\f1 /C..C/
-\f0  into their equivalent markup or treat it like 
-\f1 /X..X/
-\f0 .\
-\
-
-\b 28. Right-aligned sections.\
-
-\b0 \
-A right-aligned section is like a Centered section: it is one or more no-reflow lines that are justified against a right margin. Right-aligned lines are useful as quote attributions and when duplicating old letterhead styles. The default for 
-\f1 Right
-\f0  is 2; specify a larger number for a deeper indent, or 0 to right-align on the normal right margin.\
- \
-
-\b 29. Block quotes.
+\b 30. Block quotes.
 \b0 \
 \
 A block quote is a section of one or more paragraphs that can be reflowed but which should be indented with respect to the main text flow. Change 
@@ -814,13 +828,15 @@ Q/\
 
 \f0 \
 
-\b 28. Tables.
+\b 31. Tables.
 \b0 \
 \
 Tables are always a problem for the post-processor. The editors and typographers of the original work used all their skills to display information efficiently. The DP proofers have done their best to render the data using ASCII characters, spaces, and stile (vertical-bar) characters. But that formatting is of little use when converting to HTML, PDF or EPUB.\
 \
 If you are going to translate to Ppgen or Fpgen, you can leave tables marked with 
 \f1 /*..*/
+\f0  or 
+\f1 /X..X/
 \f0   and work on the format in those markup systems. Or you can edit a table as follows, and some at least of the information will Translate into other markups.\
 \
 Delimit the table with 
@@ -867,7 +883,7 @@ All Translators support "reflowing" the contents of a cell that are too long for
 This table markup has no provision for continuing a long cell on multiple lines. It also has no provision for spanned columns or rows, or for making the alignment of one cell different from the default for the column, or for stylings such as borders. After you Translate it into some other markup style you can add spanning and other features.\
 \
 
-\b 29. Translate to other formats.
+\b 32. Translate to other formats.
 \b0 \
 \
 The book is now 100% complete according to the DP Formatting Guidelines, possibly augmented with markup of block sections. Now it needs to be converted into other formats such as HTML, EPUB, and plain text. This is done by a Translator. A Translator converts the book as it is now, into a new document with the same contents but a different format.\
