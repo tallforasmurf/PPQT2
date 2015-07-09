@@ -726,7 +726,7 @@ TOKEN_RXS = [
     ( 'QCLOSE', r'^Q/'             ),
     ( 'UOPEN',  r'^/U'             ),
     ( 'UCLOSE', r'^U/'             ),
-    ( 'FOPEN',  r'^\[Footnote'     ),
+    ( 'FOPEN',  r'^\[Footnote\s+[^:]+:' ), # only recognize valid fnotes
     ( 'IOPEN',  r'^\[Illustration' ),
     ( 'SOPEN',  r'^\[Sidenote'     ),
     ( 'LINE',   r'^.'              ) # i.e., none of the above
@@ -782,10 +782,12 @@ class DocScanner( dpdocsyntax.DPDOCScanner ) :
     ilrex = regex.compile( r'\[Illustration:((\w+\.\w+)(\|(\w+\.\w+))?)?\s*' )
     # recognize head of sidenote
     snrex = regex.compile( r'\[Sidenote:\s*' )
-    # recognize one column spec on a /T line, from e.g. 5 52c rB
-    # note, because all are quantified ?, this will always return one
-    # null hit -- detect with group(0)==''
-    tbrex = regex.compile( r'(\d+)?([lcr])?([TCB])?' )
+    # recognize one column spec on a /T line, being very forgiving. This accepts
+    # such as l, 9C, 25rclTB, etc.
+    tbrex = regex.compile( r'[0-9lcrTBC]+' )
+    tbdig = regex.compile( r'[0-9]+' ) # extract first group of digits if any
+    tbhor = regex.compile( r'[lrc]' ) # extract first horizontal char if any
+    tbver = regex.compile( r'[TBC]' ) # extract first vertical char if any
 
     def __init__( self, iterator ):
         self.iterator = iterator
@@ -903,15 +905,17 @@ class DocScanner( dpdocsyntax.DPDOCScanner ) :
         elif tok == 'T' :
             cols = []
             for tob in self.tbrex.finditer(line[2:]) :
-                if tob.group(0) : # is not empty,
-                    cw = tob.group(1)
-                    ch = tob.group(2)
-                    cv = tob.group(3)
-                    cols.append(
-                        [ int(cw) if cw else None,
-                          ch if ch else None,
-                          cv if cv else None
-                          ] )
+                colspec = tob.group(0)
+                xob = self.tbdig.search(colspec)
+                cw = 0
+                if xob : cw = int(xob.group(0))
+                ch = None
+                xob = self.tbhor.search(colspec)
+                if xob : ch = xob.group(0)
+                cv = None
+                xob = self.tbver.search(colspec)
+                if xob : cv = xob.group(0)
+                cols.append( [cw, ch, cv] )
             unit.stuff['columns'] = cols
 
         # If looking for the end of a bracket-group and this line ends in
