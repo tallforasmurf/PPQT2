@@ -53,6 +53,9 @@ poem_line_number(text)
 poem_line_strip(text)
     returns a text with any poem line number stripped.
 
+flatten_line(text)
+    returns text stripped of all markup, only words and spaces
+
 Dialog_Item
     a class used to build an Options dialog. Usage:
         Dialog_Item( kind=, label=, tooltip='', result=None,
@@ -277,6 +280,14 @@ def poem_line_strip( string ) :
     if mob : # is not None,
         return string[:mob.start()]
     return string
+
+def flatten_line( string ) :
+    izer = tokenize( string )
+    out = ''
+    for (code, text) in izer :
+        if code == TokenCodes.WORD : out += text
+        elif code == TokenCodes.SPACE : out += ' '
+    return out
 
 EV_NAMES = {
     Events.LINE          : 'Line',
