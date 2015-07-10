@@ -451,8 +451,15 @@ class EditView( QWidget ):
             self.ImageFilename.setText('')
             self.Folio.setText('')
         # Change the current-line "extra selection" to the new current line.
+        # Note: the cursor member of the extra selection may not have a
+        # selection. If it does, the current line highlight disappears. The
+        # cursor "tc" may or may not have a selection; to make sure, we clone
+        # it and remove any selection from it.
+        cltc = QTextCursor(tc)
+        cltc.setPosition(tc.position(),QTextCursor.MoveAnchor)
+        # Set the cloned cursor into the current line extra selection object.
+        self.current_line_sel.cursor = cltc
         # Re-assign the list of extra selections to force update of display.
-        self.current_line_sel.cursor = tc
         self.Editor.setExtraSelections(self.extra_sel_list)
 
     # Slot to receive the fontsChanged signal. If it is the UI font, set
