@@ -54,7 +54,14 @@ poem_line_strip(text)
     returns a text with any poem line number stripped.
 
 flatten_line(text)
-    returns text stripped of all markup, only words and spaces
+    returns text stripped of all markup, only words and spaces:
+    in:  <id='Africa'><sc>Fig</sc>. 18. The African <i>veldt</i>...
+    out: Fig 18 The African veldt...
+
+underscore_line(text, maxlen=50)
+    returns text stripped of all markup, with words joined by underscores:
+    in:  <sc>Fig</sc>. 18. The African <i>veldt</i> drowses in the glowing sun.
+    out: Fig_18_The_African_veldt_drowses_in_the_glowing_su (trunc at 50)
 
 Dialog_Item
     a class used to build an Options dialog. Usage:
@@ -288,6 +295,11 @@ def flatten_line( string ) :
         if code == TokenCodes.WORD : out += text
         elif code == TokenCodes.SPACE : out += ' '
     return out
+
+def underscore_line(text, maxlen=50):
+    words = flatten_line( text ).split()
+    out = '_'.join( words )
+    return out[:maxlen]
 
 EV_NAMES = {
     Events.LINE          : 'Line',
