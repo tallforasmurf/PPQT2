@@ -58,7 +58,7 @@ flatten_line(text)
     in:  <id='Africa'><sc>Fig</sc>. 18. The African <i>veldt</i>...
     out: Fig 18 The African veldt...
 
-underscore_line(text, maxlen=50)
+underscore_line(text, truncate=50)
     returns text stripped of all markup, with words joined by underscores:
     in:  <sc>Fig</sc>. 18. The African <i>veldt</i> drowses in the glowing sun.
     out: Fig_18_The_African_veldt_drowses_in_the_glowing_su (trunc at 50)
@@ -296,7 +296,7 @@ def flatten_line( string ) :
         elif code == TokenCodes.SPACE : out += ' '
     return out
 
-def underscore_line(text, maxlen=50):
+def underscore_line(text, truncate=50):
     words = flatten_line( text ).split()
     out = '_'.join( words )
     return out[:maxlen]
