@@ -78,6 +78,7 @@ what conversions it makes between DP format and its target markup language.
 The doc file should have the same name as the translator module and
 an appropriate suffix such as <code>.rst</code> or <code>.html</code>.
 It can also be stored in the Translators folder for convenient access.</p>
+
 <h2 id="what-is-the-structure-of-a-translator">What Is the Structure of a Translator?</h2>
 <p>The logic of a translator is completely contained in a single Python module.
 It has no connection to the rest of PPQT except by virtue of being located in
@@ -118,6 +119,7 @@ Note that there is nothing wrong with a Translator embedding a sizable
 text file in itself with Python triple-quoting.
 The example HTML Translator, for instance, embeds its HTML header data this way.
 </p>
+
 <h2 id='what-programming-materials-are-provided'>What Programming Materials Are Provided?</h2>
 <p>The following files are distributed in the <code>xlt_dev</code> folder
 of the PPQT Extras folder.</p>
@@ -136,6 +138,8 @@ readability.</li>
 </ul>
 <p>In addition, <code><a href='https://github.com/tallforasmurf/PPQT2/blob/master/xlate_utils.py'>xlate_utils.py</a></code>
 is the source code of the support module that every Translator needs to import.</p>
+
+
 <h1 id="what-happens-when-the-user-requests-translation">What happens when the user requests translation?</h1>
 <p>First, if the translator defines an OPTION_DIALOG, that dialog is built and
 presented to the user.
@@ -190,6 +194,8 @@ Then the page-images and folio values can be displayed in the new document.</p>
 contains the original text in a different format,
 with much of the original metadata.
 The user can view it and then save it or delete it.</p>
+
+
 <h1 id="how-does-a-translator-get-user-input">How Does a Translator Get User Input?</h1>
 <p>A Translator may be able to do its work based entirely on the contents of the
 input document. However some Translators will need to query the user for
@@ -246,6 +252,8 @@ defaults if the same Translator is invoked again.</p>
 It uses a checkbox to ask whether it should display LINE text as tokens.
 It uses a choice to ask if it should succeed, or should return false from
 one of its three functions.</p>
+
+
 <h1 id="calling-the-initialize-function">Calling the initialize() function</h1>
 <p>The signature of the <code>initialize()</code> method must be:</p>
 <pre><code>def initialize( prolog, body, epilog, facts, pages )
@@ -261,6 +269,7 @@ You can use a logger in xlt_utils:</p>
 <pre><code>XU.xlt_logger.error('Schnitzel translator quitting, the wurst has happened')
 return False
 </code></pre>
+
 <h2 id="the-prolog-body-and-epilog-files">The prolog, body and epilog files</h2>
 <p>The prolog, body, and epilog arguments are MemoryStream objects. A
 MemoryStream is a file-like object based on QTextStream. The most common
@@ -291,6 +300,7 @@ It would usually receive material from the <code>translate()</code> method.</p>
 <p>The epilog is for any material that goes at the end of the book, for example
 the closing <code>&lt;/body&gt;&lt;/HTML&gt;</code> line of an HTML file.
 It would typically be written during the call to <code>finalize()</code>.</p>
+
 <h2 id="the-facts-dict">The facts dict</h2>
 <p>The facts argument is a dict which the user may or may not have filled in.
 The user edits the "book facts" (sometimes called metadata) by right-clicking in the edit
@@ -316,6 +326,7 @@ for key, value in facts.items():
 <p>In other words, prepare default values for any metadata you hope to find.
 Then extract what metadata you can from the facts dict, allowing for
 eccentric capitalization.</p>
+
 <h2 id="the-pages-list">The pages list</h2>
 <p>The pages argument is a Python list of integers. It will be an empty list if
 PPQT has no page-boundary data for this book. Otherwise it is a list of
@@ -333,6 +344,8 @@ Then the scan images will be shown at the (approximately) correct points
 as the edit cursor moves through the new document.
 If the Translator does not update the page offsets,
 no page images are shown for the new book.</p>
+
+
 <h1 id="calling-the-translate-function">Calling the translate() function</h1>
 <p>PPQT breaks the document up into many Events. The Events represent
 transitional points where a Translator might need to prepare or write output.
@@ -367,6 +380,7 @@ The heart of the <code>translate()</code> function should resemble this:</p>
 <p><code>lnum</code> is the line number in the original document that caused the event.</p>
 </li>
 </ul>
+
 <h2 id="stuff">The stuff Dict</h2>
 <p>The stuff value is always a dict which usually has at least three items, keyed
 as 'F', 'L', and 'R'.
@@ -380,6 +394,7 @@ Within a <code>/Q</code> block quote, <code>stuff['F']</code>, <code>stuff['L']<
 <p>PPQT allows users to specify First:, Left: and Right: indents on some blocks.
 The 'F', 'L' and 'R' values will reflect these user-supplied values.</p>
 <p>The stuff dict may have other items depending on the code as described below.</p>
+
 <h2 id="line-number">Line number</h2>
 <p>The <code>lnum</code> element of an event is the source document line
 number that produced the event.
@@ -389,6 +404,7 @@ The Translator can put diagnostic messages in the output stream,
 either intermixed with normal output or clustered at the end of the epilog.
 These messages can contain a line number value to tell the user approximately
 where the problem occurred.</p>
+
 <h2 id="processing-tips">Processing Tips</h2>
 <p>Depending on the target format, many codes may
 need only simple text output. One way to handle codes of this kind speedily is to set up a
@@ -418,6 +434,8 @@ else
 </code></pre>
 <p>The <code>skeleton.py</code> file in the <code>xlt_dev</code> folder
 contains the code for such an action dict.</p>
+
+
 <h1 id="what-are-the-events">What Are the Events?</h1>
 <p>The complete list of event codes is:</p>
 <pre><code>class Events( object ) :
@@ -447,6 +465,7 @@ contains the code for such an action dict.</p>
     OPEN_FNOTE    = 'F'
     CLOSE_FNOTE   = 'f'
     PAGE_BREAK    = '!'
+    T_BREAK       = '%'
     OPEN_FNLZ     = 'N'
     CLOSE_FNLZ    = 'n'
     OPEN_TABLE    = 'T'
@@ -458,6 +477,7 @@ contains the code for such an action dict.</p>
 </code></pre>
 <p>You should always refer to a code by its member-name, for example <code>XU.Events.OPEN_POEM</code>.
 (The character values may change.)</p>
+
 <h2 id="the-line-event">The LINE event</h2>
 <p>The most common event is <code>XU.Events.LINE</code>, which passes the text of one line of the document.
 The <code>text</code> value is usually a complete line from the document.
@@ -470,6 +490,7 @@ The events for the following Side note:</p>
 The prefix <code>[Sidenote:</code> and the closing <code>]</code> are removed.
 (Again, you can resolve any doubt about the sequence and content of events
 by translating some trial code with the Testing Translator.)</p>
+
 <h3 id="parsing-a-line">Parsing a line</h3>
 <p>Possibly the translator will simply write the text to the body file. But some
 translators need to change the inline markup for sub-parts such as:</p>
@@ -498,8 +519,8 @@ The complete list of tokens is:</p>
     SPAN_OFF  = 'SPAN_OFF' # ( 'SCAP_OFF', "sc" )
     DICT_ON   = 'DICT_ON'  # ( DICT_ON, 'fr_FR' ) redundant but useful
     DICT_OFF  = 'DICT_OFF' # ( DICT_OFF, "" ) always follows ITAL_OFF or SPAN_OFF
-    SUP       = 'SUP'      # ( SUP, "r" or "bt" ) Y^r O^bt^
-    SUB       = 'SUB'      # ( SUB, "2" or "maj" ) H_2_O
+    SUP       = 'SUP'      # ( SUP, "r" or "rl" or "23" ) Y^r Gen^{rl} 10^{23}
+    SUB       = 'SUB'      # ( SUB, "2" or "maj" ) H_{2}O or A_{maj}
     FNKEY     = 'FNKEY'    # ( FNKEY, 'A' ) from [A]
     LINK      = 'LINK'     # ( LINK, "idtarget:visible" eg "Page_255:Africa")
     TARGET    = 'TARGET'   # ( TARGET, "target" )
@@ -525,6 +546,7 @@ for (toktype, token) in izer :
 </code></pre>
 <p>To see exactly what is returned as <code>toktype</code> and <code>token</code>
 in that loop, use the Testing Translator with the Tokenize option.</p>
+
 <h2 id="the-paragraph">The Paragraph</h2>
 <p>A paragraph is a group of lines that, if the output is "reflowed", should be
 reflowed as a group. This includes body paragraphs but also includes headings.</p>
@@ -536,6 +558,7 @@ it should begin collecting text after the OPEN_PARA,
 and only do the reflow of the accumulated text on seeing CLOSE_PARA.</p>
 <p>Of course if the translator is not reflowing text, it can simply copy lines
 to the output as they arrive.</p>
+
 <h2 id="headings">Headings</h2>
 <p>DP documents have only two heading levels: Chapter heads (preceded by four
 newlines and closed by two newlines) and subheads (preceded by two newlines
@@ -553,6 +576,7 @@ A typical one-line head would cause the sequence</p>
 <li>CLOSE_PARA</li>
 <li>CLOSE_HEAD2 or CLOSE_HEAD3</li>
 </ul>
+
 <h2 id="the-no-flow-events">The No-Flow Events</h2>
 <p>The DP format guidelines support only one no-reflow code, <code>/*..*/</code>.
 PPQT, following the lead of Guiguts, urges its users to divide
@@ -590,6 +614,7 @@ spaces. There is a utility function <code>XU.poem_line_number(text)</code> that 
 the text from a LINE and returns either a number or None. A second function
 <code>XU.poem_line_strip(text)</code> returns the text with a line number removed, if it
 was present.</p>
+
 <h2 id="the-page-boundary-event">The page boundary event</h2>
 <p>When PPQT notes that the a LINE event falls into a new page, it inserts a
 <code>XU.Events.PAGE_BREAK</code> event. The text value is empty.
@@ -605,6 +630,14 @@ The length of collected text should be added to the position.</p>
 <p>If the Translator wants to insert some notation of the page, 
 the value in <code>stuff['folio']</code> is the value that the user has
 set up for this page's folio (visible page number) using the PPQT Pages panel.</p>
+
+<h2 id="the-thought-break-event">The thought-break event</h2>
+<p>When PPQT sees a line beginning <code>&lt;tb></code>,
+or a line beginning with five asterisks separated by spaces,
+it generates a T_BREAK event.
+The Translator writes whatever is appropriate for a thought-break 
+in the target markup style.
+
 <h2 id="block-quotes">Block quotes</h2>
 <p>PPQT recommends its users mark block quotes with <code>/Q..Q/</code>, and allows First:,
 Left: and Right: values on them. So a block quote (OPEN_QUOTE, CLOSE_QUOTE)
@@ -623,6 +656,7 @@ If the target markup language requires absolute margin values,
 the translator needs to keep track of the nesting level,
 and add margins together.</p>
 <p>Nesting is rare and almost never more than 2 levels.</p>
+
 <h2 id="unsigned-lists">Unsigned Lists</h2>
 <p>PPQT permits the user to mark an unsigned list with <code>/U..U/</code>.
 This produces OPEN_LIST and CLOSE_LIST events.</p>
@@ -637,6 +671,7 @@ The user can put other F/L/R margins on the <code>/U</code> line.</p>
 <p>The translator can ignore this markup (just process the paragraphs
 as normal), or convert it into an unsigned list
 if the output language supports it.</p>
+
 <h2 id="sidenotes">Sidenotes</h2>
 <p>Sidenotes (OPEN_SNOTE, CLOSE_SNOTE) appear between paragraphs. A Sidenote
 normally contains only one or two lines of text, but there is no rule that
@@ -645,6 +680,7 @@ is presented as one or more paragraphs. The F/L/R margins are not relevant.</p>
 <p>PPQT does not support sidenotes within paragraphs.
 If the target markup language does, the user must edit them
 into the translated document.</p>
+
 <h2 id="footnotes-and-footnote-zones">Footnotes and Footnote Zones</h2>
 <p>Footnotes are marked with OPEN_FNOTE, CLOSE_FNOTE.
 The value of <code>stuff['key']</code> is the footnote key value.</p>
@@ -659,6 +695,7 @@ marked up in the document with <code>/F..F/</code>.</p>
 <p>A landing zone is presented as OPEN_FNLZ, CLOSE_FNLZ events.
 Within a landing zone, only subhead (OPEN_HEAD3, CLOSE_HEAD3)
 and footnote (OPEN_FNOTE, CLOSE_FNOTE) blocks can appear.</p>
+
 <h2 id="illustrations">Illustrations</h2>
 <p>Illustrations are marked by OPEN_ILLO and CLOSE_ILLO events.
 The content of an illustration block can contain one or more paragraphs,
@@ -673,6 +710,7 @@ first filename, and <code>stuff['hires']</code> for the second.
 If they are omitted from the Illustration markup, these stuff values will be null strings.</p>
 <p>An Illustration section will contain at least one paragraph.
 Like a Footnote, it can also contain poems, tables, and quotes.</p>
+
 <h2 id="tables">Tables</h2>
 <p>A table (OPEN_TABLE, CLOSE_TABLE) is a special kind of no-reflow section.
 PPQT performs the service of breaking up the table markup into rows and cells
@@ -722,6 +760,7 @@ and to terminate cells with stile characters.
 However the Translator only needs to process the open and close events for rows, cells, and lines,
 and put the table out in whatever the target format requires.
 </p>
+
 <h1 id="finalizing">Finalizing</h1>
 <p>When the translate() function returns True, PPQT calls the finalize() function.
 It may write material to any of the files, prolog, body, or epilog.</p>
@@ -730,5 +769,7 @@ the positions of the body file, this is the place to also update the
 list with the length of data in the prolog file.</p>
 <p>If the Translator has been collecting diagnostics, this would be the place
 to write them to the epilog file.</p>
+
+
 </body>
 </html>

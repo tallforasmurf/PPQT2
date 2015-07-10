@@ -133,6 +133,7 @@ class Events( object ) :
     OPEN_FNOTE    = 'F'
     CLOSE_FNOTE   = 'f'
     PAGE_BREAK    = '!'
+    T_BREAK       = '%'
     OPEN_FNLZ     = 'N'
     CLOSE_FNLZ    = 'n'
     OPEN_TABLE    = 'T'
@@ -321,6 +322,7 @@ EV_NAMES = {
     Events.OPEN_FNOTE    : 'Open Footnote',
     Events.CLOSE_FNOTE   : 'Close Footnote',
     Events.PAGE_BREAK    : 'Page break',
+    Events.T_BREAK       : 'Thought break',
     Events.OPEN_FNLZ     : 'Open Footnote Zone',
     Events.CLOSE_FNLZ    : 'Close Footnote Zone',
     Events.OPEN_TABLE    : 'Open Table',

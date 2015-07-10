@@ -729,6 +729,7 @@ TOKEN_RXS = [
     ( 'FOPEN',  r'^\[Footnote\s+[^:]+:' ), # only recognize valid fnotes
     ( 'IOPEN',  r'^\[Illustration' ),
     ( 'SOPEN',  r'^\[Sidenote'     ),
+    ( 'TBREAK', r'^\s*\<\s*tb\s*\>|(\s*\*){5}' ),
     ( 'LINE',   r'^.'              ) # i.e., none of the above
 ]
 
@@ -767,6 +768,7 @@ TOKEN_VALUE = {
     'IOPEN'  : 'I',
     'FOPEN'  : 'F',
     'SOPEN'  : 'S',
+    'TBREAK' : '%',
     'LINE'   : 'L'
     }
 
