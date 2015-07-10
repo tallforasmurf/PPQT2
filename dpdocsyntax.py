@@ -4,6 +4,7 @@
 import re
 import yapps_runtime as runtime
 
+
 class DPDOCScanner(runtime.Scanner):
     patterns = [
         ('END', re.compile('\\$')),
@@ -137,6 +138,8 @@ class DPDOC(runtime.Parser):
         while self._peek('UCLOSE', 'LINE', 'EMPTY', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'END', 'NCLOSE', context=_context) == 'LINE':
             PARA = self.PARA(_context)
         UCLOSE = self._scan('UCLOSE', context=_context)
+        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'UCLOSE', 'BCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
+            EMPTY = self._scan('EMPTY', context=_context)
 
     def QUOTE(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'QUOTE', [])
