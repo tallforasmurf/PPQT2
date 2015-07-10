@@ -71,10 +71,12 @@ from sortedcontainers import SortedDict
 import utilities
 import paths
 from PyQt5.QtCore import (
+    pyqtSignal,
     Qt,
     QAbstractItemModel,
     QAbstractTableModel,
     QCoreApplication,
+    QModelIndex,
     QSortFilterProxyModel
     )
 from PyQt5.QtWidgets import (
@@ -302,6 +304,21 @@ class LoupeModel(QAbstractTableModel):
         # and that's refresh. On exit, fbts is trashed which closes
         # and deletes the temporary file.
 
+class LoupeTable(QTableView):
+    rowChanged = pyqtSignal(QModelIndex)
+
+    def __init__(self,parent) :
+        super().__init__(parent)
+        self.setSortingEnabled(True)
+        self.setCornerButtonEnabled(False)
+        self.setWordWrap(False)
+        self.setAlternatingRowColors(False)
+        self.setSelectionBehavior( QTableView.SelectRows )
+        self.setSelectionMode( QTableView.SingleSelection )
+    def selectionChanged( self, sel_model, desel_model ):
+        self.rowChanged.emit( sel_model.indexes()[0] )
+
+
 class LoupeView(QWidget):
     def __init__(self, book, parent=None):
         self.my_book = book
@@ -318,7 +335,7 @@ class LoupeView(QWidget):
         # hook up the Refresh signal
         self.refresh.clicked.connect(self.do_refresh)
         # hook up the doubleclicked signal
-        self.view.doubleClicked.connect(self.go_to_line)
+        self.view.rowChanged.connect(self.go_to_line)
 
     # On click of Refresh, get new data and reset table props.
     def do_refresh(self):
@@ -327,14 +344,10 @@ class LoupeView(QWidget):
         self.view.horizontalHeader().setStretchLastSection(True)
         self.view.setSortingEnabled(True)
 
-    # On double-click of row, tell the editor to go to that line and column.
-    # Get the line number by getting the displayed data from column 0 of the
-    # target row.
+    # On selection of a new row, make that the current row (highlighting it).
+    # Tell the editor to go to that line and column. However, grab the focus
+    # back to us.
     def go_to_line(self, index):
-        if index.column() != 0 :
-            # dblclick on some column other than 0. We need a reference to
-            # column 0, and we get it from the index.
-            index = index.sibling(index.row(),0)
         self.view.setCurrentIndex( index )
         line_num = int( index.data(Qt.DisplayRole) )
         # get a column number the same way
@@ -347,6 +360,7 @@ class LoupeView(QWidget):
         if col_num > 0 :
             (pos, anchor) = edview.get_cursor_val()
             edview.show_position(pos+col_num)
+        self.view.setFocus(Qt.TabFocusReason)
 
     def _uic(self):
         # create the refresh button left-aligned
@@ -383,13 +397,7 @@ class LoupeView(QWidget):
         # create the table model
         self.model = LoupeModel(self.my_book,self)
         # create the table view, initialized for sorting
-        self.view = QTableView(self)
-        self.view.setSortingEnabled(True)
-        self.view.setCornerButtonEnabled(False)
-        self.view.setWordWrap(False)
-        self.view.setAlternatingRowColors(False)
-        self.view.setSelectionBehavior( QTableView.SelectRows )
-        self.view.setSelectionMode( QTableView.SingleSelection )
+        self.view = LoupeTable(self)
         # connect the view to the model
         self.view.setModel(self.model)
         # Add view to the layout with all stretch
