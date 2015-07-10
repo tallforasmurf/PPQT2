@@ -50,7 +50,7 @@ sw_regex         When checked, the find string is treated as a
                  Input to any Replace field is checked for syntax
                  and if bad (rare) gets a pink bg.
 
-sw_in_range  While False, the find range is the whole document.
+sw_in_range      While False, the find range is the whole document.
                  When toggled to True, if the current selection is
                  <100 characters, the user is warned and the switch
                  is set False. Otherwise the selection is set as the
