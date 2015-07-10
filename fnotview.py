@@ -125,11 +125,9 @@ COL_ALIGNMENT = {
     2 : (Qt.AlignRight | Qt.AlignVCenter),
     3 : (Qt.AlignRight | Qt.AlignVCenter),
     4 : (Qt.AlignRight | Qt.AlignVCenter),
-    5 : (Qt.AlignRight | Qt.AlignVCenter)
+    5 : (Qt.AlignLeft | Qt.AlignVCenter)
     }
-# Amount of text to display in the last column
-# TODO: can we compute this from the header???
-MAX_NOTE_TEXT = 40
+
 # Values that make us display a matched note with a green background
 SUSPICIOUS_NOTE_SIZE = 10
 SUSPICIOUS_NOTE_DISTANCE = 50
@@ -215,7 +213,7 @@ class FnoteTableModel(QAbstractTableModel):
             elif col == 2 : return self.anchor_line
             elif col == 3 : return self.note_line
             elif col == 4 : return self.note_size
-            else : return self.data_model.note_text(row, MAX_NOTE_TEXT)
+            else : return self.data_model.note_text(row)
         elif (role == Qt.TextAlignmentRole) :
             return COL_ALIGNMENT[col]
         elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
