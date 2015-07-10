@@ -1641,8 +1641,12 @@ Sort on Line# if you want to deal with the messages line by line.
 Sort on Message text if you want to deal with (or ignore)
 each group of similar messages.
 
-Double-click any line.
+Click on any line of the table.
 The edit cursor jumps to the line and column for that message.
+The current line is highlighted.
+The focus remains in the table.
+You can move up and down the table using the up- and down-arrow keys.
+When you find an error you want to fix, click on the current line in the Edit panel.
 
 At the top of the panel are five checkboxes.
 Use these to control five of the Bookloupe command-line options
