@@ -155,9 +155,9 @@ class TokenCodes ( object ) :
     SPAN_OFF  = 'SPAN_OFF' # ( 'SCAP_OFF', "sc" )
     DICT_ON   = 'DICT_ON'  # ( DICT_ON, 'fr_FR' ) redundant but useful
     DICT_OFF  = 'DICT_OFF' # ( DICT_OFF, "" ) always follows ITAL_OFF or SPAN_OFF
-    SUP       = 'SUP'      # ( SUP, "r" or "bt" ) Y^r O^bt^
-    SUB       = 'SUB'      # ( SUB, "2" or "maj" ) H_2_O
-    FNKEY     = 'FNKEY'    # ( FNKEY, 'A' or '17' ) from [A] or [17]
+    SUP       = 'SUP'      # ( SUP, "r" or "bt" ) Y^r, O^{bt}, 2^2, 10^{23}
+    SUB       = 'SUB'      # ( SUB, "2" or "maj" ) H_{2}O, key of A_{maj}
+    FNKEY     = 'FNKEY'    # ( FNKEY, 'A' or '17' ) from [A] or [17] BUT NOT [*] or [:u]
     LINK      = 'LINK'     # ( LINK, "idtarget|visible" eg "Page_255|255")
     TARGET    = 'TARGET'   # ( TARGET, "target" ) <id='target'>
     PLINE     = 'PLINE'    # ( PLINE, '25' ) poem line number
@@ -203,11 +203,10 @@ TOKEN_RXS = [
 ( TokenCodes.SCAP_OFF, r'\</(sc)\s*>' ),
 ( TokenCodes.SPAN_ON,  r'\<span\s*([^>]*)>' ),
 ( TokenCodes.SPAN_OFF, r'\</(span)\s*>' ),
-( TokenCodes.SUB,      r'_([\w--_]+)_' ),
-( TokenCodes.SUB,      r'_(.)' ),
-( TokenCodes.SUP,      r'\^(\w+)\^' ),
-( TokenCodes.SUP,      r'\^(.)' ),
-( TokenCodes.FNKEY,    r'\[(.)\]' ),
+( TokenCodes.SUB,      r'_\{(\w+)\}' ),
+( TokenCodes.SUP,      r'\^\{(\w+)\}' ),
+( TokenCodes.SUP,      r'\^(\w)' ),
+( TokenCodes.FNKEY,    r'\[(\w+)\]' ),
 ( TokenCodes.LINK,     r'\#(\d+)\#' ),
 ( TokenCodes.LINK,     r'\#(\w+)\:([^#]+)\#' ),
 ( TokenCodes.PLINE,    POEM_LNUM_EXPR ),
@@ -266,14 +265,8 @@ def tokenize( string ) :
                 # One-part link e.g. #255#, expand to 2 parts
                 groups = condense( mob.groups() )
                 text = ('#Page_' + groups[1] ) + ':' + groups[1] + '#'
-        elif code == 'TARGET' :
+        elif code in ( 'TARGET', 'FNKEY', 'SUP', 'SUB' ) :
             text = condense( mob.groups() )[1] # just the target string
-        elif code == 'FNKEY' :
-            text = text[1] # drop the brackets
-        elif code == 'SUP' :
-            text = text.replace( '^', '' )
-        elif code == 'SUB' :
-            text = text.replace( '_', '' )
         yield ( code, text )
 
 def poem_line_number( string ) :
@@ -413,7 +406,7 @@ class Dialog_Item(object) :
         # implementation of the dialog based on this info.
 
 if __name__ == '__main__':
-    s = 'Sub_xy_ ubs'
+    s = 'Gen^{rl} L^d'
     izer = tokenize( s )
     for (tok, en ) in izer :
         print( tok, en )
