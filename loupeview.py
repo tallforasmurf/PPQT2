@@ -151,7 +151,7 @@ class LoupeModel(QAbstractTableModel):
         return len(COL_HEADS) # i.e., 3
 
     def flags(self, index):
-        return Qt.ItemIsEnabled
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     def headerData(self, col, axis, role):
         global COL_HEADS, COL_TOOLTIPS
@@ -335,6 +335,7 @@ class LoupeView(QWidget):
             # dblclick on some column other than 0. We need a reference to
             # column 0, and we get it from the index.
             index = index.sibling(index.row(),0)
+        self.view.setCurrentIndex( index )
         line_num = int( index.data(Qt.DisplayRole) )
         # get a column number the same way
         index = index.sibling(index.row(),1)
@@ -387,6 +388,8 @@ class LoupeView(QWidget):
         self.view.setCornerButtonEnabled(False)
         self.view.setWordWrap(False)
         self.view.setAlternatingRowColors(False)
+        self.view.setSelectionBehavior( QTableView.SelectRows )
+        self.view.setSelectionMode( QTableView.SingleSelection )
         # connect the view to the model
         self.view.setModel(self.model)
         # Add view to the layout with all stretch
