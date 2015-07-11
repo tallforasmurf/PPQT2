@@ -4,7 +4,6 @@
 import re
 import yapps_runtime as runtime
 
-
 class DPDOCScanner(runtime.Scanner):
     patterns = [
         ('END', re.compile('\\$')),
@@ -47,7 +46,7 @@ class DPDOC(runtime.Parser):
             else: # == 'EMPTY'
                 EMPTY = self._scan('EMPTY', context=_context)
         XCLOSE = self._scan('XCLOSE', context=_context)
-        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'UCLOSE', 'BCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'BCLOSE', 'UCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def RIGHT(self, _parent=None):
@@ -60,7 +59,7 @@ class DPDOC(runtime.Parser):
             else: # == 'EMPTY'
                 EMPTY = self._scan('EMPTY', context=_context)
         RCLOSE = self._scan('RCLOSE', context=_context)
-        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'QCLOSE', 'QOPEN', 'UCLOSE', 'TOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'END', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'QCLOSE', 'QOPEN', 'TOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'UCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def CENTER(self, _parent=None):
@@ -73,7 +72,7 @@ class DPDOC(runtime.Parser):
             else: # == 'EMPTY'
                 EMPTY = self._scan('EMPTY', context=_context)
         CCLOSE = self._scan('CCLOSE', context=_context)
-        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'QCLOSE', 'QOPEN', 'UCLOSE', 'TOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'END', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'QCLOSE', 'QOPEN', 'TOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'UCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def TABLE(self, _parent=None):
@@ -86,7 +85,7 @@ class DPDOC(runtime.Parser):
             else: # == 'EMPTY'
                 EMPTY = self._scan('EMPTY', context=_context)
         TCLOSE = self._scan('TCLOSE', context=_context)
-        if self._peek('EMPTY', 'LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'BCLOSE', 'UCLOSE', 'ROPEN', 'COPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'BCLOSE', 'ROPEN', 'COPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'UCLOSE', 'QCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def POEM(self, _parent=None):
@@ -99,7 +98,7 @@ class DPDOC(runtime.Parser):
             else: # == 'EMPTY'
                 EMPTY = self._scan('EMPTY', context=_context)
         PCLOSE = self._scan('PCLOSE', context=_context)
-        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'QCLOSE', 'UCLOSE', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'END', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'QCLOSE', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'UCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def PARA(self, _parent=None):
@@ -128,24 +127,28 @@ class DPDOC(runtime.Parser):
             EMPTY = self._scan('EMPTY', context=_context)
             while 1:
                 PARA = self.PARA(_context)
-                if self._peek('LINE', 'EMPTY', 'UCLOSE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'END', 'NCLOSE', context=_context) != 'LINE': break
+                if self._peek('LINE', 'EMPTY', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'UCLOSE', 'QCLOSE', 'END', 'NCLOSE', context=_context) != 'LINE': break
             EMPTY = self._scan('EMPTY', context=_context)
             close_head(2)
 
     def ULIST(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'ULIST', [])
         UOPEN = self._scan('UOPEN', context=_context)
-        while self._peek('UCLOSE', 'LINE', 'EMPTY', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'END', 'NCLOSE', context=_context) == 'LINE':
-            PARA = self.PARA(_context)
+        while self._peek('UCLOSE', 'LINE', 'EMPTY', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'END', 'NCLOSE', context=_context) in ['LINE', 'EMPTY']:
+            _token = self._peek('LINE', 'EMPTY', context=_context)
+            if _token == 'LINE':
+                PARA = self.PARA(_context)
+            else: # == 'EMPTY'
+                EMPTY = self._scan('EMPTY', context=_context)
         UCLOSE = self._scan('UCLOSE', context=_context)
-        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'UCLOSE', 'BCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'BCLOSE', 'UCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def QUOTE(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'QUOTE', [])
         QOPEN = self._scan('QOPEN', context=_context)
         while 1:
-            _token = self._peek('LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'QOPEN', context=_context)
+            _token = self._peek('LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'EMPTY', 'QOPEN', context=_context)
             if _token == 'LINE':
                 PARA = self.PARA(_context)
             elif _token == 'POPEN':
@@ -156,18 +159,20 @@ class DPDOC(runtime.Parser):
                 CENTER = self.CENTER(_context)
             elif _token == 'UOPEN':
                 ULIST = self.ULIST(_context)
-            else: # == 'QOPEN'
+            elif _token == 'QOPEN':
                 QUOTE = self.QUOTE(_context)
-            if self._peek('LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'QOPEN', 'QCLOSE', 'EMPTY', 'UCLOSE', 'TOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'END', 'NCLOSE', context=_context) not in ['LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'QOPEN']: break
+            else: # == 'EMPTY'
+                EMPTY = self._scan('EMPTY', context=_context)
+            if self._peek('LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'EMPTY', 'QOPEN', 'QCLOSE', 'TOPEN', 'BCLOSE', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'UCLOSE', 'END', 'NCLOSE', context=_context) not in ['LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'EMPTY', 'QOPEN']: break
         QCLOSE = self._scan('QCLOSE', context=_context)
-        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'UCLOSE', 'BCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'LINE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'BCLOSE', 'UCLOSE', 'END', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def FIGURE(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'FIGURE', [])
         IOPEN = self._scan('IOPEN', context=_context)
         while 1:
-            _token = self._peek('LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', context=_context)
+            _token = self._peek('LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'EMPTY', context=_context)
             if _token == 'LINE':
                 PARA = self.PARA(_context)
             elif _token == 'POPEN':
@@ -176,12 +181,14 @@ class DPDOC(runtime.Parser):
                 TABLE = self.TABLE(_context)
             elif _token == 'QOPEN':
                 QUOTE = self.QUOTE(_context)
-            else: # == 'UOPEN'
+            elif _token == 'UOPEN':
                 ULIST = self.ULIST(_context)
-            if self._peek('LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'BCLOSE', 'EMPTY', 'UCLOSE', 'ROPEN', 'COPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'END', 'NCLOSE', context=_context) not in ['LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN']: break
+            else: # == 'EMPTY'
+                EMPTY = self._scan('EMPTY', context=_context)
+            if self._peek('LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'EMPTY', 'BCLOSE', 'ROPEN', 'COPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'UCLOSE', 'QCLOSE', 'END', 'NCLOSE', context=_context) not in ['LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'EMPTY']: break
         BCLOSE = self._scan('BCLOSE', context=_context)
         close_note()
-        if self._peek('EMPTY', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'UCLOSE', 'BCLOSE', 'END', 'QCLOSE', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'BCLOSE', 'END', 'QCLOSE', 'UCLOSE', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def SNOTE(self, _parent=None):
@@ -189,17 +196,17 @@ class DPDOC(runtime.Parser):
         SOPEN = self._scan('SOPEN', context=_context)
         while 1:
             PARA = self.PARA(_context)
-            if self._peek('LINE', 'BCLOSE', 'EMPTY', 'UCLOSE', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'END', 'NCLOSE', context=_context) != 'LINE': break
+            if self._peek('LINE', 'BCLOSE', 'EMPTY', 'POPEN', 'ROPEN', 'COPEN', 'UOPEN', 'TOPEN', 'QOPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'UCLOSE', 'QCLOSE', 'END', 'NCLOSE', context=_context) != 'LINE': break
         BCLOSE = self._scan('BCLOSE', context=_context)
         close_note()
-        if self._peek('EMPTY', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'UCLOSE', 'BCLOSE', 'END', 'QCLOSE', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'BCLOSE', 'END', 'QCLOSE', 'UCLOSE', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def FNOTE(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'FNOTE', [])
         FOPEN = self._scan('FOPEN', context=_context)
         while 1:
-            _token = self._peek('LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', context=_context)
+            _token = self._peek('LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'EMPTY', context=_context)
             if _token == 'LINE':
                 PARA = self.PARA(_context)
             elif _token == 'POPEN':
@@ -208,18 +215,20 @@ class DPDOC(runtime.Parser):
                 TABLE = self.TABLE(_context)
             elif _token == 'QOPEN':
                 QUOTE = self.QUOTE(_context)
-            else: # == 'UOPEN'
+            elif _token == 'UOPEN':
                 ULIST = self.ULIST(_context)
-            if self._peek('LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'BCLOSE', 'EMPTY', 'UCLOSE', 'ROPEN', 'COPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'QCLOSE', 'END', 'NCLOSE', context=_context) not in ['LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN']: break
+            else: # == 'EMPTY'
+                EMPTY = self._scan('EMPTY', context=_context)
+            if self._peek('LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'EMPTY', 'BCLOSE', 'ROPEN', 'COPEN', 'XOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'TBREAK', 'UCLOSE', 'QCLOSE', 'END', 'NCLOSE', context=_context) not in ['LINE', 'POPEN', 'TOPEN', 'QOPEN', 'UOPEN', 'EMPTY']: break
         BCLOSE = self._scan('BCLOSE', context=_context)
         close_note()
-        if self._peek('EMPTY', 'FOPEN', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'NCLOSE', 'UCLOSE', 'BCLOSE', 'END', 'QCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'FOPEN', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'NCLOSE', 'BCLOSE', 'END', 'QCLOSE', 'UCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def FZONE(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'FZONE', [])
         NOPEN = self._scan('NOPEN', context=_context)
-        while self._peek('NCLOSE', 'EMPTY', 'FOPEN', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'UCLOSE', 'BCLOSE', 'END', 'QCLOSE', context=_context) in ['EMPTY', 'FOPEN']:
+        while self._peek('NCLOSE', 'EMPTY', 'FOPEN', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'BCLOSE', 'END', 'QCLOSE', 'UCLOSE', context=_context) in ['EMPTY', 'FOPEN']:
             _token = self._peek('EMPTY', 'FOPEN', context=_context)
             if _token == 'EMPTY':
                 HEAD = self.HEAD(_context)
@@ -227,7 +236,7 @@ class DPDOC(runtime.Parser):
             else: # == 'FOPEN'
                 FNOTE = self.FNOTE(_context)
         NCLOSE = self._scan('NCLOSE', context=_context)
-        if self._peek('EMPTY', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'UCLOSE', 'BCLOSE', 'END', 'QCLOSE', 'NCLOSE', context=_context) == 'EMPTY':
+        if self._peek('EMPTY', 'XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'BCLOSE', 'END', 'QCLOSE', 'UCLOSE', 'NCLOSE', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
 
     def NOFILLS(self, _parent=None):
@@ -270,7 +279,7 @@ class DPDOC(runtime.Parser):
                 ULIST = self.ULIST(_context)
             else: # == 'TBREAK'
                 TBREAK = self._scan('TBREAK', context=_context)
-            if self._peek('XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'EMPTY', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'END', 'UCLOSE', 'BCLOSE', 'QCLOSE', 'NCLOSE', context=_context) not in ['XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'EMPTY', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK']: break
+            if self._peek('XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'EMPTY', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK', 'END', 'BCLOSE', 'QCLOSE', 'UCLOSE', 'NCLOSE', context=_context) not in ['XOPEN', 'ROPEN', 'COPEN', 'TOPEN', 'POPEN', 'LINE', 'EMPTY', 'QOPEN', 'IOPEN', 'SOPEN', 'FOPEN', 'NOPEN', 'UOPEN', 'TBREAK']: break
         while self._peek('END', 'EMPTY', context=_context) == 'EMPTY':
             EMPTY = self._scan('EMPTY', context=_context)
         END = self._scan('END', context=_context)

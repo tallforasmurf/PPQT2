@@ -45,12 +45,12 @@ parser DPDOC:
                    | EMPTY EMPTY PARA+ EMPTY {{ close_head(2) }}
                    )
 
-    rule ULIST:     UOPEN PARA* UCLOSE EMPTY?
-    rule QUOTE:     QOPEN ( PARA | POEM | RIGHT | CENTER | ULIST | QUOTE )+ QCLOSE EMPTY?
-    rule FIGURE:    IOPEN ( PARA | POEM | TABLE | QUOTE | ULIST )+ BCLOSE {{ close_note() }} EMPTY?
+    rule ULIST:     UOPEN ( PARA | EMPTY )* UCLOSE EMPTY?
+    rule QUOTE:     QOPEN ( PARA | POEM | RIGHT | CENTER | ULIST | QUOTE | EMPTY )+ QCLOSE EMPTY?
+    rule FIGURE:    IOPEN ( PARA | POEM | TABLE | QUOTE | ULIST | EMPTY )+ BCLOSE {{ close_note() }} EMPTY?
     rule SNOTE:     SOPEN PARA+ BCLOSE {{ close_note() }} EMPTY?
-    rule FNOTE:     FOPEN ( PARA | POEM | TABLE | QUOTE | ULIST )+ BCLOSE {{ close_note() }} EMPTY?
-    rule FZONE:     NOPEN ( HEAD {{ check_head() }} | FNOTE )* NCLOSE EMPTY?
+    rule FNOTE:     FOPEN ( PARA | POEM | TABLE | QUOTE | ULIST | EMPTY )+ BCLOSE {{ close_note() }} EMPTY?
+    rule FZONE:     NOPEN ( HEAD {{ check_head() }} | FNOTE | EMPTY )* NCLOSE EMPTY?
     rule NOFILLS:   ( NOFILL | RIGHT | CENTER | TABLE | POEM )
 
     rule goal:  EMPTY*

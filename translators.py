@@ -637,14 +637,18 @@ def open_para():
     unit.tok = XU.Events.OPEN_PARA
     WORK_UNITS.insert( len(WORK_UNITS)-1, unit)
 
+SAVED_CLOSE = None
 def close_para():
-    global WORK_UNITS
+    global WORK_UNITS, SAVED_CLOSE
     '''
     end of para, append a PCLOSE action.
     '''
     unit = WORK_UNITS[-1].copy()
     unit.tok = XU.Events.CLOSE_PARA
     WORK_UNITS.append(unit)
+    if SAVED_CLOSE :
+        WORK_UNITS.append(SAVED_CLOSE)
+        SAVED_CLOSE = None
 
 def open_head():
     global WORK_UNITS, HEAD_UNIT
@@ -816,6 +820,7 @@ class DocScanner( dpdocsyntax.DPDOCScanner ) :
             unit.stuff['R'] = int( mob.group(1) )
 
     def grab_input( self ) :
+        global SAVED_CLOSE
         if self.pos < len( self.input ) :
             return # some pushed tokens to read still
         # parser needs another token.
@@ -922,7 +927,8 @@ class DocScanner( dpdocsyntax.DPDOCScanner ) :
 
         # If looking for the end of a bracket-group and this line ends in
         # ']', drop the bracket from the line text passed to the Translator,
-        # and push the E and ] tokens for the parser.
+        # and push the E and ] tokens for the parser. (The E closes any
+        # paragraph that might be working; the ] closes the group.)
         if self.find_bracket :
             if line.endswith(']') :
                 if line.strip() == ']' and WORK_UNITS[-1].tok != 'L' :
@@ -936,7 +942,18 @@ class DocScanner( dpdocsyntax.DPDOCScanner ) :
                 # either way, no mo brackets expected
                 self.find_bracket = False
 
-        WORK_UNITS.append( unit )
+        # OK, this is a kludge. If this is a close-quote or close-list, push
+        # an extra E ahead of it. This will close any PARA that might be
+        # open, so the user does not have to remember to put a blank line
+        # ahead of every Q/ or U/. However, we also want to append the
+        # QCLOSE/UCLOSE work unit we just built, but only after the PCLOSE is
+        # pushed by close_para() above.
+        if tok in 'qu' and WORK_UNITS[-1].tok =='L' :
+            # closing a quote or list with a paragraph working.
+            self.input = 'E' + tok # input is Eq or Eu
+            SAVED_CLOSE = unit # QCLOSE/UCLOSE unit deferred
+        else :
+            WORK_UNITS.append( unit )
 
     def get_pos( self ) :
         return ( '', 1, self.line_number )
