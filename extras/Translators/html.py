@@ -124,7 +124,7 @@ def initialize( prolog, body, epilog, facts, pages ) :
 # are written as lambdas that yield the needed expression. The lambda is
 # evaluated when called, so it gets the current value of ttext.
 #
-# In two cases it is necessary to do something more than a simple format;
+# In three cases it is necessary to do something more than a simple format;
 # these are moved to functions, and the write to BODY is in the functions.
 #
 # ...and then I learned: types.LambdaType == types.FunctionType! WTF?
@@ -154,10 +154,34 @@ def do_fnkey( ttext, lnum ) :
     FNKEYS.add( ttext )
     BODY << fnanchor.format( ttext )
 
+def do_brkts( ttext, lnum ) :
+    global BODY
+
+    # brkts is anything inside [brackets] with a colon, this includes all
+    # transliterations and the ad-hoc PPQT [typo:original:corrected] markup.
+    # We are assured at least one colon, often there are two.
+
+    [code, *rest] = ttext.split(':') # rest is one or two things
+    if code.strip().lower() == 'typo' :
+        # do not assume the user did it right
+        orig = rest[0] if len(rest) else '?'
+        corr = rest[1] if len(rest)>1 else '?'
+        msg = '<ins class="correction" title="Original: {}">{}</ins>'.format( orig, corr )
+    else :
+        # if not [typo: assume a translieration e.g. [Greek:biblio:βιβλίο] or
+        # perhaps [Cyrillic:kinga:книга] -- or just [Greek:biblio], no UTF.
+        xlit = rest[0] if len(rest) else '?'
+        if len(rest)>1 :
+            unicode = rest[1]
+            msg = '<span title="{}:{}">{}</span>'.format( code, xlit, unicode )
+        else:
+            msg = '<span title="{}">{}</span>'.format( code, xlit )
+    BODY.writeLine(msg)
+
 def do_link( ttext, lnum ) :
     global BODY
-    [target,link] = ttext[1:-1].split(':')
-    BODY << '<a href="#{}">{}</a>'.format( target, link )
+    [ visible, target ] = ttext.split(':')
+    BODY << '<a href="#{}">{}</a>'.format( target, visible )
 
 ACTIONS = {
     XU.TokenCodes.ITAL_ON   : ('t', None) ,
@@ -173,6 +197,7 @@ ACTIONS = {
     XU.TokenCodes.SUP       : ('l', lambda ttext : '<sup>' + ttext + '</sup>' ) ,
     XU.TokenCodes.SUB       : ('l', lambda ttext : '<sub>' + ttext + '</sub>' ) ,
     XU.TokenCodes.FNKEY     : ('f', do_fnkey ) ,
+    XU.TokenCodes.BRKTS     : ('f', do_brkts ) ,
     XU.TokenCodes.LINK      : ('f', do_link ) ,
     XU.TokenCodes.TARGET    : ('l', lambda ttext : '<a id="{}"></a>'.format( ttext ) ) ,
     XU.TokenCodes.PLINE     : ('z', None) , # cannot occur, do_poem_line eats it
@@ -851,6 +876,14 @@ blockquote {
    link back to the anchor. */
 .footnote a {
 	text-decoration:none; /* take the underline off it */
+}
+/* ************************************************************************
+ * Mark corrected typo with:
+ *  <ins class="correction" title="Original: typu">typo</ins>
+ * ********************************************************************** */
+ins.correction {
+	text-decoration:none; /* replace default underline.. */
+	border-bottom: thin dotted gray; /* ..with delicate gray line */
 }
 /* ************************************************************************
  * Style visible page numbers in right margin. Pagenum is inserted as
