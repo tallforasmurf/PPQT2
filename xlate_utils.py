@@ -263,15 +263,15 @@ def tokenize( string ) :
                 code = TokenCodes.DICT_OFF
                 text = ''
                 dict_start = None
-        else:
-            groups = condense( mob.groups() ) # all others need access to group
-            if code == 'LINK' :
-                text = groups[1]
-                if not ':' in text :
+        elif code in ( 'LINK', 'TARGET', 'FNKEY', 'SUP', 'SUB', 'BRKTS', 'PLINE' ) :
+            # for these we want to pass only the items of group(1) if the regex
+            # had been recognized on its own, but it was part of a huge list of
+            # regexes so mob.groups() is a long list, mostly of Nones.
+            groups = condense( mob.groups() )
+            text = groups[1] # just the target/key/sup/sub/bracketed string
+            if code == 'LINK' and (not ':' in text) :
                     # One-part link e.g. #255#, expand to 2 parts, 255:Page_255
                     text = text + ':' + 'PAGE_' + text
-        elif code in ( 'TARGET', 'FNKEY', 'SUP', 'SUB', 'BRKTS', 'PLINE' ) :
-            text = groups[1] # just the target/key/sup/sub/bracketed string
         yield ( code, text )
 
 def poem_line_number( string ) :
