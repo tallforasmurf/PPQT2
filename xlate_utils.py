@@ -159,7 +159,8 @@ class TokenCodes ( object ) :
     SUP       = 'SUP'      # ( SUP, "r" or "bt" ) Y^r, O^{bt}, 2^2, 10^{23}
     SUB       = 'SUB'      # ( SUB, "2" or "maj" ) H_{2}O, key of A_{maj}
     FNKEY     = 'FNKEY'    # ( FNKEY, 'A' or '17' ) from [A] or [17] BUT NOT [*] or [:u]
-    LINK      = 'LINK'     # ( LINK, "idtarget|visible" eg "Page_255|255")
+    BRKTS     = 'BRKTS'    # ( BRKTS, "Greek:book:βιβλίο" or "typo:original:correct" )
+    LINK      = 'LINK'     # ( LINK, "visible:target" eg "255:Page_255")
     TARGET    = 'TARGET'   # ( TARGET, "target" ) <id='target'>
     PLINE     = 'PLINE'    # ( PLINE, '25' ) poem line number
     SPACE     = 'SPACE'    # ( SPACE, " ")
@@ -207,9 +208,10 @@ TOKEN_RXS = [
 ( TokenCodes.SUB,      r'_\{(\w+)\}' ),
 ( TokenCodes.SUP,      r'\^\{(\w+)\}' ),
 ( TokenCodes.SUP,      r'\^(\w)' ),
+( TokenCodes.BRKTS,    r'\[(\w\w+\:[^\]\n]+)\]' ),
 ( TokenCodes.FNKEY,    r'\[(\w+)\]' ),
 ( TokenCodes.LINK,     r'\#(\d+)\#' ),
-( TokenCodes.LINK,     r'\#(\w+)\:([^#]+)\#' ),
+( TokenCodes.LINK,     r'\#([^:]+?\:[^#]+?)\#' ),
 ( TokenCodes.PLINE,    POEM_LNUM_EXPR ),
 ( TokenCodes.PUNCT,    r'\p{P}+' ),
 ( TokenCodes.SPACE,    r' +' ),
@@ -261,13 +263,15 @@ def tokenize( string ) :
                 code = TokenCodes.DICT_OFF
                 text = ''
                 dict_start = None
-        elif code == 'LINK' :
-            if not ':' in text :
-                # One-part link e.g. #255#, expand to 2 parts
-                groups = condense( mob.groups() )
-                text = ('#Page_' + groups[1] ) + ':' + groups[1] + '#'
-        elif code in ( 'TARGET', 'FNKEY', 'SUP', 'SUB' ) :
-            text = condense( mob.groups() )[1] # just the target string
+        else:
+            groups = condense( mob.groups() ) # all others need access to group
+            if code == 'LINK' :
+                text = groups[1]
+                if not ':' in text :
+                    # One-part link e.g. #255#, expand to 2 parts, 255:Page_255
+                    text = text + ':' + 'PAGE_' + text
+        elif code in ( 'TARGET', 'FNKEY', 'SUP', 'SUB', 'BRKTS', 'PLINE' ) :
+            text = groups[1] # just the target/key/sup/sub/bracketed string
         yield ( code, text )
 
 def poem_line_number( string ) :
