@@ -94,6 +94,7 @@ def translate( event_generator ) :
         XU.Events.OPEN_FNOTE    : None,
         XU.Events.CLOSE_FNOTE   : None,
         XU.Events.PAGE_BREAK    : note_page_break ,
+        XU.Events.T_BREAK       : None,
         XU.Events.OPEN_FNLZ     : None,
         XU.Events.CLOSE_FNLZ    : None,
         XU.Events.OPEN_TABLE    : None,
