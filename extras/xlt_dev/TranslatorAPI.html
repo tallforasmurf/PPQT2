@@ -490,63 +490,23 @@ The events for the following Side note:</p>
 The prefix <code>[Sidenote:</code> and the closing <code>]</code> are removed.
 (Again, you can resolve any doubt about the sequence and content of events
 by translating some trial code with the Testing Translator.)</p>
-
-<h3 id="parsing-a-line">Parsing a line</h3>
-<p>Possibly the translator will simply write the text to the body file. But some
-translators need to change the inline markup for sub-parts such as:</p>
+<p>For some Translators, it is sufficient to just copy the text of the
+line to the output file, <code>BODY.writeLine(text)</code>.
+However, other Translators need to examine the parts of the line for the
+different special markups that can appear within a line, including</p>
 <ul>
-<li>in-line markup like &lt;i&gt; and &lt;/sc&gt;</li>
-<li>superscripts and subscripts</li>
-<li>footnote anchors[A]</li>
-<li>links like #255#</li>
-<li>link targets (PPQT's target format is &lt;id='name'&gt;)</li>
+<li>Italic, bold and smallcap markups</li>
+<li>Subscript and superscript markups</li>
+<li>Footnote keys like[A]</li>
+<li>Changes of spelling dict as in <code>&lt;span lang='fr_FR'>Auvoir&lt;/span></code></li>
+<li>Links; the PPQT format is <code>#Africa:Page_481#</code></li>
+<li>Link targets; the PPQT format is <code>&lt;id='target'></code></li>
 </ul>
-<p>The function <code>XU.tokenize(</code> <em>text_string</em> <code>)</code> is an iterator.
-It accepts a string of text.
-The text may come from a single LINE event, or might be the
-collected text from several events, such as all the lines of a paragraph.
-It breaks up the text and returns its parts as tuples with a code
-for the type of token, and the text of the token.
-The complete list of tokens is:</p>
-<pre><code>class TokenCodes ( object ) :
-    ITAL_ON   = 'ITAL_ON'  # ( 'ITAL_ON, "i" ) or ('ITAL_ON', "i lang='fr_FR'")
-    ITAL_OFF  = 'ITAL_OFF' # ( 'ITAL_OFF', "i" )
-    BOLD_ON   = 'BOLD_ON'  # ( 'BOLD_ON, "b" )
-    BOLD_OFF  = 'BOLD_OFF' # ( 'BOLD_OFF', "b" )
-    SCAP_ON   = 'SCAP_ON'  # ( 'SCAP_ON, "sc" )
-    SCAP_OFF  = 'SCAP_OFF' # ( 'SCAP_OFF', "sc" )
-    SPAN_ON   = 'SPAN_ON'  # ( 'SPAN_ON, "span" ) or ('SPAN_ON', "span lang='en_GB')
-    SPAN_OFF  = 'SPAN_OFF' # ( 'SCAP_OFF', "sc" )
-    DICT_ON   = 'DICT_ON'  # ( DICT_ON, 'fr_FR' ) redundant but useful
-    DICT_OFF  = 'DICT_OFF' # ( DICT_OFF, "" ) always follows ITAL_OFF or SPAN_OFF
-    SUP       = 'SUP'      # ( SUP, "r" or "rl" or "23" ) Y^r Gen^{rl} 10^{23}
-    SUB       = 'SUB'      # ( SUB, "2" or "maj" ) H_{2}O or A_{maj}
-    FNKEY     = 'FNKEY'    # ( FNKEY, 'A' ) from [A]
-    LINK      = 'LINK'     # ( LINK, "idtarget:visible" eg "Page_255:Africa")
-    TARGET    = 'TARGET'   # ( TARGET, "target" )
-    PLINE     = 'PLINE'    # ( PLINE, '25' ) poem line number
-    SPACE     = 'SPACE'    # ( SPACE, " ")
-    WORD      = 'WORD'     # ( WORD, "M[:o]ther-in-law" )
-    PUNCT     = 'PUNCT'    # ( PUNCT, '!', ';', '.' etc )
-    OTHER     = 'OTHER'    # ( OTHER, '$' maybe? '*'? )
-</code></pre>
-<p>Thus you can handle the logical
-parts of a string of text with code along these lines (for HTML)</p>
-<pre><code>izer = XU.tokenize( some_text )
-for (toktype, token) in izer :
-    if toktype == XU.TokenCodes.Word :
-        body &lt;&lt; token
-    elif toktype == XU.TokenCodes.Space :
-        body &lt;&lt; ' '
-    elif toktype == XU.TokenCodes.SUP :
-        body &lt;&lt; '&lt;sup&gt;' + token + '&lt;/sup&gt;'
-    elif toktype == XU.TokenCodes.TARGET :
-        body &lt;&lt; '&lt;a id="' + token + '"&gt;&lt;/a&gt;'
-    ...
-</code></pre>
-<p>To see exactly what is returned as <code>toktype</code> and <code>token</code>
-in that loop, use the Testing Translator with the Tokenize option.</p>
-
+...and of course, individual words, spaces and punctuation if the
+output text is justfied.
+</p>
+<p>For this purpose there is the <code>XU.tokenize()</code> function.
+It is documented <a href="#parsing-a-line">at the end of this section</a>.</p>
 <h2 id="the-paragraph">The Paragraph</h2>
 <p>A paragraph is a group of lines that, if the output is "reflowed", should be
 reflowed as a group. This includes body paragraphs but also includes headings.</p>
@@ -761,6 +721,139 @@ However the Translator only needs to process the open and close events for rows,
 and put the table out in whatever the target format requires.
 </p>
 
+<h2 id="parsing-a-line">Parsing a line</h2>
+<p>The function <code>XU.tokenize(</code> <em>text_string</em> <code>)</code>
+accepts a string of text. This might be the text of a single LINE event,
+or it might be all the collected lines of a PARAgraph.
+</p><p>
+The return value is an iterator.
+The iterator yields a stream of tokens, each one a tuple with a code
+for the type of token, and the text of the token.
+The complete list of tokens is:</p>
+<pre><code>class TokenCodes ( object ) :
+    ITAL_ON   = 'ITAL_ON'  # ( 'ITAL_ON, "i" )
+    ITAL_OFF  = 'ITAL_OFF' # ( 'ITAL_OFF', "i" )
+    BOLD_ON   = 'BOLD_ON'  # ( 'BOLD_ON, "b" )
+    BOLD_OFF  = 'BOLD_OFF' # ( 'BOLD_OFF', "b" )
+    SCAP_ON   = 'SCAP_ON'  # ( 'SCAP_ON, "sc" )
+    SCAP_OFF  = 'SCAP_OFF' # ( 'SCAP_OFF', "sc" )
+    SPAN_ON   = 'SPAN_ON'  # ( 'SPAN_ON, "span" )
+    SPAN_OFF  = 'SPAN_OFF' # ( 'SCAP_OFF', "sc" )
+    DICT_ON   = 'DICT_ON'  # ( DICT_ON, 'fr_FR' )
+    DICT_OFF  = 'DICT_OFF' # ( DICT_OFF, "" )
+    SUP       = 'SUP'      # ( SUP, "r" or "bt" ) Y^r, O^{bt}, 2^2, 10^{23}
+    SUB       = 'SUB'      # ( SUB, "2" or "maj" ) H_{2}O, key of A_{maj}
+    FNKEY     = 'FNKEY'    # ( FNKEY, 'A' or '17' ) from [A] or [17] BUT NOT [*] or [:u]
+    BRKTS     = 'BRKTS'    # ( BRKTS, "Greek:book:βιβλίο" or "typo:original:correct" )
+    LINK      = 'LINK'     # ( LINK, "idtarget|visible" eg "Page_255|255")
+    TARGET    = 'TARGET'   # ( TARGET, "target" ) <id='target'>
+    PLINE     = 'PLINE'    # ( PLINE, '25' ) poem line number
+    SPACE     = 'SPACE'    # ( SPACE, " ")
+    WORD      = 'WORD'     # ( WORD, "M[:o]ther-in-law" )
+    PUNCT     = 'PUNCT'    # ( PUNCT, '!', ';', '.' etc )
+    OTHER     = 'OTHER'    # ( OTHER, '$' maybe? '*'? )
+</code></pre>
+<p>Using this iterator you can handle the logical
+units of a string of text with code along these lines (for a
+hypothetical HTML Translator):</p>
+<pre><code>izer = XU.tokenize( some_text )
+for (toktype, token) in izer :
+    if toktype == XU.TokenCodes.Word :
+        BODY &lt;&lt; token
+    elif toktype == XU.TokenCodes.Space :
+        BODY &lt;&lt; ' '
+    elif toktype == XU.TokenCodes.SUP :
+        BODY &lt;&lt; '&lt;sup&gt;' + token + '&lt;/sup&gt;'
+    elif toktype == XU.TokenCodes.TARGET :
+        body &lt;&lt; '&lt;a id="' + token + '"&gt;&lt;/a&gt;'
+    ...
+</code></pre>
+<p>Here is a discussion of the codes and token types that can be returned.</p>
+<dl>
+<dt>ITAL_ON</dt>
+<dd>The input was <code>&lt;i></code>. The token is the full contents of
+the markup, typically only <code>i</code>.</dd>
+<dt>ITAL_OFF</dt>
+<dd>The input was <code>&lt;/i></code>. The token is the full contents of
+the markup, typically only <code>i</code>.</dd>
+<dt>BOLD_ON</dt>
+<dd>The input was <code>&lt;b></code>. The token is the full contents of
+the markup, typically only <code>b</code>.</dd>
+<dt>BOLD_OFF</dt>
+<dd>The input was <code>&lt;/b></code>. The token is the full contents of
+the markup, typically only <code>b</code>.</dd>
+<dt>SCAP_ON</dt>
+<dd>The input was <code>&lt;sc></code>. The token is the full contents of
+the markup, typically only <code>sc</code>.</dd>
+<dt>SCAP_OFF</dt>
+<dd>The input was <code>&lt;/b></code>. The token is the full contents of
+the markup, typically only <code>sc</code>.</dd>
+<dt>SPAN_ON</dt>
+<dd>The input was <code>&lt;span></code>. The token is the full contents of
+the markup, perhaps <code>span</code> but often with at least
+a class, <code>span class='smcap'</code>. The user may put
+alternate spellcheck dictionaries in spans, <code>span lang='fr_FR'</code>;
+however when this is done, it is called out with a separate code.</dd>
+<dt>DICT_ON</dt>
+<dd>The user has specified an alternate spellcheck dictionary in some
+markup, typically <code>&lt;span></code>. The text is the dictionary name
+from the <code>lang=</code> property, for example <code>fr_FR</code> or
+<code>de_DE</code>. This code is emitted <em>before</em> the code
+for the markup, for example before the SPAN_ON code.</dd>
+<dt>DICT_OFF</dt>
+<dd>The preceding code, typically SPAN_OFF, marked the end of the use
+of an alternate dictionary. You can use DICT_ON and DICT_OFF as signals
+to manage spelling dictionaries, without having to parse the <code>lang=</code>
+attributes that might appear in any HTML-style markup.</dd>
+<dt>SUP</dt>
+<dd>The input was, for example, part of <code>Y^r O^{bdt} S^{vt}</code>.
+The token text is the elevated character(s). The markup characters
+<code>^{}</code> are not passed.</dd>
+<dt>SUB</dt>
+<dd>The input was, for example, part of <code>H_{2}SO_{4}</code>.
+The token text is the lowered character(s). The markup characters
+<code>_{}</code> are not passed.</dd>
+<dt>FNKEY</dt>
+<dd>The input is a footnote anchor <code>[A]</code> or <code>[ix]</code>
+or <code>[17]</code>. Only the key character(s) are passed.</dd>
+<dt>BRKTS</dt>
+<dd>The input is a bracketed sequence that begins with a word of at least
+two letters, followed by at least once colon. This captures
+for example <code>[Greek:biblio]</code> or <code>[Greek:biblio:βιβλίο]</code>.
+The PPQT user is told to use <code>[typo:original:corrected]</code> to 
+mark typos; the HTML translator converts these to a span showing the corrected
+word with a pale underline and the original as a popup title.
+</dd>
+<dt>LINK</dt>
+<dd>The input is the PPQT ad-hoc markup for a link (which is copied from Ppgen), 
+<code>#visible text:target-id#</code>. The <code>#</code>s are dropped.
+There is always a colon in the text. PPQT (following Ppgen) tells the user to
+use <code>#234#</code> as shorthand for <code>#234:Page_234#</code>.
+The tokenize() code does this expansion when there is no colon.</dd>
+<dt>TARGET</dt>
+<dd>The input is the PPQT ad-hoc markup for a link target, <code>&lt;id='target-string'</code>.
+Only the <code>target-string</code> is passed.</dd>
+<dt>PLINE</dt>
+<dd>The input is a string of one or more digits, preceded by two or more spaces,
+at the very end of the input text; that is, a poem line number.
+Only the digits are passed.</dd>
+<dt>SPACE</dt>
+<dd>The input is one or more white-space characters. (If the user has
+done the PP job properly, there will never be more than one consecutive
+space in a normal paragraph.)</dd>
+<dt>WORD</dt>
+<dd>The input is a sequence of 1 or more word characters. It can include
+hyphens and apostrophes. It can also include DP character markups such as
+<code>[~a]</code> or <code>[:u]</code>.</dd>
+<dt>PUNCT</dt>
+<dd>The text is a character that fits the Unicode definition of a punctuation
+character.</dd>
+<dt>OTHER</dt>
+<dd>The text is a character that didn't match any of the preceding tests.</p>
+</dl>
+<p>To see exactly what is returned as <code>toktype</code> and <code>token</code>,
+apply the Testing Translator to some sample text with the Tokenize option on.</p>
+
 <h1 id="finalizing">Finalizing</h1>
 <p>When the translate() function returns True, PPQT calls the finalize() function.
 It may write material to any of the files, prolog, body, or epilog.</p>
@@ -769,6 +862,7 @@ the positions of the body file, this is the place to also update the
 list with the length of data in the prolog file.</p>
 <p>If the Translator has been collecting diagnostics, this would be the place
 to write them to the epilog file.</p>
+
 
 
 </body>
