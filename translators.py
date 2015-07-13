@@ -628,14 +628,18 @@ HEAD_UNIT = None # last HEAD2/3 unit appended, see check_head below.
 # in that namespace until we insert them.
 
 def open_para():
-    global WORK_UNITS
+    global WORK_UNITS, HEAD_UNIT
     '''
     last work unit was a LINE which starts a Paragraph, need to insert a
-    POPEN action ahead of it.
+    POPEN action ahead of it. If this is also the paragraph that starts
+    a heading, stick a copy of the LINE's text into it.
     '''
     unit = WORK_UNITS[-1].copy()
     unit.tok = XU.Events.OPEN_PARA
     WORK_UNITS.insert( len(WORK_UNITS)-1, unit)
+    if HEAD_UNIT :
+        if HEAD_UNIT.text == '' :
+            HEAD_UNIT.text = WORK_UNITS[-1].text
 
 SAVED_CLOSE = None
 def close_para():
@@ -670,6 +674,7 @@ def close_head(level):
     unit = HEAD_UNIT.copy()
     unit.tok = str(level+2)
     WORK_UNITS.append(unit)
+    HEAD_UNIT = None
 
 def check_head() :
     global WORK_UNITS
@@ -1114,7 +1119,6 @@ There has to be a line after a head.
 * Item one
 
 * Item two
-
 U/
 '''
 
