@@ -526,8 +526,10 @@ and closed by one).</p>
 <p>The typical heading has only one line of text, but the DP format allows
 either head to have multiple lines, and allows for a Chapter head to have
 multiple paragraphs.</p>
-<p>PPQT delivers headings as an open event, then at least one paragraph
-(possibly more for a Chapter head), then a close event.
+<p>PPQT delivers headings as an OPEN_HEAD2 or OPEN_HEAD3 event.
+That is followed by at least one paragraph
+(possibly more for a Chapter head), each with its OPEN_PARA and CLOSE_PARA
+events; and finally a CLOSE_HEAD2 or CLOSE_HEAD3 event.
 A typical one-line head would cause the sequence</p>
 <ul>
 <li>OPEN_HEAD2 or OPEN_HEAD3</li>
@@ -536,6 +538,17 @@ A typical one-line head would cause the sequence</p>
 <li>CLOSE_PARA</li>
 <li>CLOSE_HEAD2 or CLOSE_HEAD3</li>
 </ul>
+<p>The <code>text</code> value that accompanies an OPEN_HEAD2 or OPEN_HEAD3
+event is a copy of the first line of the first paragraph of the heading.
+This is to assist the Translator that wants to generate a link target
+of some kind based on the contents of the first heading line.</p>
+<p>
+The function <code>XU.underscore_line(text, truncate=50)</code>
+takes a string of text and returns that string with only the words
+(no markup characters) connected by underscores.
+For example if the first line of a heading is <code>CHAPTER ONE: THE DONKEY[A]</code>,
+the value returned by <code>XU.underscore_line()</code> would be
+<code>CHAPTER_ONE_THE_DONKEY</code>.</p>
 
 <h2 id="the-no-flow-events">The No-Flow Events</h2>
 <p>The DP format guidelines support only one no-reflow code, <code>/*..*/</code>.
