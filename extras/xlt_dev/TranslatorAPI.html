@@ -685,54 +685,62 @@ If they are omitted from the Illustration markup, these stuff values will be nul
 Like a Footnote, it can also contain poems, tables, and quotes.</p>
 
 <h2 id="tables">Tables</h2>
-<p>A table (OPEN_TABLE, CLOSE_TABLE) is a special kind of no-reflow section.
+<p>A table is a special kind of no-reflow section signalled by OPEN_TABLE, and CLOSE_TABLE.
 PPQT performs the service of breaking up the table markup into rows and cells
-and delivering them as LINE events inside cell (OPEN_TCELL, CLOSE_TCELL)
-events, inside row (OPEN_TROW, CLOSE_TROW) events.
-(Use the Testing translator on a sample table to see the sequence of events.)
+and delivering them as LINE events, between OPEN_TCELL and CLOSE_TCELL
+events, between OPEN_TROW, CLOSE_TROW events.</p>
+<p>
+Use the Testing translator on a sample table to see the exact sequence of events,
+and what text value is passed with each event.
+</p>
+
+<p>
 In the current version, a cell will contain only one line.
 It is possible that a future version of PPQT might have some convention
 for tables that allows multiple lines per cell, so do not assume that only
 one LINE event will come per cell.</p>
+
+<h4 id='table_specification'>Table Specification</h4>
 <p>The PPQT user is given the option of spelling out the column layout on the
 <code>/T</code> line. The user is told to specify each column as:</p>
 <ul>
-<li>
-<p>an optional width integer</p>
-</li>
 <li>
 <p>an optional horizontal alignment letter <code>l</code>, <code>c</code> or <code>r</code></p>
 </li>
 <li>
 <p>an optional vertical alignment letter <code>T</code>, <code>C</code>, or <code>B</code></p>
 </li>
+<li>
+<p>an optional width integer</p>
+</li>
 </ul>
 <p>in that order, so a typical table might open with,</p>
-<pre><code>/T 5r 50 8rB
-</code></pre>
-<p>This string can be found in the <code>text</code> value of the OPEN_TABLE event.
+<pre><code>/T r5 c50 rB8</code></pre>
+<p>The <code>text</code> value of the OPEN_TABLE event contains that <code>/T...</code> line.
 However, PPQT also tries to parse it out and encode it in the <code>stuff['columns']</code> item.
-This will be a possibly-empty list of triples: <code>(</code> <em>width</em><code>,</code> <em>h-letter</em><code>,</code> <em>v-letter</em> <code>)</code>,
+This will be a list of triples: <code>(</code> <em>width</em><code>,</code> <em>h-letter</em><code>,</code> <em>v-letter</em> <code>)</code>,
 with None where the user omitted a value.</p>
 <p>The above example would yield <code>stuff['columns']</code> containing</p>
 <pre><code>[(5,'r',None), (50,None,None), (8,'r','B')]
 </code></pre>
-<p>Note that if the user doesn't code it exactly as shown, for example if she writes
-"rB8" or "8Br" instead of "8rB", the item will not be recognized.</p>
-<p>If the user does not specify columns in this way, PPQT counts the stile characters
+<p>If the user does not specify columns on the <code>/T...</code> line,
+PPQT counts the stile characters
 and the characters between them in the first line of the table.
-It sets <code>stuff['columns']</code> to reflect this, for example if the table begins</p>
+It sets <code>stuff['columns']</code> to reflect the count and spacing.
+For example if the table begins</p>
 <pre><code>/T
-Fig 1 | Descent of Man by Natural Selection | 37 |
+Fig 1 | Descent of Man by Natural Selection | 28 |
 </code></pre>
 <p>then <code>stuff['columns']</code> would contain</p>
 <pre><code>[(6,None,None),(37,None,None),(4,None,None)]
 </code></pre>
-<p>PPQT tells its user to write table data as one row per line,
-and to terminate cells with stile characters.
-However the Translator only needs to process the open and close events for rows, cells, and lines,
-and put the table out in whatever the target format requires.
-</p>
+<p>In either case, <code>len(stuff['columns'])</code> is the number of columns
+that PPQT believes are in the table.
+Exactly that many OPEN_CELL/CLOSE_CELL events will occur in each table row.
+If the user omits some columns (stile characters) in a row, blank cells are
+generated. If the user has extra stile characters, the text to the right of
+the last expected stile is discarded.
+Thus the Translator does not need to test for extra or missing cell values in a row.</p>
 
 <h2 id="parsing-a-line">Parsing a line</h2>
 <p>The function <code>XU.tokenize(</code> <em>text_string</em> <code>)</code>
