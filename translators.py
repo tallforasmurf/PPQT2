@@ -903,6 +903,7 @@ class DocScanner( dpdocsyntax.DPDOCScanner ) :
         elif tok in 'PQ' :
             unit.stuff['F'] = 2
             unit.stuff['R'] = 2
+            unit.stuff['L'] = 2 if tok == 'Q' else 12
             self._find_first( unit )
             self._find_left( unit )
             self._find_right( unit )
