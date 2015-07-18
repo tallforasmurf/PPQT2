@@ -1,0 +1,55 @@
+		ASCII Translator
+
+This Translator takes a DP-formatted book and generates one formatted
+as an ASCII etext.
+
+The user is queried for the optimum and maximum line lengths
+(typically 73 and 75), and for the treatment of italic, bold and smallcap markup.
+
+The input book's txt is formatted to DP standards (as extended by PPQT):
+
+No-reflow /X..X/ indented by the First: value (typically 2).
+
+Center /C..C/ indented by the First: value (typically 2).
+
+Right /R..R/ right-aligned to the Right: margin (typically 0).
+
+Poems /P..P/ lines individually reflowed to the First: Left: and Right:
+values (typically 2, 12, 2).
+
+Chapter paragraphs are set off by 4 newlines above and 2 below.
+
+Subhead paragraphs are set off by 2 newlines above and 1 below.
+
+Block quotes /Q..Q/ and lists /U..U/ are reflowed according to their First:,
+Left: and Right: values.
+
+Tables /T..T/ formatted with column widths as set by the /T line spec or by
+the spacing of stiles in the first line (this is calculated by PPQT).
+
+Within a table, cell text is reflowed within its column width and aligned
+l/r/c per the /T spec (defaulting to left when PPQT calculates the widths).
+Also Bottom alignment is supported: if a column is specified as for example
+rB8 (right, Bottom, 8 chars) and the display of a row takes multiple lines
+(because some cell reflowed to multiple lines), the text of the B-aligned
+cell is pushed to the bottom of the lines for the row.
+
+The following markups are discarded and do not appear in the output: <id='x'>
+targets, <span>s, 'lang="dict"' and any other syntax within HTML-like markup.
+
+The visible part of a #visible:target# link markup is retained.
+
+Sub_{script} and super^{script} markup is retained as-is. Italic, Bold and
+Smallcap markups are converted according to user option. They may be
+retained, dropped, replaced by single-character flags (underscore for italic,
+dollar-sign for bold), or may cause the marked text to be upper-cased.
+
+The text of paragraphs, poem lines, and table cells is reflowed using the
+Knuth-Pratt optimal reflow algorithm, which yields more even right edges than
+a simpler algorithm.
+
+For purposes of reflow, the "word" units are the space-delimited tokens that
+are left after processing markups. For example a "word" might be "_Gen^{rl}_"
+or "$Bold$" or "Mother-in-law", and all the characters count toward the
+length of the token.
+
