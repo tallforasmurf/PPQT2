@@ -1,23 +1,31 @@
-			HTML Translator
+
+		 =========== HTML Translator =============
 
 This module translates a DP-formatted book to HTML. It makes the following changes.
 
-		HTML Header Text
+			Errors
+
+The Translator can detect a few errors related to footnotes. It puts 
+error messages at the point of error in the output book. To find them,
+search for !! (two exclamation marks).
+
+
+			HTML Header Text
 
 The output file begins with an HTML header including CSS definitions.
 
-The DOCTYPE is XHTML 1.0 Strict/EN, and the charset is UTF-8.
+The DOCTYPE is "XHTML 1.0 Strict/EN" and the charset is UTF-8.
 
 The <title> statement contains the book title and author as given in the
-"book facts" to PPQT. If these facts are missing, the title is !!BOOK TITLE MISSING!!
-and the author is !!NO AUTHOR GIVEN!!.
+"book facts" to PPQT. If these facts are missing, the title is
+!!BOOK TITLE MISSING!! and the author is !!NO AUTHOR GIVEN!!.
 
-The CSS definitions generally follow the DP CSS Cookbook in the DP Wiki.
-The entire text of the HTML header is at the end of the html.py module and you
-are welcome to edit it as desired.
+The CSS definitions generally follow the CSS Cookbook in the DP Wiki.
+The entire text of the HTML header is at the end of the html.py module
+and you are welcome to edit it as desired.
 
 
-		Page Breaks
+			Page Breaks
 
 Wherever PPQT signals a page boundary, the following is inserted:
 
@@ -29,22 +37,22 @@ PPQT it should display the scanned images properly.
 
 
 
-		Headings
+			Headings
 
 Chapter heads are marked with <h2>..</h2>. If a chapter head has more than one
-paragraph (this is allowed by DP standard) each is marked as <h2>..</h2>.
+paragraph (as allowed by DP formatting guidelines) each is marked as <h2>..</h2>.
 
 Subheads are marked with <h3>..</h3>.
 
 
-		Margins
+			Margins
 
 Sections that PPQT allows to be marked with First:, Left: and Right: margin 
-values are given margins in percentages, based on a 72-character width.
+values are given margins in percentages, based on a 75-character width.
 These percentage values are shown below as ff%, ll%, and rr% respectively.
 
 
-		No-Reflow sections
+			No-Reflow sections
 
 A no-reflow section /X..X/ is converted to:
 
@@ -58,43 +66,49 @@ A centered section /C..C/ is converted to:
 	...
 	</div>
 
+The default for /X and /C is First:2, so the default margin is 03%.
+To one of these sections flush left, specify First:0 .
+
 A right-aligned section /R..R/ is converted to:
 
 	<div style="margin-left:ff%;margin-right:rr%;text-align:right">
 	...
 	</div>
 
-In all three of these sections, each text line is ended with <br />. There
-are no <p> paragraphs applied in a no-reflow section.
+In all three of these sections, no <p> markup is used. The lines are
+copied and each is ended with <br />.
 
 
-		Poems
+			Poems
 
 Poem sections /P..P/ are converted to:
 
 	<div class="poetry"
 		style="margin-left:ll%;margin-right:rr%;text-indent:xx%">
-	<div class="stanza">
+	  <div class="stanza">
 		...lines...
-	</div>
+	  </div>
 	</div>
 
-The text-indent value is the difference between the First: and Left: margins
-converted to a percentage of 72. Each poem line will start at this offset,
-and when lines are folded by the browser, the continuation lines will be
-at the margin-left value which is typically greater.
+The text-indent xx% is the difference between the First: and Left: margins
+converted to a percentage of 75. This sets the starting margin for each
+poem line. When lines are folded by the browser, the continuation lines
+will be at the margin-left ll%, usually providing an indent under the
+first line. The defaults are First:2 Left:12 Right:2, giving 3%, 16%
+and 3% respectively.
 
 Inside a poetry div, each poem line is converted to a single paragraph:
 
 		<p class="inn">text of line</p>
 
-The class name is based on the number of spaces at the left of the source
-line. Each two spaces is equated to one em of space. The value nn in the
-class name is the count of ems to indent. One class is generated in the
-CSS at the head of the file for each unique amount of indent used.
+The class name is based on the number of spaces at the left of the
+original source line. Each two spaces is equated to one em of space.
+The value nn in the class name is the count of ems to indent. One class
+is generated in the CSS at the head of the file for each unique amount
+of indent used in the book.
 
 
-		Block Quote sections
+			Block Quote sections
 
 The PPQT block-quote markup /Q..Q/ is converted to
 
@@ -103,18 +117,18 @@ The PPQT block-quote markup /Q..Q/ is converted to
 	</blockquote>
 
 The contents of a block quote can include paragraphs, poems, and no-flow
-sections of all three types. They will be indented within the margins.
+sections of all three types.
 
 
-		Illustrations
+			Illustrations
 
 An [Illustration markup has several parts. PPQT supports putting the image
 filename in the markup, [Illustration:fig012.png... The caption generally
-starts on the same line. The most basic image markup:
+starts on the same line. The most basic image markup is like:
 
 	[Illustration: <sc>Fig</sc>. 12, A clockwork orange
 
-will convert to:
+This will convert to:
 
 	<div class="image">
 	<img src="images/"          <--- note no image filename
@@ -123,32 +137,53 @@ will convert to:
 	<p><span class="smcap">Fig</span>. 12. A clockwork orange...
 	</div>
 
+The alt= and  title= properties are set to a string made by stripping all
+markup from the first line of caption text.
+
 When the image filename is given, as in
 
 	[Illustration:fig012.png <sc>Fig</sc>. 12, A clockwork orange
 
-then the image filename is supplied in the src= property. The alt= and 
-title= properties are set to a string made by stripping all markup from
-the first line of caption text that appears on the same line.
+then the image filename is supplied in the src= property.
+
+PPQT also allows you to put two filenames in the [Illustration markup,
+like this:
+
+	[Illustration:fig012.png|fig012hr.jpg A clockwork orange
+
+In this case the output makes the image a link to the high-res image:
+
+	<div class="image">
+	<a href="images/fig012hr.jpg">
+	<img src="images/fig012.png"
+		alt="Fig. 12. A clockwork orange"
+		title="Fig. 12. A clockwork orange" />
+	</a>
+	<p><span class="smcap">Fig</span>. 12. A clockwork orange...
+	</div>
+
+However this is no longer recommended as it is not supported in 
+EBOOK format.
 
 
-		Sidenotes
+
+			Sidenotes
 
 Sidenotes are converted to <div class="sidenote">..</div> and contain
 a single <p>paragraph</p>. 
 
 
-		Footnotes
+			Footnotes
 
 Footnote anchors[A] are converted to:
 
 <a id="FNanchor_A"></a><a href="#Footnote_A" class="fnanchor"><sup>A</sup></a>
 
 If a footnote anchor is used for a second time, an error message is inserted
-in the output, <b>!!Duplicate footnote key at line nnn!!. (You should have used
-the PPQT Footnote panel to renumber footnotes before translating.)
+in the output, !!Duplicate footnote key at line nnn!!. To avoid this, use
+the PPQT Footnote panel to renumber footnotes before translating.
 
-A [Footnote A: generates:
+A [Footnote A: markup generates:
 
 	<div class="footnote">
 	<p> <a id="Footnote_A"></a>
@@ -156,12 +191,12 @@ A [Footnote A: generates:
 
 followed by the text of the first paragraph of the footnote. If the footnote
 key "A" has not been previously used as an anchor [A], an error message
-is inserted in the output file,
+is inserted in the output file: !!Undefined Footnote key X at line n!!
+This will not occur if you used the Footnote panel to repair and renumber
+all footnotes.
 
-	<b>!!Undefined Footnote key X at line n!!</b>
 
-
-		Tables
+			Tables
 
 A PPQT Table markup /T...T/ is converted as follows.
 
@@ -174,15 +209,18 @@ A PPQT Table markup /T...T/ is converted as follows.
 	</table>
 
 The style= property of each cell depends on the column width and cell
-alignment as specified on the /T line. The cells in the first row
-will have style="width:cc%" where cc% is calculated based on the column
-width in a 72-character line. When a column has a specific alignment,
-l, r or c, every <td> for that column has a style="text-align:x"
+alignment as specified on the /T line -- or, if no columns are specified
+on the /T line, the column widths are calculated from the widths of the
+cells in the first line of the table.
+
+The cells in the first row have style="width:cc%" where cc% is based on
+the column width in a 75-character line. When a column has a specific
+alignment, l, r or c, every <td> for that column has a style="text-align:x"
 value. When a column has a specific vertical alignment T, C or B,
 every cell in that column has a vertical-align: value as well.
 
 
-		Inline Markup conversions
+			Inline Markup conversions
 
 Italic and Bold markups <i>..</i> and <b>..</b> are reproduced as-is.
 Spans are also reproduced as-is, so if you used a span to specify a different
