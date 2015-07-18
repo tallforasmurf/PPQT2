@@ -4,7 +4,8 @@ This Translator takes a DP-formatted book and generates one formatted
 as an ASCII etext.
 
 The user is queried for the optimum and maximum line lengths
-(typically 73 and 75), and for the treatment of italic, bold and smallcap markup.
+(typically 73 and 75), and for the treatment of italic, bold and
+smallcap markup.
 
 The input book's txt is formatted to DP standards (as extended by PPQT):
 
@@ -24,8 +25,8 @@ Subhead paragraphs are set off by 2 newlines above and 1 below.
 Block quotes /Q..Q/ and lists /U..U/ are reflowed according to their First:,
 Left: and Right: values.
 
-Tables /T..T/ formatted with column widths as set by the /T line spec or by
-the spacing of stiles in the first line (this is calculated by PPQT).
+Tables /T..T/ are formatted with column widths as set by the /T line spec
+or by the spacing of stiles in the first line.
 
 Within a table, cell text is reflowed within its column width and aligned
 l/r/c per the /T spec (defaulting to left when PPQT calculates the widths).
@@ -38,6 +39,10 @@ The following markups are discarded and do not appear in the output: <id='x'>
 targets, <span>s, 'lang="dict"' and any other syntax within HTML-like markup.
 
 The visible part of a #visible:target# link markup is retained.
+
+[typo:original:corrected] is replaced by corrected.
+
+[Greek:translit] and [Greek:translit:unicode] are replaced by translit.
 
 Sub_{script} and super^{script} markup is retained as-is. Italic, Bold and
 Smallcap markups are converted according to user option. They may be
