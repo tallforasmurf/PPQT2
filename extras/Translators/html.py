@@ -268,9 +268,9 @@ def translate( eventizer ) :
     global BODY, PAGES
     global IN_POEM, STARTING_FNOTE, IN_NO_REFLOW, PARA_CLASS, IN_STANZA_DIV
 
-    # Converts a character length on a 72-char line to a percent margin.
+    # Converts a character length on a 75-char line to a percent margin.
     def pct( n ) :
-        return int( 100 * (n / 72) )
+        return int( 100 * (n / 75) )
 
     # do_page notes the cpos in the PAGES list, and generates an anchor. If
     # this gets called at all, there must be info in the list.
@@ -476,7 +476,7 @@ def translate( eventizer ) :
             if stuff['hires'] :
                 BODY << '    />\n</a>\n'
             else :
-                BODY << '  \>\n'
+                BODY << '  />\n'
 
     def close_image( ) :
         global PARA_CLASS
