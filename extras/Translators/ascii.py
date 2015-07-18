@@ -621,26 +621,32 @@ def translate( event_generator ) :
 #
 # This is applied to individual lines of no-flow, centered, right sections as
 # well as to table cells and paragraphs before they are reflowed.
-#
+
 def clean_up( text, lnum ) :
 
     izer = XU.tokenize( text )
-    new_text = ''
+    new_text_parts = []
     next_tok = ''
     force_caps = False
     balances = 0 # markup depth counters
+    simple_tokens = [XU.TokenCodes.WORD, XU.TokenCodes.PUNCT, XU.TokenCodes.PLINE, XU.TokenCodes.OTHER]
     for (ttype, token) in izer :
-        if ttype == XU.TokenCodes.SPACE :
-            # Space means force out the current token and start a new one.
-            if force_caps : next_tok = next_tok.upper()
-            if new_text : new_text += ' ' # space after previous token(s)
-            new_text += next_tok
-            next_tok = ''
 
-        elif ttype in [XU.TokenCodes.WORD, XU.TokenCodes.PUNCT, XU.TokenCodes.PLINE, XU.TokenCodes.OTHER] :
+        # for performance it is important to have the most common token types
+        # found at the top of this if-stack.
+
+        if ttype in simple_tokens :
             # something innocent and nonblank: add it to the token (treating
             # poem line number as a token)
             next_tok += token
+
+        elif ttype == XU.TokenCodes.SPACE :
+            # Space means force out the current token and start a new one.
+            # Collecting each token in a list rather than building and rebuilding
+            # the output string with "new_text += next_tok".
+            if force_caps : next_tok = next_tok.upper()
+            new_text_parts.append( next_tok )
+            next_tok = ''
 
         elif ttype == XU.TokenCodes.ITAL_ON :
             balances += 1
@@ -689,11 +695,18 @@ def clean_up( text, lnum ) :
         elif ttype == XU.TokenCodes.SUB :
             next_tok += '_{' + token + '}'
 
-        elif ttype == XU.TokenCodes.FNKEY or ttype == XU.TokenCodes.BRKTS :
+        elif ttype == XU.TokenCodes.FNKEY :
             next_tok += '[' + token + ']'
 
         elif ttype == XU.TokenCodes.LINK :
             next_tok += token.split(':')[0] # just take the visible link
+
+        elif ttype == XU.TokenCodes.BRKTS :
+            brkt_parts = token.split(':')
+            if ( brkt_parts[0].lower() == 'typo' ) and ( len(brkt_parts) > 2 ) :
+                next_tok += brkt_parts[2] # just the "corrected" part
+            else : # assume [Greek:blah...]
+                next_tok += '[' + brkt_parts[0] + ':' + brkt_parts[1] + ']'
 
         else :
             #assert ttype in [XU.TokenCodes.SPAN_ON,
@@ -702,8 +715,9 @@ def clean_up( text, lnum ) :
                        #XU.TokenCodes.DICT_OFF,
                        #XU.TokenCodes.TARGET] # all these are omitted
             pass
-    if new_text : new_text += ' '
-    new_text += next_tok # collect the last word
+
+    new_text_parts.append(next_tok) # collect the last word
+    new_text = ' '.join(new_text_parts) # just build one string
 
     # if balance is nonzero, the user forgot a </i/b/sc>
     if balances :
