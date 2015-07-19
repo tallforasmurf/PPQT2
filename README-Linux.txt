@@ -2,31 +2,24 @@
 			
                     Distribution of 21 July 2015
 
-
-Note: this version has a minor problem due to an open bug in PyInstaller,
-the app used to prepare PPQT2 for distribution. When you first launch
-PPQT2, its menus do not appear in the menu bar. Click on the desktop to
-make the Finder active, then click on the PPQT2 window again. Its menus
-appear and all is well until the next time you launch PPQT2.
-
-
 Contents of this folder
 =======================
 
-Besides this file, the PPQT2 folder contains:
+Besides this file, this folder contains the following:
 
 * COPYING.TXT -- a copy of the GNU Public License V3 under
   which PPQT2 is released.
 
-* PPQT2.app -- double-click it to launch the program.
+* PPQT2 -- a folder containing the PPQT2 executable file and the many
+  support files it needs to run. Find PPQT2/PPQT2 and launch it to run
+  the program.
 
 * extras -- a folder of useful things listed below.
 
-You can put the PPQT2 folder anywhere you wish. You do not need to keep it
-open all the time if you make a link to PPQT2. In the Finder, right-click
-on the PPQT2 icon. Select "Make Alias" from the context menu. Then you can
-drag the Alias file onto your desktop or anywhere. Double-clicking the
-alias launches the program.
+You can put this folder anywhere you wish. You do not need to keep it open
+all the time if you make a link to PPQT2. Right-click on PPQT2/PPQT2 and
+select Make Link. Drag the link to the desktop. You can double-click it to
+launch the program.
 
 Documentation
 =============
@@ -40,8 +33,8 @@ The documentation of PPQT is in two parts:
 * extras/suggested-workflow.rtf describes how to use PPQT in
   every phase of post-processing, with hints and tips.
 
-If you have used PPQT2 before, click the link to "What's New" in the
-first paragraph of the Help to see what has been changed or added.
+If you have used PPQT2 before, see the link to "What's New" in the
+first paragraph of the Help to learn what is changed or added.
 
 If this is your first time with PPQT2, **PLEASE** read these
 topics in the Help file now, before you start editing:
@@ -82,7 +75,7 @@ The extras folder contains these things:
     italic, smallcap and bold markup.
   - text_fixups.utf has more searches for common errors.
   - unbalanced_markup.utf has searches to find some unbalanced markup.
-  - syntax_of_find_buttons.utf explains the format of the these files.
+  - syntax_of_find_buttons.utf explains the format of these files.
 
 * Translators is a folder of translator modules. See the Help topic
   of that name for an explanation of Translators.
