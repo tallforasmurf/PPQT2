@@ -1854,6 +1854,36 @@ and skips the bad section.
 What's New
 ===========
 
+21 July 2015
+-------------
+
+This updated release has a few minor usability fixes in the app itself.
+For example, previously when you did a Find, the yellow current-line
+highlight did not appear and it was hard to see where the "found" thing
+was in the Edit panel. Now the current-line highlight shows up to draw
+your eye to the found text.
+
+The main change is in the supplied Translators.
+There is an HTML Translator as before (one fix there).
+There is a short document, extras/Translators/html.utf,
+that documents what the HTML Translator does.
+
+And now there is an ASCII Translator also.
+It supports all the PPQT markup conventions for /Q, /C, /R
+and also properly supports /T table markup as described in the
+"suggested workflow" document. It even reflows text inside table cells.
+The short document extras/Translators/ascii.utf describes it.
+
+The ASCII Translator uses a more sophisticated algorithm for paragraph
+reflow than usual, and should do a nice job of reflowing longer paragraphs.
+
+Also in the extras/xlt_dev folder the TranslatorAPI.html document is
+revised for clarity.
+If you are a Python programmer, please read it:
+you could write a Translator for your favorite markup style!
+
+1 July 2015
+-------------
 It's all new! This is the first release of version 2!
 Version 2 is not compatible with Version 1 because the metadata file
 format is different.

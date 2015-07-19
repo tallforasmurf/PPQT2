@@ -1529,6 +1529,31 @@ and skips the bad section.</p>
 </div>
 <div class="section" id="what-s-new">
 <span id="id27"></span><h1>What&#8217;s New<a class="headerlink" href="#what-s-new" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="july-2015">
+<h2>21 July 2015<a class="headerlink" href="#july-2015" title="Permalink to this headline">¶</a></h2>
+<p>This updated release has a few minor usability fixes in the app itself.
+For example, previously when you did a Find, the yellow current-line
+highlight did not appear and it was hard to see where the &#8220;found&#8221; thing
+was in the Edit panel. Now the current-line highlight shows up to draw
+your eye to the found text.</p>
+<p>The main change is in the supplied Translators.
+There is an HTML Translator as before (one fix there).
+There is a short document, extras/Translators/html.utf,
+that documents what the HTML Translator does.</p>
+<p>And now there is an ASCII Translator also.
+It supports all the PPQT markup conventions for /Q, /C, /R
+and also properly supports /T table markup as described in the
+&#8220;suggested workflow&#8221; document. It even reflows text inside table cells.
+The short document extras/Translators/ascii.utf describes it.</p>
+<p>The ASCII Translator uses a more sophisticated algorithm for paragraph
+reflow than usual, and should do a nice job of reflowing longer paragraphs.</p>
+<p>Also in the extras/xlt_dev folder the TranslatorAPI.html document is
+revised for clarity.
+If you are a Python programmer, please read it:
+you could write a Translator for your favorite markup style!</p>
+</div>
+<div class="section" id="id28">
+<h2>1 July 2015<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h2>
 <p>It&#8217;s all new! This is the first release of version 2!
 Version 2 is not compatible with Version 1 because the metadata file
 format is different.
@@ -1557,6 +1582,7 @@ etext formats, we can&#8217;t provide preview panels for all of them.
 Open an HTML file in a browser.
 Then just save (ctl-s) in PPQT and click the refresh button on the browser.</li>
 </ul>
+</div>
 </div>
 
 
@@ -1661,7 +1687,11 @@ Then just save (ctl-s) in PPQT and click the refresh button on the browser.</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#metadata-file">Metadata File</a></li>
-<li><a class="reference internal" href="#what-s-new">What&#8217;s New</a></li>
+<li><a class="reference internal" href="#what-s-new">What&#8217;s New</a><ul>
+<li><a class="reference internal" href="#july-2015">21 July 2015</a></li>
+<li><a class="reference internal" href="#id28">1 July 2015</a></li>
+</ul>
+</li>
 </ul>
 
   <div role="note" aria-label="source link">
