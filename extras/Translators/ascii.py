@@ -308,7 +308,7 @@ def open_illo( code, text, stuff, lnum ) :
 
 def open_fnote( code, text, stuff, lnum ) :
     global PARA
-    PARA = '[Footnote {}:'.format( stuff['key'] )
+    PARA = '[{}] '.format( stuff['key'] )
 
 def open_snote( code, text, stuff, lnum ) :
     global PARA
@@ -587,7 +587,7 @@ def translate( event_generator ) :
         XU.Events.OPEN_SNOTE    : open_snote,
         XU.Events.CLOSE_SNOTE   : close_brkt,
         XU.Events.OPEN_FNOTE    : open_fnote,
-        XU.Events.CLOSE_FNOTE   : close_brkt,
+        XU.Events.CLOSE_FNOTE   : None,
         XU.Events.PAGE_BREAK    : None, # don't care
         XU.Events.T_BREAK       : '\n\n*    *    *    *    *\n',
         XU.Events.OPEN_FNLZ     : None, # nothing to do
