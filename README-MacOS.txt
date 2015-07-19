@@ -3,12 +3,8 @@
                     Distribution of 21 July 2015
 
 
-Note: this version has a minor problem due to an open bug in PyInstaller,
-the app used to prepare PPQT2 for distribution. When you first launch
-PPQT2, its menus do not appear in the menu bar. Click on the desktop to
-make the Finder active, then click on the PPQT2 window again. Its menus
-appear and all is well until the next time you launch PPQT2.
-
+Note: the annoying PyInstaller bug that kept the PPQT menu from appearing
+in the menu bar has been fixed! Thank you Hartmut and Martin!
 
 Contents of this folder
 =======================
