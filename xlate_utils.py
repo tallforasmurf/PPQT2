@@ -213,7 +213,7 @@ TOKEN_RXS = [
 ( TokenCodes.LINK,     r'\#(\d+)\#' ),
 ( TokenCodes.LINK,     r'\#([^:]+?\:[^#]+?)\#' ),
 ( TokenCodes.PLINE,    POEM_LNUM_EXPR ),
-( TokenCodes.PUNCT,    r'\p{P}+' ),
+( TokenCodes.PUNCT,    r'\p{P}' ),
 ( TokenCodes.SPACE,    r' +' ),
 ( TokenCodes.OTHER,    r'.' ) # so we always match something.
 ]
