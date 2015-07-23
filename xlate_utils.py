@@ -271,7 +271,7 @@ def tokenize( string ) :
             text = groups[1] # just the target/key/sup/sub/bracketed string
             if code == 'LINK' and (not ':' in text) :
                     # One-part link e.g. #255#, expand to 2 parts, 255:Page_255
-                    text = text + ':' + 'PAGE_' + text
+                    text = text + ':' + 'Page_' + text
         yield ( code, text )
 
 def poem_line_number( string ) :
