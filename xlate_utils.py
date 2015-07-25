@@ -208,7 +208,7 @@ TOKEN_RXS = [
 ( TokenCodes.SUB,      r'_\{(\w+)\}' ),
 ( TokenCodes.SUP,      r'\^\{(\w+)\}' ),
 ( TokenCodes.SUP,      r'\^(\w)' ),
-( TokenCodes.BRKTS,    r'\[(\w\w+\:[^\]\n]+)\]' ),
+( TokenCodes.BRKTS,    r'\[(\w\w+\:[^\[\]\n]+)\]' ),
 ( TokenCodes.FNKEY,    r'\[(\w+)\]' ),
 ( TokenCodes.LINK,     r'\#(\d+)\#' ),
 ( TokenCodes.LINK,     r'\#([^:]+?\:[^#]+?)\#' ),
