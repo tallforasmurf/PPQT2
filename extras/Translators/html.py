@@ -180,6 +180,7 @@ def do_brkts( ttext, lnum ) :
 
 def do_link( ttext, lnum ) :
     global BODY
+    ttext = ttext.replace('PAGE_','Page_') # temp fix of an xlate_utils bug
     [ visible, target ] = ttext.split(':')
     BODY << '<a href="#{}">{}</a>'.format( target, visible )
 
@@ -591,6 +592,7 @@ def translate( eventizer ) :
         XU.Events.OPEN_FNOTE    : open_fnote ,
         XU.Events.CLOSE_FNOTE   : '</div>\n' ,
         XU.Events.PAGE_BREAK    : do_page ,
+        XU.Events.T_BREAK       : '<hr style="width:30%;margin:0.5em,auto,0.5em,auto;" />',
         XU.Events.OPEN_FNLZ     : '<div class="footnotes">\n',
         XU.Events.CLOSE_FNLZ    : '</div>\n',
         XU.Events.OPEN_TABLE    : open_table ,
@@ -762,16 +764,20 @@ h3 {
 /* ************************************************************************
  * Styles for images and captions
  * ********************************************************************** */
-img { /* style the default inline image here, e.g. */
+div.image { /* style the div that contains both image and caption */
+         border: 1px solid black;
+         text-align: center; /* centers the image */
+}
+img {   /* style the default inline image here, e.g. */
 	/* border: 1px solid black; a thin black line border.. */
 	/* padding: 6px; ..spaced a bit out from the graphic */
 }
-p.caption {
+p.caption { /* style the paragraphs of caption text */
 	margin-top: 0; /* snuggled up to its image */
 	font-size: smaller;
+        text-align: left; /* defeats :center on the image div */
 	/* font-style: italic; 		match style to orginal */
 	/* font-variant: small-caps; ditto */
-}
 }
 /* ************************************************************************
  * Styling tables and their contents:
