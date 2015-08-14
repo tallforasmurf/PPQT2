@@ -6,8 +6,8 @@ This module translates a DP-formatted book to HTML. It makes the following chang
 			Errors
 
 The Translator can detect a few errors related to footnotes. It puts 
-error messages at the point of error in the output book. To find them,
-search for !! (two exclamation marks).
+error messages at the point of error in the output book. To find if
+there are any, search for !! (two exclamation marks) in the translated text.
 
 
 			HTML Header Text
@@ -20,99 +20,100 @@ The <title> statement contains the book title and author as given in the
 "book facts" to PPQT. If these facts are missing, the title is
 !!BOOK TITLE MISSING!! and the author is !!NO AUTHOR GIVEN!!.
 
-The CSS definitions generally follow the CSS Cookbook in the DP Wiki.
-The entire text of the HTML header is at the end of the html.py module
-and you are welcome to edit it as desired.
+The entire text of the HTML header, including all CSS definitions, is at
+the end of the html.py module and you are welcome to edit it as desired.
 
 
 			Page Breaks
 
 Wherever PPQT signals a page boundary, the following is inserted:
 
-	<span class="pagenum"><a id="Page_fff">[fff]</a></span>
+	<span class="pagenum"><a id="Page_fff">[fff]</a></span>\n
 
 where "fff" is the folio value as set with the Pages panel. The Translator
 also updates the page boundary metadata so if you edit the html file in
 PPQT it should display the scanned images properly.
 
-
+The CSS for class "pagenum" is taken from this Wiki article:
+  www.pgdp.net/wiki/User:Laurawisewell/Content_Method_for_HTML_pagenums
+  
 
 			Headings
 
-Chapter heads are marked with <h2>..</h2>. If a chapter head has more than one
-paragraph (as allowed by DP formatting guidelines) each is marked as <h2>..</h2>.
+Chapter heads are marked with <h2>..</h2>. If a chapter head has more than
+one paragraph (as allowed by DP formatting guidelines) each is marked as
+<h2>..</h2>. (You would probably want to change this.)
 
 Subheads are marked with <h3>..</h3>.
 
 
-			Margins
+			Margins and Indents
 
 Sections that PPQT allows to be marked with First:, Left: and Right: margin 
-values are given margins in percentages, based on a 75-character width.
-These percentage values are shown below as ff%, ll%, and rr% respectively.
+values are given margins and text-indents in "em" values, counting two
+ASCII spaces as equal to one HTML "em" width.
+
+Each unique combination of First/Left/Right values is given a single CSS
+class with the class name fN_lN_rN. Then the div or blockquote using that
+combination of First/Left/Right has class='fN_lN_rN'.
 
 
 			No-Reflow sections
 
 A no-reflow section /X..X/ is converted to:
 
-	<div style="margin-left:ff%">
+	<div style='white-space:pre;' class='fN_lN_rN'> (for its F/L/R)
 	...
 	</div>
 
 A centered section /C..C/ is converted to:
 
-	<div style="margin-left:ff%;margin-right:rr%;text-align:center">
+	<div style="white-space:pre;text-align:center;" class="fN_lN_rN">
 	...
 	</div>
 
-The default for /X and /C is First:2, so the default margin is 03%.
-To one of these sections flush left, specify First:0 .
+The default for /X and /C is First:2, so the default margin is 1em.
+To make one of these sections flush left, specify First:0 .
 
 A right-aligned section /R..R/ is converted to:
 
-	<div style="margin-left:ff%;margin-right:rr%;text-align:right">
+	<div style="white-space:pre;text-align:right;" class="fN_lN_rN">
 	...
 	</div>
 
 In all three of these sections, no <p> markup is used. The lines are
-copied and each is ended with <br />.
+copied with no markup. The white-space:pre CSS property causes newlines
+and spaces to be reproduced.
 
 
 			Poems
 
 Poem sections /P..P/ are converted to:
 
-	<div class="poetry"
-		style="margin-left:ll%;margin-right:rr%;text-indent:xx%">
+	<div class="poem fN_lN_rN" >
 	  <div class="stanza">
-		...lines...
+		...
 	  </div>
 	</div>
 
-The text-indent xx% is the difference between the First: and Left: margins
-converted to a percentage of 75. This sets the starting margin for each
-poem line. When lines are folded by the browser, the continuation lines
-will be at the margin-left ll%, usually providing an indent under the
-first line. The defaults are First:2 Left:12 Right:2, giving 3%, 16%
-and 3% respectively.
+The poem default margins are First:2 Left:12 Right:2, so that CSS class
+f2_l12_r2 will have a left margin of 6em (created using padding-left),
+right margin of 2em, and text-indent of -5em.
 
 Inside a poetry div, each poem line is converted to a single paragraph:
 
-		<p class="inn">text of line</p>
+		<p class="iN">text of line</p>
 
-The class name is based on the number of spaces at the left of the
+The class name "iN" is based on the number of spaces at the left of the
 original source line. Each two spaces is equated to one em of space.
-The value nn in the class name is the count of ems to indent. One class
-is generated in the CSS at the head of the file for each unique amount
-of indent used in the book.
+The value N in the class name is the count of ems to indent.
 
 
 			Block Quote sections
 
 The PPQT block-quote markup /Q..Q/ is converted to
 
-	<blockquote style="text-indent:ff%;margin-left:ll%,margin-right:rr%">
+	<blockquote class='fN_lN_rN' >
 		...
 	</blockquote>
 
@@ -132,13 +133,13 @@ This will convert to:
 
 	<div class="image">
 	<img src="images/"          <--- note no image filename
-		alt="Fig. 12. A clockwork orange"
-		title="Fig. 12. A clockwork orange" />
+		alt="Fig 12 A clockwork orange"
+		title="Fig 12 A clockwork orange" />
 	<p><span class="smcap">Fig</span>. 12. A clockwork orange...
 	</div>
 
-The alt= and  title= properties are set to a string made by stripping all
-markup from the first line of caption text.
+The alt= and  title= strings are made by stripping all markup from the
+first line of caption text. You may need to edit these strings.
 
 When the image filename is given, as in
 
@@ -162,28 +163,30 @@ In this case the output makes the image a link to the high-res image:
 	<p><span class="smcap">Fig</span>. 12. A clockwork orange...
 	</div>
 
-However this is no longer recommended as it is not supported in 
-EBOOK format.
+However this is no longer recommended as it is not supported in EPUB.
 
 
 
 			Sidenotes
 
 Sidenotes are converted to <div class="sidenote">..</div> and contain
-a single <p>paragraph</p>. 
+a single <p>paragraph</p>. The CSS for class sidenote put the text in a
+box of 10em width with a dotted outline. The CSS to float the sidenote to
+the right is in the file but commented out, as floats are not allowed
+in EPUB format.
 
 
 			Footnotes
 
-Footnote anchors[A] are converted to:
+Footnote anchor such as[A] is converted to:
 
 <a id="FNanchor_A"></a><a href="#Footnote_A" class="fnanchor"><sup>A</sup></a>
 
 If a footnote anchor is used for a second time, an error message is inserted
-in the output, !!Duplicate footnote key at line nnn!!. To avoid this, use
-the PPQT Footnote panel to renumber footnotes before translating.
+in the output, !!Duplicate footnote key at line nnn!!. This will not occur
+if you use the PPQT Footnote panel to renumber footnotes before translating.
 
-A [Footnote A: markup generates:
+A [Footnote A: ...] markup generates:
 
 	<div class="footnote">
 	<p> <a id="Footnote_A"></a>
@@ -213,11 +216,14 @@ alignment as specified on the /T line -- or, if no columns are specified
 on the /T line, the column widths are calculated from the widths of the
 cells in the first line of the table.
 
-The cells in the first row have style="width:cc%" where cc% is based on
-the column width in a 75-character line. When a column has a specific
-alignment, l, r or c, every <td> for that column has a style="text-align:x"
-value. When a column has a specific vertical alignment T, C or B,
-every cell in that column has a vertical-align: value as well.
+The cells in the first row have style="width:Nem" where N is based on the
+column width, allowing one HTML em for each 2 ASCII spaces. When a column
+has a specific alignment r or c, every <td> for that column has class='r'
+or class='c'. The classes "td.r" and "td.c" are defined to align text
+right or left.
+
+When a column has a specific vertical alignment T, C or B, every cell in
+that column has a vertical-align: value.
 
 
 			Inline Markup conversions
@@ -240,13 +246,20 @@ The PPQT typo markup, [typo:original:corrected], is converted to:
 
 	<ins class="correction" title="Original: original">corrected</ins>
 
+The CSS for ins.correction basically does nothing, because in EPUB, there
+are no pop-up titles. Thus there is no point in calling attention to a
+corrected typo. For an HTML-only book, you can un-comment the border-bottom
+property in this CSS to make a corrected typo visible, so the user can
+hover it and see the original text pop up.
+
 The DP transliteration markup, [Greek:biblio] or [Cyrillic:kinga], that is,
 a language name, colon, transliteration, is converted to:
 
 	<span title="Greek">biblio</span>
 
-When the markup is extended with Unicode original, as in [Greek:biblio:βιβλίο] or [Cyrillic:kinga:книга], the output is
-
+When the markup is extended with Unicode original, as in
+[Greek:biblio:βιβλίο] or [Cyrillic:kinga:книга], the output is
 
 	<span title="Greek:biblio">βιβλίο</span>
 
+Again in EPUB there are no pop-up title strings, so this is wasted effort.

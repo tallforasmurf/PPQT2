@@ -15,7 +15,7 @@ __license__ = '''
     extras/COPYING.TXT included in the distribution of this program, or see:
     <http://www.gnu.org/licenses/>.
 '''
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2013, 2014, 2015 David Cortesi"
 __maintainer__ = "David Cortesi"
@@ -29,10 +29,12 @@ HTML translation using the Translator API.
 The boilerplate text for the HTML header and CSS style sheet is at the end of
 the module as triple-quoted literals named DTD and CSS.
 
-TODO:
-  fix kludge in tokenize
-  sc->smcap
-  markup tokens?
+This version is based on actual experience preparing an HTML book
+anticipating conversion to EPUB, and reviewing the various EPUB-related
+documents in the DP Wiki. The CSS provided (see CSS_START at the end of the
+file) is severely pruned back from the previous version (which was based on
+old Guiguts practice).
+
 '''
 
 import xlate_utils as XU
@@ -65,7 +67,12 @@ POEM_EMS = set()
 # Set of footnote keys to test for uniqueness and previous definition
 #
 FNKEYS = set()
-
+#
+# Dict of CSS classes that establish left/right margins and text-indent values
+# that correspond to F/L/R values passed by the user.
+#
+FLR_CLASSES = dict()
+#
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # Initialize:
@@ -79,11 +86,12 @@ FNKEYS = set()
 # poetry classes.
 #
 def initialize( prolog, body, epilog, facts, pages ) :
-    global PROLOG, BODY, EPILOG, PAGES, FNKEYS, POEM_EMS
+    global PROLOG, BODY, EPILOG, PAGES, FNKEYS, POEM_EMS, FLR_CLASSES
 
     # clear lists that may have junk from a prior translation
     POEM_EMS = set()
     FNKEYS = set()
+    FLR_CLASSES = dict()
 
     # save the MemoryStream thingies
     PROLOG = prolog
@@ -180,7 +188,6 @@ def do_brkts( ttext, lnum ) :
 
 def do_link( ttext, lnum ) :
     global BODY
-    ttext = ttext.replace('PAGE_','Page_') # temp fix of an xlate_utils bug
     [ visible, target ] = ttext.split(':')
     BODY << '<a href="#{}">{}</a>'.format( target, visible )
 
@@ -201,7 +208,7 @@ ACTIONS = {
     XU.TokenCodes.BRKTS     : ('f', do_brkts ) ,
     XU.TokenCodes.LINK      : ('f', do_link ) ,
     XU.TokenCodes.TARGET    : ('l', lambda ttext : '<a id="{}"></a>'.format( ttext ) ) ,
-    XU.TokenCodes.PLINE     : ('z', None) , # cannot occur, do_poem_line eats it
+    XU.TokenCodes.PLINE     : ('l', lambda ttext : '  ({})'.format(ttext) ) ,
     XU.TokenCodes.SPACE     : ('t', None) ,
     XU.TokenCodes.WORD      : ('t', None) ,
     XU.TokenCodes.PUNCT     : ('t', None) ,
@@ -227,6 +234,24 @@ def trans_line( text, lnum, linebreak='\n' ):
     BODY << linebreak
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# This function takes the given First/Left/Right values and composes the
+# CSS to implement them. The actual CSS is saved in FLR_CLASSES, keyed to
+# a class-name of the form "fnlnrn". The class-name is returned so the
+# caller can use it in a class= attribute. If the F/L/R are all zero,
+# return a null string.
+def indent_by_ems(n):
+    #return int( round( 100 * ( n/75 ) ) )
+    return int(round(n/2))
+
+def make_flr( F, L, R ) :
+    global FLR_CLASSES
+    if 0 == F+L+R : return ''
+    class_name = 'f{}_l{}_r{}'.format(F,L,R)
+    if not class_name in FLR_CLASSES :
+        FLR_CLASSES[ class_name ] = ( indent_by_ems(F-L), indent_by_ems(L), indent_by_ems(R) )
+    return class_name
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # The translate() function. Just like the skeleton, at the heart is a dict
 # of actions which are either string expressions or callable references.
@@ -249,9 +274,6 @@ IN_POEM = False
 # by the open_fnote() code.
 STARTING_FNOTE = False
 
-# In a no-flow section? Affects how text lines are terminated.
-IN_NO_REFLOW = False
-
 # Class to give the next OPEN_PARA. Most paras get no class= but this is set
 # for sidenotes and illustrations.
 PARA_CLASS = None
@@ -267,11 +289,7 @@ CELL = 0 # current cell
 
 def translate( eventizer ) :
     global BODY, PAGES
-    global IN_POEM, STARTING_FNOTE, IN_NO_REFLOW, PARA_CLASS, IN_STANZA_DIV
-
-    # Converts a character length on a 75-char line to a percent margin.
-    def pct( n ) :
-        return int( 100 * (n / 75) )
+    global IN_POEM, STARTING_FNOTE, PARA_CLASS, IN_STANZA_DIV
 
     # do_page notes the cpos in the PAGES list, and generates an anchor. If
     # this gets called at all, there must be info in the list.
@@ -323,28 +341,25 @@ def translate( eventizer ) :
         BODY.writeLine( '</div>' )
 
     # open_noflow sets up a noflow, center or right section. It sets margins
-    # based on the F and R margin values. The style argument, if not omitted,
-    # must be a CSS property complete with semicolon, e.g. 'text-align:left;'
+    # based on the F and R margin values (Left: is not significant in a
+    # no-reflow section). The style argument, if not omitted, must be a CSS
+    # property complete with semicolon, e.g. 'text-align:left;'
 
     def open_noflow( style='' ) :
-        global IN_NO_REFLOW
+        global BODY
 
-        marge = ''
-        if stuff['F'] : # is not 0
-            marge = 'margin-left:{}%;'.format( pct( stuff['F'] ) )
-        if stuff['R'] :
-            marge += 'margin-right:{}%;'.format( pct( stuff['R'] ) )
-        css = ''
-        if style or marge :
-            css = 'style="{}{}"'.format( marge, style )
-        BODY << '<div {}>\n'.format( css )
-        IN_NO_REFLOW = True
+        BODY << '<div'
+        flr_class = make_flr( stuff['F'], stuff['F'], stuff['R'] )
+        css = 'white-space:pre;' + style
+        BODY << ' style="{}"'.format(css)
+        if flr_class :
+            BODY << ' class="{}"'.format(flr_class)
+        BODY << '>\n'
 
     def close_noflow( ) :
         global IN_NO_REFLOW
 
         BODY << '</div>\n' # close the div
-        IN_NO_REFLOW = False
 
     # open_list starts a /U list section. Paras will be list items. The F/L/R
     # values given by the user are ignored; they are only appropriate for
@@ -373,12 +388,13 @@ def translate( eventizer ) :
     def open_poem( ):
         global IN_STANZA_DIV, IN_POEM
 
-        L = pct( stuff['L'] )
-        F = L - pct( stuff['F'] )
-        css = 'margin-left:{}%;text-indent:{}%;'.format( L, F )
-        if stuff['R'] :
-            css += 'margin-right:{}%;'.format( pct( stuff['R'] ) )
-        BODY << '\n<div class="poetry" style="{}">\n'.format( css )
+        flr_class = make_flr(  stuff['F'], stuff['L'], stuff['R']  )
+
+        BODY << '\n<div class="poem'
+        if flr_class :
+            BODY << ' '+flr_class
+        BODY << '">\n'
+
         IN_STANZA_DIV = False
         IN_POEM = True
     #
@@ -389,13 +405,11 @@ def translate( eventizer ) :
     #
     # Else it is not empty. If we are not in a stanza, start the div.
     #
-    # If it has a line number, extract and format that, so the span
-    # for the line number precedes the line text.
-    #
     # Determine its indent in ems and generate the paragraph start.
     # Note the indent value for final CSS.
     #
-    # Process the line through trans_line.
+    # Process the line through trans_line, which handles any line number
+    # by putting it in parens at line-end.
     #
     # Generate the paragraph end.
     #
@@ -410,11 +424,7 @@ def translate( eventizer ) :
             if not IN_STANZA_DIV :
                 BODY << '<div class="stanza">\n'
                 IN_STANZA_DIV = True
-            plnum = XU.poem_line_number( text )
-            if plnum :
-                BODY << '<span class="linenum">{}</span>'.format( plnum )
-                text = XU.poem_line_strip( text )
-            ems = round( (len( text ) - len( text.lstrip() )) / 2 )
+            ems = round( ( len( text )-len( text.lstrip() ) ) / 2 )
             if ems > 0 :
                 POEM_EMS.add( ems )
                 BODY << '<p class="i{}">'.format(ems)
@@ -438,20 +448,13 @@ def translate( eventizer ) :
     # There is no close_quote function, it's just a string.
 
     def open_quote( ) :
-        css = ''
-        F = stuff['F']
-        L = stuff['L']
-        R = stuff['R']
-        if F :
-            css += 'text-indent:{}%;'.format( pct( F-L ) )
-        if L :
-            css += 'margin-left:{}%;'.format( pct( L ) )
-        if R :
-            css += 'margin-right:{}%;'.format( pct( R ) )
-        if css :
-            BODY.writeLine( '<blockquote style="{}">'.format( css ) )
-        else :
-            BODY.writeLine( '<blockquote>' )
+        global BODY
+
+        flr_class = make_flr(  stuff['F'], stuff['L'], stuff['R']  )
+        BODY << '<blockquote'
+        if flr_class :
+            BODY << ' class="{}"'.format(flr_class)
+        BODY.writeLine( '>' )
 
     # open_image builds an <img> statement from the filenames if they were
     # provided. The image markup used differs from the old GG. Set up the
@@ -520,7 +523,7 @@ def translate( eventizer ) :
         ROW = 0
         CELL = 0
         for (chars, h, v) in stuff['columns'] :
-            WIDTHS.append( 'width:{}%;'.format( pct( chars ) ) )
+            WIDTHS.append( 'width:{}%;'.format( indent_by_ems( chars ) ) )
             style = ''
             if h : # is not None,
                 if h[0] == 'r' :
@@ -564,12 +567,10 @@ def translate( eventizer ) :
     # each event code to an action that deals with it.
 
     actions = {
-        XU.Events.LINE          : lambda : do_poem_line( text, lnum ) if IN_POEM \
-                                           else trans_line( text, lnum, linebreak='<br />\n' ) if IN_NO_REFLOW \
-                                           else trans_line( text, lnum ) ,
+        XU.Events.LINE          : lambda : do_poem_line( text, lnum ) if IN_POEM else trans_line( text, lnum ) ,
         XU.Events.OPEN_PARA     : open_para ,
         XU.Events.CLOSE_PARA    : close_para ,
-        XU.Events.OPEN_NOFLOW   : open_noflow ,
+        XU.Events.OPEN_NOFLOW   : lambda : open_noflow( ) ,
         XU.Events.CLOSE_NOFLOW  : close_noflow ,
         XU.Events.OPEN_CENTER   : lambda : open_noflow( 'text-align:center;' ) ,
         XU.Events.CLOSE_CENTER  : close_noflow ,
@@ -616,24 +617,46 @@ def translate( eventizer ) :
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
-# finalize(): Add any poem indents to the CSS and append it to the prolog.
+# finalize(): Add any poem indents and F/L/R classes to the CSS and append
+# them to the prolog.
 #
 # Update the page breaks if any.
 #
 # Put </body></html> in epilog
 
 def finalize() :
-    global POEM_EMS, PAGES
+    global PROLOG, POEM_EMS, FLR_CLASSES, PAGES, EPILOG
 
     if len( POEM_EMS ) :
-        # Some poetry indents were noted. Generate matching CSS.
+        # Some poetry indents were noted. Generate matching CSS. The statement
+        # for each value of indent is
+        #   .stanza .iN { margin-left:Nem;} for the count of ems N
         for em in sorted( POEM_EMS ) :
-            PROLOG.writeLine( '.stanza .i{0} {{margin-left:{0}em;}}'.format( em ) )
+            PROLOG.writeLine(
+                '.stanza .i{0} {{ margin-left:{0}em; }}'.format( em )
+            )
+
+    if len( FLR_CLASSES ) :
+        # Some F/L/R classes were encountered; write their CSS. make_flr()
+        # has saved a triple (T,L,R) (text-, left-, and right-indent) as
+        # counts of ems, keyed by the classname. Convert those to two lines,
+        #    .classname { padding-left:L; right-margin:M }
+        #    .classname p { text-indent:T; }
+        #
+        for ( class_name, (T, L, R) ) in FLR_CLASSES.items() :
+            PROLOG.writeLine(
+                '.{} {{ padding-left:{}em; margin-right:{}em; }}'.format(class_name, L, R)
+                )
+            PROLOG.writeLine(
+                '.{} p {{ text-indent:{}em; }}'.format(class_name, T)
+                )
+
     PROLOG << CSS_CLOSE # finish the prolog
 
     if PAGES :
+        offset = PROLOG.cpos()
         for j in range( len( PAGES ) ) :
-            PAGES[j] += PROLOG.cpos()
+            PAGES[j] += offset
 
     EPILOG << '\n\n</body>\n</html>\n'
 
@@ -647,8 +670,7 @@ def finalize() :
 #
 # DTD for XHTML Strict
 #
-DTD = '''
-<!DOCTYPE html
+DTD = '''<!DOCTYPE html
 PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 '''
@@ -676,8 +698,8 @@ CSS_START = '''
 /*<![CDATA[  XML blockout */
 <!--
 /* ************************************************************************
- * Different bROWsers have different defaults when loading a new page. The
- * following CSS Reset makes all bROWsers start out with the same properties.
+ * Different browsers have different defaults when loading a new page. The
+ * following CSS Reset makes all browsers start out with the same properties.
  * See meyerweb.com/eric/tools/css/reset/ License: none (public domain)
  * ********************************************************************** */
 html, body, div, span, applet, object, iframe,h1, h2, h3, h4, h5, h6, p,
@@ -704,139 +726,99 @@ blockquote:before, blockquote:after, q:before, q:after {
 table { border-collapse: collapse; border-spacing: 0; }
 /* End of CSS Reset */
 /* ************************************************************************
- * set the body margins to allow whitespace along sides of window - use
- * width rather than margin-right to get IE5 to behave itself.
- * ********************************************************************** */
-body { margin-left:5%; width:90%; /* == margin-right:5% */ }
-/* ************************************************************************
  * set the indention, spacing, and leading for ALL paragraphs
  * ********************************************************************** */
 p {
-        margin-top: 1em; 	/* inter-paragraph space */
+	margin-top: 1em;	/* inter-paragraph space */
 	margin-bottom: 0;	/* use only top-margin for spacing */
-	line-height: 1.4em;	/* generous interline spacing */
+	text-align: left;	/* some e-readers don't justify well */
+	text-indent: 0;		/* first-line indent, could be 0em */
 }
 /* ************************************************************************
- * Style all paragraphs of open text (not quotes, table CELLs etc)
+ * Head 2 is for chapter heads, h3 for sub-heads.
  * ********************************************************************** */
-body > p {
-	text-align: justify; /* or left?? */
-	text-indent: 2em;	/* first-line indent, could be 0em */
-}
-/* ************************************************************************
- * suppress first-line-indent on paragraphs that following heads and
- * on paragraphs in table data CELLs
- * ********************************************************************** */
-h2+p, h3+p, h4+p, td, td > p { text-indent: 0; }
-/* ************************************************************************
- * Set tighter spacing for list item paragraphs
- * ********************************************************************** */
-dd, li, li > p {
-	margin-top: 0.25em;
-	margin-bottom:0;
-	line-height: 1.2em; /* leading a bit tighter than p's */
-}
+h2 { text-align:center; font-size: 150%; }
+h3 { text-align:center; font-size: 125%; }
 /* ************************************************************************
  * Small-cap font class, for use in spans.
  * ********************************************************************** */
 .smcap {font-variant: small-caps;}
 /* ************************************************************************
- * Head 2 is for chapter heads.
- * ********************************************************************** */
-h2 {
-	margin-top:3em;			/* extra space above.. */
-	margin-bottom: 2em;		/* ..and below */
-	clear: both;			/* don't let sidebars overlap */
-	font-size: 133%;		/* larger font than body */
-	/* font-weight: bold;      change these to match book */
-	/* letter-spacing: 3px;    older books often have loose headers */
-	/* text-align:center;	   left-aligned by default. */
-}
-/* ************************************************************************
- * Head 3 is for section heads, if any, or perhaps poem titles
- * ********************************************************************** */
-h3 {
-	margin-top: 2em;	/* extra space above but not below */
-	clear: both;		/* don't let sidebars overlap */
-	/* text-align:center;  left-aligned by default. */
-	/* font-weight: bold;  match the original */
-}
-/* ************************************************************************
- * Styles for images and captions
+ * Styles for images and captions. All paras directly within an image div
+ * get class='caption'.
  * ********************************************************************** */
 div.image { /* style the div that contains both image and caption */
-         border: 1px solid black;
-         text-align: center; /* centers the image */
+	border: 1px solid black;
+	text-align: center; /* centers the image */
 }
 img {   /* style the default inline image here, e.g. */
 	/* border: 1px solid black; a thin black line border.. */
 	/* padding: 6px; ..spaced a bit out from the graphic */
 }
 p.caption { /* style the paragraphs of caption text */
-	margin-top: 0; /* snuggled up to its image */
-	font-size: smaller;
-        text-align: left; /* defeats :center on the image div */
-	/* font-style: italic; 		match style to orginal */
-	/* font-variant: small-caps; ditto */
+	margin-top: 0;		/* snuggled up to its image */
+	text-align: left; /* optional, override :center from the div */
 }
 /* ************************************************************************
  * Styling tables and their contents:
- *   automatic center/bold for header and footer CELLs.
- *   use class="shade" to put gray background in a <tr> or a <td>.
+ *   automatic center for header and footer cells.
  * ********************************************************************** */
 table { /* these affect all <table> elements */
 	margin-top: 1em;	/* space above the table */
-	caption-side:		/* top; or */ bottom ;
-	empty-CELLs: show;	/* remove need for nbsp's in empty CELLs */
+	empty-cells: show;	/* remove need for nbsp's in empty cells */
 }
 td, td > p { /* style all text inside body CELLs */
-	margin-top: 0.25em;	/* compact vertical.. */
-	line-height: 1.1em;	/* ..spacing */
-	font-size: 90%;		/* smaller than book body text */
-	text-align: left;	/* left-align even if table in "center" div */
+	text-align: left;	/* in case table in "center" div */
 }
 thead td, tfoot td {	/* header/footer CELLs: center & bold */
 	text-align: center;
 	font-weight: bold;
-	/* background-color: #ddd;  optional: gray background */
 }
-td.c { text-align:center; } /* align text in table CELLs */
-td.r { text-align:right; }  /* generated by PPQT table->html */
-
-table .shade { /* class="shade" apply to <tr> or <td> */
-	background-color: #ddd;
-}
+td.c { text-align:center; } /* align text in table cells */
+td.r { text-align:right; }
 /* ************************************************************************
- * Style the blockquote tag and related elements:
- *  - inset left and right
- *	- one-point smaller font (questionable?)
+ * Style the blockquote tag inset left and right. Note: many block quotes
+ * get a class based on the First/Left/Right values that overrides these.
+ * This default is based on F:2 L:2 R:2, 2/75 --> 2.66% rounding to 3%
  * ********************************************************************** */
 blockquote {
-	margin-left: 5%;
-	margin-right: 5%;
-	/*font-size: 90%;  optional: smaller font */
+	margin-left: 3%;
+	margin-right: 3%;
+}
+/* ************************************************************************
+ * Style the rule used for a thought-break. Centered, 30% width, space
+ * above and below. Note that <p> has 1em top margin. Note that the only
+ * way to center a rule, margin-left/right:auto, is stripped out by EPUB
+ * conversion, so in an e-reader this rule is left-aligned.
+ * ********************************************************************** */
+hr.tb {
+	width:30%;
+	margin-top:1em;
+	margin-bottom: 0em;
+	margin-left: auto;
+	margin-right: auto;
 }
 /* ************************************************************************
  * [Sidenote:stuff] becomes <div class="sidenote"><p>stuff</p></div>.
+ * For HTML you could consider "floating" a sidenote to the right. The code
+ * to do so is commented out because floats aren't allowed in EPUB.
  * ********************************************************************** */
 .sidenote {
 /* the following style the look of the sidenote box: */
-	width: 5em;			/* ..fixed width, */
-	float: right;		/* ..float to the right, */
-	margin-right: -4%;	/* ..exdented into body margin of 5% */
-	margin-top: 0;		/* top even with following <p>'s top */
-	margin-left: 6px;	/* ..ensure space away from body text */
+	width: 10em;		/* ..fixed width, */
 	border: 1px dotted black; /* ..thin dotted border */
-	padding: 0 0 0 4px; /* ..ease content out from left border */
-	background-color: #ddd; /* ..optional pale tint */
+	/* Un-comment the following for XML/HTML only (no floats in EPUB) */
+	/* float: right;		float style: uncomment for HTML */
+	/* margin-top: 0;		top even with following <p>'s top */
+	/* margin-left: 6px;	..ensure space away from body text */
 }
 /* the following style the look of the text inside the box: */
 .sidenote p {
-	font-size: smaller;	/* ..small text; could be font-size:x-small */
-	/*color: #333;		 ..optional dark-gray text */
-	text-indent: 0;		/* ..no para indent */
-	text-align: right;	/* ..right align text in box */
-	line-height: 1.1em;	/* tight vert. spacing */
+	margin-top: 0.1em;	/* snuggle up to top of box */
+	font-size: smaller;	/* could be font-size:x-small */
+	text-indent: 0;		/* no para indent */
+	text-align: center;	/* center text in 10em box */
+	line-height: 1.1em;	/* tight leading if it folds */
 }
 /* ************************************************************************
  * Footnotes and footnote anchors
@@ -847,110 +829,96 @@ blockquote {
  *     - style ".footnote a" to change look of label link
  * <a ...class="fnanchor"> around [nn] in the body text
  * ********************************************************************** */
- /* Style the look of the [nn] Anchor in the body text */
-.fnanchor {
-	font-size: 75%;		/* small - 2pts less than adjacent text */
-	text-decoration: none;	/* no underscore, blue color is enough */
-	vertical-align: 0.33em;	/* raise up from baseline a bit */
-	/*background-color: #eee;  optional pale gray background */
-}
-/* Style the /F..F/ block with a border or a background color */
-.footnotes {
-	margin: 2em 1em 1em 1em;	/* set off from body */
-	/*border: dashed 1px gray;	optional border */
-	/*background-color: #EEE;	optional light background tint */
-	/*padding: 0 1em 1em 1em; 	optional indent note text from border */
-}
-/* Style an optional header, e.g. "FOOTNOTES" within a footnote block */
-.footnotes h3 {
-	text-align:center;
-	margin-top: 0.5em;
-	font-weight:normal;
-	font-size:90%;
+div.footnotes {
+	/* nothing special, could have a border */
 }
 /* Style the label and all text within one footnote */
 .footnote {
-	/*font-size: 90%;	optional make font 1-pt smaller than body */
+	/*font-size: smaller;  optional smaller font than body */
 }
-/* Style the [nn] label separately from the footnote itself */
+/* Style the [nn] label within the footnote separately */
 .fnlabel {
-	/*float:left;	optional: float left of footnote text */
-	text-align:left;	/* aligned left in span */
-	width:2.5em;		/* uniform width of [1] and [99] */
+	/* nothing special beyond normal link decoration */
 }
-/* Style any link within a footnote, in particular the [nn] which is a
-   link back to the anchor. */
-.footnote a {
-	text-decoration:none; /* take the underline off it */
+
+/* Style the look of the [nn] Anchor in the body text */
+.fnanchor {
+	font-size: small;	/* whatever the e-reader thinks is small */
+	text-decoration: none;	/* no underscore, blue color is enough */
+	vertical-align: 0.33em;	/* raise up from baseline a bit */
 }
 /* ************************************************************************
- * Mark corrected typo with:
+ * The translator (see do_brkts()) replaces a corrected typo with:
  *  <ins class="correction" title="Original: typu">typo</ins>
+ * NOTE e-readers do not do pop-up titles. So the "Original: XXX" title
+ * will never be seen by the e-reader user. For that reason the
+ * border-bottom style should only be used in HTML, where it alerts the
+ * reader that there is something going on with this word. It should be
+ * commented out for EPUB conversion and the correction looks normal.
  * ********************************************************************** */
 ins.correction {
 	text-decoration:none; /* replace default underline.. */
-	border-bottom: thin dotted gray; /* ..with delicate gray line */
+	/* border-bottom: thin dotted gray; ..with delicate gray line */
 }
 /* ************************************************************************
- * Style visible page numbers in right margin. Pagenum is inserted as
- * <span class='pagenum'> <a id="Page_FOLIO">[FOLIO]</a> </span>
+ * Style visible page numbers, as described in
+ *   www.pgdp.net/wiki/User:Laurawisewell/Content_Method_for_HTML_pagenums
+ * (this replaces the old Guiguts code for pagenums).
+ *
+ * Pagenum is inserted in text at pagebreaks using:
+ * <span class="pagenum" title="FOLIO">&nbsp;</span><a id="Page_FOLIO"></a>
  * where FOLIO is what you set with the Pages panel!
  * ********************************************************************** */
-.pagenum { /* right-margin page numbers */
-	/*visibility:hidden	uncomment to hide the page numbers */
-	font-size:75%;		/* tiny type.. */
-	color: #222;		/* ..dark gray.. */
-	text-align: right;	/* ..right-justified.. */
-	position: absolute;	/* out of normal flow.. */
-	right: 0;		/* ..in the right margin.. */
-	padding: 0 0 0 0 ;	/* ..very compact */
-	margin: auto 0 auto 0;
-	}
-.pagenum a {/* when pagenum is a self-reference link (see text)... */
-	text-decoration:none;	/* no underline.. */
-	color:#444;		/* same color as non-link */
-	}
-.pagenum a:hover { color:#F00; }/* turn red when hovered */
+.pagenum  {
+        position: absolute;
+        right: 0;
+        font-size: 12px;
+        font-weight: normal;
+        font-variant:normal;
+        font-style:normal;
+        text-indent: 0em; text-align:right;
+        color: silver;
+        background-color: #FFF;
+    }
+span[title].pagenum:after { content: "[" attr(title) "] "; }
+a[name] { position:absolute; }      /* Fix Opera bug  */
 /* ************************************************************************
  * Styling poetry, Guiguts-compatible class names
- * <div class="poem"> around entire poem -- title goes outside as <h2 or 3>
- * <div class="stanza"> around each stanza even if only one
- * <p class="i?">..</p> around each line
- * the span class i<n> is omitted for unindented lines; else <n> is 1/2
- *   the count of ascii spaces preceding the indented line.
+ * <div class="poem"> around entire poem or canto -- any stanza number or
+ *    canto title goes outside the poem div as <h3>.
+ * <div class="stanza"> around each stanza, even if only one.
+ * <p>..</p> around every non-indented line.
+ * <p class="i?">..</p> around each indented line. These classes are
+ * generated at the end of the styles.
+ *
+ * Note the translator puts a poem line number at the end of its line
+ * in parentheses. No attempt to float it or put it in the margin nor to
+ * style it with smaller font or anything.
  * ********************************************************************** */
-div.poem { /* Style the entire poem */
+/* Style the entire poem or canto. */
+div.poem {
 	text-align:left; 	/* make sure no justification attempted */
-	margin-left:5%;		/* inset a bit from the left */
-	width:90%;		/* inset from the right, & fix IE6 abs.pos. bug */
-	position: relative;	/* div is a container for .linenum positions */
+	margin-left:3%;		/* inset a bit from the left */
 }
 .poem .stanza {		/* set vertical space between stanzas */
 	margin-top: 1em;
 }
-.stanza p { /* style any one line */
-	line-height: 1.2em;	/* set spacing between lines within stanza */
-	margin-top: 0;		/* stanza provides vertical break */
-}
-/* Style poem line numbers, positioned far right or far left */
-.stanza .linenum {
-/* the following locate poem line numbers horizontally */
-	position: absolute;	/* positioned out of text flow */
-	top:auto;
-	/*left: -2.5em; 		   ..in the LEFT margin, or.. */
-	right: -2em;		/* ..in the RIGHT margin */
-/* the following determine the look of poem line numbers */
-	margin: 0;
-	text-indent:0;
-	font-size: 90%;		/* they are smaller */
-	text-align: center;	/* centered in a space... */
-	width: 2.5em;		/* ...about 3+ digits wide */
-	color: #555; background-color: #eee; /* dark gray on light gray or */
-	/* color: #fff; background-color: #777;  ..white on medium gray */
+/* Style any single poem line which is in <p>...</p> */
+.stanza p {
+	margin-top: 0.25em;	/* spacing between lines in a stanza */
+	line-height: 1.2em;	/* only used if a long line "folds" */
+        /* following is needed to get text-indent from div.poem */
+	text-indent: inherit;
 }
 /* Here follows generated lines of the form:
- *     .stanza .i9 {margin-left:9em;}
- * one for each unique poem line indent used, i1 to i?.
+ *     .stanza .iX {margin-left:Xem;}
+ * with one class for each unique poem line indent used, i1 to i?.
+ *
+ * Also generated lines of the form:
+ * .fnlnrn { margin-left:L%; text-indent:F%; margin-right:R%; }
+ * where the L, F and R percentages are based on the F/L/R values
+ * of a /Q block, for example given /Q F:4 Left:2 Right:2,
+ * .f4l2r2 { margin-left:3%; text-indent:3%; margin-right:3%; }
  */
 '''
 
