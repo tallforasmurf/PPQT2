@@ -1,0 +1,165 @@
+
+       =============  Ppgen Translator  ==============
+
+This module translates a DP-formatted book to Ppgen markup syntax.
+It copies most lines of text from the source book unchanged, but makes
+the following changes.
+
+
+		Your Notes
+
+Your notes from the Notes panel of the source book are copied to the
+new book.
+
+
+		Page Breaks
+
+Wherever PPQT signals a page boundary, a line ".pn FOLIO" is inserted.
+The FOLIO value is from the folio values you set in the Pages panel.
+
+Also, the page boundary metadata for the output file is updated, so if
+you save the new file in the same folder as the source book, PPQT will
+be able to display scan images in the Images panel correctly.
+
+
+		Book Facts
+
+The first three lines of the output are:
+
+	.dt The Project Gutenberg eBook of TITLE, by AUTHOR
+    .h1 title='TITLE'
+	TITLE
+
+The TITLE and AUTHOR are filled in from the Book Facts, if you have set
+them there (right-click in the edit panel to edit Book Facts). Otherwise
+they are filled with "No Title Given?" and "Author Unknown?".
+
+
+		Block Quotes
+
+Sections marked /Q..Q/ are marked with
+	.in L
+	.ll -R
+where L is the Left: indent value and R is the Right: indent value. (No
+support for First: paragraph indents.) Following the quote is
+	.in
+	.ll
+to cancel the indents.
+
+
+		No-Reflow Sections
+
+Sections marked /X..X/, /R..R/, /C..C/, and poems marked /P..P/ are all
+converted to .nf blocks. Right-aligned and centered sections are marked
+with ".nf r" and ".nf c" respectively. Following the lines of the section
+or poem is the line
+	.nf-
+to close the section.
+
+Prior to each no-reflow section are the commands
+	.in +F
+	.ll -R
+where F is the First: indent value and R is the Right: indent value. The
+line ".in +F" line is produced only when First: is not zero. The line
+".ll -R" is produced only when Right: is not zero. Following each
+no-reflow section are the lines,
+	.in
+	.ll
+to cancel the indents, when needed.
+
+
+		Link targets
+
+PPQT recommends marking a link target <id='targetname'> while Ppgen uses
+<target id='targetname'>. Whenever the Translator sees "<id=" it changes it
+to "<target id=". (If you already used "<target id=" it is left alone.)
+
+
+		Headings
+
+The four blank lines before a chapter head are replaced with
+	.sp 4
+	.h2
+The chapter head text is followed by a ".sp 2" line.
+
+The two blank lines before a sub-head are replaced with
+	.sp 2
+	.h3
+Note that PPQT allows a chapter head to have multiple lines and multiple
+paragraphs, and a sub-head to have multiple lines. Ppgen expects either
+head to be just one line.
+
+
+		Illustrations
+
+"[Illustration: Caption text..." converts to
+	.il
+	.ca
+	Caption text...
+	.ca-
+
+"[Illustration:fig3.png Caption text..." converts to
+	.il fn=fig3.png
+	.ca
+	Caption text...
+	.ca-
+
+"[Illustration:fig3.png|fig3hr.jpg Caption text..." converts to
+	.il fn=fig3.png link=fig3hr.jpg
+	.ca
+	Caption text...
+	.ca-
+
+Note that PPQT permits an Illustration block to contain multiple paragraphs
+quotes, etc. Ppgen only expects one-line captions. The Ppgen ".il" command
+has many optional arguments besides fn= and link= which you will need to
+add manually.
+
+
+		Footnotes
+
+"[Footnote X: Note text starts..." is converted to
+	.fn X
+	Note text starts...
+A line ".fn-" is written following the end of the note text.
+
+
+		Footnote Landing Zones
+
+Ppgen has a different concept of "footnote landing zones" than does PPQT.
+If you want to use the Ppgen method, which permits moving footnotes to
+different locations depending on the output medium (one destination for
+ETEXT, another for HTML, etc.), then you should use the PPQT Footnote panel
+only to edit, validate, and renumber footnotes. Do not define /F..F/
+footnote zones in PPQT and leave the footnotes in place following their
+reference paragraphs.
+
+If you want to move the footnotes in PPQT, do define /F..F/ zones to 
+receive them, and use the Footnotes panel to move them. This translator
+converts the /F and F/ lines to .fm lines, requesting a footnote rule.
+
+
+	Tables
+
+PPQT table sections marked /T..T/ are converted to Ppgen syntax. The table
+is preceded by a .ta line and ends with a .ta- line.
+
+PPQT assumes that you use stile characters to TERMINATE every cell value
+(one stile for every cell in a row). Ppgen assumes that you use stile
+characters to SEPARATE cell values (one fewer stiles than cells per row).
+The Translator takes care of this difference; cell values are correctly
+punctuated for Ppgen in the output.
+
+If you do not specify column widths and alignments on the /T line, PPQT
+calculates widths based on the first row of cells, and makes all alignments
+left and middle. If you specify the column widths and alignments using the
+PPQT syntax (as in the "Suggested Workflow" document), these are converted
+to the correct Ppgen column syntax on the .ta line.
+
+
+
+
+	
+
+
+	
