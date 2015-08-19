@@ -401,19 +401,18 @@ Put the regular expression
 \f1 \\[[^FIS]
 \f0  (literal left-bracket not followed by F I or S) in the Find field and search. What comes up should be transliterations such as 
 \f1 [Greek:Mia glossa]
-\f0 . You need to check the transliterated letters against the original image. Here are two important resources:\
-    www.gutenberg.org/wiki/Gutenberg:Greek_How-To\
-    www.pgdp.net/phpBB2/viewtopic.php?t=16124\
-\
-The Translators for HTML and Ppgen both support including the Unicode for the original Greek in the HTML, EPUB or UTF output. For now, place the Unicode after the transliteration, divided by a stile character:\
-    
-\f1 [Greek:Mia glossa|
+\f0 , or possibly actual Greek characters, 
+\f1 [Greek:
 \f5 \uc0\u924 
 \f3 \uc0\u943 \u945 
 \f1  
 \f3 \uc0\u947 \u955 \u974 \u963 \u963 \u945 
-\f1 ]
-\f0 \
+\f1 ].
+\f0  You need to check the letters against the original image. Here are two important resources:\
+    www.gutenberg.org/wiki/Gutenberg:Greek_How-To\
+    www.pgdp.net/phpBB2/viewtopic.php?t=16124\
+\
+If you plan to translate to Ppgen format, be sure to read the Ppgen tutorial on Greek syntax.\
 \
 
 \b 16. Illustrations\
@@ -472,7 +471,7 @@ On the Fnote panel, click Refresh. PPQT runs through the book and attempts to pa
 \
 Start at the top of the table and examine each footnote in sequence: click on the Key value once to see the Anchor; click again to see the Note that has been paired with it. Repeat for each note in sequence. Make sure that each Note is positioned soon after the paragraph that contains its Anchor. Make sure that the highlight covers all of the Note, but only that Note. If the highlight on a Note is too long, it means the closing right-bracket is missing or is not the last letter on its line.\
 \
-There is no substitute for looking at every footnote this way to ensure that PPQT has correctly paired Anchors and Notes and recognized the scope of each Note correctly.\
+There is no substitute for looking at every footnote in this way! This is the only way to ensure that PPQT has correctly paired Anchors and Notes and recognized the scope of each Note correctly.\
 \
 Here's a common problem. If some Note A is malformed, the Anchor 
 \f1 [A]
@@ -489,6 +488,8 @@ When all footnotes are correctly matched, renumber them. Decide on the numbering
 Decide whether to have in-line footnotes (as they are now, located after their paragraphs of reference) or out-of-line footnotes (grouped at the end of each chapter or at the end of the book). If out-of-line, define the footnote zones with 
 \f1 /F..F/
 \f0  markup. Click Move Notes on the Fnote panel. Check the results. If any problem, click in the Edit panel and undo the move.\
+\
+(If you will translate the book to Ppgen markup, be aware that Ppgen has its own method of moving footnotes. Leave the footnotes close to their reference paragraphs for now, and set up the Ppgen dynamic move system later.)\
 \
 
 \b 19. Balanced markup
@@ -532,41 +533,7 @@ If the full text begins on image 017 with folio 1, go to that line of the table.
 Now make the Images panel visible. Click in the Edit panel and page through the text. The Folio value can be seen on bottom edge of the Edit panel. Compare it to what is visible in the scanned image. With further adjustments of the Pages table you can arrange that the proper Folio is shown for every page image. It is these Folio values that are available as link targets (next topic).\
 \
 
-\b 22. Illustrations, image files, and ids.
-\b0 \
-\
-Some books have many illustrations, others few or none. Now is a good time to take a break from editing the text and process the image files for the Illustrations. Set up a (not-regex) search for 
-\f1 [Illustration
-\f0  and step through the illustrations. At each one,\
-\
-* Locate the high-resolution image file that matches it.\
-\
-* Use Photoshop or other software to do any image processing needed.\
-\
-* Save the processed image in the 
-\f1 images
-\f0  folder.\
-\
-* If there are two sizes, a small inline image and a larger, linked image, store both using some consistent naming scheme. (The PPVer will require that image filenames be short and all-lowercase.)\
-\
-Some Translators recognize the filename of the image to be displayed, and optionally the filename of a larger linked image, as part of this markup. Put the inline filename immediately after the colon, and the optional linked filename after a stile:\
-\
-    
-\f1 [Illustration:fig023.png|hr023.jpg <sc>Fig.</sc> 23...]
-\f0 \
-\
-Some Translators will recognize a link-target as part of the markup. Write it as <
-\f1 id="
-\f0\i target
-\f1\i0 ">
-\f0  before the beginning of the caption text.\
-\
-
-\f1\fs24   [Illustration:fig023.png|hr023.jpg <id=F023> <sc>Fig.</sc> 23...]
-\f0\fs28 \
-\
-
-\b 23. Internal links
+\b 22. Internal links
 \b0 \
 \
 Books often contain internal cross-references, for example "See discussion, page 482". You want to mark these so that in formats that support linking (HTML, EPUB, PDF) the text will be a link that can be clicked.\
@@ -593,7 +560,7 @@ If you have set the Folios properly as described in the step 21, you can use Fol
 \f1 Page_418
 \f0  or 
 \f1 Page_xiv 
-\f0 is made automatically for every Folio value.\
+\f0 is made automatically for every unique Folio value.\
 \
 
 \b Links.
@@ -632,6 +599,41 @@ If you have set the Folios properly as described in the step 21, you can use Fol
 \f0 ) or the Table of Contents.\
 \
 
+\b 23. Illustrations, image files, and ids.
+\b0 \
+\
+Some books have many illustrations, others few or none. Now is a good time to take a break from editing the text and process the image files for the Illustrations. Set up a (not-regex) search for 
+\f1 [Illustration
+\f0  and step through the illustrations. At each one,\
+\
+* Locate the high-resolution image file that matches it.\
+\
+* Use Photoshop or other software to do any image processing needed.\
+\
+* Save the processed image in the 
+\f1 images
+\f0  folder. (The PPVer will require that image filenames be short and all-lowercase.)\
+\
+If there are two sizes, a small inline image and a larger, linked image, store both using some consistent naming scheme. (Note that linking to larger images is not supported by EPUB; and that EPUB limits all images to less than 600px width and less than 200KB file size.)\
+\
+Some Translators recognize the filename of the image to be displayed, and optionally the filename of a larger linked image, as part of this markup. Put the inline filename immediately after the colon, and the optional linked filename after a stile:\
+\
+    
+\f1 [Illustration:fig023.png|hr023.jpg <sc>Fig.</sc> 23...]
+\f0 \
+\
+You can note that an image has a target-id for linking from the text. Write it as <
+\f1 id="
+\f0\i target
+\f1\i0 ">
+\f0  before the beginning of the caption text:\
+
+\f1\fs24   [Illustration:fig023.png|hr023.jpg 
+\f6\b <id=F023>
+\f1\b0  <sc>Fig.</sc> 23...]
+\f0\fs28 \
+\
+
 \b 24. Book Facts
 \b0 \
 \
@@ -651,8 +653,7 @@ Right-click in the Edit panel and choose Edit Book Facts... from the context men
 \
 The list of facts is saved in the metadata file, and it is passed to any Translator you run. For example the HTML Translator will take the "Title"  and "Author" facts, if they are given, and put them in a 
 \f1 <title>
-\f0  statement. DP Canada's Fpgen markup supports a scheme of facts based on the Dublin Core standard. You can put such facts in with lines like:\
-    DC.Language : en\
+\f0  statement. The Ppgen Translator puts the "Title" and "Author" facts, if given, in the ".dt" statement at the top of the document. DP Canada's Fpgen markup supports a scheme of facts based on the Dublin Core standard. You can add such facts with lines like: DC.Language : en\
 \
 
 \b 25. Extended block markup.
@@ -666,7 +667,7 @@ The DP formatting guidelines support only two types of block markup:
 \
 In the following steps you supplement the DP markup with more information. 
 \i These steps are optional
-\i0 . If you are going to Translate the book to some other markup convention such as Ppgen or Fpgen, you could go to step 32 and do so now. Then you can work in the translated document to use its markup codes to complete the book layout.\
+\i0 . If you are going to Translate the book to some other markup convention such as Ppgen or Fpgen, you could skip immediately to step 33. Then you can work in the translated document and use its markup conventions to complete the book layout.\
 \
 The following markups accept 
 \f1 First:
@@ -677,13 +678,18 @@ The following markups accept
 \i0  and 
 \f1 Right:
 \f0\i n
-\i0  parameters to control margins. In each case 
+\i0  parameters to control margins, for example\
+	
+\f1 /X First:2 Right:2
+\f0 \
+In each case 
 \i n
-\i0  represents a count of ASCII spaces, relative to the standard ASCII etext line of 72 characters. 
+\i0  represents a count of ASCII spaces, relative to the standard ASCII maximum line of 75 characters. 
 \f1 First:
 \f0  specifies the indent for the first line of a paragraph, or for each line of a poem. 
 \f1 Left:
-\f0  specifies the indent for lines of a paragraph that follow the first one, or for the part of a line of a poem that has to be "broken" because the line doesn't fit in 72 characters. 
+\f0  specifies the indent for lines of a paragraph that follow the first one, or for the part of a line of a poem that has to be "broken" because the line doesn't fit in the width.\
+
 \f1 Right:
 \f0  specifies an indent from the right margin.\
 \
@@ -695,24 +701,24 @@ The following markups accept
 \f1 Right
 \f0  can be abbreviated to their initial letters.\
 \
-When they are converted to HTML or other formats that do not have fixed widths, these margin numbers are translated as percentages of the 72-character line. For example a 
-\f1 Left:4
-\f0  parameter translates to a 5.5% left margin in HTML. A 
-\f1 Right:7
-\f0  parameter translates to a 10% right margin, achieved in HTML by setting line width to 90%.\
+The HTML Translator converts these numbers to HTML "em" units in the ratio 2:1, that is, 2 ASCII spaces equal one HTML em.  For example a 
+\f1 First:4
+\f0  parameter translates to a CSS style of 
+\f1 margin-left:2em
+\f0 .\
 \
 
-\b 25. No-reflow sections.\
+\b 26. No-reflow sections.\
 
 \b0 \
 No-reflow sections are sections of highly-formatted text that need to be left as-is, and will probably require individual attention when the book is translated to some other format such as HTML. Mark these with 
 \f1 /X..X/
 \f0 , or just leave them marked with  
 \f1 /*..*/
-\f0  as the proofers marked them. Examples of no-reflow sections are equations, and small tables with odd layouts.\
+\f0  as the proofers marked them.\
 \
 
-\b 26. Centered lines.
+\b 27. Centered lines.
 \b0 \
 \
 A block of centered lines, like the typical book title page, is now surrounded with 
@@ -730,15 +736,15 @@ A block of centered lines, like the typical book title page, is now surrounded w
 \f0 .\
 \
 
-\b 27. Right-aligned sections.\
+\b 28. Right-aligned sections.\
 
 \b0 \
-A right-aligned section is like a Centered section: it is one or more no-reflow lines that are justified against a right margin. Right-aligned lines are useful as quote attributions and when duplicating old letterhead styles. The default for 
+A right-aligned section consists of one or more no-reflow lines that are to be justified against a right margin. Right-aligned lines are useful as quote attributions and when duplicating old letterhead styles. The default for 
 \f1 Right
 \f0  is 2; specify a larger number for a deeper indent, or 0 to right-align on the normal right margin.\
 \
 
-\b 28. Poetry.
+\b 29. Poetry.
 \b0 \
 \
 When 
@@ -773,7 +779,7 @@ In a poem, stanza breaks are indicated by single blank lines and are part of the
 If the poem has line numbers, make sure that each line number is separated from the text of its line by at least two spaces.\
 \
 
-\b 29. Lists.
+\b 30. Lists.
 \b0  When 
 \f1 /*..*/
 \f0  encloses a list, change it to 
@@ -798,7 +804,7 @@ be one greater,
 \f0 .\
 \
 
-\b 30. Block quotes.
+\b 31. Block quotes.
 \b0 \
 \
 A block quote is a section of one or more paragraphs that can be reflowed but which should be indented with respect to the main text flow. Change 
@@ -811,9 +817,9 @@ A block quote is a section of one or more paragraphs that can be reflowed but wh
 \f1 Left
 \f0 , and 
 \f1 Right
-\f0  is 2,2,4 (for a total line length of 70-2-4=64 characters in ASCII).\
+\f0  is 2,2,4 (for a total line length of 72-2-4=66 characters in ASCII).\
 \
-Block quotes may include other quotes, poems, footnote anchors (but not the footnotes themselves), centered and right-aligned sections. Here is an example:\
+PPQT allows block quotes to include multiple paragraphs, other quotes, poems, footnote anchors (but not the footnotes themselves), centered and right-aligned sections. Here is an example:\
 \
 
 \f1 /Q\
@@ -834,7 +840,7 @@ Q/\
 
 \f0 \
 
-\b 31. Tables.
+\b 32. Tables.
 \b0 \
 \
 Tables are always a problem for the post-processor. The editors and typographers of the original work used all their skills to display information efficiently. The DP proofers have done their best to render the data using ASCII characters, spaces, and stile (vertical-bar) characters. But that formatting is of little use when converting to HTML, PDF or EPUB.\
@@ -847,9 +853,9 @@ If you are going to translate to Ppgen or Fpgen, you can leave tables marked wit
 \
 Delimit the table with 
 \f1 /T..T/
-\f0 . After the 
+\f0 . On the 
 \f1 /T
-\f0  write text to specify the columnar layout. For each column, write a letter to specify alignment and optionally a number to give the column width. The alignment letters are 
+\f0  line you may specify the columnar layout. For each column, write one or two letters to specify alignment and optionally a number to give the column width. The alignment letters are 
 \f1 l
 \f0  (ell), 
 \f1 r
@@ -861,19 +867,19 @@ Delimit the table with
 \f1 C
 \f0 , and 
 \f1 B
-\f0  for top, center and bottom vertical alignment. The width is a count of characters relative to the 72-character ASCII line. In assigning widths keep in mind that there must be a stile character between  columns in the output. If width is omitted, the column width is computed by some algorithm.\
+\f0  for top, center and bottom vertical alignment. The width is a count of characters relative to the 75-character ASCII line. In assigning widths keep in mind that there must be a stile character between  columns in the output.\
 \
 For example 
 \f1 /T r5 l55 rB8
 \f0  begins a three column table with the first column 5 characters wide and right-aligned and the second column 55 characters left-aligned. The third column is 8 characters wide and cell contents are to be left-aligned horizontally and bottom-aligned vertically. (This might be a Table of Contents with a chapter number, a chapter title, and a page number.)\
 \
-If you do not specify any columns on the 
+If you only specify the alignments, but not the widths, PPQT calculates the widths based on the cell contents of the first line of the table. If you do not specify any columns on the 
 \f1 /T
-\f0  line, PPQT assumes that there are as many columns as there are stile characters in the first data line, and gives them widths based on the separation of those stile characters.\
+\f0  line, PPQT assumes that there are as many columns as there are stile characters in the first data line. It defaults all the columns to left alignment and gives them widths based on the separation of those stile characters.\
 \
 Each line of text in a table has the contents of one table row. The contents of the cells are 
 \i\b terminated
-\i0\b0  by stile characters. Each row of data must the same number as stiles as the table has columns. White space around the stiles is ignored.\
+\i0\b0  by stile characters. Each row of data must have the same number as stiles as the table has columns. White space around the stiles is ignored.\
 \
 
 \f1 /T r5 l55 rB8\
@@ -884,29 +890,37 @@ Each line of text in a table has the contents of one table row. The contents of 
 T/
 \f0 \
 \
-All Translators support "reflowing" the contents of a cell that are too long for the width of its column.\
+The HTML and ASCII Translators support "reflowing" the contents of a cell that are too long for the width of its column. The Ppgen Translator converts this table markup into the Ppgen table markup.\
 \
 This table markup has no provision for continuing a long cell on multiple lines. It also has no provision for spanned columns or rows, or for making the alignment of one cell different from the default for the column, or for stylings such as borders. After you Translate it into some other markup style you can add spanning and other features.\
 \
 
-\b 32. Translate to other formats.
+\b 33. Translate to other formats.
 \b0 \
 \
-The book is now 100% complete according to the DP Formatting Guidelines, possibly augmented with markup of block sections. Now it needs to be converted into other formats such as HTML, EPUB, and plain text. This is done by a Translator. A Translator converts the book as it is now, into a new document with the same contents but a different format.\
+The book is 100% complete according to the DP Formatting Guidelines, possibly augmented with markup of block sections. Now it needs to be converted into other formats such as HTML, EPUB, and plain text. This is done by a Translator. A Translator converts the book as it is now, into a new document with the same contents but a different format.\
 \
-Open the File>Translate menu and select one of the translators in the sub-menu.  The chosen Translator starts. It may present a dialog with options.\
+All Translators are found in the Translators folder in the Extras folder. Each Translator is a file with the suffix 
+\f1 .py
+\f0 . For each one there should be a file of documentation with the same name and suffix of 
+\f1 .txt
+\f0  or 
+\f1 .utf
+\f0 . This file will tell you what features the Translator can accept and what it does with them.\
+\
+Open the File>Translate menu and select one of the translators in the sub-menu.  The chosen Translator is initialized. It may present a dialog with options for you to select, or not.\
 \
 Next, PPQT performs a document structure check of the entire document. The purpose is to ensure that all block markups are properly closed, and where block markup is nested, the nesting is legitimate.\
 \
-The document structure check is quite the robot bureaucrat. The first few times you attempt a Translation you are likely to see instead an error message "Document structure error around line 
+The document structure check is quite a little robot bureaucrat. The first few times you attempt a Translation you are likely to see an error message "Document structure error around line 
 \i n
-\i0 " followed by some cryptic notes about "Processing XXXX trying to find one of YYYY ZZZZ...". The first all-cap name is a clue to what element the parser was trying to finish, for example QUOTE, PARA or FNOTE. The others tell you what type of element could legally follow, for example EMPTY (blank line), LINE (non-empty line), BCLOSE (right-bracket to end a Footnote or Illustration) and so on.\
+\i0 " followed by some cryptic notes about "Processing XXXX trying to find one of YYYY ZZZZ...". The first all-cap name is a clue to what element the parser was trying to finish, for example QUOTE, PARA or FNOTE. The others tell you what type of element could legally follow, for example EMPTY (blank line), LINE (non-empty line), BCLOSE (right-bracket to end a Footnote or Illustration) and so on. Jump to the line number in the message and figure out what the problem is, for example a missing Q/ line at the end of a block quote.\
 \
 When PPQT finds the document structure correct, it feeds the book's contents into the Translator. The Translator writes a new version of the document using a different markup scheme.\
 \
-The translated document appears as a new document with its own Edit panel and other panels. (The original book is still open and unchanged.) The name of the new document is 
+The translated document appears as a new document with its own Edit panel and other panels. The original book is still open and unchanged. The name of the new document is 
 \i Untitled-n
-\i0 . It has copies of the Notes, the good-word and bad-word lists, and Find panel values from the source book. It may or may not have the Page panel data and display scan images in the Images panel (this depends on the Translator).\
+\i0 . It contains a copy of the Notes, the good-word list, the bad-word list, and the Find panel search history from the source book. It may or may be able to display scan images in the Images panel (this depends on the Translator).\
 \
 Examine the new document. If there is some problem, you can simply close it without saving it, and return to the original for more editing before you Translate again.\
 \
