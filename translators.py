@@ -1092,7 +1092,10 @@ def event_generator( page_model, edit_model ) :
             code = last_bracket
 
         if not in_no_flow :
-            in_no_flow = code in 'XCRP'
+            if code in 'XCRP':
+                # entering a no-flow, bring expect_lnum up to this line
+                in_no_flow = True
+                expect_lnum = lnum # expect the one we have
         else :
             in_no_flow = not code in 'xcrp'
 
