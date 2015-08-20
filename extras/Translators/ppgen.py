@@ -190,7 +190,7 @@ def open_illo( code, text, stuff ):
         BODY << ' fn=' + image
         if hires :
             BODY << ' link=' + hires
-    BODY <<'\n.ca\n'
+    BODY <<' w=77%\n.ca\n'
 
 # Open a [Footnote X: markup, emitting .fn X. This will be followed by
 # paragraph events, possibly quotes and noflows, who knows? Eventually we get
