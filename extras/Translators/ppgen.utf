@@ -93,27 +93,32 @@ head to be just one line.
 		Illustrations
 
 "[Illustration: Caption text..." converts to
-	.il
+	.il w=77%
 	.ca
 	Caption text...
 	.ca-
 
 "[Illustration:fig3.png Caption text..." converts to
-	.il fn=fig3.png
+	.il fn=fig3.png w=77%
 	.ca
 	Caption text...
 	.ca-
 
 "[Illustration:fig3.png|fig3hr.jpg Caption text..." converts to
-	.il fn=fig3.png link=fig3hr.jpg
+	.il fn=fig3.png link=fig3hr.jpg w=77%
 	.ca
 	Caption text...
 	.ca-
 
-Note that PPQT permits an Illustration block to contain multiple paragraphs
-quotes, etc. Ppgen only expects one-line captions. The Ppgen ".il" command
-has many optional arguments besides fn= and link= which you will need to
+The purpose of the width "w=77%" is to prevent Ppgen from issuing an error
+message. However, you will need to edit these values to make them correct.
+You can find them easily by searching for "77%". The ".il" command has
+other optional arguments besides fn=, link= and w= that you will need to
 add manually.
+
+Note that PPQT permits an Illustration block to contain multi-line
+paragraphs, multiple paragraphs, quotes, etc. Ppgen only expects one-line
+captions. You will have to edit any caption with multiple lines.
 
 
 		Footnotes
