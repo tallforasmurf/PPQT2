@@ -1,10 +1,19 @@
                       This is PPQT Version 2
 			
-                    Distribution of 21 July 2015
+                    Distribution of 22 August 2015
 
+This 22 August bundle includes two minor fixes for the Translator support
+module, a revised HTML Translator, and now, a Ppgen Translator!
 
-Note: the annoying PyInstaller bug that kept the PPQT menu from appearing
-in the menu bar has been fixed! Thank you Hartmut and Martin!
+You can now take your book through Step 24 (at least) of the Suggested
+Workflow and then Translate it to Ppgen markup syntax. Ppgen will process
+the translated book correctly, but you will surely want to edit it much
+more to make it look its best. You can edit the Ppgen book in PPQT2: the
+Image panel will show the scan images at their (approximate) location; your
+Notes from the original book are there; the Find panel works; and you can
+still use the Words, Characters, and Bookloupe panels. (The Footnotes and
+Pages panels are not useful in a Ppgen book.)
+
 
 Contents of this folder
 =======================
