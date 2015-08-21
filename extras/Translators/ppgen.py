@@ -83,6 +83,8 @@ def finalize( ) :
 # in the order they are named in the actions dict.
 #
 
+# Status flag: the action code before the current one, for open_para
+LAST_CODE = None
 # Status flag: are we working in a table?
 IN_TABLE = False
 # When in a table, cell values for one row are collected here
@@ -116,6 +118,16 @@ def do_line( code, text, stuff ) :
         TABLE_ROW_DATA.append( line_text )
     else :
         BODY.writeLine( line_text )
+
+# Open a paragraph. If the preceding action was CLOSE_PARA or closing any
+# head, then emit a blank line. Otherwise, the preceding action was
+# close of a noflow, quote, footnote or table and there's no need for
+# another space.
+
+def open_para( code, text, stuff ) :
+    global BODY, LAST_CODE
+    if LAST_CODE in ( XU.Events.CLOSE_PARA, XU.Events.CLOSE_HEAD2, XU.Events.CLOSE_HEAD3, XU.Events.T_BREAK ) :
+        BODY << '\n'
 
 # Open a /X.. or /C.. or /R.. or /P.. noflow section. In all four cases set
 # left and right indents based on First and Right values. Use the code
@@ -252,7 +264,7 @@ def close_table( code, text, stuff ):
     IN_TABLE = False
 
 def translate( event_generator ) :
-    global PROLOG, BODY, PAGES, PARA_NLS
+    global PROLOG, BODY, PAGES, LAST_CODE
 
     # The following dict acts as a computed go-to, distributing each event
     # code to an action that deals with it. An action can be None (not
@@ -262,8 +274,8 @@ def translate( event_generator ) :
 
     actions = {
         XU.Events.LINE          : ( do_line ) ,
-        XU.Events.OPEN_PARA     : ( None ) , # nothing to do here
-        XU.Events.CLOSE_PARA    : ( '\n' ) , # one extra newline to terminate paragraph
+        XU.Events.OPEN_PARA     : ( open_para ) , # maybe a newline, maybe not
+        XU.Events.CLOSE_PARA    : ( None ) , # nothing after a para
         XU.Events.OPEN_NOFLOW   : ( open_noflow ) , # open no-fill .nf
         XU.Events.CLOSE_NOFLOW  : ( close_noflow ) , #close no-fill
         XU.Events.OPEN_CENTER   : ( open_noflow ) , # open no-fill .nf c
@@ -287,7 +299,7 @@ def translate( event_generator ) :
         XU.Events.OPEN_FNOTE    : ( open_fnote ) , # start footnote
         XU.Events.CLOSE_FNOTE   : ( '.fn-\n' ) , # close footnote
         XU.Events.PAGE_BREAK    : ( note_page_break ) ,
-        XU.Events.T_BREAK       : ( '.tb\n\n' ) , # thought break with blank line after
+        XU.Events.T_BREAK       : ( '.tb\n' ) , # thought break with blank line after
         XU.Events.OPEN_FNLZ     : ( '.fm\n' ) , # simple .fm for a rule above..
         XU.Events.CLOSE_FNLZ    : ( '.fm\n' ) , # ..and below block of footnotes
         XU.Events.OPEN_TABLE    : ( open_table ) , # start .ta
@@ -305,5 +317,6 @@ def translate( event_generator ) :
                 BODY << action # write string literal
             else :
                 action( code, text, stuff ) # call the callable
+        LAST_CODE = code
 
     return True
