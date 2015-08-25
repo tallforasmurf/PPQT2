@@ -31,52 +31,36 @@ provides a level of indirection (symbolic binding) between file management
 and data management. One object of class MetaMgr is created by each Book to
 handle the metadata for that book.
 
-The metadata file for a book has the suffix .ppqt. It consists of a series of
-JSON objects. Each JSON object has a single named value. The name of the
-value is the section name as defined in constants.py: MD_BW and following.
-Each encoded section object begins with "\n{" and runs through the matching
-"}". (Note this means the file should *start*with* a newline!)
+The metadata file for a book has the suffix .ppqt. It consists of one giant
+JSON object. Logically, that object is a dict. Each key is a metadata
+section name, for example "GOODWORDS", and each value is a single Python
+value that contains the metadata for that section.
 
-    \n{ "SECTIONNAME" : one Python value, usually a dict, occupying
-         an arbitrary number of lines... }
-    \n{ "NEXT SECTION NAME" : ...
-
-The user may edit the file, modifying values within JSON object definitions;
-of course any such modifications will be lost when the file is rewritten on a
-Save operation. Because we expect users will (rarely) edit the metadata file
-we have to permit:
-
-    * arbitrary whitespace within sections (JSON handles this)
-    * arbitrary text of any length between sections,
-    * arbitrary sequence of sections
-    * sections occuring multiple times - Each reader function determines if
-      a later section will extend or replace an earlier one
-    * arbitrary sequence of items within a section because the JSON encoder
-      rearranges the order of dict entries, and the user might rearrange
-      items of a list.
+The section names are defined in constants.py. The values are defined
+entirely by the metadata writers and readers. For example the value of the
+GOODWORDS section is a list of strings, because that is what the module
+responsible for managing that metadata chooses to write.
 
 We want to encapsulate knowledge of the content and format of each type of
 metadata in the classes that create and use that type of metadata. We do not
 want that knowledge to leak into the load/save logic as it did in version 1.
 So we set up a level of indirection in the form of a dict that relates
 section objects to methods that create or consume the data in those sections.
-Objects instantiated by the Book register their reader and writer methods
-here by section name.
+The various objects instantiated by the Book register their reader and writer
+methods here by section name.
 
 The key to MetaMgr.section_dict is a SECTIONNAME and its value is [reader,
 writer] where those are methods. MetaMgr.register(section,reader,writer) is
 called to register the reader and a writer for a given section.
 
-In MetaMgr.load_meta(), we scan a stream for top-level objects, and decode
-them in turn. Each decoded object should be a Python dict with just one key,
-the section name, whose value is a single Python object. We look up that
-section in section_dict, and call the reader passing the decoded value.
+In MetaMgr.load_meta(), we read the entire metadata file and give it to JSON
+to decode. The result is a dict with a key for each SECTIONNAME. We call the
+reader that was registered for that section name, passing the decoded value.
 
 In MetaMgr.save_meta() we go through the keys of section_dict, calling each
-registered writer in turn. The writer returns a single Python value. We write
-to the output stream the JSON encoding of {'SECTION':value}, with newlines on
-each side. Also available is MetaMgr.save_section() to write the metadata of
-a single section by name (used when duplicating a Book).
+registered writer in turn. The writer returns a single Python value. We build
+a temporary dict with keys of section names and values as returned by the
+writers, and dump the JSON encoding of that dict to the output file.
 
 The signature of a reader is:  rdr(section, value, version), where
     * section is the SECTIONNAME string,
@@ -87,26 +71,34 @@ It is possible to register the same reader function for multiple SECTIONNAME
 values, and it can use the section parameter to tell which it is decoding.
 
 The signature of a writer is wtr(section). The writer is expected to return a
-single Python value, typically a dict, containing the data that the
-corresponding reader would expect on load of that section. That value is
-JSON-encoded with the key of section. A given writer function could be
-registered for multiple sections, distinguishing which to do from the section
-parameter.
+single Python value containing the data that the corresponding reader would
+expect on load of that section. A given writer function could be registered
+for multiple sections, distinguishing which to do from the section parameter.
 
 The standard JSON encoder does not support Python set or byte values. We
 extend it with customized encode and decode operations. A set value is
 encoded as a dict {"<SET>":[list_of_set_values]}. A byte value is encoded as
 a dict {"<BYTE>":"string_of_hex_chars"}.
 
+The user may edit the metadata file, modifying values within JSON object
+definitions; of course any such modifications will be lost when the file is
+rewritten on a Save operation. Because users may edit the metadata file, even
+if very rarely, reader methods have to permit:
+
+    * arbitrary whitespace within sections (JSON handles this)
+    * sections occuring multiple times - Each reader function determines if
+      a later section will extend or replace an earlier one
+    * arbitrary sequence of items within a section value, because the JSON
+      encoder rearranges the order of dict entries, and the user might
+      rearrange items of a list.
+
 '''
 
-import constants as C
-import utilities # for warning message
 import logging
-import types # for FunctionType validation in register
-
 metadata_logger = logging.getLogger(name='metadata')
 
+import constants as C
+import types # for FunctionType validation in register
 import json
 
 # =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
