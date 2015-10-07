@@ -323,7 +323,7 @@ def main( argv ):
 
     bin_name = book_name + '.bin'
     bin_file = open( bin_name, 'w', encoding='LATIN1', errors='replace' )
-    bin_file.write( "%::pagenumbers = (\n" )
+    bin_file.write( "%pagenumbers = (\n" )
 
     sequence = 0
     for one_page in page_list :
