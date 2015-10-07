@@ -295,12 +295,28 @@ The first bad character is at ''',
     # written. Note that we ASSUME any save will include a .meta file. (PPQT
     # is not a general purpose editor, if you use it for some scratch file,
     # you will get scratch.meta as well.)
+    #
+    # After writing the data into the streams, we call the flush() method.
+    # This returns False if the operation is unsuccessful, presumably due to
+    # an I/O error of some type. (flush is the main operation, the close()
+    # method ignores errors on flush and in fact clears error status. the
+    # files will be closed when mainwindow._save() exits.)
+
     def save_book(self, doc_stream, meta_stream):
         doc_stream << self.editm.toPlainText()
-        self.metamgr.write_meta(meta_stream)
-        self.editm.setModified(False)
-        self.md_modified = False
-        self.editv.mod_change_signal(False)
+        output_ok = doc_stream.flush()
+        if not output_ok :
+            doc_stream.show_error( 'saving', self.mainwindow )
+        else :
+            self.metamgr.write_meta(meta_stream)
+            output_ok = meta_stream.flush()
+            if not output_ok :
+                meta_stream.show_error( 'saving metadata', self.mainwindow )
+        if output_ok :
+            self.editm.setModified(False)
+            self.md_modified = False
+            self.editv.mod_change_signal(False)
+        return output_ok
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # The following functions are registered to the metatdata manager to read

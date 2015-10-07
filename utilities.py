@@ -32,6 +32,7 @@ even though that means some lengthy call indirections.
 from PyQt5.QtCore import (
     QDir,
     QFile,
+    QFileDevice,
     QFileInfo,
     QIODevice,
     QTemporaryFile,
@@ -146,6 +147,12 @@ class MemoryStream(QTextStream):
 #   suffix() to return the *final* suffix of the filename
 #   filename() to return the filename with suffix(es)
 #   folderpath() to return the canonical path to the containing folder
+#   flush() calls the flush() method of our QFile. This overrides the flush()
+#      method of QTextStream, which does not return a result. QFile.flush()
+#      returns True for success, False for error.
+#   show_error(action, parent) displays a warning message based on
+#      the value of QFile.error() centered over parent, a window. This would
+#      presumably be called after reading or flushing a file.
 
 class FileBasedTextStream(QTextStream):
     def __init__(self, qfile):
@@ -180,6 +187,16 @@ class FileBasedTextStream(QTextStream):
         if self.qfi is None:
             self.qfi = QFileInfo(self.saved_file)
         return self.qfi.suffix()
+    def flush(self):
+        super().flush() # make sure text buffer goes to device
+        return self.device().flush() # do a real flush
+    def show_error( self, action, parent ):
+        error_number = self.device().error()
+        if error_number : # is not 0, no error
+            error_string = self.device().errorString()
+            msg_string = 'Error {} ({}) on {}'.format(
+                error_number, error_string, action )
+            warning_msg( msg_string, self.fullpath(), parent )
 
 # This is where we enforce our rule on encodings: we support only UTF-8 and
 # ISO8859-1 (a.k.a. Latin-1), and of course ASCII which is a proper subset of
