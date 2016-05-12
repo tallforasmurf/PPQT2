@@ -47,7 +47,14 @@ import resources # make available fonts and images encoded by pyrcc5
 if C.PLATFORM_IS_MAC :
     log_path = os.path.expanduser( '~/Library/Logs' )
 elif C.PLATFORM_IS_WIN :
-    log_path = '/Windows/Temp'
+    if 'TMP' in os.environ :
+        log_path = os.environ['TMP']
+    elif 'TEMP' in os.environ :
+        log_path = os.environ['TEMP']
+    elif 'WINDIR' in os.environ :
+        log_path = os.path.join( os.environ['WINDIR'], 'TEMP' )
+    else :
+        log_path = '/Windows/Temp'
 else: # Linux
     log_path = '/var/tmp'
 log_path = os.path.join( log_path, 'PPQT2.log' )
