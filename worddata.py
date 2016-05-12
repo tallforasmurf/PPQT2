@@ -405,7 +405,13 @@ class WordData(QObject):
         vlist = []
         for word in self.vocab:
             [count, prop_set] = self.vocab[word]
-            tag = "" if AD not in prop_set else self.alt_tags[word]
+            #tag = "" if AD not in prop_set else self.alt_tags[word]
+            tag = ""
+            if AD in prop_set :
+                if word in self.alt_tags :
+                    tag = self.alt_tags[word]
+                else : # should never occur, could be assertion error
+                    worddata_logger.error( 'erroneous alt tag on ' + word )
             plist = list(prop_set)
             vlist.append( [ word, count, tag, plist ] )
         return vlist
@@ -688,10 +694,17 @@ class WordData(QObject):
     # token is hyphenated, we enter each part of it alone, then add the
     # phrase with the union of the prop_sets of its parts, plus HY. Thus
     # "mother-in-law's" will be added as "mother", "in" and "law's", and as
-    # itself with HY, LC, AP. If a part of a phrase fails spellcheck, it
-    # will have XX but we do not propogate that to the phrase itself.
-    # "1989-1995" puts 1989 and 1995 in the list and will have HY and ND.
-    # Yes, this means that a hyphenation could have all of UC, MC and LC.
+    # itself with HY, LC, AP. "1989-1995" puts 1989 and 1995 in the list and
+    # will have HY and ND. Yes, this means that a hyphenation could have all
+    # of UC, MC and LC.
+    #
+    # If a part of a phrase fails spellcheck, it will have XX but we do not
+    # propogate that to the phrase itself.
+    #
+    # If a part of the phrase has AD (because it was previously entered as
+    # part of a lang= string) that also is not propogated to the phrase
+    # itself. Since hyphenated phrases are never spell-checked, they should
+    # never have AD.
     #
     # Note: en-dash \u2013 is not supported here, only the ascii hyphen.
     # Support for it could be added if required.
@@ -712,7 +725,7 @@ class WordData(QObject):
                     self._count(member, dic_tag)
                     [x, part_props] = self.vocab[member]
                     prop_set |= part_props
-            self.vocab[tok_str] = [count, prop_set & prop_nox]
+            self.vocab[tok_str] = [count, prop_set  - {XX, AD} ]
 
     # Internal method to count a token, adding it to the list if necessary.
     # An /alt-tag must already be removed. The word must be already
@@ -733,6 +746,8 @@ class WordData(QObject):
         # The following is only done once per unique word.
         self.my_book.metadata_modified(True, C.MD_MOD_FLAG)
         work = word[:] # copy the word, we may modify it next.
+        if work.startswith("Point"):
+            pass # debug
         # If word has apostrophes, note that and delete for following tests.
         if -1 < work.find("'") : # look for ascii apostrophe
             prop_set.add(AP)
