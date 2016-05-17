@@ -78,7 +78,7 @@ Offers these additional methods:
 '''
 
 import regex
-from PyQt5.Qt import Qt, QObject, QCoreApplication, QSize
+from PyQt5.QtCore import Qt, QObject, QCoreApplication, QSize
 _TR = QCoreApplication.translate
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (

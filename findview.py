@@ -179,7 +179,7 @@ from PyQt5.QtGui import(
     QValidator
 )
 from PyQt5.QtCore import QSize, QObject, pyqtSignal
-from PyQt5.Qt import Qt, QCoreApplication
+from PyQt5.QtCore import Qt, QCoreApplication
 _TR = QCoreApplication.translate
 
 import fonts

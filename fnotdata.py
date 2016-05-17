@@ -198,7 +198,7 @@ start. So we try to keep that relation on all cursors.
 '''
 import regex
 import constants as C
-from PyQt5.Qt import pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import QObject,QRegExp
 from PyQt5.QtGui import QTextCursor
 import logging
