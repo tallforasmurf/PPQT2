@@ -60,7 +60,7 @@ else: # Linux
 log_path = os.path.join( log_path, 'PPQT2.log' )
 
 log_handler = logging.handlers.RotatingFileHandler(
-    log_path, mode='a', maxBytes=100000, backupCount=5 )
+    log_path, mode='a', encoding='UTF-8', maxBytes=100000, backupCount=5 )
 
 logging.basicConfig( handlers=[log_handler], level=logging.INFO )
 
