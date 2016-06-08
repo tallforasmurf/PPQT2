@@ -69,7 +69,7 @@ import utilities
 
 import os
 
-from PyQt5.Qt import pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 
 from PyQt5.QtWidgets import (
     QApplication,
