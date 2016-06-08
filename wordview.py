@@ -682,8 +682,8 @@ class GoodView(QListView):
         word_list = []
         for index in self.selectedIndexes() :
             word_list.append( index.data() )
-        if len(words) : # got any?
-            QApplication.clipboard().setText( ' '.join(words) )
+        if len(word_list) : # got any?
+            QApplication.clipboard().setText( ' '.join(word_list) )
     #
     # Paste gets whatever words are on the clipboard as a list, and
     # passes them to the model to add. If there are more than 20 it
@@ -932,3 +932,5 @@ class WordPanel(QWidget) :
                 'Rebuilding the vocabulary' ), self)
         self.progress.setAutoClose(False) # close it manually
         self.progress.setAutoReset(False)
+        self.progress.reset()
+        self.progress.hide()
