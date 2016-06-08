@@ -76,6 +76,7 @@ import preferences
 import constants as C
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#
 # Manage the Edit menu for our sub-panels. Not all panels have uses for the
 # Edit menu. A panel that does support Edit actions calls set_up_edit_menu()
 # when it gets a focus-in event. This populates the Edit menu with actions
@@ -90,24 +91,41 @@ _LAST_MENU = None # id of last action list to populate the edit menu
 # slot, key), as required by QMenu.addAction. The caller can pass
 # (None,None,None) to get a menu separator.
 #
-#The caller passes a unique letter so we can avoid the setup work when, as
-#often happens, one panel gets focus-in multiple times without another panel
-#having changed the menu.
+# We test the Python id of the given action_list so we can avoid the setup
+# work when, as often happens, one panel gets focus-in multiple times without
+# another panel having changed the menu.
 
-def set_up_edit_menu(action_list) :
+def set_up_edit_menu( action_list ) :
     global _EDIT_MENU, _LAST_MENU
-    if id(action_list) != _LAST_MENU :
-        _LAST_MENU = id(action_list)
+
+    _EDIT_MENU.setEnabled(True)
+    if id( action_list ) != _LAST_MENU :
+        _LAST_MENU = id( action_list )
         _EDIT_MENU.clear()
         for (title, slot, key) in action_list :
             if title is None :
                 _EDIT_MENU.addSeparator()
             else :
                 _EDIT_MENU.addAction(title, slot, key)
-    _EDIT_MENU.setEnabled(True)
 
 def hide_edit_menu():
-    _EDIT_MENU.setEnabled(False)
+    global _EDIT_MENU
+    if not C.PLATFORM_IS_WIN :
+        _EDIT_MENU.setEnabled(False)
+    else :
+        # Under Windows 7, when you click on the Edit menu button, it causes
+        # an immediate focus-out event for the active panel. (Apparently the
+        # machinery for keyboard accelerators causes the menu to act as a 
+        # focus-taking widget?) That causes the above .setEnabled(False) call
+        # to be issued whenever the user clicks on Edit, which makes the menu
+        # unusable as a menu. So we do not do that in Windows.
+        #
+        # This has as a result that when you click on a panel that does not
+        # declare its own edit menu, the prior panel's edit menu remains
+        # active, including the actions. This produces some odd behaviors. I
+        # really should add edit menu action lists to at least the Find
+        # panel.
+        pass
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #
