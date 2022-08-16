@@ -15,7 +15,7 @@ __license__ = '''
     extras/COPYING.TXT included in the distribution of this program, or see:
     <http://www.gnu.org/licenses/>.
 '''
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2013, 2014, 2015 David Cortesi"
 __maintainer__ = "David Cortesi"
@@ -29,13 +29,13 @@ read-only. Stylistically they should be ALL-CAP.
 
 '''
 # Make available values for our platform levels:
-from PyQt5.QtCore import PYQT_VERSION_STR
-from PyQt5.QtCore import QT_VERSION_STR
-from PyQt5.QtCore import QSize, QCoreApplication
+from PyQt6.QtCore import PYQT_VERSION_STR
+from PyQt6.QtCore import QT_VERSION_STR
+from PyQt6.QtCore import QSize, QCoreApplication
 _TR = QCoreApplication.translate
 import platform
 PLATFORM_NAME_STR = platform.uname().system # e.g 'Darwin', 'Windows'
-PLATFORM_IS_MAC = PLATFORM_NAME_STR.startswith('Darw')
+PLATFORM_IS_MAC  = PLATFORM_NAME_STR.startswith('Darw')
 PLATFORM_IS_WIN = PLATFORM_NAME_STR.startswith('Win')
 
 # default values for the rare startup where the settings are empty
@@ -49,7 +49,6 @@ ENCODING_UTF = 'UTF-8'
 ENCODING_LATIN = 'ISO-8859-1'
 # File suffix to tack on to a book filename to name our metadata file
 METAFILE_SUFFIX = 'ppqt'
-
 # constant value for the line-delimiter used by QPlainTextEdit
 UNICODE_LINE_DELIM = '\u2029'
 # constant for the en-space used instead of spaces when
@@ -129,17 +128,38 @@ ED_MENU_TO_TITLE    = _TR('Edit Menu','To Titlecase','Edit menu action')
 FIND_BUTTON = _TR('"Find" button','Find')
 
 '''
-Keystrokes checked by editor and other panels that monitor KeyEvent signals.
+Prepare to set up simple constants for keyboard events.
+
+In PyQt6, what were relatively simple references to integer flags have become
+EnumMeta definitions for which verbose expressions are needed to get at the
+simple integer flag values. Reduce the keyboard related ones to int
+constants.
+'''
+
+from PyQt6.QtCore import Qt # Qt namespace including keys
+
+KBD_MOD_PAD = Qt.KeyboardModifier.KeypadModifier.value
+KBD_MOD_PAD_CLEAR = int(0xffffffff ^ KBD_MOD_PAD)
+KBD_MOD_CTRL = Qt.KeyboardModifier.ControlModifier.value
+KBD_MOD_SHFT = Qt.KeyboardModifier.ShiftModifier.value
+KBD_MOD_META = Qt.KeyboardModifier.MetaModifier.value
+KBD_MOD_ALT = Qt.KeyboardModifier.AltModifier.value
+
+'''
+
+Now we can define the keystrokes checked by the editor and other panels that
+monitor KeyEvent signals:
 
 ^f start search,
 ^F start search with selection
-^g and ^G, search again forward/backward,
+^g search again
+^G, search again backward,
 ^= replace (using rep#1)
 ^t and ^T replace (rep#1) then search forward/backward,
 
-^1-9 go to bookmarks
 ^-alt-1-9 set bookmarks
-^-shift-1-9 go to bookmark with selection from cursor
+^1-9 go to bookmarks
+^-shift-1-9 go to bookmark adding selection from cursor
 
 ^+ and ^- for zoom in/out
     note ctl-plus can be received as ctl-shft-equal and ctl-sht-plus!
@@ -148,94 +168,94 @@ Keystrokes checked by editor and other panels that monitor KeyEvent signals.
 
 ^b, ^[, ^left : "Back" in html windows
 
-The following definitions combine the key value with the modifier) value,
+The following definitions combine the key value with the modifier value,
 so a keyEvent method begins with
     key = int(event.key()) | int(event.modifiers())
     if key in <list of relevant keys>...
 '''
 
-from PyQt5.QtCore import Qt # Qt namespace including keys
-
-KEYPAD_MOD_CLEAR = int(0xffffffff ^ Qt.KeypadModifier)
 # File menu keys
-CTL_N = int(Qt.ControlModifier) | Qt.Key_N
-CTL_S = int(Qt.ControlModifier) | Qt.Key_S
-CTL_SHFT_S = int(Qt.ShiftModifier) | CTL_S
-CTL_O = int(Qt.ControlModifier) | Qt.Key_O
-CTL_W = int(Qt.ControlModifier) | Qt.Key_W
+CTL_N = KBD_MOD_CTRL | Qt.Key.Key_N.value
+CTL_S = KBD_MOD_CTRL | Qt.Key.Key_S.value
+CTL_SHFT_S = KBD_MOD_SHFT | CTL_S
+CTL_O = KBD_MOD_CTRL | Qt.Key.Key_O.value
+CTL_W = KBD_MOD_CTRL | Qt.Key.Key_W.value
 # Editor key actions
-CTL_F = int(Qt.ControlModifier) | Qt.Key_F
-CTL_SHFT_F = int(Qt.ShiftModifier) | CTL_F
-CTL_G = int(Qt.ControlModifier) | Qt.Key_G
-CTL_SHFT_G = int(Qt.ShiftModifier) | CTL_G
-CTL_EQUAL = int(Qt.ControlModifier) | Qt.Key_Equal
-CTL_T = int(Qt.ControlModifier) | Qt.Key_T
-CTL_SHFT_T = int(Qt.ShiftModifier) | CTL_T
-CTL_SHFT_L = int(Qt.ShiftModifier) | int(Qt.ControlModifier) | Qt.Key_L
-CTL_SHFT_U = int(Qt.ShiftModifier) | int(Qt.ControlModifier) | Qt.Key_U
-CTL_SHFT_I = int(Qt.ShiftModifier) | int(Qt.ControlModifier) | Qt.Key_I
-CTL_1 = int(Qt.ControlModifier) | Qt.Key_1
-CTL_2 = int(Qt.ControlModifier) | Qt.Key_2
-CTL_3 = int(Qt.ControlModifier) | Qt.Key_3
-CTL_4 = int(Qt.ControlModifier) | Qt.Key_4
-CTL_5 = int(Qt.ControlModifier) | Qt.Key_5
-CTL_6 = int(Qt.ControlModifier) | Qt.Key_6
-CTL_7 = int(Qt.ControlModifier) | Qt.Key_7
-CTL_8 = int(Qt.ControlModifier) | Qt.Key_8
-CTL_9 = int(Qt.ControlModifier) | Qt.Key_9
-CTL_SHFT_1 = int(Qt.ShiftModifier) | CTL_1
-CTL_SHFT_2 = int(Qt.ShiftModifier) | CTL_2
-CTL_SHFT_3 = int(Qt.ShiftModifier) | CTL_3
-CTL_SHFT_4 = int(Qt.ShiftModifier) | CTL_4
-CTL_SHFT_5 = int(Qt.ShiftModifier) | CTL_5
-CTL_SHFT_6 = int(Qt.ShiftModifier) | CTL_6
-CTL_SHFT_7 = int(Qt.ShiftModifier) | CTL_7
-CTL_SHFT_8 = int(Qt.ShiftModifier) | CTL_8
-CTL_SHFT_9 = int(Qt.ShiftModifier) | CTL_9
+CTL_F = KBD_MOD_CTRL | Qt.Key.Key_F.value
+CTL_SHFT_F = KBD_MOD_SHFT | CTL_F
+CTL_G = KBD_MOD_CTRL | Qt.Key.Key_G.value
+CTL_SHFT_G = KBD_MOD_SHFT | CTL_G
+CTL_EQUAL = KBD_MOD_CTRL | Qt.Key.Key_Equal.value
+CTL_T = KBD_MOD_CTRL | Qt.Key.Key_T.value
+CTL_SHFT_T = KBD_MOD_SHFT | CTL_T
+CTL_SHFT_L = KBD_MOD_SHFT | KBD_MOD_CTRL | Qt.Key.Key_L.value
+CTL_SHFT_U = KBD_MOD_SHFT | KBD_MOD_CTRL | Qt.Key.Key_U.value
+CTL_SHFT_I = KBD_MOD_SHFT | KBD_MOD_CTRL | Qt.Key.Key_I.value
+CTL_1 = KBD_MOD_CTRL | Qt.Key.Key_1.value
+CTL_2 = KBD_MOD_CTRL | Qt.Key.Key_2.value
+CTL_3 = KBD_MOD_CTRL | Qt.Key.Key_3.value
+CTL_4 = KBD_MOD_CTRL | Qt.Key.Key_4.value
+CTL_5 = KBD_MOD_CTRL | Qt.Key.Key_5.value
+CTL_6 = KBD_MOD_CTRL | Qt.Key.Key_6.value
+CTL_7 = KBD_MOD_CTRL | Qt.Key.Key_7.value
+CTL_8 = KBD_MOD_CTRL | Qt.Key.Key_8.value
+CTL_9 = KBD_MOD_CTRL | Qt.Key.Key_9.value
+CTL_SHFT_1 = KBD_MOD_SHFT | CTL_1
+CTL_SHFT_2 = KBD_MOD_SHFT | CTL_2
+CTL_SHFT_3 = KBD_MOD_SHFT | CTL_3
+CTL_SHFT_4 = KBD_MOD_SHFT | CTL_4
+CTL_SHFT_5 = KBD_MOD_SHFT | CTL_5
+CTL_SHFT_6 = KBD_MOD_SHFT | CTL_6
+CTL_SHFT_7 = KBD_MOD_SHFT | CTL_7
+CTL_SHFT_8 = KBD_MOD_SHFT | CTL_8
+CTL_SHFT_9 = KBD_MOD_SHFT | CTL_9
 # On the Mac platform, Qt does not deliver the correct Alt-digit values, it
 # delivers the Mac's keyboard replacements, e.g. for Option-2 it delivers Alt
 # + the Euro symbol \u20AC. This may or may not be a bug but rather than
 # fight it, we make the mac UI use the physical command and control keys,
 # translated by Qt into Ctl+Meta rather than Alt.
 if PLATFORM_IS_MAC :
-    CTL_ALT_1 = int(Qt.MetaModifier) | CTL_1
-    CTL_ALT_2 = int(Qt.MetaModifier) | CTL_2
-    CTL_ALT_3 = int(Qt.MetaModifier) | CTL_3
-    CTL_ALT_4 = int(Qt.MetaModifier) | CTL_4
-    CTL_ALT_5 = int(Qt.MetaModifier) | CTL_5
-    CTL_ALT_6 = int(Qt.MetaModifier) | CTL_6
-    CTL_ALT_7 = int(Qt.MetaModifier) | CTL_7
-    CTL_ALT_8 = int(Qt.MetaModifier) | CTL_8
-    CTL_ALT_9 = int(Qt.MetaModifier) | CTL_9
+    CTL_ALT_1 = KBD_MOD_META | CTL_1
+    CTL_ALT_2 = KBD_MOD_META | CTL_2
+    CTL_ALT_3 = KBD_MOD_META | CTL_3
+    CTL_ALT_4 = KBD_MOD_META | CTL_4
+    CTL_ALT_5 = KBD_MOD_META | CTL_5
+    CTL_ALT_6 = KBD_MOD_META | CTL_6
+    CTL_ALT_7 = KBD_MOD_META | CTL_7
+    CTL_ALT_8 = KBD_MOD_META | CTL_8
+    CTL_ALT_9 = KBD_MOD_META | CTL_9
 else : # for Win & Linux use the actual Alt modifier
-    CTL_ALT_1 = int(Qt.AltModifier) | CTL_1
-    CTL_ALT_2 = int(Qt.AltModifier) | CTL_2
-    CTL_ALT_3 = int(Qt.AltModifier) | CTL_3
-    CTL_ALT_4 = int(Qt.AltModifier) | CTL_4
-    CTL_ALT_5 = int(Qt.AltModifier) | CTL_5
-    CTL_ALT_6 = int(Qt.AltModifier) | CTL_6
-    CTL_ALT_7 = int(Qt.AltModifier) | CTL_7
-    CTL_ALT_8 = int(Qt.AltModifier) | CTL_8
-    CTL_ALT_9 = int(Qt.AltModifier) | CTL_9
-CTL_MINUS = int(Qt.ControlModifier) | Qt.Key_Minus
-CTL_PLUS = int(Qt.ControlModifier) | Qt.Key_Plus
-CTL_SHFT_EQUAL = int(Qt.ShiftModifier) | CTL_EQUAL
-CTL_SHFT_PLUS = int(Qt.ShiftModifier) | CTL_PLUS
-CTL_M = int(Qt.ControlModifier) | Qt.Key_M
-CTL_SHFT_M = int(Qt.ShiftModifier) | CTL_M
-CTL_P = int(Qt.ControlModifier) | Qt.Key_P
-CTL_SHFT_P = int(Qt.ShiftModifier) | CTL_P
-CTL_LEFT = int(Qt.ControlModifier) | Qt.Key_Left
-CTL_RIGHT = int(Qt.ControlModifier | Qt.Key_Right)
-CTL_LEFT_PAD = CTL_LEFT | int(Qt.KeypadModifier)
-CTL_RIGHT_PAD = CTL_RIGHT | int(Qt.KeypadModifier)
-CTL_LEFT_BRACKET = int(Qt.ControlModifier) | Qt.Key_BracketLeft
-CTL_RIGHT_BRACKET = int(Qt.ControlModifier) | Qt.Key_BracketRight
-CTL_B = int(Qt.ControlModifier) | Qt.Key_B
-# Groups of keys by function
+    CTL_ALT_1 = KBD_MOD_ALT | CTL_1
+    CTL_ALT_2 = KBD_MOD_ALT | CTL_2
+    CTL_ALT_3 = KBD_MOD_ALT | CTL_3
+    CTL_ALT_4 = KBD_MOD_ALT | CTL_4
+    CTL_ALT_5 = KBD_MOD_ALT | CTL_5
+    CTL_ALT_6 = KBD_MOD_ALT | CTL_6
+    CTL_ALT_7 = KBD_MOD_ALT | CTL_7
+    CTL_ALT_8 = KBD_MOD_ALT | CTL_8
+    CTL_ALT_9 = KBD_MOD_ALT | CTL_9
+CTL_MINUS = KBD_MOD_CTRL | Qt.Key.Key_Minus.value
+CTL_PLUS = KBD_MOD_CTRL | Qt.Key.Key_Plus.value
+CTL_SHFT_EQUAL = KBD_MOD_SHFT | CTL_EQUAL
+CTL_SHFT_PLUS = KBD_MOD_SHFT | CTL_PLUS
+CTL_M = KBD_MOD_CTRL | Qt.Key.Key_M.value
+CTL_SHFT_M = KBD_MOD_SHFT | CTL_M
+CTL_P = KBD_MOD_CTRL | Qt.Key.Key_P.value
+CTL_SHFT_P = KBD_MOD_SHFT | CTL_P
+CTL_LEFT = KBD_MOD_CTRL | Qt.Key.Key_Left.value
+CTL_RIGHT = KBD_MOD_CTRL | Qt.Key.Key_Right.value
+CTL_LEFT_PAD = KBD_MOD_PAD | CTL_LEFT
+CTL_RIGHT_PAD = KBD_MOD_PAD | CTL_RIGHT
+CTL_LEFT_BRACKET = KBD_MOD_CTRL | Qt.Key.Key_BracketLeft.value
+CTL_RIGHT_BRACKET = KBD_MOD_CTRL | Qt.Key.Key_BracketRight.value
+CTL_B = KBD_MOD_CTRL | Qt.Key.Key_B.value
+'''
+Encode groups of related keystrokes as sets, for quick tests such
+as "key in KEYS_FIND".
+'''
 KEYS_WEB_BACK = {CTL_B, CTL_LEFT, CTL_LEFT_BRACKET, CTL_LEFT_PAD}
 KEYS_WEB_FORWARD = {CTL_RIGHT, CTL_RIGHT_PAD, CTL_RIGHT_BRACKET}
-KEYS_FIND = {CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F, CTL_T, CTL_EQUAL, CTL_SHFT_T}
+KEYS_FIND = {CTL_G, CTL_SHFT_G, CTL_F, CTL_SHFT_F, CTL_T, CTL_SHFT_T, CTL_EQUAL}
 KEYS_MARK = {CTL_1, CTL_2, CTL_3, CTL_4, CTL_5, CTL_6, CTL_7, CTL_8, CTL_9 }
 KEYS_MARK_SET = {CTL_ALT_1, CTL_ALT_2, CTL_ALT_3, CTL_ALT_4,
                  CTL_ALT_5, CTL_ALT_6, CTL_ALT_7, CTL_ALT_8, CTL_ALT_9 }
@@ -249,14 +269,18 @@ KEYS_CASE_MOD = {CTL_SHFT_I, CTL_SHFT_L, CTL_SHFT_U }
 KEYS_EDITOR = KEYS_FIND | KEYS_BOOKMARKS | KEYS_ZOOM | KEYS_CASE_MOD
 # Keys acted on by the Notes panel
 KEYS_NOTES = {CTL_M, CTL_SHFT_M, CTL_P, CTL_SHFT_P} | KEYS_ZOOM
-# TODO keys acted on by html panel, others?
 
 '''
-A dictionary of the 252 Named Entities of HTML 4. The names are indexed by
-the unicode characters they translate. To complete an entity prepend & and
-append ;, thus quot -> &quot; This list was lifted from
-en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references and
-processed into this form using regex changes in BBEdit.
+
+Define a dictionary of the 252 Named Entities of HTML 4. The names are
+indexed by the unicode characters they translate.
+
+To encode a character as an entity, use the character value to get the name
+from the dict, then prepend "&" and append ";" Thus \u0022 -> &quot;
+
+This list was lifted from
+en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references
+and processed into this form using regex changes in BBEdit.
 '''
 NAMED_ENTITIES = {
 u'\u0022' : u'quot', # quotation mark (= APL quote)
