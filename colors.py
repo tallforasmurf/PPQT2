@@ -34,7 +34,7 @@ The following are called by the mainwindow at startup and shutdown:
     initialize(settings) Retrieve color choices from saved settings,
                          or set the defaults.
 
-    shutdown(settings)   Save color choices in app settings.
+    shutdown(settings)   Save current color choices in app settings.
 
 The following are interrogated by an editview:
 
@@ -77,14 +77,14 @@ The following are used by the Preferences dialog:
 Regarding the colorChange signal, see comments in fonts.py.
 '''
 
-from PyQt5.QtCore import Qt, QCoreApplication
+from PyQt6.QtCore import Qt, QCoreApplication
 _TR = QCoreApplication.translate
 
 import logging
 colors_logger = logging.getLogger(name='colors')
 import constants as C
-from PyQt5.QtGui import QBrush, QColor, QTextCharFormat
-from PyQt5.QtWidgets import QColorDialog
+from PyQt6.QtGui import QBrush, QColor, QTextCharFormat
+from PyQt6.QtWidgets import QColorDialog
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
