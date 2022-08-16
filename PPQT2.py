@@ -15,14 +15,14 @@ __license__ = '''
     extras/COPYING.TXT included in the distribution of this program, or see:
     <http://www.gnu.org/licenses/>.
 '''
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2013, 2014, 2015 David Cortesi"
 __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
 '''
-                          PPQT.PY
+                          PPQT2.PY
 Top level module of PPQT version 2.
 
 Performs all non-GUI global initialization of the application.
@@ -42,7 +42,9 @@ import datetime
 import constants as C
 import resources # make available fonts and images encoded by pyrcc5
 
-# Set up logging to a rotating set of files in a writable location
+'''
+Select a writeable location for the log files depending on the OS platform.
+'''
 
 if C.PLATFORM_IS_MAC :
     log_path = os.path.expanduser( '~/Library/Logs' )
@@ -59,6 +61,11 @@ else: # Linux
     log_path = '/var/tmp'
 log_path = os.path.join( log_path, 'PPQT2.log' )
 
+'''
+Initiate a rotating log file in the chosen location and write
+a start-up log message documenting time and versions.
+'''
+
 log_handler = logging.handlers.RotatingFileHandler(
     log_path, mode='a', encoding='UTF-8', maxBytes=100000, backupCount=5 )
 
@@ -70,11 +77,16 @@ logging.info( '==========================================' )
 logging.info( 'PPQT2 starting up on {} with Qt {} and PyQt {}'.format(
     now.ctime(), C.QT_VERSION_STR, C.PYQT_VERSION_STR ) )
 
-# Create the application and open the settings object.
+'''
+Create the Qt application, passing it either an empty list of options
+or, in Linux, a selected style chosen to avoid a GTK bug in Ubuntu Unity
 
-from PyQt5.QtWidgets import QApplication
-import sys
+TODO: test to see if that is still needed or appropriate!
+'''
+
+from PyQt6.QtWidgets import QApplication
 args = []
+import sys
 if sys.platform == 'linux' :
     # avoid a GTK bug in Ubuntu Unity
     args = ['','-style','Cleanlooks']
@@ -84,15 +96,33 @@ the_app.setOrganizationName( "PGDP" )
 the_app.setOrganizationDomain( "pgdp.net" )
 the_app.setApplicationName( "PPQT2" )
 
-from PyQt5.QtCore import QSettings
+'''
+Now that the application is running we can open our settings file. The
+settings file is saved by the Main Window and passed to each major module
+(such as a Book) when it is instantiated. Each module is expected to load its
+particular settings from it, and to save them during shut-down.
+
+Normally the settings file will contain the various items written when we
+last shut down. In the case of a clean install, the settings are empty, but
+each module supplies suitable defaults for that case.
+'''
+
+from PyQt6.QtCore import QSettings
 the_settings = QSettings()
 
+'''
+Create the one and only MainWindow instance, passing it the settings file.
+Ask it to show itself. Then initiate the application event loop.
+'''
 from mainwindow import MainWindow
 the_main_window = MainWindow( the_settings )
 the_main_window.show()
 the_app.exec_()
 
-# Annotate the log file for shutdown.
+'''
+The application event loop has ended, meaning probably that Quit has been
+called. Annotate the log file for shutdown.
+'''
 now = datetime.datetime.now()
 
 logging.info( 'PPQT2 shutting down at {}'.format( now.ctime() ) )
