@@ -32,7 +32,7 @@ the "tag" or dictionary filename, for example "en_US".
 The main window calls initialize() during startup, when we get the user's
 preferred default tag from saved settings.
 
-The set_default_tag() functiion is called from the preferences dialog.
+The set_default_tag() function is called from the preferences dialog.
 
 initialize(settings)     Get default tag from settings if available.
 
@@ -48,7 +48,7 @@ get_tag_list(path)       Prepare and return a dict{tag:path} where each
                          where the tag.dic/tag.aff files can be found.
                          The list is developed searching first in path
                          (presumably a book path), then in the dict path
-                         then the extras path.
+                         then the extras path (see paths.py).
 
 make_speller(tag, path)  Make a spellcheck object of class Speller
                          for the language tag using path/tag.dic .aff.
@@ -102,6 +102,8 @@ def shutdown(settings):
 #
 # For each pair, if that lang is not in the tag_dict already (from a prior
 # call to a higher-priority path), add it to the dict as lang:path.
+#TODO: would this be better with pathlib than os.path?
+
 
 def _find_tags(path, tag_dict):
     if not paths.check_path(path) :
