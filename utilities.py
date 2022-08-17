@@ -29,27 +29,20 @@ All uses of QFile, QDir, QFileDialog and the like are isolated to this module
 even though that means some lengthy call indirections.
 
 '''
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     QDir,
     QFile,
-    QFileDevice,
     QFileInfo,
     QIODevice,
-    QTemporaryFile,
     QTextStream,
     QTextCodec,
     QByteArray
 )
-from PyQt5.QtWidgets import (
-    QApplication,
-    QDialog,
+from PyQt6.QtWidgets import (
     QFileDialog,
-    QHBoxLayout,
     QInputDialog,
-    QMessageBox,
     QPlainTextEdit,
     QProgressDialog,
-    QPushButton,
     QVBoxLayout
 )
 import constants as C # for encoding names
@@ -628,109 +621,109 @@ def to_alpha( n, lc=True ) :
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Diagnostic routines for evaluating events
 # TODO REMOVE
-from PyQt5.QtCore import QEvent, Qt
-from PyQt5.QtGui import QMouseEvent, QKeyEvent
-def printEventMods(mods):
-    '''
-    Return a string containing names of the modifier bits in mods.
-    mods is from event.modifiers.
-    '''
-    imods = int(mods)
-    cmods = u''
-    if imods & Qt.ControlModifier : cmods += u'Ctl '
-    if imods & Qt.AltModifier: cmods += u'Alt '
-    if imods & Qt.ShiftModifier : cmods += u'Shft '
-    if imods & Qt.KeypadModifier : cmods += u'Kpd '
-    if imods & Qt.MetaModifier : cmods += u'Meta '
-    return cmods
-def printKeyEvent(event):
-    key = int(event.key())
-    mods = int(event.modifiers())
-    if key & 0x01000000 : # special/standard key
-        print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
-    else:
-        cmods = printEventMods(mods)
-        cmods += "'{0:c}'".format(key)
-        print('data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
+#from PyQt6.QtCore import QEvent, Qt
+#from PyQt6.QtGui import QMouseEvent, QKeyEvent
+#def printEventMods(mods):
+    #'''
+    #Return a string containing names of the modifier bits in mods.
+    #mods is from event.modifiers.
+    #'''
+    #imods = int(mods)
+    #cmods = u''
+    #if imods & Qt.ControlModifier : cmods += u'Ctl '
+    #if imods & Qt.AltModifier: cmods += u'Alt '
+    #if imods & Qt.ShiftModifier : cmods += u'Shft '
+    #if imods & Qt.KeypadModifier : cmods += u'Kpd '
+    #if imods & Qt.MetaModifier : cmods += u'Meta '
+    #return cmods
+#def printKeyEvent(event):
+    #key = int(event.key())
+    #mods = int(event.modifiers())
+    #if key & 0x01000000 : # special/standard key
+        #print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
+    #else:
+        #cmods = printEventMods(mods)
+        #cmods += "'{0:c}'".format(key)
+        #print('data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
 
-_Mevs = [2,3,4,5]
-_Mnm = {QEvent.MouseButtonPress:'Down',
-        QEvent.MouseButtonRelease:'Up',
-        QEvent.MouseButtonDblClick:'Dblclick',
-        QEvent.MouseMove:'Move'}
-_Mbs = {Qt.LeftButton:'Left',
-        Qt.RightButton:'Right',
-        Qt.MidButton:'Middle'}
+#_Mevs = [2,3,4,5]
+#_Mnm = {QEvent.MouseButtonPress:'Down',
+        #QEvent.MouseButtonRelease:'Up',
+        #QEvent.MouseButtonDblClick:'Dblclick',
+        #QEvent.MouseMove:'Move'}
+#_Mbs = {Qt.LeftButton:'Left',
+        #Qt.RightButton:'Right',
+        #Qt.MidButton:'Middle'}
 
-def printMouseEvent(event):
-    name = _Mnm[event.type()]
-    cmods = printEventMods(event.modifiers())
-    mbu = _Mbs[event.button()]
-    print('{0} {1} button {2} at x{3} y{4}'.format(cmods,mbu,name,event.x(),event.y()))
-_Evs = {24:'WindowActivate',
-        6:'KeyPress',
-        8:'FocusIn',
-        9:'FocusOut',
-        110:'Tooltip',
-        207:'InpMethQuery',
-        12:'Paint',
-        10:'Enter',
-        68:'ChildAdded',
-        69:'ChildPolished',
-        71:'ChildRemoved',
-        23:'FocusAboutToChange',
-        25:'WindowDeactivate',
-        75:'Polish',
-        11:'Leave',
-        13:'Move',
-        14:'Resize',
-        17:'Show',
-        26:'ShowToParent',
-        74:'PolishRequest',
-        43:'MetaCall',
-        78:'UpdateLater',
-        76:'LayoutRequest',
-        31:'Wheel',
-        82:'ContextMenu',
-        51:'ShortcutOverride',
-        18:'Hide',
-        103:'WindowBlocked',
-        104:'WindowUnblocked'
-    }
-_IQs = {
-    Qt.ImEnabled:'ImEnable',
-    Qt.ImMicroFocus:'ImMicroFocus',
-    Qt.ImCursorRectangle:'CursorRectangle',
-    Qt.ImFont:'ImFont',
-    Qt.ImCursorPosition:'CursorPosition',
-    Qt.ImSurroundingText:'SurroundingText',
-    Qt.ImCurrentSelection:'CurrentSelection',
-    Qt.ImMaximumTextLength:'MaxTextLen',
-    Qt.ImAnchorPosition:'AnchorPosn',
-    Qt.ImHints:'Hints',
-    Qt.ImPreferredLanguage:'PreferredLang',
-    Qt.ImPlatformData:'PlatformData'
-    }
+#def printMouseEvent(event):
+    #name = _Mnm[event.type()]
+    #cmods = printEventMods(event.modifiers())
+    #mbu = _Mbs[event.button()]
+    #print('{0} {1} button {2} at x{3} y{4}'.format(cmods,mbu,name,event.x(),event.y()))
+#_Evs = {24:'WindowActivate',
+        #6:'KeyPress',
+        #8:'FocusIn',
+        #9:'FocusOut',
+        #110:'Tooltip',
+        #207:'InpMethQuery',
+        #12:'Paint',
+        #10:'Enter',
+        #68:'ChildAdded',
+        #69:'ChildPolished',
+        #71:'ChildRemoved',
+        #23:'FocusAboutToChange',
+        #25:'WindowDeactivate',
+        #75:'Polish',
+        #11:'Leave',
+        #13:'Move',
+        #14:'Resize',
+        #17:'Show',
+        #26:'ShowToParent',
+        #74:'PolishRequest',
+        #43:'MetaCall',
+        #78:'UpdateLater',
+        #76:'LayoutRequest',
+        #31:'Wheel',
+        #82:'ContextMenu',
+        #51:'ShortcutOverride',
+        #18:'Hide',
+        #103:'WindowBlocked',
+        #104:'WindowUnblocked'
+    #}
+#_IQs = {
+    #Qt.ImEnabled:'ImEnable',
+    #Qt.ImMicroFocus:'ImMicroFocus',
+    #Qt.ImCursorRectangle:'CursorRectangle',
+    #Qt.ImFont:'ImFont',
+    #Qt.ImCursorPosition:'CursorPosition',
+    #Qt.ImSurroundingText:'SurroundingText',
+    #Qt.ImCurrentSelection:'CurrentSelection',
+    #Qt.ImMaximumTextLength:'MaxTextLen',
+    #Qt.ImAnchorPosition:'AnchorPosn',
+    #Qt.ImHints:'Hints',
+    #Qt.ImPreferredLanguage:'PreferredLang',
+    #Qt.ImPlatformData:'PlatformData'
+    #}
 
-def printIMQ(event):
-    '''print input method query'''
-    qc = ''
-    qs = event.queries()
-    for q in _IQs.keys():
-        if q & qs :
-            qc += _IQs[q]
-            qc += ' '
-    print('InputMethodQuery for ',qc)
+#def printIMQ(event):
+    #'''print input method query'''
+    #qc = ''
+    #qs = event.queries()
+    #for q in _IQs.keys():
+        #if q & qs :
+            #qc += _IQs[q]
+            #qc += ' '
+    #print('InputMethodQuery for ',qc)
 
-def printEvent(event):
-    t = int(event.type())
-    if t == 7 : # Key Release gets special details
-        printKeyEvent(event)
-    elif t in _Mevs :
-        printMouseEvent(event)
-    elif t == 207:
-        printIMQ(event) # whatever that is
-    else:
-        s = 'spontaneous' if (t != 12 and event.spontaneous()) else ''
-        n = _Evs[t] if t in _Evs else str(t)
-        print('event type ',n,s)
+#def printEvent(event):
+    #t = int(event.type())
+    #if t == 7 : # Key Release gets special details
+        #printKeyEvent(event)
+    #elif t in _Mevs :
+        #printMouseEvent(event)
+    #elif t == 207:
+        #printIMQ(event) # whatever that is
+    #else:
+        #s = 'spontaneous' if (t != 12 and event.spontaneous()) else ''
+        #n = _Evs[t] if t in _Evs else str(t)
+        #print('event type ',n,s)
