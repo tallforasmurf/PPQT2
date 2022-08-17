@@ -28,16 +28,16 @@ Create and manage the display of the Help file.
 
 One object of class HelpWidget is created by the main window the first time
 the user selects File>Show Help. The object initializes a window containing
-only a QWebView, and populates it with either the distributed ppqt2help.html
-file, or with a default text explaining how to open that file.
+only a QWebEngineView, and populates it with either the distributed
+ppqt2help.html file, or with a default text explaining how to open that file.
 
 The window title is set to "PPQT Help Viewer".
 
-Note: Using QWebView rather than the newer QWebEngineView because the older
-web engine is adequate to display a manual. As of Qt5.4, the WebEngine does
-not support the FindFlag FindWrapsAroundDocument, which is kind of important.
-If some later version of Qt adds that to WebEngine and deprecates WebView the
-change is very simple to make.
+Note: Originally we used QWebView rather than the newer QWebEngineView
+because the older web engine is adequate to display a manual. The
+WebEngineView does not support the FindFlag FindWrapsAroundDocument, which is
+kind of important. However, QWebView is no longer offered in Qt6, so the
+change has been made.
 
 If the user closes the help widget, control comes to the closeEvent()
 slot. The event is ignored, meaning the widget is not closed. However,
@@ -58,10 +58,14 @@ import utilities # for get_find_string
 import constants as C
 import os # for access, path.join
 # no need for logging
-from PyQt5.QtCore import QCoreApplication, QUrl
+
+from PyQt6.QtCore import QCoreApplication, QUrl
 _TR = QCoreApplication.translate
-from PyQt5.QtWidgets import QWidget, QHBoxLayout
-from PyQt5.QtWebKitWidgets import QWebPage, QWebView
+
+from PyQt6.QtWidgets import QWidget, QHBoxLayout
+
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWebEngineCore import QWebEnginePage
 
 # TODO : find a way to get this translated.
 DEFAULT_HTML = '''
@@ -71,10 +75,10 @@ The <i>real</i> Help text is very helpful.
 It is stored in a file named <b><tt>ppqt2help.html</tt></b>.
 That file should be in the "Extras" folder distributed with PPQT.
 </p><p>
-Also required: a folder named "sphinx" in the Extras folder.</p>
-<p>
+Also required: a folder named "sphinx" in the Extras folder.
+</p><p>
 Please use the Preferences dialog to set the correct path to the "Extras" folder
-where ppqt2help.html and sphinx/ are found.
+where ppqt2help.html and sphinx are found.
 </p><p>
 If those items are not not in the Extras folder, you need to find them
 and put them there.
@@ -91,7 +95,7 @@ class HelpWidget(QWidget) :
         self.last_shape = None
         # Initialize find string, see find_action().
         self.find_text = None
-        self.view = QWebView()
+        self.view = QWebEngineView()
         hb = QHBoxLayout()
         hb.addWidget(self.view)
         self.setLayout(hb)
@@ -174,10 +178,9 @@ class HelpWidget(QWidget) :
     # Following a successful find, the found text is selected in the view, so
     # if you do ^f again without disturbing that selection, that text is back
     # in the dialog to be used or replaced. So ^f+Enter is the same as ^g.
-
-    FIND_NORMAL = QWebPage.FindWrapsAroundDocument
-    FIND_PRIOR = QWebPage.FindWrapsAroundDocument | QWebPage.FindBackward
-
+    
+    FIND_NORMAL = QWebEnginePage.FindFlag.FindCaseSensitively
+    FIND_PRIOR = QWebEnginePage.FindFlag.FindBackward | QWebEnginePage.FindFlag.FindCaseSensitively
 
     def find_action(self):
         prep_text = self.view.selectedText()[:40]
@@ -202,8 +205,9 @@ class HelpWidget(QWidget) :
         else :
             self.find_action()
 
-    # The actual search, factored out of the above actions. Because the
-    # search wraps around, if it fails, it fails, and that's that.
+    # The actual search, factored out of the above actions. The WebEngineView
+    # search doesn't wrap around. If the search fails, just beep. The user
+    # has to figure out to go to the top manually.
 
     def _do_find( self, find_flags ) :
         if not self.view.page().findText( self.find_text, find_flags ):
