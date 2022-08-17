@@ -69,28 +69,23 @@ import utilities
 
 import os
 
-from PyQt5.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QApplication,
-    QComboBox,
     QDialog,
     QGroupBox,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
-    QTextEdit,
-    QVBoxLayout,
-    QWidget
+    QTextEdit
 )
-from PyQt5.QtGui import (
+from PyQt6.QtGui import (
     QColor,
     QPalette,
     QBrush,
     QTextCharFormat
 )
-from PyQt5.QtCore import QCoreApplication
+#from PyQt6.QtCore import QCoreApplication
 
 _TR = QApplication.translate
 
