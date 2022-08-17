@@ -85,7 +85,7 @@ fonts_logger = logging.getLogger(name='fonts')
 
 import constants as C
 
-from PyQt5.QtCore import QCoreApplication
+from PyQt6.QtCore import QCoreApplication
 _TR = QCoreApplication.translate
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -95,7 +95,7 @@ _TR = QCoreApplication.translate
 # to this signal: fonts.notify_me(my_slot)
 #
 
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     pyqtSignal,
     QObject
     )
@@ -124,11 +124,11 @@ def _emit_signal(boola):
 # and Cousine, loading them from our resources module.
 #
 
-from PyQt5.QtGui import (
+from PyQt6.QtGui import (
     QFont,
     QFontDatabase
 )
-from PyQt5.QtWidgets import QFontDialog
+from PyQt6.QtWidgets import QFontDialog
 
 _FONT_DB = QFontDatabase()
 _FONT_DB.addApplicationFont(':/liberation_mono.ttf')
