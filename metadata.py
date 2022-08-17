@@ -46,8 +46,8 @@ metadata in the classes that create and use that type of metadata. We do not
 want that knowledge to leak into the load/save logic as it did in version 1.
 So we set up a level of indirection in the form of a dict that relates
 section objects to methods that create or consume the data in those sections.
-The various objects instantiated by the Book register their reader and writer
-methods here by section name.
+Each of the various objects instantiated by the Book, register their reader
+and writer methods here by section name.
 
 The key to MetaMgr.section_dict is a SECTIONNAME and its value is [reader,
 writer] where those are methods. MetaMgr.register(section,reader,writer) is
