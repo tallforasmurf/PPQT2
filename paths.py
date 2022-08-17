@@ -193,7 +193,7 @@ def shutdown(settings):
 # user changes path preferences, connect with paths.notify_me(my_slot)
 #
 
-from PyQt5.QtCore import ( pyqtSignal, QObject )
+from PyQt6.QtCore import ( pyqtSignal, QObject )
 
 class PathSignaller(QObject):
     PathsChanged = pyqtSignal(str)
