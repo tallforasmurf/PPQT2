@@ -235,6 +235,9 @@ class MetaMgr(object):
     # Write the contents of a metadata file by calling the writer for each
     # registered section saving each value returned in a dict keyed by
     # section-name. Dump that whole dict via JSON as the metadata file.
+    #
+    # TODO: should we use ensure_ascii=False? Is our metadata file certain
+    # to be unicode? Ascii-encoding unicode chars is harmless.
     def write_meta(self, qts) :
         global _Extended_Encoder
         bookconf = dict()
