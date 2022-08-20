@@ -24,31 +24,37 @@ __email__ = "tallforasmurf@yahoo.com"
 '''
                           charview.py
 
-Define classes to implement the Chars panel.
+Here we define classes to implement the Chars panel.
 
 CharModel(QAbstractTableModel) interfaces to chardata.py to get the actual
 data, and also supplies such user-visible items as column headers and
 tooltips, which need to be translated and localized. It calls on the Python
 standard module unicodedata for character class names and character names.
 
-CharSortFilter(QSortFilterProxyModel) implements sort/filter proxy
+CharSortFilter(QSortFilterProxyModel) implements a sort/filter proxy
 based on a test function set by the parent.
 
 CharView(QWidget) implements a panel consisting of a top row containing
-a Refresh button the left, and a filter combobox on the right. Below and
-filling the rest of the widget is a 6-column table headed (in English)
- * Glyph, the character symbol
- * Value, the character value in hex
- * Count, the number times it appears in the document
- * Entity, the HTML named or numeric entity value
- * Category, unicode category in words.
- * Name, official unicode name for that character
+a Refresh button the left, and a filter combobox on the right.
 
+Pressing Reset causes a call to chardata.py to reload the census of
+characters, and a redisplay of the table afterward. The combo box offers the
+user a choice of displaying all characters, or only non-ASCII characters, or
+only non-Latin-1 characters.
+
+Below and filling the rest of the widget is a 6-column table headed (in English)
+
+ * Symbol, the character symbol
+ * Value, the character value in hex
+ * Count, the number of times it appears in the document
+ * Entity, the HTML named or numeric entity value
+ * Category, a unicode category in words.
+ * Name, official unicode name for that character
 
 '''
 import constants as C
 import unicodedata
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     Qt,
     QAbstractTableModel,
     QCoreApplication,
@@ -58,7 +64,6 @@ _TR = QCoreApplication.translate
 from PyQt5.QtWidgets import (
     QWidget,
     QComboBox,
-    QHBoxLayout,
     QVBoxLayout,
     QPushButton,
     QTableView
