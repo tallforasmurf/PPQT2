@@ -61,20 +61,21 @@ from PyQt6.QtCore import (
     QSortFilterProxyModel
     )
 _TR = QCoreApplication.translate
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QWidget,
     QComboBox,
     QVBoxLayout,
     QPushButton,
     QTableView
     )
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Dictionary to translate Unicode category abbreviations such as "Sc"
-# returned by unicodedata.category() to phrases such as "Symbol, currency".
-# The key is lowercased because we don't trust unicodedata to be 100%
-# consistent with the unicode standard names.
-#
-# Not making any attempt to translate these, as unicode.org doesn't.
+'''
+The following dictionary translates the Unicode category abbreviations such
+as "Sc" as returned by unicodedata.category(), to phrases such as "Symbol,
+currency". The key is lowercased because we don't trust unicodedata to be
+100% consistent with the unicode standard names.
+
+Not making any attempt to translate these, as unicode.org doesn't.
+'''
 
 UC_CAT_EXPAND = {
     'cc' : 'Other, Control',
@@ -110,9 +111,11 @@ UC_CAT_EXPAND = {
     'zs' : 'Separator, Space'
 }
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Dictionaries of translated column header strings, column tool-tip strings,
-# and column text alignment. Key is the column number 0..5.
+'''
+The following dictionaries supply column header strings, column tool-tip
+strings, and column text alignment for our table. The column headers are
+translated. The key is the column number 0..5.
+'''
 
 COL_HEADERS = {
     0 : _TR('character table column head',
@@ -143,23 +146,24 @@ COL_TOOLTIPS = {
            'Official Unicode character name')
 }
 COL_ALIGNMENT = {
-    0: Qt.AlignHCenter,
-    1: Qt.AlignRight,
-    2: Qt.AlignRight,
-    3: Qt.AlignLeft,
-    4:Qt.AlignLeft,
-    5:Qt.AlignLeft
+    0: Qt.AlignmentFlag.AlignCenter,
+    1: Qt.AlignmentFlag.AlignRight,
+    2: Qt.AlignmentFlag.AlignRight,
+    3: Qt.AlignmentFlag.AlignLeft,
+    4: Qt.AlignmentFlag.AlignLeft,
+    5: Qt.AlignmentFlag.AlignLeft
 }
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Define the table model, implementing those methods required to make an
-# abstract table, concrete:
-#
-# flags : the base class returns Qt.itemIsSelectable|Qt.itemIsEnabled.
-# columnCount : return the number of columns (6, but not hard-coded)
-# rowCount : return number of chars in the database
-# headerData : return the column header name or tooltip string.
-# data : return the actual data, or various helpful info about a column.
+'''
+Here we define the table model, implementing those methods required to
+convert an abstract table into a concrete implementation:
+
+* flags : the base class returns Qt.itemIsSelectable|Qt.itemIsEnabled.
+* columnCount : return the number of columns (6, but not hard-coded)
+* rowCount : return number of chars in the database
+* headerData : return the column header name or tooltip string.
+* data : return the actual data, or various helpful info about a column.
+'''
 
 class CharModel(QAbstractTableModel):
     def __init__(self, chardata, parent):
@@ -174,22 +178,22 @@ class CharModel(QAbstractTableModel):
     def rowCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
         return self.chardata.char_count()
-
+    
     def headerData(self, col, axis, role):
         global COL_HEADERS, COL_TOOLTIPS, COL_ALIGNMENT
-        if (axis == Qt.Horizontal) and (col >= 0):
-            if role == Qt.DisplayRole : # request for actual text
+        if (axis == Qt.Orientation.Horizontal) and (col >= 0):
+            if role == Qt.ItemDataRole.DisplayRole : # request for actual text
                 return COL_HEADERS[col]
-            if (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
+            if (role == Qt.ItemDataRole.ToolTipRole) or (role == Qt.ItemDataRole.StatusTipRole) :
                 return COL_TOOLTIPS[col]
-            if (role == Qt.TextAlignmentRole) :
+            if (role == Qt.ItemDataRole.TextAlignmentRole) :
                 return COL_ALIGNMENT[col]
         return None # whatever you said, we don't have it
 
     def data(self, index, role ):
         global UC_CAT_EXPAND, COL_ALIGNMENT, COL_TOOLTIPS
         (char, count) = self.chardata.get_tuple(index.row())
-        if role == Qt.DisplayRole : # request for actual data
+        if role == Qt.ItemDataRole.DisplayRole : # request for actual data
             if 0 == index.column():
                 return char
             elif 1 == index.column():
@@ -205,9 +209,9 @@ class CharModel(QAbstractTableModel):
                 return UC_CAT_EXPAND[unicodedata.category(char).lower()]
             else: # assuming column is 5, unicode name
                 return unicodedata.name(char,'no name?').title()
-        elif (role == Qt.TextAlignmentRole) :
+        elif (role == Qt.ItemDataRole.TextAlignmentRole) :
             return COL_ALIGNMENT[index.column()]
-        elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
+        elif (role == Qt.ItemDataRole.ToolTipRole) or (role == Qt.ItemDataRole.StatusTipRole) :
             if index.column() < 5 :
                 return COL_TOOLTIPS[index.column()]
             # For column 5, the tooltip is the name string, because a narrow
@@ -215,17 +219,18 @@ class CharModel(QAbstractTableModel):
             return unicodedata.name(char,'no name?').title()
         # Sorry, we don't support other roles
         return None
+'''
+Define the sort/filter proxy, used by the table view to sort and filter
+the rows to be displayed. We don't re-implement the sort() method, that
+just goes to the default which sorts columns on their character values
+as returned by the data() method above.
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Define the sort/filter proxy, used by the table view to sort and filter
-# the rows to be displayed. We don't re-implement the sort() method, that
-# just goes to the default which sorts columns on their character values
-# as returned by the data() method above.
-#
-# We do implement filterAcceptsRow(). This tests the given row's character
-# value in a Lambda expression selected by the user. The lambdas are defined
-# in this class, and the current lambda is selected upon an activated(row)
-# signal from the filter combobox.
+We do implement filterAcceptsRow(). This tests the given row's character
+value in a Lambda expression selected by the user. This is how the user
+chooses to display all, or non-ascii, or non-latin-1 characters. The lambdas
+are defined in this class, and the current lambda is selected upon an
+activated(row) signal from the filter combobox.
+'''
 
 class CharFilter(QSortFilterProxyModel):
     def __init__(self, chardata, parent):
@@ -252,9 +257,12 @@ class CharFilter(QSortFilterProxyModel):
         elif row == 2 : self.test = self.lambda_not_latin
         else : self.test = self.lambda_all
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Define the CharView object that is displayed in the Chars panel.
-#
+'''
+Define the CharView object that is displayed in the Chars panel and comprises
+the visual content of that panel. This object is instantiated by the Book
+object when a Book is opened.
+'''
+
 class CharView(QWidget):
     def __init__(self, my_book):
         super().__init__(None) # no parent, the tabset will parent us later
@@ -293,12 +301,12 @@ class CharView(QWidget):
         if index.column() == 3 :
             # doubleclick was in the HTML entity column. Put the entity
             # string from column 3 in the replace-1 field
-            repl = index.data(Qt.DisplayRole)
+            repl = index.data(Qt.ItemDataRole.DisplayRole)
         if index.column() != 0 :
             # dblclick on some column other than 0. We need a reference to
             # column 0, and we get it from the index.
             index = index.sibling(index.row(),0)
-        what = index.data(Qt.DisplayRole) # get the character as a string
+        what = index.data(Qt.ItemDataRole.DisplayRole) # get the character as a string
         # Call for a find with respect case on, whole word and regex off
         self.findpanel.find_this(what,case=True,word=False,regex=False,repl=repl)
 
