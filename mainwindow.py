@@ -15,17 +15,20 @@ __license__ = '''
     extras/COPYING.TXT included in the distribution of this program, or see:
     <http://www.gnu.org/licenses/>.
 '''
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2013, 2014, 2015 David Cortesi"
 __maintainer__ = "David Cortesi"
-__email__ = "tallforasmurf@yahoo.com"
 
 '''
                           mainwindow.py
 
 Create and manage the main window, menus, and toolbars.
-This code manages app-level global resources, for example
+
+This code:
+
+1. Manages app-level global resources used by other modules, such as
+
   * the path(s) to user resources "extras" and spellcheck dicts (via paths module)
   * default spellcheck dictionary tags (via dictionaries module)
   * fonts (via the font module)
@@ -33,42 +36,36 @@ This code manages app-level global resources, for example
   * the Help file and its display panel (via helpview)
   * the app-level Preferences (via preferences)
 
-Creates the app-level menu structure and all the menu actions.
+2. Creates the app-level menu structure, and defines all the menu actions.
 
-Creates the widgets that display the various "view" objects.
+3. Creates the widgets that display the various "view" objects that comprise
+   the entire user interface.
 
-Instantiates and manages multiple Book objects.
+4. Instantiates and manages multiple Book objects.
 
-Maintains a sequence of integers for successive "untitled-n" booknames.
-Kept & used by File > New action.
+5. Maintains a sequence of integers for successive "untitled-n" booknames
+   (kept & used by the File > New menu action)
 
-Manage the change of user focus from one document to another, switching
-all the dependent panels of the incoming Book for those of the outgoing
-one (see focus_me()).
+6. Manages the change of user focus from one document to another, switching
+   all the dependent panels of the incoming Book for those of the outgoing
+   one (see focus_me()).
 
 TODO Support the user action of dragging a panel out of the tab-set to be an
 independent window, or vice-versa.
 
 '''
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     Qt,
     QByteArray,
     QCoreApplication,
-    QPoint,
-    QSize,
     QTimer
     )
-from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QAction,
-    QLabel,
     QMainWindow,
     QMenu,
-    QMenuBar,
-    QScrollArea,
     QSplitter,
-    QTabBar, QTabWidget,
-    QWidget
+    QTabWidget
     )
 _TR = QCoreApplication.translate
 import os# TODO remove
