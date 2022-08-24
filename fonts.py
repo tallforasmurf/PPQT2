@@ -116,13 +116,15 @@ def _emit_signal(boola):
     fonts_logger.debug('Emitting fontChange signal({})'.format(boola) )
     _SIGNALLER.send(boola)
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Static globals and functions to manage them.
-#
-# Generate a font database and make sure it contains Liberation Mono
-# and Cousine, loading them from our resources module.
-#
+'''
+Static globals and functions to manage them.
+
+In PyQt5 it was necessary to create an instance of QFontDatabase.
+In PyQt6 this is not done; rather the methods of the class are called as static
+members. So where previously we created an object under the name _FONT_DB,
+now we simply make _FONT_DB a Python reference to the QFontDatabase class.
+The syntax of calling its methods remains the same!
+'''
 
 from PyQt6.QtGui import (
     QFont,
@@ -130,7 +132,13 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import QFontDialog
 
-_FONT_DB = QFontDatabase()
+_FONT_DB = QFontDatabase
+
+'''
+Ensure that the Liberation Mono and Cousine, fonts are known to the
+font system, loading them from our resources module.
+'''
+
 _FONT_DB.addApplicationFont(':/liberation_mono.ttf')
 _FONT_DB.addApplicationFont(':/cousine.ttf')
 
@@ -172,6 +180,7 @@ def set_defaults():
     _GENL_QFONT = QFont(_GENL_FAMILY,_GENL_SIZE)
     _MONO_QFONT = QFont(_MONO_FAMILY,_MONO_SIZE)
 
+# Initialize the font system - called from mainwindow.py while starting up
 def initialize(settings):
     global _GENL_SIZE,_MONO_SIZE,_GENL_FAMILY,_MONO_FAMILY,_GENL_QFONT,_MONO_QFONT
     fonts_logger.debug('Fonts initializing')
@@ -189,6 +198,9 @@ def initialize(settings):
     # happening before any visible widget is initializing.
     _GENL_QFONT = QFont( _GENL_FAMILY, _GENL_SIZE )
     _MONO_QFONT = QFont( _MONO_FAMILY, _MONO_SIZE )
+
+# On shutdown, save the user's current font choices. Called from 
+# mainwindow.py at shutdown.
 
 def shutdown(settings):
     fonts_logger.debug('Saving font info in settings')
@@ -248,32 +260,3 @@ def font_from_family(family):
     qf.setPointSize(_MONO_SIZE)
     return qf
 
-# When preference is actually designed, we go with our own combobox
-# instead of the full font dialog. Also, decided NOT to support user
-# choice of the general UI font.
-
-#def choose_font(mono=True, parent=None):
-    #fonts_logger.debug('choose_font mono={0}'.format(mono))
-    #if mono :
-        #caption = _TR('fonts.py',
-                      #'Select a monospaced font for editing',
-                      #'Font choice dialog caption')
-        #initial = _MONO_QFONT
-    #else :
-        #caption = _TR('fonts.py',
-                      #'Select the font for titles, menus, and buttons',
-                      #'Font choice dialog caption')
-        #initial = _GENL_QFONT
-    #(new_font, ok) = QFontDialog.getFont(initial,parent,caption)
-    #if ok : return new_font
-    #else: return None
-
-#def set_general(qfont):
-    #global _GENL_FAMILY, _GENL_SIZE, _GENL_QFONT
-    #fonts_logger.debug('fonts:set_general')
-    #if qfont.family() != _GENL_FAMILY or qfont.pointSize() != _GENL_SIZE :
-        ## general font is changing
-        #_GENL_QFONT = QFont(qfont)
-        #_GENL_FAMILY = qfont.family()
-        #_GENL_SIZE = qfont.pointSize()
-        #_emit_signal(False)
