@@ -93,7 +93,7 @@ from PyQt6.QtWidgets import QColorDialog
 # to this signal: colors.notify_me(my_slot)
 #
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal
 
 class ColorSignaller(QObject):
     colorChange = pyqtSignal()
@@ -117,13 +117,13 @@ def _emit_signal():
 # updated in set_defaults(), initialize(), and the set_* methods.
 
 _CL_COLOR = QColor('#FAFAE0') # color background of the current edit line
-_CL_STYLE = QTextCharFormat.NoUnderline # line style, usually no-underline
+_CL_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline # line style, usually no-underline
 _FR_COLOR = QColor('#CCFFFF') # color background of a limited find range
-_FR_STYLE = QTextCharFormat.NoUnderline # line style, usually no-underline
+_FR_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline # line style, usually no-underline
 _SNO_COLOR = QColor('thistle') # color to highlight scannos
-_SNO_STYLE = QTextCharFormat.NoUnderline # scanno highlight style
+_SNO_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline # scanno highlight style
 _SPU_COLOR = QColor('magenta') # color to highlight spelling errors
-_SPU_STYLE = QTextCharFormat.WaveUnderline # spelling highlight style
+_SPU_STYLE = QTextCharFormat.UnderlineStyle.WaveUnderline # spelling highlight style
 
 def initialize(settings):
     global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE
@@ -169,7 +169,7 @@ def shutdown(settings):
 def _make_format( color, line_type ):
     qtcf = QTextCharFormat()
     qtcf.setUnderlineStyle(line_type)
-    if line_type == QTextCharFormat.NoUnderline:
+    if line_type == QTextCharFormat.UnderlineStyle.NoUnderline:
         # make a background color format
         qtcf.setBackground(QBrush(color)) # background get a QBrush
     else :
@@ -179,12 +179,12 @@ def _make_format( color, line_type ):
 
 def get_current_line_format():
     qtcf = _make_format(_CL_COLOR, _CL_STYLE )
-    qtcf.setProperty( QTextCharFormat.FullWidthSelection, True )
+    qtcf.setProperty( QTextCharFormat.Property.FullWidthSelection, True )
     return qtcf
 
 def get_find_range_format( full_width=True ):
     qtcf = _make_format( _FR_COLOR, _FR_STYLE )
-    qtcf.setProperty( QTextCharFormat.FullWidthSelection, full_width )
+    qtcf.setProperty( QTextCharFormat.Property.FullWidthSelection, full_width )
     return qtcf
 
 def get_scanno_format():
@@ -215,7 +215,7 @@ def set_defaults(signal=True):
 
 def _parse_format(qtfc):
     line_type = qtfc.underlineStyle()
-    if line_type == QTextCharFormat.NoUnderline:
+    if line_type == QTextCharFormat.UnderlineStyle.NoUnderline:
         qc = qtfc.background().color()
     else:
         qc = qtfc.underlineColor()
