@@ -60,8 +60,8 @@ from PyQt6.QtCore import (
     QCoreApplication,
     QTimer
     )
+from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
-    QAction,
     QMainWindow,
     QMenu,
     QSplitter,
