@@ -35,7 +35,6 @@ from PyQt6.QtCore import (
     QFileInfo,
     QIODevice,
     QTextStream,
-    QTextCodec,
     QByteArray
 )
 from PyQt6.QtWidgets import (
@@ -110,10 +109,9 @@ class MemoryStream(QTextStream):
         self.buffer = QByteArray()
         # Initialize the "real" QTextStream with a ByteArray buffer.
         super().__init__(self.buffer, QIODevice.ReadWrite)
-        # The default codec is codecForLocale, which might vary with
-        # the platform, so set a codec here for consistency. UTF-16
-        # should entail minimal or no conversion on input or output.
-        self.setCodec( QTextCodec.codecForName('UTF-16') )
+        # Previously we set up a UTF-8 text encoder because the
+        # default was the local encoding. However in Qt6, this class
+        # defaults to UTF8 and has automatic Unicode detection enabled.
     def pos(self):
         self.flush()
         return super().pos()
