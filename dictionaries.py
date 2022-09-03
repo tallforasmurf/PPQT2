@@ -26,49 +26,77 @@ __email__ = "tallforasmurf@yahoo.com"
 
 Global spelling dictionary resource for PPQT2.
 
-This module allows spell-check objects to be created for languages given only
-the "tag" or dictionary filename, for example "en_US".
+This module allows spell-check objects to be created, given only the "tag" or
+ISO language code, for example "en_US". The returned Speller (see the class
+below) provides two methods,
 
-The main window calls initialize() during startup, when we get the user's
-preferred default tag from saved settings.
+    is_valid() returning true when the Speller is properly initialized
+    and ready to check spelling
+    
+    check(word, alt_tag=None) tests the word against the default or an
+    alternate language dictionary. Returns True when the word is correctly
+    spelled or when a dictionary is not found.
 
-The set_default_tag() function is called from the preferences dialog.
+The spell check process is carried out by the Spyll module which is a pure
+Python implementation of the widely-used Hunspell checker. Spell-checking
+centers on dictionary files which can be obtained from a variety of sources.
+PPQT2 is distributed with several dictionaries in the extras folder. Other
+dictionaries are widely available for free download.
 
-initialize(settings)     Get default tag from settings if available.
+Each Hunspell dictionary comprises two files with the same filename, which is
+one of the ISO language codes, such as "en_US". The file suffixes are ".dic"
+for the dictionary file and ".aff" for the affix file. A major part of this
+module is devoted to locating and verifying dictionary files given a language
+tag, and given our conventions for file locations.
 
-shutdown(settings)       Save default tag in settings.
+Here are the external functions:
 
-set_default_tag(tag)     Note the tag of the preferred dictionary
-                         from preferences
+set_default_tag()
 
-get_default_tag()        Return the preferred main dictionary tag.
+Called from the preferences dialog when the user selects a default language
+for the book.
 
-get_tag_list(path)       Prepare and return a dict{tag:path} where each
-                         tag is an available language tag and path is
-                         where the tag.dic/tag.aff files can be found.
-                         The list is developed searching first in path
-                         (presumably a book path), then in the dict path
-                         then the extras path (see paths.py).
+initialize(settings)
 
-make_speller(tag, path)  Make a spellcheck object of class Speller
-                         for the language tag using path/tag.dic .aff.
-                         The tag and path are expected to be valid and
-                         accessible, probably from a tag_list above.
+Called from the Mainwindow during startup, to get the default tag from
+settings if available.
 
-class Speller.check(word, alt_tag=None) Check the spelling of word in the
-                         primary or alternate dictionary. Return True for
-                         correctly-spelled or when no dictionary is found.
+shutdown(settings)
+
+Called from the Mainwindow during shutdown to save the current default tag in
+settings.
+
+set_default_tag(tag)
+
+Called from the preferences dialog when the user chooses a default language.
+
+get_default_tag()
+
+Return the current default tag.
+
+get_tag_list(path)
+
+Prepare and return a dictionary of {tag:path} where each tag is an available
+language, and path is where the two dictionary files for that tag can be
+found. The list is developed searching first in path (presumably a book
+path), then in the dict path, then the extras path (see paths.py).
+
+make_speller(tag, path)
+
+Return a spellcheck object of class Speller for the given tag, fetching a
+dictionary from the path. The tag and path are expected to be valid and
+accessible, probably from a tag_list above.
 
 '''
 import os
 import logging
 dictionaries_logger = logging.getLogger(name='dictionaries')
 import paths
-import hunspell
+from spylls.hunspell import Dictionary
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Static functions to manage the default language tag.
+'''
+Functions called from Preferences to manage the default language tag.
+'''
 
 _PREFERRED_TAG = ''
 
@@ -78,11 +106,10 @@ def set_default_tag(tag):
 def get_default_tag():
     return str(_PREFERRED_TAG)
 
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Static functions called from mainwindow to fetch and store system
-# default values in the settings.
+'''
+Functions called from Mainwindow to fetch and store system
+default values in the settings during startup and shutdown.
+'''
 
 def initialize(settings):
     global _PREFERRED_TAG
@@ -95,21 +122,20 @@ def shutdown(settings):
     settings.setValue("dictionaries/default_tag",_PREFERRED_TAG)
     dictionaries_logger.debug( 'Default dict {} saved to settings'.format(_PREFERRED_TAG) )
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Internal function to search one folder path for all matching dictionary
-# file-pairs lang.dic/lang.aff.
-#
-# For each pair, if that lang is not in the tag_dict already (from a prior
-# call to a higher-priority path), add it to the dict as lang:path.
-#TODO: would this be better with pathlib than os.path?
+'''
 
+Internal utility function to search one folder path looking for all matching
+dictionary file-pairs <lang>.dic/<lang>.aff, and to store their tags and
+paths in the tag_dict.
+
+For each pair, if that <lang> is not in the tag_dict already (from a prior
+search of to a higher-priority path), add it to the dict as lang:path.
+'''
 
 def _find_tags(path, tag_dict):
     if not paths.check_path(path) :
         return # path does not exist or is not readable
-
-    # Get a list of all files in this path.
+    ''' Get a list of all files in this path.'''
     try:
         file_names = os.listdir(path)
     except OSError as E:
@@ -118,7 +144,10 @@ def _find_tags(path, tag_dict):
     except Exception:
         dictionaries_logger.error("Unexpected error listing files in {0}".format(path))
         file_names = []
-    # Collect the set of matching pairs lang.dic/lang.aff
+    '''
+    Collect the set of matching pairs <lang>.dic/<lang>.aff. Use the magic of
+    sets to produce the set of <lang> values for which we found both files.
+    '''
     aff_set = set()
     dic_set = set()
     for one_name in file_names:
@@ -127,7 +156,7 @@ def _find_tags(path, tag_dict):
         if one_name[-4:] == '.dic':
             dic_set.add(one_name[:-4])
     pair_set = aff_set & dic_set # names with both .dic and .aff
-    # Process the paired files by name
+    ''' Store the <langs> having paired files in the tag_dict '''
     for lang in pair_set:
         if lang not in tag_dict :
             tag_dict[lang] = path
@@ -143,13 +172,11 @@ def _find_tags(path, tag_dict):
         dictionaries_logger.error(
         "Found {0}.dic but not {0}.aff in {1}".format(lang,path) )
 
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Make a (python) dict with all available language tags with their paths.
-# Give priority to the ones on the path argument (which may be the null
-# string), then the dict_path, then the extras_path.
-
+'''
+Make a (python) dict with all available language tags with their paths.
+Give priority to the ones on the path argument (which may be the null
+string), then the dict_path, then the extras_path.
+'''
 def get_tag_list(path = ''):
     tag_dict = {}
     if path : # don't bother searching a nullstring path
@@ -158,27 +185,30 @@ def get_tag_list(path = ''):
     _find_tags(paths.get_extras_path(), tag_dict)
     return tag_dict
 
+'''
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Make a spell-check object given a language tag and a path. The language tag
-# names the primary or default dictionary. The path is used to find its
-# .dic/.aff files. However a spell-check object can be called with an alt-tag
-# in which case it uses get_tag_list to find the files for the alt-tag.
-#
-# If the Speller cannot make a primary dictionary it writes a log message and
-# sets itself "invalid". Its validity can be checked by calling is_valid().
-# Normally an object of this type should not be created except with a
-# path and tag that were returned by get_tag_list above. However we put
-# in checks to make sure.
-#
-# If it is used when not valid, all spelling checks return True, meaning
-# correct spelling (this avoids marking every word in a book misspelled when
-# a dictionary is temporarily missing).
-#
-# If it cannot make an alt dict, the same: log message and True for any word
-# in that alt dict.
-#
+Define a spell-check object given a language tag and a path.
+
+The language tag names the primary or default dictionary to be used whenever
+a word is checked using this speller.
+
+The path is used to find the .dic/.aff files for that language. However a
+spell-check object can be called with an alt-tag in which case it uses
+get_tag_list to find the files for the alt-tag.
+
+If the Speller cannot make a primary dictionary it writes a log message and
+sets itself "invalid". Its validity can be checked by calling is_valid().
+Normally an object of this type should not be created except with a
+path and tag that were returned by get_tag_list above. However we put
+in checks to make sure.
+
+If the speller is used when not valid, all spelling checks return True,
+meaning correct spelling. This avoids marking every word in a book misspelled
+when a dictionary is temporarily missing.
+
+If it cannot make an alt dict, the same: log message and True for any word
+checked with that alt tag.
+'''
 
 class Speller(object):
     def __init__(self, primary_tag, dict_path ):
@@ -194,10 +224,12 @@ class Speller(object):
         dic_path = os.path.join(path, tag + '.dic')
         if paths.check_path(aff_path) and paths.check_path(dic_path) :
             try:
-                dic = hunspell.HunSpell(dic_path, aff_path)
+                # Spylls want the tag at the end of the path,
+                # for example '/path/to/dictionary/en_US'
+                dic = Dictionary.from_files(os.path.join(path, tag))
             except :
                 dictionaries_logger.error(
-                "Unexpected error opening dictionary {0} on {1}".format(tag,path)
+                "Error opening dictionary {0} on {1}".format(tag,path)
                 )
                 dic = None
         else:
@@ -207,6 +239,19 @@ class Speller(object):
 
     def is_valid(self):
         return self.primary_dictionary is not None
+    
+    '''
+    The actual spell-check. Most of this is about setting up a dictionary
+    for an alternate language. This is needed when the book text contains
+    for example "<span lang='FR_fr'><i>je t'aime, ma cheri</i></span>".
+    When checking the spelling of those four words, the speller will be
+    called with alt_tag='FR_fr'. In the vast majority of cases, if a book
+    uses any alt tags, it will use only one. For this reason we cache the
+    latest alt tag dictionary used, in hopes it will be used again.
+    
+    For the great majority of calls, the alt_tag argument is None and we
+    use the primary dictionary for this book.
+    '''
 
     def check(self, word, alt_tag = None):
         if alt_tag is None:
@@ -227,7 +272,7 @@ class Speller(object):
                     dict_to_use = None
         if dict_to_use : # we have a valid primary or alt dictionary
             try :
-                return dict_to_use.spell(word)
+                return dict_to_use.lookup(word)
             except UnicodeError as UE :
                 dictionaries_logger.error("error encoding spelling word {}".format(word))
                 return False
@@ -236,3 +281,21 @@ class Speller(object):
                 return False
         else: # No available dictionary, say it is correct
             return True
+        
+if __name__ == '__main__':
+    # simple unit test
+    
+    my_path = os.path.dirname(__file__) # source dir probably
+    dic_path = os.path.join(my_path,'extras','dictionaries')
+    print('speller')
+    speller = Speller('en_US', dic_path)
+    print('one')
+    assert speller.check('shit')
+    print('two')
+    assert not speller.check('shyt')
+    print('3')
+    assert speller.check('merde','fr_FR')
+    print('4')
+    assert not speller.check('myrde','fr_FR')
+    print('done')
+
