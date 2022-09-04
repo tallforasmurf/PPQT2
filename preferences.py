@@ -32,13 +32,13 @@ The Preferences dialog gives the user the ability to choose the following:
 
     The path to a folder of spellcheck dictionaries
 
-    The preferred spellcheck language (dictionary) for new books
+    The preferred default spellcheck language (dictionary)
 
     The monospaced font for the editor
 
-    The text format used to show the current line
+    The text format used to highlight the current line
 
-    The text format used to show a limited Find range
+    The text format used to highlight a limited Find range
 
     The text format used to highlight detected scannos
 
@@ -89,21 +89,22 @@ from PyQt6.QtGui import (
 
 _TR = QApplication.translate
 
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Since the preference choices are similar in many ways they are coded as a
-# family of classes. ChoiceWidget(QGroupBox) creates the look of the basic
-# rectangle with a title line. It implements the mouse-over behavior of
-# changing color and setting self.explanation into self.explainer.
-# Creates self.layout for contents.
-#
-# Each subclass must:
-# * pass title string
-# * pass explainer, a widget that supports setText()
-# * set self.explanation to explain itself
-# * implement self.apply() to install the current values
-# * implement self.reset() to get the established values and display them
-#
+'''
 
+Since the preference choices are all similar in many ways, they are coded as
+subclasses of the following base class, ChoiceWidget(QGroupBox), which
+creates the look of the basic rectangle with a title line. It implements the
+mouse-over behavior of changing color and setting self.explanation into
+self.explainer. Creates self.layout for contents.
+
+Each subclass must:
+* pass its title string
+* pass its explainer, a widget that supports setText()
+* set self.explanation to explain itself
+* implement self.apply() to install the current values
+* implement self.reset() to get the established values and display them
+
+'''
 class ChoiceWidget(QGroupBox):
     def __init__( self, title, explainer ) :
         super().__init__( title, None )
@@ -113,7 +114,8 @@ class ChoiceWidget(QGroupBox):
         # Compress the stack vertically
         self.layout().setContentsMargins( 0,5,0,5 )
         # Figure out a slightly darker color for mouse-over
-        self.normal_color = self.palette().color(QPalette.Normal, QPalette.Window)
+        self.normal_color = self.palette().color(
+            QPalette.ColorGroup.Normal, QPalette.ColorRole.Window)
         self.mouse_color = self.normal_color.darker(110)
         # allow changing background color
         self.setAutoFillBackground(True)
@@ -121,18 +123,19 @@ class ChoiceWidget(QGroupBox):
 
     def enterEvent( self, event ) :
         palette = self.palette()
-        palette.setColor( QPalette.Normal, QPalette.Window, self.mouse_color )
+        palette.setColor(
+            QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, self.mouse_color )
         self.setPalette(palette)
         self.explainer.setText(self.explanation)
 
     def leaveEvent( self, event ) :
         palette = self.palette()
-        palette.setColor( QPalette.Normal, QPalette.Window, self.normal_color )
+        palette.setColor(
+            QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, self.normal_color )
         self.setPalette(palette)
         #self.explainer.setText('') # leave it in place until changed by another
 
-    # Called when the Apply button is clicked, make your current choice value
-    # the established value.
+    # Called when the Apply button is clicked.
     def apply( self ) :
         pass
 
@@ -141,9 +144,11 @@ class ChoiceWidget(QGroupBox):
     def reset( self ) :
         pass
 
-# Choose the editor font: basic ChoiceWidget plus ComboBox of available
-# fixed-pitch fonts.
+'''
 
+Choose the editor font: basic ChoiceWidget plus ComboBox of available
+fixed-pitch fonts.
+'''
 class ChooseFixedFont( ChoiceWidget ) :
     def __init__( self, explainer ) :
         super().__init__( _TR( 'Preference item title line',
@@ -172,15 +177,17 @@ When you select a font from the menu, that font is applied to this window. To ap
     def apply(self) :
         fonts.set_fixed( fonts.font_from_family( self.choice ) )
 
-# Choose the default dictionary tag, used when opening new books.
-# A basic ChoiceWidget with a combobox containing the available
-# dict tags. Signs up to get the pathsChanged signal and reloads
-# the combo box when the dicts or extras paths change.
+'''
+Choose the default dictionary tag, used when opening a new book. A basic
+ChoiceWidget with a combobox containing the available dict tags. Signs up
+to get the pathsChanged signal and reloads the combo box when the dicts or
+extras paths change.
+'''
 
 class ChooseDefaultDict( ChoiceWidget ):
     def __init__( self, explainer ) :
         super().__init__( _TR( 'Preference item title line',
-                               'Choose the dictionary for any new book' ),
+                               'Choose the spellcheck dictionary for any new book' ),
                           explainer )
         self.dcb = QComboBox()
         self.layout().addWidget(self.dcb)
@@ -190,7 +197,7 @@ class ChooseDefaultDict( ChoiceWidget ):
         self.explanation = _TR( 'Preference item details',
 '''Choose the spell-check dictionary to be used when a book is opened for the first time.
 
-If the dictionary that you want is not in the list, you may need to choose the path to the dictionaries folder, above, and click Apply.
+If the list is empty or the dictionary that you want is not shown, you may need to choose the path to the dictionaries folder, above, and click Apply.
 
 You can change the dictionary for any book by right-clicking in its Edit panel.''' )
 
@@ -198,7 +205,7 @@ You can change the dictionary for any book by right-clicking in its Edit panel.'
         self.choice = dic_tag
 
     def path_changed( self, which ):
-        # some path preference changed; if "dicts" reload the menu
+        # some path preference changed; if "dicts", reload the menu
         if which == "dicts" :
             self.reload_menu()
 
@@ -216,17 +223,17 @@ You can change the dictionary for any book by right-clicking in its Edit panel.'
     def apply(self):
         dictionaries.set_default_tag( self.choice )
 
-#
-# Parent class for the three choose-a-path classes. Display a lineedit and a
-# browse button. On end-edit, check the line-edit contents for validity as a
-# path according to a criterion, and if not valid turn the field pink and
-# beep. When editing resumes, clear the pink color.
-#
-# Subclass must:
-# * pass criterion, one of os.F_OK, R_OK, or X_OK
-# * implement browse to respond to the Browse button click
-# * in reset(), check self.path_valid
+'''
+Parent class for the three choose-a-path classes. Display a lineedit and a
+browse button. On end-edit, check the line-edit contents for validity as a
+path according to a criterion, and if not valid turn the field pink and
+beep. When editing resumes, clear the pink color.
 
+Subclass must:
+* pass criterion, one of os.F_OK, os.R_OK, or os.X_OK
+* implement browse to respond to the Browse button click
+* in reset(), check self.path_valid
+'''
 class PathChoice(ChoiceWidget):
     def __init__( self, criterion, title, explainer ) :
         super().__init__( title, explainer )
@@ -241,21 +248,17 @@ class PathChoice(ChoiceWidget):
         self.layout().addWidget( self.path_edit, 1 )
         self.layout().addWidget( self.browse_button, 0 )
 
-    # Change the color of the background of the path_edit.
+    ''' Change the color of the background of the path_edit.'''
     def set_path_color( self, color_name ) :
         p = self.path_edit.palette()
-        p.setColor( QPalette.Normal, QPalette.Base, QColor( color_name ) )
+        p.setColor(
+            QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor( color_name ) )
         self.path_edit.setPalette(p)
 
-    # User is editing the path string. If it is now marked invalid,
-    # clear that and make its background white again.
-    def path_working( self ) :
-        if self.path_valid : return
-        self.path_valid = True
-        self.set_path_color('White')
-
-    # Return pressed or focus-out of the path line-edit. Check for
-    # validity per the criterion.
+    '''
+    Return pressed (or focus-out) on the path line-edit. Check for
+    validity per the criterion. If it is not valid, mark it so.
+    '''
     def check_path( self ) :
         if os.access( self.path_edit.text(), self.criterion ) :
             return
@@ -264,13 +267,25 @@ class PathChoice(ChoiceWidget):
             self.path_valid = False
             self.set_path_color( 'Pink' )
 
-    # User wants to browse for a path. The subclass must implement
-    # this by calling a utilities dialog with a specific caption.
+    '''
+    User is editing the path string. If we had marked it invalid (above),
+    clear that indication and make its background white again.
+    '''
+    def path_working( self ) :
+        if self.path_valid : return
+        self.path_valid = True
+        self.set_path_color('White')
 
+    '''
+    User wants to browse for a path. The subclass must implement
+    this by calling a utilities dialog with a specific caption.
+    '''
     def browse(self) :
         pass
 
-# Choose path to bookloupe executable.
+'''
+Choose path to bookloupe executable.
+'''
 
 class ChooseLoupe( PathChoice ) :
     def __init__( self, explainer ):
@@ -300,8 +315,9 @@ Enter the path to the bookloupe program file. If you have not installed bookloup
         if self.path_valid :
             paths.set_loupe_path( self.path_edit.text() )
 
-# Choose the "extras" folder
-
+'''
+Choose the "extras" folder
+'''
 class ChooseExtras( PathChoice ) :
     def __init__( self, explainer ):
         super().__init__( os.F_OK,
@@ -330,7 +346,9 @@ The "extras" folder is found in the PPQT folder when it is downloaded, but you m
         if self.path_valid :
             paths.set_extras_path( self.path_edit.text() )
 
-# Choose the "dicts" folder
+'''
+Choose the "dicts" folder
+'''
 
 class ChooseDicts( PathChoice ) :
     def __init__( self, explainer ) :
@@ -343,7 +361,7 @@ class ChooseDicts( PathChoice ) :
 
 When PPQT needs to perform spell-checking, it looks for a dictionary first in the folder for the current book, then in this folder, last in the "extras" folder.
 
-Some dictionaries are distributed with PPQT in the folder extras/dicts, but you may move that folder anywhere.''' )
+Some dictionaries are distributed with PPQT in the folder extras/dictionaries, but you may move that folder anywhere.''' )
         self.reset() # fill initial value
 
     def browse( self ) :
@@ -362,11 +380,12 @@ Some dictionaries are distributed with PPQT in the folder extras/dicts, but you 
         if self.path_valid :
             paths.set_dicts_path( self.path_edit.text() )
 
-#
-# Classes to implement the four character-format choices. Swatch is a
-# clickable color patch. It emits a signal clicked on mouse release. It
-# offers a set_color method.
-#
+'''
+Classes to help implement the four character-format choices.
+
+Swatch is a clickable color patch. It emits a signal "clicked" on mouse
+release. It offers a set_color method.
+'''
 
 class Swatch(QLabel):
     clicked = pyqtSignal()
@@ -382,9 +401,10 @@ class Swatch(QLabel):
     def mouseReleaseEvent( self, event ) :
         self.clicked.emit()
 
-# Sample is a read-only QTextEdit that displays the appearance of
-# some QTextCharFormat.
-
+'''
+Sample is a read-only QTextEdit that displays the appearance of
+some QTextCharFormat.
+'''
 class Sample(QTextEdit):
     def __init__( self, parent=None ) :
         super().__init__(parent)
@@ -395,21 +415,25 @@ class Sample(QTextEdit):
     def change_format( self, qtcf ) :
         self.cursor.setCharFormat( qtcf )
 
-# Parent class of four choose-format widgets. Builds on ChoiceWidget to add
-# a combobox for underline styles, a Swatch and a Sample.
-#
-# When the Swatch is clicked, query the user for a color choice. When the
-# color or combobox changes, update the sample to show the effect.
+'''
 
-# underline styles 0..6 for loading the combobox.
+Parent class of four choose-format widgets. Builds on ChoiceWidget to add
+a combobox for underline styles, a Swatch and a Sample.
+
+When the Swatch is clicked, query the user for a color choice. When the
+color or combobox changes, update the sample to show the effect.
+
+underline styles 0..6 for loading the combobox.
+'''
+
 UNDERLINES = {
-    QTextCharFormat.NoUnderline : 'No underline',
-    QTextCharFormat.SingleUnderline : 'Single',
-    QTextCharFormat.DashUnderline : 'Dash',
-    QTextCharFormat.DotLine : 'Dotted',
-    QTextCharFormat.DashDotLine : 'Dash-Dot',
-    QTextCharFormat.DashDotDotLine : 'Dash-dot-dot',
-    QTextCharFormat.WaveUnderline : 'Wave'
+    QTextCharFormat.UnderlineStyle.NoUnderline : 'No underline',
+    QTextCharFormat.UnderlineStyle.SingleUnderline : 'Single',
+    QTextCharFormat.UnderlineStyle.DashUnderline : 'Dash',
+    QTextCharFormat.UnderlineStyle.DotLine : 'Dotted',
+    QTextCharFormat.UnderlineStyle.DashDotLine : 'Dash-Dot',
+    QTextCharFormat.UnderlineStyle.DashDotDotLine : 'Dash-dot-dot',
+    QTextCharFormat.UnderlineStyle.WaveUnderline : 'Wave'
 }
 
 class FormatChoice( ChoiceWidget ) :
@@ -431,49 +455,54 @@ class FormatChoice( ChoiceWidget ) :
         self.sample = Sample()
         self.layout().addWidget( self.sample )
         self.reset() # set widgets to current value
-
-    # Combine the underline choice and swatch color into a QTextCharFormat.
+    '''
+    Combine the underline choice and swatch color into a QTextCharFormat.
+    '''
     def make_format( self, ul_index, qc ) :
         qtcf = QTextCharFormat()
         qtcf.setUnderlineStyle( ul_index )
-        if ul_index == QTextCharFormat.NoUnderline :
+        if ul_index == QTextCharFormat.UnderlineStyle.NoUnderline :
             qtcf.setBackground(QBrush(qc))
         else :
             qtcf.setUnderlineColor(qc) # underline color gets a QColor
             qtcf.clearBackground()
         return qtcf
-
-    # Parse self.text_format and display it in the swatch and combobox.
+    '''
+    Parse self.text_format and display it in the swatch and combobox.
+    '''
     def show_format( self ) :
         un = self.text_format.underlineStyle()
-        if un == QTextCharFormat.NoUnderline :
+        if un == QTextCharFormat.UnderlineStyle.NoUnderline :
             qc = self.text_format.background().color()
         else :
             qc = self.text_format.underlineColor()
         self.swatch.set_color( qc )
         self.ul_menu.setCurrentIndex( un )
         self.sample.change_format(self.text_format)
-
-    # Handle a change in selection of the underline popup
+    '''
+    Handle a change in selection of the underline popup
+    '''
     def ul_change( self, index ) :
         self.text_format = self.make_format( index, self.swatch.qc )
         self.show_format()
-
-    # Handle a click on the color swatch. Show the color dialog. After it
-    # ends, the Preferences dialog will be behind the main window. Why? Who
-    # knows! But raise it back up to visibility.
+    '''
+    Handle a click on the color swatch. Show the color dialog. After it
+    ends, the Preferences dialog will be behind the main window. Why? Who
+    knows! But raise it back up to visibility.
+    '''
     def color_change(self) :
         qc = colors.choose_color(
             _TR('Browse dialog for color preference',
-                'Choose a color for scanno marking'),
+                'Choose a color for highlighting'),
             self.swatch.qc )
         BIG_FAT_KLUDGE.raise_()
         if qc is not None :
             self.text_format = self.make_format( self.ul_menu.currentIndex(), qc )
             self.show_format()
 
-# Choose the Scanno highlight.
-
+'''
+Choose the Scanno highlight.
+'''
 class ChooseScanno( FormatChoice ) :
     def __init__( self, explainer ) :
         super().__init__( _TR( 'Preference item title line',
@@ -492,10 +521,11 @@ When you choose "No Underline" the text is marked with a colored background. Whe
 
     def apply( self ) :
         colors.set_scanno_format( self.text_format )
-        QCoreApplication.processEvents()
+        QCoreApplication.processEvents() # force change to be visible
 
-# Choose the Spellcheck highlight.
-
+'''
+Choose the Spellcheck highlight.
+'''
 class ChooseSpellcheck( FormatChoice ) :
     def __init__( self, explainer ) :
         super().__init__( _TR( 'Preference item title line',
@@ -513,8 +543,11 @@ When you choose "No Underline" the text is marked with a colored background. Whe
 
     def apply( self ) :
         colors.set_spelling_format( self.text_format )
+        QCoreApplication.processEvents() # force change to be visible        
 
-# Choose the Find-range highlight.
+'''
+Choose the Find-range highlight.
+'''
 
 class ChooseFindRange( FormatChoice ) :
     def __init__( self, explainer ) :
@@ -534,7 +567,7 @@ When you choose "No Underline" the text is marked with a colored background. Whe
 
     def apply( self ) :
         colors.set_find_range_format( self.text_format )
-        QCoreApplication.processEvents()
+        QCoreApplication.processEvents() # force change to be displayed
 
 # Choose the Current-line highlight.
 
@@ -555,10 +588,15 @@ When you choose "No Underline" the text is marked with a colored background. Whe
 
     def apply( self ) :
         colors.set_current_line_format( self.text_format )
+        QCoreApplication.processEvents() # force change to be visible        
 
 BIG_FAT_KLUDGE = None
 
-# Finally, the actual PreferencePanel object.
+'''
+
+**Finally**, the actual PreferencePanel object.
+
+'''
 class PreferenceDialog(QDialog):
     def __init__( self, parent=None ):
         global BIG_FAT_KLUDGE
