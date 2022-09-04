@@ -96,10 +96,10 @@ _EXTRAS = ''
 _LOUPE = ''
 
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Validate a path as readable or executable. Note that os.access('',F_OK)
-# returns False, a null string is not valid.
+'''
+Validate a path as readable (most cases) or executable (book loupe path).
+Note that os.access('',F_OK) returns False, so a null string is not valid.
+'''
 
 def check_path(path, executable=False):
     if executable :
@@ -107,11 +107,16 @@ def check_path(path, executable=False):
     # else not checking executable-ness only readability
     return os.access( path ,os.F_OK ) and os.access( path, os.R_OK )
 
+'''
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Set the default paths as best we can based on fixed information.
+Set the default paths as best we can based on fixed information. The
+constants module has already worked out the platform. If we are bundled by
+PyInstaller or cxFreeze, the startup code has set sys.frozen.
 
+I expect the user to use the preferences dialog to set preferred paths
+which then carry forward from session to session through settings.
+
+'''
 def set_defaults():
     global _DICTS, _EXTRAS, _LOUPE
     # Default for the Loupe path is platform-dependent.
@@ -139,34 +144,37 @@ def set_defaults():
         candidate = ''
     _DICTS = str(candidate)
 
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Starting up: set the default paths based on our current environment,
-# then load saved settings if they exist.
+'''
+Starting up: set the default paths based on our current environment, then
+load saved settings if they exist.
+'''
 
 def initialize(settings):
     global _DICTS, _EXTRAS, _LOUPE
     paths_logger.debug('paths initializing')
     set_defaults()
-    # Recover save bookloupe path if any, else the default.
+    ''' 
+    Recover saved bookloupe path if any, else the default.
+    Note a saved path might have gone bad since.
+    '''
     candidate = settings.value( "paths/loupe_path", _LOUPE )
     if not check_path(candidate,executable=True):
-        candidate = '' # no-longer-valid path from settings
+        candidate = '' # no-longer-valid path from settings?
     _LOUPE = str(candidate)
     paths_logger.debug('initial loupe path is ' + _LOUPE)
-
-    # Recover saved extras path if any, else leave the default.
-    # The default from set_defaults is a valid path.
+    '''
+    Recover saved extras path if any, else leave the default.
+    '''
     candidate = settings.value( "paths/extras_path", _EXTRAS )
     if check_path(candidate):
         # extras_path from settings (or the default) is valid.
         _EXTRAS = str(candidate)
     # else extras from settings is no longer valid, leave default.
     paths_logger.debug('initial extras path is ' + _EXTRAS)
-
-    # Recover the saved dicts path if any, else try to find
-    # one in the newly-set Extras, else leave null.
+    '''
+    Recover the saved dicts path if any, else try to find
+    one in the newly-set Extras, else leave null.
+    '''
     candidate = settings.value( "paths/dicts_path", _DICTS )
     if not check_path(candidate):
         # Either the saved path is no longer good, or _DICTS was
@@ -178,6 +186,11 @@ def initialize(settings):
     _DICTS = str(candidate)
     paths_logger.debug('initial dicts path is ' + _DICTS)
 
+'''
+Called from Mainwindow at shutdown, save the current paths for
+the next session.
+'''
+
 def shutdown(settings):
     paths_logger.debug('paths saving loupe: ' + _LOUPE)
     settings.setValue("paths/loupe_path",_LOUPE)
@@ -186,12 +199,11 @@ def shutdown(settings):
     paths_logger.debug('paths saving dicts: ' + _DICTS)
     settings.setValue("paths/dicts_path",_DICTS)
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Create a global object that can send the signal
-# PathsChanged('dict'/'extras'/'loupe'). Objects that want to know when the
-# user changes path preferences, connect with paths.notify_me(my_slot)
-#
+'''
+Create a global object that can send the signal
+PathsChanged('dict'/'extras'/'loupe'). Objects that want to know when the
+user changes path preferences, connect with paths.notify_me(my_slot)
+'''
 
 from PyQt6.QtCore import ( pyqtSignal, QObject )
 
@@ -207,30 +219,36 @@ _SIGNALLER = PathSignaller() # create one object of that class
 def notify_me(slot):
     paths_logger.debug('Connecting PathsChanged signal to {}'.format(slot.__name__))
     _SIGNALLER.connect(slot)
+
 def _emit_signal(what):
     paths_logger.debug('Emitting PathsChanged signal({})'.format(what) )
     _SIGNALLER.send(what)
 
-# Return the current path to the extras. This should never be a null
-# string although it might the fairly-useless cwd.
-
+'''
+Return the current path to the extras. This should never be a null
+string although it might the fairly-useless cwd set as default.
+'''
 def get_extras_path():
     return str(_EXTRAS)
 
-# Return the current path to dictionaries or a null string if none is
-# currently known.
-
+'''
+Return the current path to dictionaries or a null string if none is
+currently known.
+'''
 def get_dicts_path():
     return str(_DICTS)
 
-# Return the current value of the bookloupe executable or a null string.
+'''
+Return the current value of the bookloupe executable or a null string.
+'''
 
 def get_loupe_path():
     return str(_LOUPE)
 
-# Set some user-selected path. In each case assume the caller used
-# check_path() first.
-
+'''
+Set some user-selected path (from e.g. preferences). In each case assume the
+caller used check_path() first.
+'''
 def set_loupe_path(path):
     global _LOUPE
     paths_logger.debug('setting loupe path to: ' + path)
