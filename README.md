@@ -4,9 +4,9 @@ This is a major rewrite of PPQT to achieve certain goals.
 
 (July 2015) This project is substantially complete.
 
-(August 2022) Just for fun began updating to use PyQt6, however
-was unable to get the hunspell-dev package or hunspell module to
-install. Not going to continue with what is only a vanity project.
+(August 2022) Just for fun began updating to use PyQt6, this is purely
+a vanity project, nobody wants to know but me. Hit a snag with Hunspell
+and then discovered Spylls, a pure-Python remake of Hunspell. So continuing.
 
 ## What Is PPQT?
 
