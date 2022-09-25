@@ -72,30 +72,36 @@ import os# TODO remove
 import preferences
 import constants as C
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#
-# Manage the Edit menu for our sub-panels. Not all panels have uses for the
-# Edit menu. A panel that does support Edit actions calls set_up_edit_menu()
-# when it gets a focus-in event. This populates the Edit menu with actions
-# defined by that panel, and makes the Edit menu visible. On focus-out it
-# calls hide_edit_menu() to make it invisible.
-#
+'''
 
+Manage the Edit menu for our sub-panels. The issue is that the Edit menu of
+the app is global to the whole app, but the user interacts with one panel at
+a time, the editview, perhaps the notes, then the footnotes etc. Not all
+panels have a use for the Edit menu, but those that do, have unique uses for
+the Edit actions like cut, paste etc. Paste with the Notes panel active needs
+to call an action defined in the notesview module.
+
+Each panel that does support Edit actions calls set_up_edit_menu() each time
+it gets a focus-in event. This populates the Edit menu with QActions defined
+by that panel, and makes the Edit menu visible. On focus-out, the panel calls
+hide_edit_menu() to make the menu invisible.
+'''
 _EDIT_MENU = None # global reference to the only Edit menu, see _uic.
 _LAST_MENU = None # id of last action list to populate the edit menu
 
-# Populate the edit menu. The action_list is a list of triples, ('Title',
-# slot, key), as required by QMenu.addAction. The caller can pass
-# (None,None,None) to get a menu separator.
-#
-# We test the Python id of the given action_list so we can avoid the setup
-# work when, as often happens, one panel gets focus-in multiple times without
-# another panel having changed the menu.
+'''
+Populate the edit menu. The action_list is a list of triples,
+('Title',slot,key), as required by QMenu.addAction. The caller can pass
+(None,None,None) to get a menu separator.
 
+We test the Python id of the given action_list so we can avoid the setup
+work when, as often happens, one panel gets focus-in multiple times without
+another panel having changed the menu.
+'''
 def set_up_edit_menu( action_list ) :
     global _EDIT_MENU, _LAST_MENU
 
-    _EDIT_MENU.setEnabled(True)
+    _EDIT_MENU.setEnabled(True) # make visible
     if id( action_list ) != _LAST_MENU :
         _LAST_MENU = id( action_list )
         _EDIT_MENU.clear()
@@ -123,35 +129,38 @@ def hide_edit_menu():
         # really should add edit menu action lists to at least the Find
         # panel.
         pass
+'''
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#
-# Class of the single main window instance. One instance is created by
-# ppqt.py at startup, and the open QSettings object is passed.
-#
-# The details of the following are coded out of line in the _uic method.
-#
-# * Get info from settings, including recent files and files open in the
-#   previous session.
-# * Create the app window.
-# * Create the menus.
-#
-# If there were files open in a previous session, ask if we should reopen
-# them, and do so -- or just create a single New file.
-#
-# Respond to menu actions and other UI inputs until shutdown.
-#
-# On close event, save stuff into settings and call sub-modules to do the
-# same.
-#
-# Files that are not open now, for example the list of recent files, are kept
-# as complete absolute path strings. The utilities module has some useful
-# functions for working with these.
-#
-# The set of currently-open files is stored as a dict { n: Book-object }
-# where n is a sequence number assigned when a file is opened. The file name,
-# path, and other info can be interrogated from the Book-object.
-#
+Class of the single main window instance.
+
+One instance of this class is created by ppqt.py at startup, and the open
+QSettings object is passed.
+
+The details of the following are coded out of line in the _uic method.
+
+* Get info from settings, including recent files and files open in the
+  previous session.
+  
+* Create the app window.
+
+* Create the menus.
+
+If there were files open in a previous session, ask if we should reopen
+them, and do so -- or just create a single New file.
+
+Respond to menu actions and other UI inputs until shutdown.
+
+On close event, save stuff into settings and call sub-modules to do the
+same.
+
+Files that are not open now, for example the list of recent files, are kept
+as complete absolute path strings. The utilities module has some useful
+functions for working with these.
+
+The set of currently-open files is stored as a dict { n: Book-object }
+where n is a sequence number assigned when a file is opened. The file name,
+path, and other info can be interrogated from the Book-object.
+'''
 
 import paths
 import fonts
@@ -162,36 +171,36 @@ import logging
 import utilities
 import helpview
 import book
-#import translators TODO - reenable translators
+#import translators # TODO - reenable translators
 mainwindow_logger = logging.getLogger(name='main_window')
 # from PyQt6.QtTest import QTest # dbg
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Dicts copied from the following are used to keep track of the several
-# view-panel objects owned by each Book. A new Book gets a copy and fills
-# it in with references to its view objects. The main window keeps a copy
-# that has references to the objects currently being displayed. These
-# dicts are used and updated by the focus_me() method.
-#
-# The keys 'Images' through 'Loupe' are the labels of the view panels. The Book
-# object initializes their values with references to the widgets that
-# implement those panels.
-#
-# Key 'default' is the default sequence of panel tabs, left to right, used by
-# the book to set itself up.
-#
-# Key 'tab_list' is a list of tab labels in their actual sequence at the time
-# a book loses focus, as the user may have rearranged them.
-#
-# Key 'current' is the tab index of the panel tab that was active when the
-# book lost focus, e.g. index of the Find or Fnote panel.
-#
-# When a book loses focus, its panel labels and current index are stored
-# under 'tab_list' and the index of the current tab under 'current'. When a
-# book comes into focus the panel tabset is rebuilt in the correct sequence
-# from this info.
-# TODO: CHANGE THIS TO A DATA CLASS!
 
+'''
+Dicts copied from the following are used to keep track of the several
+view-panel objects owned by each Book. A new Book gets a copy and fills
+it in with references to its view objects. The main window keeps a copy
+that has references to the objects currently being displayed. These
+dicts are used and updated by the focus_me() method.
+
+The keys 'Images' through 'Loupe' are the labels of the view panels. The Book
+object initializes their values with references to the widgets that
+implement those panels.
+
+Key 'default' is the default sequence of panel tabs, left to right, used by
+the book to set itself up.
+
+Key 'tab_list' is a list of tab labels in their actual sequence at the time
+a book loses focus, as the user may have rearranged them.
+
+Key 'current' is the tab index of the panel tab that was active when the
+book lost focus, e.g. index of the Find or Fnote panel.
+
+When a book loses focus, its panel labels and current index are stored
+under 'tab_list' and the index of the current tab under 'current'. When a
+book comes into focus the panel tabset is rebuilt in the correct sequence
+from this info.
+TODO: CHANGE THIS TO A DATA CLASS!
+'''
 
 PANEL_DICT = {
     'Images':None,
