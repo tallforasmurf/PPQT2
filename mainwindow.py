@@ -173,7 +173,7 @@ from PyQt5.QtTest import QTest # dbg
 # that has references to the objects currently being displayed. These
 # dicts are used and updated by the focus_me() method.
 #
-# The keys 'Images' through 'Loupe' are the labels of the panels. The Book
+# The keys 'Images' through 'Loupe' are the labels of the view panels. The Book
 # object initializes their values with references to the widgets that
 # implement those panels.
 #
@@ -190,6 +190,8 @@ from PyQt5.QtTest import QTest # dbg
 # under 'tab_list' and the index of the current tab under 'current'. When a
 # book comes into focus the panel tabset is rebuilt in the correct sequence
 # from this info.
+# TODO: CHANGE THIS TO A DATA CLASS!
+
 
 PANEL_DICT = {
     'Images':None,
@@ -525,7 +527,7 @@ class MainWindow(QMainWindow):
         if target_book.get_save_needed() :
             # Compose message of translated parts because _TR does not
             # allow for incorporating strings, only numbers.
-            msg = _TR('File Close dialog', 'Book file ', 'filename follows here')
+            msg = _TR('File Close dialog', 'x file ', 'filename follows here')
             msg += target_book.get_book_name()
             msg += _TR('File Close dialog', ' has been modified!', 'filename precedes this')
             ret = utilities.save_discard_cancel_msg(
