@@ -86,13 +86,11 @@ import constants as C
 from PyQt6.QtGui import QBrush, QColor, QTextCharFormat
 from PyQt6.QtWidgets import QColorDialog
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Create a global object that can send the colorChange signal. Objects
-# that want to know when the user changes color preferences, connect
-# to this signal: colors.notify_me(my_slot)
-#
-
+'''
+Create a global object that can send the colorChange signal. Objects that
+want to know when the user changes color preferences, connect to this signal:
+colors.notify_me(my_slot)
+'''
 from PyQt6.QtCore import QObject, pyqtSignal
 
 class ColorSignaller(QObject):
@@ -111,20 +109,33 @@ def _emit_signal():
     colors_logger.debug('Emitting colorChange()')
     _SIGNALLER.send()
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#
-# Establish the static global choices of the colors and styles. These are
-# updated in set_defaults(), initialize(), and the set_* methods.
+'''
+Establish static global values for our text colors and styles, with initial
+default values. These are updated in set_defaults(), initialize(), and the
+set_* methods.
 
-_CL_COLOR = QColor('#FAFAE0') # color background of the current edit line
-_CL_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline # line style, usually no-underline
-_FR_COLOR = QColor('#CCFFFF') # color background of a limited find range
-_FR_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline # line style, usually no-underline
-_SNO_COLOR = QColor('thistle') # color to highlight scannos
-_SNO_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline # scanno highlight style
-_SPU_COLOR = QColor('magenta') # color to highlight spelling errors
-_SPU_STYLE = QTextCharFormat.UnderlineStyle.WaveUnderline # spelling highlight style
+Color background and style of the current edit line (pale yellow).
+'''
+_CL_COLOR = QColor('#FAFAE0') # 
+_CL_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline
+'''
+Color background and style of a limited Find range (pale pink).
+'''
+_FR_COLOR = QColor('#CCFFFF')
+_FR_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline
+'''
+Color background and style of a detected Scanno (light lavendar-ish).
+'''
+_SNO_COLOR = QColor('thistle')
+_SNO_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline
+'''
+Color background and style of a spelling error (bright magenta) and a
+wavy underline.
+'''
+_SPU_COLOR = QColor('magenta')
+_SPU_STYLE = QTextCharFormat.UnderlineStyle.WaveUnderline
 
+''' On startup, initialize the above globals '''
 def initialize(settings):
     global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE
     global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
@@ -143,6 +154,7 @@ def initialize(settings):
     _FR_STYLE = settings.value( 'colors/find_range_style', _FR_STYLE )
     _FR_STYLE = int( _FR_STYLE )
 
+''' On shutdown, save the current choices to the Settings '''
 def shutdown(settings):
     global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE
     global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
@@ -156,16 +168,11 @@ def shutdown(settings):
     settings.setValue('colors/find_range',_FR_COLOR.name())
     settings.setValue('colors/find_range_style', _FR_STYLE)
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Functions called by editview to get text formats for four different
-# highlight types. In each case return a QTextCharFormat that reflects the
-# current color and underline-style set from preferences.
-#
-# For the current-line style and usually, the find-range style, editview
-# needs the fullWidthSelection property set, and we do that here.
-
-# Create a QTextCharFormat based on a color and underline value.
-
+'''
+Factored function to create a QTextCharFormat based on a color and underline
+value. When the style contains an underline, the color applies to the 
+underline. When no underline, the color applies to the text background.
+'''
 def _make_format( color, line_type ):
     qtcf = QTextCharFormat()
     qtcf.setUnderlineStyle(line_type)
@@ -177,6 +184,14 @@ def _make_format( color, line_type ):
         qtcf.setUnderlineColor(color) # underline color gets a QColor
     return qtcf
 
+'''
+Functions called by editview to get text formats for four different highlight
+types. In each case return a QTextCharFormat that reflects the current color
+and underline-style set from preferences.
+
+For the current-line style and usually, the find-range style, editview needs
+the fullWidthSelection property set, and we do that here.
+'''
 def get_current_line_format():
     qtcf = _make_format(_CL_COLOR, _CL_STYLE )
     qtcf.setProperty( QTextCharFormat.Property.FullWidthSelection, True )
@@ -191,11 +206,11 @@ def get_scanno_format():
     return _make_format( _SNO_COLOR, _SNO_STYLE )
 
 def get_spelling_format():
-    return _make_format( _SPU_COLOR,_SPU_STYLE )
+    return _make_format( _SPU_COLOR, _SPU_STYLE )
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Functions called by the Preferences dialog.
-
+'''
+Functions called by the Preferences dialog to store user choices.
+'''
 def set_defaults(signal=True):
     global _CL_COLOR, _CL_STYLE, _FR_COLOR, _FR_STYLE
     global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
@@ -210,9 +225,10 @@ def set_defaults(signal=True):
     _SPU_STYLE = QTextCharFormat.WaveUnderline
     if signal: _emit_signal()
 
-# Extract the two important features of a QTextCharFormat, its line style
-# and its color.
-
+'''
+Extract the two important features of a QTextCharFormat, its line style
+and its color.
+'''
 def _parse_format(qtfc):
     line_type = qtfc.underlineStyle()
     if line_type == QTextCharFormat.UnderlineStyle.NoUnderline:
@@ -245,12 +261,14 @@ def set_spelling_format(qtcf):
     _emit_signal()
     colors_logger.debug('Set spelling format to {0} {1}'.format(int(_SPU_STYLE),_SPU_COLOR.name()))
 
-# Generic color-picker dialog to be called by the Preferences dialog.
-#   parent: widget over which to center the dialog.
-#   title: a translated title for the dialog, e.g. "Choose scanno highlight color"
-#   qc_initial: starting color value.
-# Returns None if the user cancels, or the chosen QColor.
+'''
+Generic color-picker dialog to be called by the Preferences dialog.
 
+* parent: widget over which to center the dialog.
+* title: a translated title for the dialog, e.g. "Choose scanno highlight color"
+* qc_initial: starting color value.
+* Returns None if the user cancels, or the chosen QColor.
+'''
 def choose_color(title, qc_initial, parent=None ):
     qc = QColorDialog.getColor( qc_initial, parent, title )
     if qc.isValid() : return qc
