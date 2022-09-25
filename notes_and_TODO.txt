@@ -1,4 +1,52 @@
 
+Changing spellchecker to Spylls (hunspell in pure python)
+https://spylls.readthedocs.io/en/latest/
+https://pypi.org/project/spylls/
+Refresh dictionaries in extras/dictionaries
+sources:
+- http://extensions.libreoffice.org
+- http://cgit.freedesktop.org/libreoffice/dictionaries
+- http://extensions.openoffice.org
+- http://wiki.services.openoffice.org/wiki/Dictionaries
+
+https://github.com/LibreOffice/dictionaries
+
+Qt6 and comment conversion progress
+==========================
+book.py		6 C
+chardata.py	
+charview.py	
+colors.py	6 C
+constants.py	6 C
+dictionaries.py	6 C
+dpdocsyntax.py  x
+editdata.py	6 C
+editview.py	6 C
+findview.py	6 C
+fnotdata.py	
+fnotview.py	
+fonts.py	6
+helpview.py	6
+imageview.py	
+loupeview.py	
+mainwindow.py	6
+meta2bin.py	not needed?
+metadata.py	6
+noteview.py	
+pagedata.py	
+pageview.py	
+paths.py	6 C
+PPQT2.py	6 C
+preferences.py	6 C
+resources.py	6 x
+translators.py	
+utilities.py	6
+worddata.py	
+wordview.py	
+xlate_utils.py	6
+
+
+
 New Hierarchy of auxiliary files
 ================================
 
