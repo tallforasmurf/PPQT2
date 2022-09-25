@@ -145,7 +145,6 @@ class ChoiceWidget(QGroupBox):
         pass
 
 '''
-
 Choose the editor font: basic ChoiceWidget plus ComboBox of available
 fixed-pitch fonts.
 '''
@@ -416,7 +415,6 @@ class Sample(QTextEdit):
         self.cursor.setCharFormat( qtcf )
 
 '''
-
 Parent class of four choose-format widgets. Builds on ChoiceWidget to add
 a combobox for underline styles, a Swatch and a Sample.
 
