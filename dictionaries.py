@@ -56,6 +56,10 @@ set_default_tag()
 Called from the preferences dialog when the user selects a default language
 for the book.
 
+get_default_tag()
+
+Return the current default tag.
+
 initialize(settings)
 
 Called from the Mainwindow during startup, to get the default tag from
@@ -65,14 +69,6 @@ shutdown(settings)
 
 Called from the Mainwindow during shutdown to save the current default tag in
 settings.
-
-set_default_tag(tag)
-
-Called from the preferences dialog when the user chooses a default language.
-
-get_default_tag()
-
-Return the current default tag.
 
 get_tag_list(path)
 
