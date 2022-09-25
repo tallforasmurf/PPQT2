@@ -162,9 +162,9 @@ import logging
 import utilities
 import helpview
 import book
-import translators
+#import translators TODO - reenable translators
 mainwindow_logger = logging.getLogger(name='main_window')
-from PyQt5.QtTest import QTest # dbg
+# from PyQt6.QtTest import QTest # dbg
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #
 # Dicts copied from the following are used to keep track of the several
@@ -563,15 +563,15 @@ class MainWindow(QMainWindow):
         # and schedule the book and associated objects for garbage collect.
         target_book = None
 
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    # Implement a Translate... submenu command. Call translators.xlt_book
-    # with the book object that is currently in focus. If the process works
-    # xlt_book will create a new book by calling do_new() and load it.
-    #
-    def _xlt_a_book( self ):
-        book = self.open_books[ self.focus_book ]
-        datum = self.sender().data()
-        translators.xlt_book( book, datum, self )
+    ## -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    ## Implement a Translate... submenu command. Call translators.xlt_book
+    ## with the book object that is currently in focus. If the process works
+    ## xlt_book will create a new book by calling do_new() and load it.
+    ##
+    #def _xlt_a_book( self ):
+        #book = self.open_books[ self.focus_book ]
+        #datum = self.sender().data()
+        #translators.xlt_book( book, datum, self )
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Implement loading and saving find panel user buttons. Start the search
@@ -759,10 +759,10 @@ class MainWindow(QMainWindow):
                          )
         work.triggered.connect(self._find_save)
 
-        # Translate... gets a submenu with an entry for every Translator
-        # in extras/Translators (if any). The actions connect to _xlt_a_book.
-        self.translate_submenu = translators.build_xlt_menu( self, self._xlt_a_book )
-        self.file_menu.addMenu( self.translate_submenu )
+        ## Translate... gets a submenu with an entry for every Translator
+        ## in extras/Translators (if any). The actions connect to _xlt_a_book.
+        #self.translate_submenu = translators.build_xlt_menu( self, self._xlt_a_book )
+        #self.file_menu.addMenu( self.translate_submenu )
 
         # Open Recent gets a submenu that is added to the File menu.
         # The aboutToShow signal is connected to our _build_recent slot.
