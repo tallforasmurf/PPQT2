@@ -34,27 +34,28 @@ We register reader/writer functions for two metadata sections.
 The Book is also responsible for linking the editor's cursorMoved signal
 to our cursor_move() method.
 
-When (if) the Book loads an existing file it processes metadata which may
-enter our metadata reader functions. Then it calls the set_path() method.
-There we find out if a folder of pngs exists. If so we enable all our
-controls and set up to display images.
+When (if) the Book loads an existing file, it processes that file's metadata
+which may enter our metadata reader functions. Then the Book calls the
+set_path() method. There we find out if a folder of scanned image .pngs
+exists. If so we enable all our controls and set up to display images.
 
 Rather than using the Qt Designer this widget is "hand-made", however the
-lengthy code to set it up including translation of labels, is taken out of
-line to the _uic() method below. See comments there.
+lengthy code to set it up, including translation of labels, is taken out of
+line to the _uic() method below. See comments there on layout.
 
 If the cursor_to_image button is checked (default true), whenever the edit
-cursor moves we check to see if the page has changed, and if so, change the
-display.
+cursor moves we check to see if the cursor location falls on a different
+page, and if so, we change the display.
 
-If the image_to_cursor button is checked (default false), when we do a page
-up or down, we force the edit cursor to move to the top of the new page.
+If the image_to_cursor button is checked (default false), when we perform a
+page up or down, we force the edit cursor to move to the top of text
+corresponding to the new page.
 
 We intercept keystrokes and process them as follows:
-  ctrl-plus zooms up by 1.25
-  ctrl-minus zooms down by 0.8
-  page up goes to the next-lower page index
-  page down goes to the next-higher page index
+  ctrl-plus:  zoom up by 1.25
+  ctrl-minus: zoom down by 0.8
+  page up:    go to the next-lower page index
+  page down:  go to the next-higher page index
 
 '''
 import constants as C
@@ -63,41 +64,37 @@ import pagedata
 import resources # for hand icons
 import math # for isnan() only
 
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     Qt,
     QDir,
-    QFileInfo,
-    QCoreApplication,
-    QSize
+    QCoreApplication
 )
 _TR = QCoreApplication.translate
 
-from PyQt5.QtWidgets import (
-    QCheckBox,
-    QFrame,
+from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QAbstractScrollArea, QScrollArea,
     QSizePolicy,
-    QSpinBox,
+    QPushButton,
     QToolButton,
-    QVBoxLayout,
     QWidget
 )
-from PyQt5.QtGui import (
+from PyQt6.QtGui import (
     QColor,
+    QFontMetrics,
     QIcon,
     QImage,
-    QKeyEvent,
     QPixmap,
     QPalette
 )
 import logging
 imageview_logger = logging.getLogger(name='imageview')
 
-# Establish min/max zoom settings as module constants (they affect
-# only this module, so not placed in constants).
+'''
+Establish min/max zoom settings as module constants (they affect
+only this module, so not placed in constants.py).
+'''
 ZOOM_FACTOR_MIN = 0.15
 ZOOM_FACTOR_MAX = 2.0
 
@@ -457,67 +454,77 @@ class ImageDisplay(QWidget):
                      'The edit cursor does NOT move when you use Page Up/Down to change images.' )
                 )
 
-    # Build the widgetary contents. The widget consists mostly of a vertical
-    # layout with two items: A scrollArea containing a QLabel used to display
-    # an image, and a horizontal layout containing the zoom controls.
-    # TODO: figure out design and location of two cursor-link tool buttons.
+    '''
+    Build the widgetary contents. The widget consists mostly of a vertical
+    layout with two items: A scrollArea containing a QLabel used to display
+    an image, and a horizontal layout containing the zoom controls.
+        '''
     def _uic(self):
 
-        # Function to return the actual width of the label text
-        # of a widget. Get the fontMetrics and ask it for the width.
-        def _label_width(widget):
+        '''
+        Function to return the actual width of the label text
+        of a widget. Get the fontMetrics and ask it for the width
+        of the widget's text contents.
+        '''
+        def _label_width(widget:QWidget):
             fm = widget.fontMetrics()
-            return fm.width(widget.text())
+            return fm.horizontalAdvance(widget.text())
 
-        # Create a gray field to use when no image is available
+        ''' Create a gray field to use when no image is available. '''
         self.gray_image = QPixmap(700,900)
         self.gray_image.fill(QColor("gray"))
 
-        # Build the QLabel that displays the image pixmap. It gets all
-        # available space and scales its contents to fit that space.
+        '''
+        Build the QLabel that displays the image pixmap. It gets all
+        available space and scales its contents to fit that space.
+        '''
         self.image_display = QLabel()
-        self.image_display.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.image_display.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
         self.image_display.setScaledContents(True)
-
-        # Create a scroll area within which to display the image. It will
-        # create a horizontal and/or vertical scroll bar when
-        # the image_display size exceeds the size of the scroll area.
+        '''
+        Create a scroll area within which to display the image. It will
+        create a horizontal and/or vertical scroll bar when
+        the image_display size exceeds the size of the scroll area.
+        '''
         self.scroll_area = QScrollArea()
-        self.scroll_area.setBackgroundRole(QPalette.Dark)
-        self.scroll_area.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.scroll_area.setBackgroundRole(QPalette.ColorRole.Dark)
+        self.scroll_area.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         self.scroll_area.setWidget(self.image_display)
-        # Make sure the scroll area does not swallow user keystrokes
-        self.setFocusPolicy(Qt.ClickFocus) # focus into whole widget
+        ''' Make sure the scroll area does not swallow user keystrokes '''
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus) # focus into whole widget
         self.scroll_area.setFocusProxy(self) # you, pass it on.
-
-        # Create the image-linking toolbuttons.
-        # Cursor-to-image uses left-hands.
+        '''
+        Create the image-linking toolbuttons using images from resources.py.
+        Cursor-to-image uses left-hands.
+        '''
         c2i_on = QPixmap(':/hand-left-closed.png')
         c2i_off = QPixmap(':/hand-left-open.png')
         c2i_con = QIcon()
-        c2i_con.addPixmap(c2i_on,QIcon.Normal,QIcon.On)
-        c2i_con.addPixmap(c2i_off,QIcon.Normal,QIcon.Off)
+        c2i_con.addPixmap(c2i_on,QIcon.Mode.Normal,QIcon.State.On)
+        c2i_con.addPixmap(c2i_off,QIcon.Mode.Normal,QIcon.State.Off)
         self.cursor_to_image = QToolButton()
         self.cursor_to_image.setCheckable(True)
         self.cursor_to_image.setContentsMargins(0,0,0,0)
         self.cursor_to_image.setIconSize(QSize(30,24))
         self.cursor_to_image.setMaximumSize(QSize(32,26))
         self.cursor_to_image.setIcon(c2i_con)
-        # Image-to-cursor uses right-hands.
+        ''' Image-to-cursor uses right-hands. '''
         i2c_on = QPixmap(':/hand-right-closed.png')
         i2c_off = QPixmap(':/hand-right-open.png')
         i2c_con = QIcon()
-        i2c_con.addPixmap(i2c_on,QIcon.Normal,QIcon.On)
-        i2c_con.addPixmap(i2c_off,QIcon.Normal,QIcon.Off)
+        i2c_con.addPixmap(i2c_on,QIcon.Mode.Normal,QIcon.State.On)
+        i2c_con.addPixmap(i2c_off,QIcon.Mode.Normal,QIcon.State.Off)
         self.image_to_cursor = QToolButton()
         self.image_to_cursor.setCheckable(True)
         self.image_to_cursor.setContentsMargins(0,0,0,0)
         self.image_to_cursor.setIconSize(QSize(30,24))
         self.image_to_cursor.setMaximumSize(QSize(32,26))
         self.image_to_cursor.setIcon(i2c_con)
-
-        # Create a spinbox to set the zoom from 15 to 200 and connect its
-        # signal to our slot.
+        '''
+        Create a spinbox to set the zoom from 15 to 200 and connect its
+        signal to our slot.
+        '''
         self.zoom_pct = QSpinBox()
         self.zoom_pct.setRange(
             int(100*ZOOM_FACTOR_MIN),int(100*ZOOM_FACTOR_MAX))
@@ -525,23 +532,28 @@ class ImageDisplay(QWidget):
             _TR('Imageview zoom control tooltip',
                 'Set the magnification of the page image')
             )
-        # Connect the valueChanged(int) signal as opposed to the
-        # valueChanged(str) signal.
+        '''
+        Connect the valueChanged(int) signal as opposed to the
+        valueChanged(str) signal.
+        '''
         self.zoom_pct.valueChanged['int'].connect(self._new_zoom_pct)
-        # Create a label for the zoom spinbox. (the label is not saved as a
-        # class member, its layout will keep it in focus) Not translating
-        # the word "Zoom".
+        '''
+        Create a label for the zoom spinbox. (the label is not saved as a
+        class member, its layout will keep it in focus) Not translating
+        the word "Zoom".
+        '''
         pct_label = QLabel(
             '&Zoom {0}-{1}%'.format(
                 str(self.zoom_pct.minimum() ),
                 str(self.zoom_pct.maximum() )
                 )
             )
-        pct_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        pct_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         pct_label.setBuddy(self.zoom_pct)
-
-        # Create the to-width and to-height zoom buttons. Make
-        # sure their widths are equal after translation.
+        '''
+        Create the to-width and to-height zoom buttons. Make
+        sure their widths are equal after translation.
+        '''
         self.zoom_to_width = QPushButton(
             _TR('Imageview zoom control button name','to Width')
             )
@@ -562,17 +574,19 @@ class ImageDisplay(QWidget):
         w = 20 + max(_label_width(self.zoom_to_height),_label_width(self.zoom_to_width))
         self.zoom_to_height.setMinimumWidth(w)
         self.zoom_to_width.setMinimumWidth(w)
-
-        # Create an HBox for the top of the panel which contains only
-        # the cursor-to-image link button.
+        '''
+        Create an HBox for the top of the panel which contains only
+        the cursor-to-image link button.
+        '''
         tophbox = QHBoxLayout()
         tophbox.setContentsMargins(0,0,0,0)
         tophbox.addWidget(self.cursor_to_image,0)
         tophbox.addStretch() # left-align the button
-        # Create an HBox layout to contain the above controls, using
-        # spacers left and right to center them and a spacers between
-        # to control the spacing.
-
+        '''
+        Create an HBox layout to contain the above controls, using
+        spacers left and right to center them and a spacers between
+        to control the spacing.
+        '''
         zhbox = QHBoxLayout()
         zhbox.setContentsMargins(0,0,0,0)
         zhbox.addWidget(self.image_to_cursor,0)
@@ -584,13 +598,14 @@ class ImageDisplay(QWidget):
         zhbox.addSpacing(10) # juuuust a little space between buttons
         zhbox.addWidget(self.zoom_to_width,0)
         zhbox.addStretch(2) # right side spacer
-
-        # With all the pieces in hand, create our layout with a stack of
-        # image over row of controls.
+        '''
+        With all the pieces in hand, create our layout with a stack of image
+        over row of controls. The image gets a high stretch and default
+        alignment.
+        '''
         vbox = QVBoxLayout()
         vbox.setContentsMargins(0,0,0,0)
         vbox.addLayout(tophbox,0)
-        # The image gets a high stretch and default alignment.
         vbox.addWidget(self.scroll_area,2)
         vbox.addLayout(zhbox,0)
         self.setLayout(vbox)
