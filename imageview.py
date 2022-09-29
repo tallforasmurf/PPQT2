@@ -102,28 +102,30 @@ class ImageDisplay(QWidget):
     def __init__(self, my_book, parent=None):
         super().__init__(parent)
         self.my_book = my_book
-        # register metadata readers and writers
+        ''' register metadata readers and writers '''
         md = my_book.get_meta_manager()
         md.register(C.MD_IZ,self._zoom_read,self._zoom_write)
         md.register(C.MD_IX,self._link_read,self._link_write)
-        # Create our widgets including cursor_to_image and
-        # image_to_cursor pushbuttons.
+        '''
+        Create all our widgets including cursor_to_image and image_to_cursor
+        pushbuttons
+        '''
         self._uic()
-        # set defaults in case no metadata
+        ''' set defaults in case no metadata is read '''
         self.cursor_to_image.toggled.connect( self.toggle_cursor_to_image )
         self.cursor_to_image.setChecked(True)
         self.image_to_cursor.toggled.connect( self.toggle_image_to_cursor )
         self.image_to_cursor.setChecked(False)
         self.zoom_factor = 0.25
         self.png_path = None
-        # disable all widgetry until we get some metadata
+        ''' disable all widgetry until we get some metadata '''
         self._disable()
         # end of __init__()
 
-    # Disable our widgets because we have no image to show.
+    ''' Disable our widgets because we have no image to show. '''
     def _disable(self):
         self.no_image = True
-        self.last_index = None # compares unequal to any
+        self.last_index = None # compares unequal to anything
         self.pix_map = QPixmap()
         self.image = QImage()
         self.cursor_to_image.setEnabled(False)
@@ -137,8 +139,10 @@ class ImageDisplay(QWidget):
                 'Display of one scanned page (no images available)')
             )
 
-    # Enable our widgets, we have images to show. At this time the Book
-    # has definitely created an edit view and a page model.
+    '''
+    Enable our widgets, we have images to show. At this time the Book
+    has definitely created an edit view and a page model.
+    '''
     def _enable(self):
         self.edit_view = self.my_book.get_edit_view()
         self.editor = self.edit_view.Editor # access to actual QTextEdit
@@ -154,11 +158,17 @@ class ImageDisplay(QWidget):
             #)
         self.no_image = False
         self.zoom_pct.setEnabled(True)
-        # the following triggers entry to _new_zoom_pct() below
+        '''
+        The following, in changing the value of the zoom factor,
+        raises the signal that is caught by _new_zoom_pct() below
+        '''
         self.zoom_pct.setValue(int(100*self.zoom_factor))
 
-    # Metadata: read or write the value of the current image zoom factor as a
-    # decimal between 0.15 and 2.0. On input defend against user mistakes.
+    '''
+    Metadata: read/write the value of the current image zoom factor as a
+    decimal between 0.15 and 2.0. On input defend against user mistakes.
+    TODO: explain why _zoom_read doesn't call _set_zoom_real?
+    '''
     def _zoom_read(self, section, value, version):
         try:
             z = float(value) # throws exception on non-numeric value
@@ -171,11 +181,13 @@ class ImageDisplay(QWidget):
     def _zoom_write(self, section):
         return self.zoom_factor
 
-    # Metadata: read or write the values of the image_to_cursor and
-    # cursor_to_image switches as a list [cursor_to_image, image_to_cursor].
-    # On input defend against user meddling. Actually bool(x) is pretty lax,
-    # any scalar not zero and any iterable not empty is True. Zero and
-    # iterables of length 0 are False.
+    '''
+    Metadata: read or write the values of the image_to_cursor and
+    cursor_to_image switches as a list [cursor_to_image, image_to_cursor].
+    On input defend against user meddling. Actually bool(x) is pretty lax,
+    any scalar not zero and any iterable not empty is True. Zero and
+    iterables of length 0 are False.
+    '''
     def _link_read(self, section, value, version):
         try:
             (c2i, i2c) = value # exception if not iterable of 2 items
@@ -187,10 +199,15 @@ class ImageDisplay(QWidget):
     def _link_write(self, section):
         return [self.cursor_to_image.isChecked(), self.image_to_cursor.isChecked()]
 
-    # The Book calls here after it has loaded a book with defined page data,
-    # passing the path to the folder containing the book. If we can find a
-    # folder named 'pngs' in it we record that path and enable our widgets,
-    # and fake a cursorMoved signal to display the current edit page.
+    '''
+    
+    The Book calls here after it has loaded a book which it is sure has
+    defined page data, passing the path to the folder containing the book. If
+    we can find a folder named 'pngs' we record that path and enable our
+    widgets, and fake a cursorMoved signal to display the current edit page.
+    
+    We save the QDir self.png_dir and use it when loading page image files.
+    '''
     def set_path(self,book_folder_path):
         book_dir = QDir(book_folder_path)
         if book_dir.exists('pngs') :
@@ -198,111 +215,154 @@ class ImageDisplay(QWidget):
             self._enable()
             self.cursor_move()
 
-    # Come here to display or re-display an image. The last-displayed
-    # page image index (if any) is in self.last_index. The desired page
-    # index is passed as the argument, which may be:
-    # * the same as last_index, for example on a change of zoom%. Just
-    #   redisplay the current page.
-    # * negative or None if the cursor is "above" the first available page or on
-    #   a Page-Up keystroke. Display the gray image.
-    # * greater than page_data.page_count() on a Page-Down keystroke,
-    #   display the last available page.
-    # If different from last_index, try to load the .png file for that
-    # page. If that fails, use the gray image. Otherwise display that
-    # page and save it as last_index.
-
+    '''
+    
+    Come here to display or re-display an image. The last-displayed page
+    image index (if any) is in self.last_index. The desired page index is
+    passed as the argument, which among other things could be:
+    
+    * the same as last_index, for example on a change of zoom%. Just
+      redisplay the current page.
+      
+    * negative or None if the cursor is "above" the first available page on
+      a Page-Up keystroke. Display the gray image.
+      
+    * greater than page_data.page_count() on a Page-Down keystroke.
+      Display the last available page.
+    
+    If different from last_index, try to load the .png file for that
+    page. If that fails, use the gray image. Otherwise display that
+    page and save it as last_index.
+    '''
     def _show_page(self, page_index):
         if page_index != self.last_index :
+            ''' Change of page. Note new page. '''
             self.last_index = page_index
-            # change of page, see if we have a filename for it
+            ''' Ask the page data model for its filename '''
             self.pix_map = self.gray_image # assume failure...
             im_name = self.page_data.filename(page_index)
             if im_name :
-                # pagedata has a filename; of course there is no guarantee
-                # such a file exists now or ever did.
+                '''
+                pagedata has a filename; of course there is no guarantee
+                such a file exists now or ever did. Use the QDir to look for
+                the file as .png or .jpg.
+                '''
                 f_name = im_name + '.png'
                 if not self.png_dir.exists( f_name ) :
                     f_name = im_name + '.jpg'
                 if self.png_dir.exists(f_name) :
+                    ''' file exists, try to load it as a QImage '''
                     self.image = QImage(self.png_dir.absoluteFilePath(f_name))
                     if not self.image.isNull():
-                        # we loaded it ok, make a full-scale pixmap for display
+                        ''' we loaded it; make a full-scale pixmap for display '''
                         self.pix_map = QPixmap.fromImage(self.image,Qt.ColorOnly)
-        # Whether new page or not, rescale to current zoom. The .resize method
-        # takes a QSize; pix_map.size() returns one, and it supports * by a real.
+        '''
+        Whether or not the page changed, rescale the pixmap to the current
+        zoom. The .resize method takes a QSize; pix_map.size() returns one,
+        and QSize supports being multiplied by a real.
+        '''
         self.image_display.setPixmap(self.pix_map)
         self.image_display.resize( self.zoom_factor * self.pix_map.size() )
 
-    # Slot to receive the cursorMoved signal from the editview widget. If we
-    # are in no_image state, do nothing. If the cursor_to_image switch is
-    # not checked, do nothing. Else get the character position of
-    # the high-end of the current edit selection, and use that to get the
-    # current page index from pagedata, and pass that to _show_page.
+    '''
+    Slot to receive the cursorMoved signal from the editview widget. This is
+    entered every frickin' time the cursor moves!
+    
+    If we are in no_image state, do nothing. If the cursor_to_image switch is
+    not checked, do nothing.
+    
+    Else get the character position of the high-end of the current edit
+    selection, and use that to get the current page index from pagedata, and
+    pass that to _show_page.
+    '''
     def cursor_move(self):
         if self.no_image : return
         if self.cursor_to_image.isChecked() :
             pos = self.editor.textCursor().selectionEnd()
             self._show_page( self.page_data.page_index(pos) )
 
-    # Slots to receive the signals from our zoom percent and zoom-to buttons.
-    # The controls are disabled while we are in no_image state, so if a signal
-    # arrives, we are not in that state.
-    #
-    # These are strictly internal hence _names.
+    '''
+    Slots to receive the signals from our zoom percent and zoom-to buttons.
+    The controls are disabled while we are in no_image state, so if a signal
+    arrives, we are not in that state.
+    
+    These are strictly internal hence _names.
 
-    # Any change in the value of the zoom % spin-box including setValue().
+    Handle any change in the value of the zoom % spin-box including calling
+    setValue(). Convert the integer widget value to a real, and force the
+    page to be displayed again.
+    '''
     def _new_zoom_pct(self,new_value):
         self.zoom_factor = self.zoom_pct.value() / 100
         self._show_page(self.last_index)
 
-    # Set a new zoom factor (a real) and update the zoom pct spinbox.
-    # Setting zoom_pct triggers a signal to _new_zoom_pct above, and
-    # thence to _show_page which repaints the page at the new scale value.
+    '''
+    Set a new zoom factor (a real) and update the zoom pct spinbox. Setting
+    zoom_pct triggers a signal to _new_zoom_pct above, and thence to
+    _show_page which repaints the page at the new scale value.
+    '''
     def _set_zoom_real(self,new_value):
         zoom = max(new_value, ZOOM_FACTOR_MIN)
         zoom = min(zoom, ZOOM_FACTOR_MAX)
         self.zoom_factor = zoom
         self.zoom_pct.setValue(int(100*zoom))
 
-    # Re-implement keyPressEvent in order to provide zoom and page up/down.
-    #   ctrl-plus increases the image size by 1.25
-    #   ctrl-minus decreases the image size by 0.8
-    #   page-up displays the next-higher page
-    #   page-down displays the next-lower page
-
+    '''
+    
+    Re-implement QWidget.keyPressEvent in order to provide zoom and page up/down.
+    The page display widget ignores all keystrokes except for:
+    
+    * ctrl-plus increases the image size by a factor of 1.25
+    * ctrl-minus decreases the image size by a factor of 0.8
+    * page-up displays the next-higher page
+    * page-down displays the next-lower page
+    '''
     def keyPressEvent(self, event):
-        # assume we will not handle this key and clear its accepted flag
+        ''' assume we will not handle this key and clear its accepted flag '''
         event.ignore()
-        if self.no_image or (self.last_index is None) :
-            return # ignore keys until we are showing some image
-        # We have images to show, check the key value.
+        ''' ignore all keys until we are showing some image '''
+        if self.no_image or (self.last_index is None) : return 
+        ''' We have images to show, check the key value. '''
         modkey = int( int(event.key() | (int(event.modifiers()) & C.KEYPAD_MOD_CLEAR)) )
         if modkey in C.KEYS_ZOOM :
+            ''' ctrl-+/- keys, modify the zoom value '''
             event.accept()
             fac = (0.8) if (modkey == C.CTL_MINUS) else (1.25)
             self._set_zoom_real( fac * self.zoom_factor)
         elif (event.key() == Qt.Key_PageUp) or (event.key() == Qt.Key_PageDown) :
+            ''' page up/down, show the current page +/- 1 if it exists '''
             event.accept()
             pgix = self.last_index + (1 if (event.key() == Qt.Key_PageDown) else -1)
-            # If not paging off either end, show that page
             if pgix >= 0 and pgix < self.page_data.page_count() :
                 self._show_page(pgix)
                 if self.image_to_cursor.isChecked():
                     self.edit_view.show_position(self.page_data.position(pgix))
 
-    # Zoom to width and zoom to height are basically the same thing:
-    # 1. Using the QImage of the current page in self.image,
-    #    scan its pixels to find the width (height) of the nonwhite area.
-    # 2. Get the ratio of that to our image label's viewport width (height).
-    # 3. Set that ratio as the zoom factor and redraw the image.
-    # 5. Set the scroll position(s) of our scroll area to left-justify the text.
-    #
-    # We get access to the pixel data using QImage.bits() which gives us a
-    # "sip.voidptr" object that we can index to get byte values.
+    '''
+    Zoom to width and zoom to height are basically the same thing:
+    
+    1. Using the QImage of the current page in self.image,
+       scan its pixels to find the width (height) of the nonwhite area.
+    2. Get the ratio of that to our image label's viewport width (height).
+    3. Set that ratio as the zoom factor and redraw the image.
+    5. Set the scroll position(s) of our scroll area to left-justify the text.
+    
+    We get access to the pixel data using QImage.bits() which gives us a
+    "sip.voidptr" object that we can index to get byte values.
+    
+    TODO: finish editing comments on this section after verifying it works
+    and understanding WTF it is really doing.
+    '''
     def _zoom_to_width(self):
-
-        # Generic loop to scan inward from the left or right edge of one
-        # column inward until a dark pixel is seen, returning that margin.
+        '''
+        Generic loop to scan from the left or right edge of one column,
+        inward until a dark pixel is seen, and return that margin.
+        
+        White pixels are 255 or nearly, black pixels are 0 or nearly. What we
+        actually do is move a 3-px window along looking for 3 adjacent pixels
+        that sum to less than 24. This skips tiny noise freckles that
+        are common in scanned page images.        
+        '''
         def inner_loop(row_range, col_start, margin, col_step):
             pa, pb = 255, 255 # virtual white outside column
             for row in row_range:
