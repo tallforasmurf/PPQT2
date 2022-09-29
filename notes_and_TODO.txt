@@ -23,11 +23,11 @@ dpdocsyntax.py  x
 editdata.py	6 C
 editview.py	6 C
 findview.py	6 C
-fnotdata.py	
-fnotview.py	
+fnotdata.py	6 C
+fnotview.py	6 C
 fonts.py	6
 helpview.py	6
-imageview.py	
+imageview.py	6 Cx
 loupeview.py	
 mainwindow.py	6
 meta2bin.py	not needed?
