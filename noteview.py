@@ -34,11 +34,12 @@ registers to read and write the NOTES section of metadata. The Book puts a
 reference to the object in its PANELDICT, so whenever the Book becomes
 active, the Noteview is displayed in the Notes tab.
 
-It tracks its QTextDocument's modification changes, and tells the Book
+It tracks its own QTextDocument's modification changes, and tells the Book
 when the mod state changes.
 
 Implements a keyEvent method to provide keystrokes for insertion of
-{line#} and [image#] values, and to navigate to a noted line or image.
+{line#} and [image#] values, and to navigate to a noted line or image:
+
     shift-ctl-m inserts {line#}
     ctl-m when cursor is in or next to {line#}, jumps to that line
     shift-ctl-p inserts {image#}
@@ -64,58 +65,63 @@ import fonts
 import mainwindow
 import utilities
 import regex
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QAbstractScrollArea,
     QPlainTextDocumentLayout,
     QPlainTextEdit,
     QTextEdit,
     QMenu
     )
-from PyQt5.QtGui import (
+from PyQt6.QtGui import (
     QTextDocument,
     QTextCursor,
     QKeySequence
     )
-from PyQt5.QtGui import QPalette
-from PyQt5.QtCore import Qt, QCoreApplication
+from PyQt6.QtGui import QPalette
+from PyQt6.QtCore import Qt, QCoreApplication
 _TR = QCoreApplication.translate
 
 class NotesPanel(QPlainTextEdit):
     def __init__(self, my_book, parent=None):
         super().__init__(parent)
         self.book = my_book
-        # Where we store the last-sought-for find string
+        ''' Where we store the last-sought-for find string '''
         self.find_text = None
-        # Register to read and write metadata
+        ''' Register to read and write metadata '''
         my_book.get_meta_manager().register( C.MD_NO, self._read_meta, self._save_meta )
-        # Set our only font (we don't care about the general font, only mono)
-        # n.b. this gets the Book's default size as it hasn't loaded a document
-        # yet.
+        '''
+        Set our only font (we don't care about the general font, only mono)
+        This gets the Book's default size as it hasn't loaded a document yet.
+        '''
         self.setFont(fonts.get_fixed(my_book.get_font_size()))
-        # hook up to be notified of a change in font choice
+        ''' hook up to be notified of a change in font choice '''
         fonts.notify_me(self.font_change)
-        # Set up our document not using the default one
+        ''' Set up our document not using the default one '''
         a_document = QTextDocument()
         a_document.setDocumentLayout(QPlainTextDocumentLayout(a_document))
         self.setDocument(a_document)
-        # Turn off linewrap mode
-        self.setLineWrapMode(QPlainTextEdit.NoWrap)
-        # The following kludge allows us to get the correct highlight
-        # color on focus-in. For unknown reasons Qt makes us use the
-        # "Inactive" color group even after focus-in. See focusInEvent()
-        # and focusOutEvent() below.
+        ''' Turn off linewrap mode '''
+        self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        '''
+        The following kludge allows us to get the correct highlight color on
+        focus-in. For unknown reasons Qt makes us use the "Inactive" color
+        group even after focus-in. See focusInEvent() and focusOutEvent()
+        below.
+        '''
         self.palette_active = QPalette(self.palette())
         self.palette_inactive = QPalette(self.palette())
-        b = self.palette().brush(QPalette.Active,QPalette.Highlight)
-        self.palette_active.setBrush(QPalette.Inactive,QPalette.Highlight,b)
-        # Set the cursor shape to IBeam -- no idea why this supposed default
-        # inherited from QTextEdit, doesn't happen. But it doesn't.
-        self.viewport().setCursor(Qt.IBeamCursor)
-        # Hook up a slot to notice that the document has changed its
-        # modification state.
+        b = self.palette().brush(QPalette.ColorGroup.Active,QPalette.ColorRole.Highlight)
+        self.palette_active.setBrush(QPalette.ColorGroup.Inactive,QPalette.ColorRole.Highlight,b)
+        '''
+        Set the cursor shape to IBeam -- no idea why this supposed default
+        inherited from QTextEdit, doesn't happen. But it doesn't.
+        '''
+        self.viewport().setCursor(Qt.CursorShape.IBeamCursor)
+        ''' Hook up a slot to notice that the document has changed its
+        modification state. '''
         self.document().modificationChanged.connect(self.yikes)
-        # Create the list of actions for our edit menu and save it
-        # for use on focus-in.
+        ''' Create the list of actions for our edit menu and save it
+        for use on focus-in. '''
         self.ed_action_list = [
             (C.ED_MENU_UNDO, self.undo, QKeySequence.Undo),
             (C.ED_MENU_REDO,self.redo,QKeySequence.Redo),
@@ -129,16 +135,20 @@ class NotesPanel(QPlainTextEdit):
             ]
         self.setFocusPolicy(Qt.StrongFocus)
 
-    # Save the current notes text to a metadata file. We write
-    # the whole text as one string, so the JSON is {"NOTES":"humongous string..."}
-    # At this point we are no longer "modified" so clear that state.
+    '''
+    Save the current notes text to a metadata file. We write the whole text
+    as one string, so the JSON is {"NOTES":"humongous string..."} At this
+    point we are no longer "modified" so clear that state.
+    '''
     def _save_meta(self, section):
         self.document().setModified(False)
         return self.toPlainText()
 
-    # Read notes text from a metadata file. Clear our internal document just
-    # to be sure. Then install the JSON value which is a (possibly very long)
-    # string. Set it as not-modified and put the cursor on the first line.
+    '''
+    Read notes text from a metadata file. Clear our internal document just to
+    be sure. Then install the JSON value which is a (possibly very long)
+    string. Set it as not-modified and put the cursor on the first line.
+    '''
     def _read_meta(self,section,value,version):
         self.document().clear()
         self.setPlainText(value)
@@ -148,14 +158,17 @@ class NotesPanel(QPlainTextEdit):
         self.document().setModified(False) # will cause a call of self.yikes
         self.font_change(True) # update font selection
 
-    # Notify our book of a change in the modification state.
-    # This slot gets the modificationChanged(bool) signal from our
-    # document.
+    '''
+    Notify our book of a change in the modification state.
+    This slot gets the modificationChanged(bool) signal from our document.
+    '''
     def yikes(self, boolean):
         self.book.metadata_modified(boolean,C.MD_MOD_NO)
 
-    # Intercept the focus-in and -out events and use them to display
-    # and hide our edit menu.
+    '''
+    Intercept the focus-in and -out events and use them to display
+    and hide our edit menu as needed.
+    '''
     def focusInEvent(self, event):
         mainwindow.set_up_edit_menu(self.ed_action_list)
         super().focusInEvent(event)
@@ -164,28 +177,31 @@ class NotesPanel(QPlainTextEdit):
         mainwindow.hide_edit_menu()
         super().focusOutEvent(event)
 
-    # Get notified of a change in the user's choice of font
+    ''' Get notified of a change in the user's choice of font '''
     def font_change(self,is_mono):
         if is_mono :
             self.setFont(fonts.get_fixed(self.book.get_font_size()))
 
-    # Implement a simple Find dialog. utilities.getFindMsg returns
-    # (ok,find-text). This is a simple find from the present cursor position
-    # downward, case-insensitive. If we get no hit we try once more from the
-    # top, thus in effect wrapping.
+    '''
+    Implement a simple Find dialog. utilities.getFindMsg returns
+    (ok,find-text). This is a simple find from the present cursor position
+    downward, case-insensitive. If we get no hit we try once more from the
+    top, thus in effect wrapping.
+    '''
 
-    # The actual search, factored out of the two actions
+    ''' The actual search, factored out of the two actions '''
     def _do_find(self):
         if not self.find(self.find_text): # no hits going down
             self.moveCursor(QTextCursor.Start) # go to top
             if not self.find(self.find_text): # still no hit
                 utilities.beep()
 
-    # Edit > Find (^f) action gets a string to look for, initialized
-    # with up to 40 chars of the current selection.
+    '''
+    Edit > Find (^f) action gets a string to look for, initialized
+    with up to 40 chars of the current selection.
+    '''
     def find_action(self):
-        # Show the find dialog initialized with
-        # a copy of the current selection.
+        ''' Show the find dialog initialized with the current selection. '''
         prep_text = self.textCursor().selectedText()[:40]
         self.find_text = utilities.get_find_string(
             _TR('Notes panel find dialog','Text to find'),
@@ -193,27 +209,28 @@ class NotesPanel(QPlainTextEdit):
         if self.find_text is not None :
             self._do_find()
 
-    # Edit > Find Next (^g) action: if there is no active find-text
-    # pretend that ^f was hit, otherwise repeat the search.
+    '''
+    Edit > Find Next (^g) action: if there is no active find-text
+    pretend that ^f was hit, otherwise repeat the search.
+    '''
     def find_next_action(self):
         if self.find_text is not None :
-            # Some previous string to look for, find-again.
             self._do_find()
         else :
-            # no previous string, do beginning find
             self.find_action()
 
-    # Re-implement keyPressEvent to provide these functions:
-    #   ctrl-plus and ctrl-minus zoom the font size one point.
-    #   ctl-alt-M inserts the current line number as {nnn}
-    #   alt-M looks for a nearby {nnn}, selects it, and asks our editor
-    #         to jump to that line.
-    #   ctl-alt-P insert the current page (scan) filename as [xxx]
-    #   alt-P looks for a nearby [nnn], selects it, and asks our editor
-    #         to jump to that page position.
-
+    '''
+    Re-implement keyPressEvent to provide these functions:
+      * ctrl-plus and ctrl-minus zoom the font size one point.
+      * ctl-alt-M inserts the current line number as {nnn}
+      * alt-M looks for a nearby {nnn}, selects it, and asks our editor
+            to jump to that line.
+      * ctl-alt-P insert the current page (scan) filename as [xxx]
+      * alt-P looks for a nearby [nnn], selects it, and asks our editor
+            to jump to that page position.
+    '''
     def keyPressEvent(self, event):
-        #utilities.printKeyEvent(event)
+        #utilities.printKeyEvent(event) # dbg
         kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key())
         if kkey in C.KEYS_NOTES :
             # this is a key we do handle, so...
@@ -233,31 +250,37 @@ class NotesPanel(QPlainTextEdit):
         if not event.isAccepted() : # if we didn't handle it, pass it up
             super().keyPressEvent(event)
 
-    # on ctl-shft-m (mac: cmd-shft-m), insert the current edit line number in
-    # notes as {nnn}
+    '''
+    On ctl-shft-m (mac: cmd-shft-m), insert the current edit line number in
+    notes as {nnn}
+    '''
     def insert_line(self):
         tc = self.textCursor()
         bn = self.book.get_edit_view().get_line_number() # line num
         tc.insertText(u"{{{0}}}".format(bn))
 
-    # Class variable of a compiled regex for line number syntax. Allowing
-    # spaces because I'm just a nice guy.
+    '''
+    Class variable of a compiled regex for line number syntax. Allowing
+    spaces because I'm just a nice guy.
+    '''
     rex_line_number = regex.compile('\{\s*(\d+)\s*\}')
 
-    # on ctl-m (mac: cmd-m) look for a {nnn} line number "near" our cursor in
-    # the notes. We require the target to be in the same logical line as
-    # the cursor. The strategy is to first find-backwards for '{',
-    # then find-forward for regex {(\d+)\}
+    '''
+    On ctl-m (mac: cmd-m) look for a {nnn} line number "near" our cursor in
+    the notes. We require the target to be in the same logical line as
+    the cursor. The strategy is to first find-backwards for '{',
+    then find-forward for regex {(\d+)\}
+    '''
     def go_to_line(self):
         tb = self.textCursor().block()
         line = tb.text()
         pos = self.textCursor().positionInBlock()
-        # Find the rightmost { left of the cursor position
+        ''' Find the rightmost { left of the cursor position '''
         j = line.rfind('{',0,pos+1)
         if 0 > j :
             utilities.beep()
             return
-        # Find {nnn} starting at that point
+        ''' Find {nnn} starting at that point '''
         match = self.rex_line_number.search(line,j)
         if match is None :
             utilities.beep()
@@ -267,41 +290,47 @@ class NotesPanel(QPlainTextEdit):
         except ValueError:
             utilities.beep()
             return
-        # Select the found value, then move the editor putting focus in it
+        ''' Select the found value, then move the editor putting focus in it '''
         self.textCursor().setPosition( tb.position()+match.end() )
         self.textCursor().setPosition( tb.position()+match.start(), QTextCursor.KeepAnchor )
         self.book.get_edit_view().go_to_line_number(line_number)
 
-    # Class variable of a compiled regex for page string syntax. Allowing
-    # spaces because I'm just a nice guy.
+    '''
+    Class variable of a compiled regex for page string syntax. Allowing
+    spaces because I'm just a nice guy.
+    '''
     rex_page_name = regex.compile('\[\s*([^\]]+)\s*\]')
 
-    # on ctl-shft-p (mac: cmd-shft-p), insert the current scan image name
-    # if there is one, as [xxx]. If there isn't one, you get just [].
+    '''
+    On ctl-shft-p (mac: cmd-shft-p), insert the current scan image name
+    if there is one, as [xxx]. If there isn't one, you get just [].
+    '''
     def insert_page(self):
         tc = self.textCursor()
         pn = self.book.get_edit_view().get_image_name() # page filename
         tc.insertText(u"[{0}]".format(pn))
 
-    # on ctl-p (mac: cmd-p) look for a [xxx] page name "near" our cursor in
-    # the notes. We require the target to be in the same logical line as the
-    # cursor. The strategy is to first find-backwards for '[', then
-    # find-forward for regex [(.+)]
+    '''
+    On ctl-p (mac: cmd-p) look for a [xxx] page name "near" our cursor in
+    the notes. We require the target to be in the same logical line as the
+    cursor. The strategy is to first find-backwards for '[', then
+    find-forward for regex [(.+)]
+    '''
     def go_to_page(self):
         tb = self.textCursor().block()
         line = tb.text()
         pos = self.textCursor().positionInBlock()
-        # Find the rightmost [ left of the cursor position
+        ''' Find the rightmost [ left of the cursor position '''
         j = line.rfind('[',0,pos+1)
         if 0 > j :
             utilities.beep()
             return
-        # Find [xxx] starting at that point
+        ''' Find [xxx] starting at that point '''
         match = self.rex_page_name.search(line,j)
         if match is None :
             utilities.beep()
             return
-        # Select the found value, then move the editor putting focus in it
+        ''' Select the found value, then move the editor putting focus in it '''
         self.textCursor().setPosition( tb.position()+match.end() )
         self.textCursor().setPosition( tb.position()+match.start(), QTextCursor.KeepAnchor )
         self.book.get_edit_view().go_to_image_name(match.group(1))
