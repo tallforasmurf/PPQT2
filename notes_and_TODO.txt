@@ -14,8 +14,8 @@ https://github.com/LibreOffice/dictionaries
 Qt6 and comment conversion progress
 ==========================
 book.py		6 C
-chardata.py	
-charview.py	
+chardata.py	6 C
+charview.py	6 C
 colors.py	6 C
 constants.py	6 C
 dictionaries.py	6 C
@@ -32,7 +32,7 @@ loupeview.py
 mainwindow.py	6
 meta2bin.py	not needed?
 metadata.py	6
-noteview.py	
+noteview.py	6 C
 pagedata.py	
 pageview.py	
 paths.py	6 C
