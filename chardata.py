@@ -26,9 +26,9 @@ __email__ = "tallforasmurf@yahoo.com"
                           CHARDATA.PY
 
 Defines a class for storing the counts of characters in a document. An object
-of this class is created by the book when a file is created or opened. It
-acts as the real data model for the Chars panel (charview.py). However, it is
-not based on QAbstractTableModel, because that class also has to provide
+of this class is created by the Book as part of opening or creating a file.
+It acts as the real data model for the Chars panel (charview.py). However, it
+is not based on QAbstractTableModel, because that class also has to provide
 user-visible strings such as column headers and tooltips, and these are more
 appropriately defined in the charview module.
 
@@ -37,14 +37,13 @@ appropriately defined in the charview module.
 Characters are stored as the keys in a dict, with the count of the character
 as the value of the key. The count is tallied during a census. (In an earlier
 version the type "sorteddict" was used, but that type has been withdrawn and
-now an ordinary dict is used. Since Python 3.7 dicts promise to preserve the
+now an ordinary dict is used, since Python 3.7 dicts promise to preserve the
 insertion sequence of data. We have to make sure when building the dict, that
 insertion sequence is also character-value sequence.
 
 The char_read() method is registered with the metadata manager to read the
-CHARCENSUS section of a metadata file, and initializes the char dict. The
-info on these lines can differ between version-1 and -2 metadata, see
-comments below.
+CHARCENSUS section of a metadata file, and initializes the char dict as it
+was when the file was saved.
 
 During a Save, the metamanager calls the method char_save() to write the
 current census as metadata, passing a text stream to write into.
@@ -54,7 +53,7 @@ It calls get_tuple(n) for a tuple of (char, count) for the value and count of
 the nth character in the sorted sequence.
 
 The Chars panel calls refresh() when the user clicks that button, causing us
-to rip through the whole document counting the characters and rebuild the
+to rip through the whole document counting the characters and to rebuild the
 dict.
 '''
 import metadata
@@ -69,10 +68,10 @@ class CharData(QObject):
 
     def __init__(self,my_book):
         super().__init__()
-        # Save access to the book, from which we learn the metadata
+        # Save access to the Book, from which we learn the metadata
         # manager and the edit data model.
         self.my_book = my_book
-        # The character list as a dict 'x':count.
+        # The character list as a dict {'x':count}.
         self.census = dict()
         # Key and Value views on the census dict, so that we can get
         # the nth character from the sorted list.
@@ -109,7 +108,6 @@ class CharData(QObject):
             return ('?',0)
 
     '''
-    
     Build a new census. The current self.census may be empty, for example
     after opening a document with no metadata and clicking Refresh for the
     first time. Or, we may already have a loaded it, from metadata or a prior
@@ -122,8 +120,8 @@ class CharData(QObject):
     a scan over the book text, self.census[0] is instead, the first character
     seen in the text (insertion order).
     
-    So we build a scrap census dict in book text order and then, in one large
-    dict comprehension, create self.census in alpha order.
+    So we build a scrap census dict in book text order as we scan the text.
+    Then, in one large dict comprehension, create self.census in alpha order.
     '''
     
     def refresh(self):
@@ -161,7 +159,6 @@ class CharData(QObject):
         return self.census
     
     '''
-    
     Load the character census from a metadata file. See metadata.py for the
     function signature. The input value should be a dict, a previous
     self.census, see char_save() above. It could be an empty dict if the user
@@ -178,7 +175,6 @@ class CharData(QObject):
     almost certainly an already-sorted dict, we ignore it. In this unlikely
     event the display of characters will have an out-of-order value until the
     next time it is refreshed.
-    
     '''
 
     def char_read(self, sentinel, value, version) :
