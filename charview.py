@@ -35,7 +35,7 @@ CharSortFilter(QSortFilterProxyModel) implements a sort/filter proxy
 based on a test function set by the parent.
 
 CharView(QWidget) implements a panel consisting of a top row containing
-a Refresh button the left, and a filter combobox on the right.
+a Refresh button on the left, and a filter combobox on the right.
 
 Pressing Reset causes a call to chardata.py to reload the census of
 characters, and a redisplay of the table afterward. The combo box offers the
@@ -241,17 +241,20 @@ class CharFilter(QSortFilterProxyModel):
         self.lambda_not_latin = lambda char : (ord(char) > 255) or (not (ord(char) & 0x60))
         self.test = self.lambda_all
 
-    # To implement filterAcceptsRow we take the row number and go to the
-    # database to get that character. We pass the character into one of the
-    # above lambda expressions and return that result, True for accept and
-    # False for reject.
+    '''
+    To implement filterAcceptsRow we take the row number and go to the
+    database to get that character. We pass the character into one of the
+    above lambda expressions and return that result, True for accept and
+    False for reject.
+    '''
 
     def filterAcceptsRow(self, row, parent_index):
         return self.test(self.chardata.get_char(row))
 
-    # The parent calls this slot to set the test lambda when the user chooses
-    # one. It is up to the parent widget to cause a redisplay of the table.
-
+    '''
+    The parent calls this slot to set the test lambda when the user chooses
+    one. It is up to the parent widget to cause a redisplay of the table.
+    '''
     def set_filter(self, row):
         if row == 1 : self.test = self.lambda_not_ascii
         elif row == 2 : self.test = self.lambda_not_latin
@@ -270,77 +273,99 @@ class CharView(QWidget):
         self.my_book = my_book
         self.chardata = my_book.get_char_model()
         self.findpanel = my_book.get_find_panel()
-        # Instantiate our layout and subwidgets. This creates:
-        # self.view, QTableView
-        # self.refresh, QPushButton
-        # self.popup, QComboBox
+        '''
+        Instantiate our layout and subwidgets. This creates:
+           * self.view, QTableView
+           * self.refresh, QPushButton
+           * self.popup, QComboBox
+        '''
         self._uic()
-        # Set up the table model/view. Pass to the model a pointer
-        # to the view so it can query the row under the mouse.
+        '''
+        Set up the table model/view. Pass to the model a pointer
+        to the view (self) so it can query the row under the mouse.
+        '''
         self.model = CharModel(self.chardata,self)
-        #Interpose a sort filter proxy between the view and the model.
+        ''' Interpose a sort filter proxy between the view and the model. '''
         self.proxy = CharFilter(self.chardata,self)
         self.proxy.setSourceModel(self.model)
         self.view.setModel(self.proxy)
-        # Hook up some signals.
-        # Connect the double-click signal to find_this.
+        ''' Connect the double-click signal to find_this. '''
         self.view.doubleClicked.connect(self.find_this)
-        # Connect the CharsLoaded from the chardata object to our slot.
+        ''' Connect the CharsLoaded from the chardata object to our slot
+        where we reset the table. '''
         self.chardata.CharsLoaded.connect(self.chars_loaded)
-        # Connect the popup activated signal to our slot.
+        '''Connect the filter popup activated signal to our slot.'''
         self.popup.activated.connect(self.new_filter)
-        # Connect the refresh button clicked signal to refresh below
+        ''' Connect the refresh button clicked signal to refresh below '''
         self.refresh.clicked.connect(self.do_refresh)
-        # Connect the modelReset signal to our slot.
+        ''' Connect the modelReset signal to our slot. '''
         self.model.modelReset.connect(self.set_up_view)
 
-    # Slot to receive doubleClicked(index) from the table view, and
-    # convert that into a Find for that character.
+    '''
+    Slot to receive doubleClicked(index) from the table view, and
+    convert that into a Find for that character. We go to the Find
+    panel (findview.py) and set it to search for the character.
+    '''
     def find_this(self, index):
         repl = None
         if index.column() == 3 :
-            # doubleclick was in the HTML entity column. Put the entity
-            # string from column 3 in the replace-1 field
+            '''
+            doubleclick was in the HTML entity column. Put the entity
+            string from column 3 in the replace-1 field, thus the user
+            is set to replace a character with its HTML entity.
+            '''
             repl = index.data(Qt.ItemDataRole.DisplayRole)
         if index.column() != 0 :
-            # dblclick on some column other than 0. We need a reference to
-            # column 0, and we get it from the index.
+            '''
+            dblclick on some column other than 0. We need a reference to
+            column 0, and we get it from the index.
+            '''
             index = index.sibling(index.row(),0)
-        what = index.data(Qt.ItemDataRole.DisplayRole) # get the character as a string
-        # Call for a find with respect case on, whole word and regex off
+        ''' get the character as a string '''
+        what = index.data(Qt.ItemDataRole.DisplayRole) 
+        ''' Call for a find with respect case on, whole word and regex off '''
         self.findpanel.find_this(what,case=True,word=False,regex=False,repl=repl)
 
-    # Slot to receive the CharsLoaded() signal from the chardata module
-    # (metadata has been loaded). Reset the table model.
+    '''
+    Slot to receive the CharsLoaded() signal from the chardata module
+    (metadata has been loaded). Reset the table model.
+    '''
     def chars_loaded(self):
         self.model.beginResetModel()
         self.model.endResetModel()
 
-    # Slot to receive the activated(row) signal from the filter popup. Set
-    # the filter and reset the table model.
+    '''
+    Slot to receive the activated(row) signal from the filter popup. The user
+    has made a choice from the popup. Set the filter, then reset the table
+    model which will then display only the filtered characters.
+    '''
     def new_filter(self,row):
         self.model.beginResetModel()
         self.proxy.set_filter(row)
         self.model.endResetModel()
 
-    # Slot to receive the clicked() signal from the Refresh button.
-    # Warn the table model that things be changing, then call the
-    # database to do a new census, then finish the table reset.
+    '''
+    Slot to receive the clicked() signal from the Refresh button.
+    Warn the table model that things be changing, then call the
+    database to do a new census, then finish the table reset.
+    '''
     def do_refresh(self):
         self.model.beginResetModel()
         self.chardata.refresh()
         self.model.endResetModel()
 
-    # Slot to receive the modelReset() signal from the table model, emitted
-    # after the endResetModel() call. Set some features of our table view
-    # that we can't set until some data has been loaded.
+    '''
+    Slot to receive the modelReset() signal from the table model, emitted
+    after the endResetModel() call. Set some features of our table view
+    that we can't set until some data has been loaded.
+    '''
     def set_up_view(self):
         self.view.resizeColumnsToContents()
         self.view.horizontalHeader().setStretchLastSection(True)
         self.view.resizeRowsToContents()
         self.view.setSortingEnabled(True)
 
-    # Do all the fiddly UI stuff out of line.
+    ''' Do all the fiddly UI stuff out of line. '''
     def _uic(self):
         mainLayout = QVBoxLayout()
         self.setLayout(mainLayout)
