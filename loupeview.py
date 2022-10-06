@@ -22,6 +22,13 @@ __maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
 
 '''
+DISABLED - I AM DISABLING THIS MODULE (IN BOOK.PY) FOR A COUPLE OF REASONS,
+One, I am unable to install bookloupe on MacOS Monterey, so testing will have
+to wait until I try a Linux port, if ever. Two, the sort algorithm needs to
+be changed completely.
+
+
+
                           loupeview.py
 
 Define a class LoupePanel(QWidget) to implement the Loupe panel.
@@ -67,10 +74,9 @@ import logging
 loupeview_logger = logging.getLogger(name='loupeview')
 import subprocess
 import regex
-from sortedcontainers import SortedDict
 import utilities
 import paths
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     pyqtSignal,
     Qt,
     QAbstractItemModel,
@@ -79,7 +85,7 @@ from PyQt5.QtCore import (
     QModelIndex,
     QSortFilterProxyModel
     )
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QVBoxLayout,
@@ -88,15 +94,10 @@ from PyQt5.QtWidgets import (
     QWidget
     )
 _TR = QCoreApplication.translate
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#
-# Class of our table model. Overrides the standard methods:
-# flags : return Qt.itemIsEnabled.
-# columnCount : return the number of columns (3)
-# rowCount : return number of message tuples in the message_list
-# headerData : return the column header name or tooltip string.
-# data : return the actual data, or various helpful info about a column.
-#
+
+'''
+Constant values to define the table columns.
+'''
 COL_HEADS = {
     0 : _TR('Loupe table column head, keep it short','Line#'),
     1 : _TR('Loupe table column head, keep it short','Col#'),
@@ -108,27 +109,51 @@ COL_TOOLTIPS = {
     2: _TR('Loupe table column tooltip', 'Description of the error that was found in this line')
 }
 COL_ALIGNMENT = {
-    0: Qt.AlignRight,
-    1: Qt.AlignRight,
-    2: Qt.AlignLeft
+    0: Qt.AlignmentFlag.AlignRight,
+    1: Qt.AlignmentFlag.AlignRight,
+    2: Qt.AlignmentFlag.AlignLeft
     }
-# Regex to get parts out of a bookloupe message, for example
-#    Line 1 column 26 - Query standalone 1:
-#  match group 1 == '1'
-#  match group 3 == '26'
-#  match group 4 == 'Query standalone 1'
-#    Line 81 - Mismatched singlequotes?
-#  match group 1 == '81'
-#  match group 3 == None
-#  match group 4 == 'Mismatched singlequotes?'
-# Other messages: no match
+
+'''
+Define a regex to extract parts out of typical bookloupe messages.
+Line+column message:
+
+      Line 1 column 26 - Query standalone 1:
+
+* match group 1 == '1'
+* match group 3 == '26'
+* match group 4 == 'Query standalone 1'
+
+Line-only message:
+
+      Line 81 - Mismatched singlequotes?
+
+* match group 1 == '81'
+* match group 3 == None
+* match group 4 == 'Mismatched singlequotes?'
+
+Other messages: no match
+'''
 
 MSGREX = regex.compile('Line\s(\d+)(\s+column\s+(\d+))?\s+-\s+(\w.+)')
+
+'''
+Class of our table model. As usual for a concrete table model, it overrides
+the standard methods:
+
+* flags : return Qt.itemIsEnabled.
+* columnCount : return the number of columns (3)
+* rowCount : return number of message tuples in the message_list
+* headerData : return a column's header name or tooltip string.
+* data : return the actual data, or various helpful info about a column.
+
+The parent argument is the LoupeView object, defined later.
+'''
 
 class LoupeModel(QAbstractTableModel):
     def __init__(self, my_book, parent):
         super().__init__(parent)
-        # save access to parent's four command line switches
+        ''' save access to parent's five command line switches '''
         self.sw_l = parent.switch_l
         self.sw_p = parent.switch_p
         self.sw_s = parent.switch_s
@@ -136,9 +161,9 @@ class LoupeModel(QAbstractTableModel):
         self.sw_x = parent.switch_x
         self.my_book = my_book # for access to edit data
         self.message_tuples = list() # where we keep messages
-        # stuff related to sorting
+        ''' stuff related to sorting the table '''
         self.sort_col = 0 # default sort on column 1..
-        self.sort_dir = Qt.DescendingOrder # ..Descending
+        self.sort_dir = Qt.SortOrder.DescendingOrder # ..Descending
         self.active_sort_vector = [] # active sort indirection list
         self.sort_vectors_ascending = [None, None]
         self.sort_vectors_descending = [None, None]
@@ -153,53 +178,56 @@ class LoupeModel(QAbstractTableModel):
         return len(COL_HEADS) # i.e., 3
 
     def flags(self, index):
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
     def headerData(self, col, axis, role):
         global COL_HEADS, COL_TOOLTIPS
         if (axis == Qt.Horizontal) and (col >= 0):
-            if role == Qt.DisplayRole : # wants actual text
+            if role == Qt.ItemDataRole.DisplayRole : # wants actual text
                 return COL_HEADS[col]
-            elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
+            elif (role == Qt.ItemDataRole.ToolTipRole) or (role == Qt.ItemDataRole.StatusTipRole) :
                 return COL_TOOLTIPS[col]
         return None # whatever, we don't do that
 
     def data(self, index, role ):
         global COL_ALIGNMENT, COL_TOOLTIPS
-        if role == Qt.DisplayRole : # wants actual data
+        if role == Qt.ItemDataRole.DisplayRole : # wants actual data
             col = index.column()
             row = index.row()
             sort_row = self.active_sort_vector[ row ]
             line_col_msg_tuple = self.message_tuples[ sort_row ]
             return line_col_msg_tuple[ col ]
-        elif (role == Qt.TextAlignmentRole) :
+        elif (role == Qt.ItemDataRole.TextAlignmentRole) :
             return COL_ALIGNMENT[index.column()]
-        elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
+        elif (role == Qt.ItemDataRole.ToolTipRole) or (role == Qt.ItemDataRole.StatusTipRole) :
             return COL_TOOLTIPS[index.column()]
         # don't support other roles
         return None
 
-    # Instead of using a QSortFilterProxyModel, which has a fatal performance
-    # bug that makes sorting a table of more than a few hundred rows just
-    # impossibly slow, we do our own sort.
+    '''
+    Instead of using a QSortFilterProxyModel, which has a fatal performance
+    bug that makes sorting a table of more than a few hundred rows just
+    impossibly slow, we do our own sort.
+    
+    When the standard Qt table view detects a click on a column head, it
+    calls its associated table model's sort() method passing a column number
+    and a direction.
+    
+    At that point we apply a sort vector, that is, a list of indices into
+    self.message_tuples that will return those tuples in the desired order.
+    
+    In order to create a sort vector we use a SortedDict. The dict key is a
+    sort key, and the value is the index in self.message_tuples for that
+    key. When col==0 or 1, line # sort, the key is "line#+col#". When
+    col==2, the key is "msg+line#". When the values are read out in sorted
+    order, they give us the indexes of the data in sort sequence: a sort
+    vector. When the sort order is descending, we have to read out the
+    vector reversed() to make a list of indexes in descending order.
     #
-    # When the table view detects a click on a column head, it calls its
-    # model's sort() method passing a column number and a direction. At that
-    # point we apply a sort vector, that is, a list of indices into
-    # self.message_tuples that will return those tuples in the desired order.
-    #
-    # In order to create a sort vector we use a SortedDict. The dict key is a
-    # sort key, and the value is the index in self.message_tuples for that
-    # key. When col==0 or 1, line # sort, the key is "line#+col#". When
-    # col==2, the key is "msg+line#". When the values are read out in sorted
-    # order, they give us the indexes of the data in sort sequence: a sort
-    # vector. When the sort order is descending, we have to read out the
-    # vector reversed() to make a list of indexes in descending order.
-    #
-    # Vectors are expensive to make and we anticipate the user will sort
-    # and re-sort the table multiple times, so we cache the sort vectors
-    # and reuse them when possible.
-
+    Vectors are expensive to make and we anticipate the user will sort
+    and re-sort the table multiple times, so we cache the sort vectors
+    and reuse them when possible.
+    '''
     def sort( self, col, order ) :
         self.active_sort_vector = []
         if 0 == len(self.message_tuples) : # nothing to display
@@ -229,41 +257,64 @@ class LoupeModel(QAbstractTableModel):
         self.active_sort_vector = vector
         self.layoutChanged.emit([],QAbstractItemModel.VerticalSortHint)
 
-    # OK, the money method. Generate the data to show by invoking bookloupe
-    # in a subprocess. Actual refresh in a subroutine so on any error we just
-    # return, and the endResetModel will still happen.
+    '''
+    OK, the money method. Generate the table data by invoking bookloupe in a
+    subprocess. Actual refresh in a subroutine so on any error we just
+    return, and the endResetModel will still happen.
+    '''
     def refresh(self):
-        #self.beginResetModel()
-        # Clear out existing data so if the call fails, table is empty
+        #self.beginResetModel() # why is this commented out?
+        ''' Clear out existing data so if the call fails, table is empty '''
         self.message_tuples = list()
+        ''' Do the actual refresh '''
         self._real_refresh()
+        ''' Re-create the sort vectors '''
         self.sort_vectors_ascending = [None, None]
         self.sort_vectors_descending = [None, None]
         self.sort( self.sort_col, self.sort_dir )
-        #self.endResetModel()
+        #self.endResetModel() # apparently not needed?
 
     def _real_refresh(self):
-        # Make sure we have access to the bookloupe executable
+        '''
+        Make sure we have access to the bookloupe executable and if not,
+        remind the user to provide that path.
+        '''
         bl_path = paths.get_loupe_path()
         if not bl_path : # path is null string
             bl_path = utilities.ask_executable(
                 _TR('File-open dialog to select bookloupe',
                     'Select the bookloupe executable file'), self.parent() )
-            if bl_path is None : # user selected non-executable
+            if bl_path is None : # user selected a non-executable
                 utilities.warning_msg(
                     _TR('Error choosing bookloupe file',
                         'That is not an executable file.') )
                 return
-            if 0 == len(bl_path) : # user pressed Cancel
+            if 0 == len(bl_path) : # user simply pressed Cancel
                 return
             paths.set_loupe_path(bl_path)
-        # bl_path is an executable, continue
-        # create a temp file containing the book contents
+        '''
+        One way or the other, bl_path names an executable, we can proceed.
+        Create a temp file (FileBasedTextStream) for the book contents.
+        The rewind method positions for input from 0, and forces a flush.
+        '''
         fbts = utilities.temporary_file()
         fbts << self.my_book.get_edit_model().full_text()
-        fbts.rewind() # forces a flush()
-        # create the bookloupe command
-        command = [bl_path,'-d','-e','-t','-m']
+        fbts.rewind()
+        '''
+        Create the bookloupe command with the following switches on
+        by default: 
+           --dp = ignore distributed proofreader special markup
+           --no-echo = don't echo input text to output file
+           --markup = ignore common HTML markup
+        To those we append the five option toggles from our UI, which
+        for reference are,
+            -l = turn off line-end checks
+            -p = do strict quote checking on paragraphs
+            -s = check single-quote balance
+            -v = verbose report of minor problems
+            -x = paranoid typo check
+        '''
+        command = [bl_path,'--dp','--no-echo','--markup']
         # line-end check is disabled by -l
         if not self.sw_l.isChecked() : command.append( '-l' )
         if self.sw_p.isChecked() : command.append( '-p' )
@@ -272,7 +323,7 @@ class LoupeModel(QAbstractTableModel):
         if self.sw_x.isChecked() : command.append( '-x' )
         command.append( fbts.fullpath() )
         loupeview_logger.info('executing'+' '.join(command))
-        # run it, capturing the output as a byte stream
+        ''' run it, capturing the output as a byte stream '''
         try:
             bytesout = subprocess.check_output( command, stderr=subprocess.STDOUT )
         except subprocess.CalledProcessError as CPE :
@@ -286,23 +337,38 @@ class LoupeModel(QAbstractTableModel):
             msg2 += CPE.output[-100:].decode('UTF-8','replace')
             utilities.warning_msg( msg1, msg2, self.parent())
             return # leaving message_tuples empty
-        # convert the bytes to unicode. bookloupe's message templates are
-        # just ASCII but they can include quoted characters of any set.
+        '''
+        Convert the byte-stream to unicode. bookloupe's message templates are
+        just ASCII but they can include quoted characters of any set.
+        '''
         charsout = bytesout.decode(encoding='UTF-8',errors='replace')
-        # convert the stream to a list of lines.
+        ''' Convert the stream to a list of lines. '''
         linesout = charsout.split('\n')
-        # process the lines into tuples in our list.
+        '''
+        Process the lines into tuples in our list, using our regex
+        to pick out the two types of useful message lines.
+        '''
         for line in linesout :
             m = MSGREX.search(line)
-            if m : # was matched, so is not None,
+            if m :
+                '''
+                One or the other message type matched. Isolate the line
+                number as a 6-character string right justified.
+                '''
                 lno = format( int(m.group(1)), ' >6' )
+                '''
+                Format the column if given, or 0, as 3 characters.
+                '''
                 c = 0 if m.group(3) is None else int(m.group(3))
                 cno = format( c, ' >3' )
+                '''
+                Store the tuple (line,col,message)
+                '''
                 msg = m.group(4)
                 self.message_tuples.append( (lno, cno, msg) )
         loupeview_logger.info('loupeview total of {} items'.format(len(self.message_tuples)))
-        # and that's refresh. On exit, fbts is trashed which closes
-        # and deletes the temporary file.
+        ''' and that's refresh. On exit, local variable fbts is trashed which closes
+        and deletes the temporary file. '''
 
 class LoupeTable(QTableView):
     rowChanged = pyqtSignal(QModelIndex)
