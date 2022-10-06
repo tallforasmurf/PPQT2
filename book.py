@@ -80,7 +80,7 @@ import findview
 import fnotdata
 import fnotview
 import imageview
-import loupeview
+#import loupeview
 import noteview
 import pagedata
 import pageview
@@ -183,7 +183,7 @@ class Book(QObject):
         self.panel_dict['Words'] = wordview.WordPanel(self) # wordview.WordPanel(self)
         self.panel_dict['Pages'] = pageview.PagePanel(self) # pageview.PagePanel(self)
         self.panel_dict['Fnote'] = fnotview.FnotePanel(self) # fnotview.FnotePanel(self)
-        self.panel_dict['Loupe'] = loupeview.LoupeView(self)
+        #self.panel_dict['Loupe'] = loupeview.LoupeView(self)
         self.panel_dict['tab_list'] = [
         (tabname, self.panel_dict[tabname]) for tabname in self.panel_dict['default']
             ]
@@ -743,8 +743,8 @@ Each line must have a key such as Title, a colon, then a value.'''),
     def get_char_panel(self):
         return self.panel_dict['Chars']
     ''' give access to the Loupe panel mostly for test '''
-    def get_loupe_panel(self):
-        return self.panel_dict['Loupe']
+    #def get_loupe_panel(self):
+        #return self.panel_dict['Loupe']
     ''' give access to the page panel mostly for test '''
     def get_page_panel(self):
         return self.panel_dict['Pages']
