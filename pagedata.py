@@ -25,8 +25,8 @@ __email__ = "tallforasmurf@yahoo.com"
 
                           PAGEDATA.PY
 
-Defines a class to store info extracted from page boundary lines and act as
-the Data Model for pageview.py, which displays the page table with user
+Defines a class to store info extracted from page boundary lines, and to act
+as the Data Model for pageview.py, which displays the page images with user
 controls. Defines some constants used by pagedata and pageview.
 
 One of these objects is created by each Book object. It:
@@ -58,8 +58,8 @@ In either case QTextCursors are created to mark the start of each page.
     Save Process
 
 The metadata manager calls the write_pages() method to return a metadata
-object comprising all that is known about pages. This is the new V2
-JSON-based metadata method.
+object comprising all that is known about pages. This metadata will be
+loaded when the file is next opened.
 
     Data Storage
 
@@ -98,30 +98,33 @@ data is in lists indexed by row number:
                       Public Methods
 
 pagedata has three clients:
- * imageview needs the scan image filename for an edit cursor location;
- * editview needs the same to display in its status line;
- * pageview displays all the data in the Pages panel.
+
+ * imageview needs the scan image filename that corresponds to an edit
+   cursor location;
+ * editview needs the scan image filename to display in its status line;
+ 
+ * pageview displays all the data in a table in the Pages panel.
 
     active()    returns True when pagedata is available, False else.
-
-    page_count()returns the count of pages (for sizing the page table).
-
-    page_index(P)  returns the row index R for the page that contains
+    
+    page_count() returns the count of pages (for sizing the page table).
+    
+    page_index(P) returns the row index R for the page that contains
                 document position P, or None if P precedes the first page.
-
+    
     name_index(fname) returns the row index R of the page with filename
                 fname, if it exists.
-
-    position(R) returns the document position for page R
-
+    
+    position(R) returns the starting document position for page R
+    
     filename(R) returns the filename string for page R.
-
+    
     folio_string(R) returns the formatted display of the folio for row R.
-
+    
     proofers(R) returns the list of proofer name strings for row R.
-
+    
     folio_info(R)   returns the list [rule,format,number] for page R.
-
+    
     set_folios(R, rule, fmt, number) update the folio values for page R,
         with None meaning no-change.
 
@@ -146,13 +149,12 @@ Quick, control-z!" -- the cursors are NOT restored to their former positions
 but remain pointing to the end of the now-restored section of text. So Undo
 fails to restore the page boundary positions once they are moved.
 
-This is rarely an issue under normal post-process editing. However, in
-Version 1, the Reflow process often replaced spans of text that overlapped
-page boundaries; but it took pains to preserve the markers in the reflowed
-text. However the user was encouraged to reflow and then Undo, and on Undo,
-bug 32689 would bite. In version 2, we do not support inline Reflow (only a
-translation to a new file with new page boundaries). So page boundary cursors
-will be less often misplaced.
+This is highly unlikely to occur under normal post-process editing. The book
+for post-processing is largely complete and doesn't need big chunks of text
+moved around. (In version 1 of PPQT we supported reflowing text, and the user
+might reflow a large section or the whole book, and then undo that action,
+which would produce the bug. However in the version we do not support reflow
+at all.)
 
 '''
 import logging
@@ -163,8 +165,8 @@ import utilities # for to_roman
 import constants as C
 import metadata
 import editdata
-from PyQt5.QtGui import QTextBlock, QTextCursor
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt6.QtGui import QTextBlock, QTextCursor
+from PyQt6.QtCore import QObject, pyqtSignal
 
 '''
 This regex recognizes page separator lines. In a typical book a page
@@ -177,8 +179,7 @@ It seemed that in some books, proofers are absent:
 
  -----File: 001.png---------------------------------------------------------
 
-This defeats the regex used in V1, which expected at least one proofer name.
-(However this turned out to be user error operating on an incomplete file.)
+However this turned out to be user error operating on an incomplete file.
 Regardless, the regex below handles either alternative and captures:
 
     group(1) : the image filename -- usually but not always numeric
@@ -193,34 +194,35 @@ re_line_sep = regex.compile(
     ,regex.IGNORECASE)
 
 class PageData(QObject):
-    # define the signal we emit on reading metadata
+    ''' define the signal we emit on reading metadata '''
     PagesUpdated = pyqtSignal()
 
     def __init__(self, my_book):
         super().__init__(None)
         self.my_book = my_book
-        # Save reference to the metamanager
+        ''' Save reference to the metamanager '''
         self.metamgr = my_book.get_meta_manager()
-        # Get a reference to the edited document
+        ''' Register to read and write metadata '''
+        self.metamgr.register(C.MD_PT, self.read_pages, self.write_pages)
+        ''' Save a reference to the edited document '''
         self.document = my_book.get_edit_model()
-        # Set up lists
+        ''' Set up the lists that comprise our database '''
         self.cursor_list = []
         self.filename_list = []
         self.folio_list = []
         self.proofers_list = []
-        # Flag indicating we have data and are open for business
+        ''' Flag that's True if we have data and are open for business '''
         self._active = False
-        # Last-returned position and row
+        ''' Last-returned position and row: see page_index() below '''
         self.last_pos = None
         self.last_row = 0
-        # Set of rows having an explicit folio format, as opposed to "same"
+        ''' Set of rows having an explicit folio format, as opposed to "same" '''
         self.explicit_formats = set()
-        # Register to read and write metadata
-        self.metamgr.register(C.MD_PT, self.read_pages, self.write_pages)
-
-    # Clear our lists prior to reading metadata. This is for convenience
-    # of the unit test. It is not expected that there will be multiple
-    # calls to read__pages in normal use.
+    '''
+    Clear our lists prior to reading metadata. This is for convenience
+    of the unit test. It is not expected that there will be multiple
+    calls to read_pages in normal use.
+    '''
     def clear(self):
         self.cursor_list = []
         self.filename_list = []
@@ -230,14 +232,15 @@ class PageData(QObject):
         self.last_pos = None
         self.last_row = 0
         self.explicit_formats = set()
-    #
-    # Scan all lines of a new document and create page sep info. We fetch
-    # QTextBlocks, not just content strings, because we need to get the
-    # .position() of the matching lines.
-    #
-    # Set all folios to Arabic, Add 1, and the sequence number. This
-    # operation creates new data, so we set metadata_modified.
-    #
+    '''
+    
+    Scan all lines of a new document (one with no metadata) and create page
+    sep info. We fetch QTextBlocks, not just content strings, because we need
+    to get the .position() of the matching lines.
+    
+    Set all folios to Arabic, Add 1, and the sequence number. This
+    operation creates new data, so we set metadata_modified.
+    '''
     def scan_pages(self):
         global re_line_sep
         # first page is Arabic starting at 1
