@@ -34,7 +34,7 @@ meta2bin.py	not needed?
 metadata.py	6
 noteview.py	6 C
 pagedata.py	6 C
-pageview.py	
+pageview.py	6 C
 paths.py	6 C
 PPQT2.py	6 C
 preferences.py	6 C
