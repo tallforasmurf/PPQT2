@@ -27,11 +27,12 @@ __email__ = "tallforasmurf@yahoo.com"
 Define a class PagePanel(QWidget) to implement the Pages panel.
 
 The top row of the widget has three items:
-  * A button Refresh that  triggers recalculation of folio values
+
+  * A button Refresh that triggers recalculation of folio values
     down the table based on the current skip, start-at and add-1 values.
-    It also has the effect of loading the table the first time, as this
-    panel is created by the book before the book loads a document, thus
-    we have no data to show at the time of creation.
+    Refresh is also used to load the table the first time, as this
+    panel is created by the Book before the Book loads a document, thus
+    we initially have no data to show at the time of creation.
 
   * A text field allows entry of a string to be inserted at every
     page boundary. In the string, %f is replaced with the folio value
@@ -43,22 +44,22 @@ The top row of the widget has three items:
 Below the top row is a table with these columns:
 
 0: Image scan filename, typically like 0002 but can be like index05
-1: Folio format shown as: Same, Arabic, ROMAN, roman
-2: Folio action shown as: Add 1, Skip, Set to:
-3: Folio display value for example 15 or xxvi
+1: Folio format, shown as: Same, Arabic, ROMAN, roman
+2: Folio action, shown as: Add 1, Skip, Set to:
+3: Folio display value, for example 15 or xxvi
 4: Proofer names as a comma-delimited list
 
 Unlike tables in other panels this one cannot be sorted, it is built
 in sequence and stays that way.
 
-Class PageModel(QAbstractTableModel) draws actual data from pagedata (passed
-to its __init__) and returns the usual table support values: #rows, #cols,
-data, headerdata, etc.
+Class PageModel(QAbstractTableModel) has the usual table model method
+overrides to supply data for display (drawn from the PageData object passed
+to its __init__) and to supply column headers, row counts and so on.
 
 Class PageTable(QTableView) implements the visible table and allows
 editing via three custom item delegates, one for each of the folio
 columns. The page table also handles a doubleclick in column 0, causing
-the editor to jump to that line.
+the editor to jump to the top of the text for that scan image.
 
 Class PagePanel(QWidget) defines the entire panel and initializes it.
 '''
@@ -68,14 +69,14 @@ import fonts
 import utilities
 pageview_logger = logging.getLogger(name='pageview')
 
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     Qt,
     QAbstractTableModel,
     QCoreApplication
     )
 _TR = QCoreApplication.translate
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QComboBox,
     QHBoxLayout, QVBoxLayout,
     QHeaderView,
@@ -87,10 +88,9 @@ from PyQt5.QtWidgets import (
     QWidget
     )
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Table Model, doing all the usual table model support methods, drawing
-# data from the pagedata module known to the book (passed in to init).
-#
+'''
+Define constant values used by the Table Model
+'''
 COL_HEADERS = {
     0 : _TR('page data table column head',
             'Image', 'name of scan image file'),
@@ -116,25 +116,33 @@ COL_TOOLTIPS = {
            'Names of the PGDP users who worked on this page')
 }
 COL_ALIGNMENT = {
-    0: Qt.AlignRight,
-    1: Qt.AlignRight,
-    2: Qt.AlignLeft,
-    3: Qt.AlignRight,
-    4: Qt.AlignLeft
+    0: Qt.AlignmentFlag.AlignRight,
+    1: Qt.AlignmentFlag.AlignRight,
+    2: Qt.AlignmentFlag.AlignLeft,
+    3: Qt.AlignmentFlag.AlignRight,
+    4: Qt.AlignmentFlag.AlignLeft
 }
-# Names for the format codes, in sequence by C.FolioFormat*
-FORMAT_NAMES = [ # Not translating these intentionally
-    'Arabic', 'ROMAN', 'roman', '(same)'
-]
-# Names for the format actions, in sequence by C.FolioRule*
-ACTION_NAMES = [ # Not translating these intentionally
-    'Add 1', 'Set to:', 'Omit'
-]
+'''
+Displayed names for the format codes, in sequence by C.FolioFormat*
+Not translating these, intentionally.
+'''
+FORMAT_NAMES = [ 'Arabic', 'ROMAN', 'roman', '(same)' ]
+# Names for the format actions, in sequence by 
+'''
+Displayed names for the folio format actions, see C.FolioRule*
+Also not translated.
+'''
+ACTION_NAMES = [ 'Add 1', 'Set to:', 'Omit' ]
+
+'''
+Define the table model with all the usual table model support methods, drawing
+data from the pagedata module. A reference to pagedata is obtained by the
+PagePanel widged and passed in to init here.
+'''
 class PageTableModel(QAbstractTableModel):
     def __init__(self, pdata, parent=None):
         super().__init__(parent)
-        # Save the reference to the pagedata database
-        self.pdata = pdata
+        self.pdata = pdata # Save reference to the pagedata database
 
     def columnCount(self,index):
         global COL_ALIGNMENT # just for its length
@@ -143,46 +151,57 @@ class PageTableModel(QAbstractTableModel):
 
     def flags(self,index):
         if self.pdata.active() :
-            f = Qt.ItemIsEnabled
+            ''' All table items are enabled '''
+            f = Qt.ItemFlag.ItemIsEnabled
+            '''
+            Figure out if the queried column should be flagged editable. If
+            asking about columns 1 & 2 (folio format and action), they are
+            editable. Column 3 (folio display value) is only editable when
+            the folio action for that row is "Set to:" -- which can only be
+            the case when there is page data.
+            ''' 
             c = index.column()
             if (c == 1) or (c == 2) :
-                f |= Qt.ItemIsEditable # cols 1-2 always editable
+                f |= Qt.ItemFlag.ItemIsEditable # cols 1-2 always editable
             elif (c == 3) and \
-                 (self.pdata.active) and \
                  (self.pdata.folio_info(index.row())[0] == C.FolioRuleSet) :
-                f |= Qt.ItemIsEditable # col 3 editable only when rule is Set to n
-        else : f = Qt.NoItemFlags
+                f |= Qt.ItemIsEditable
+        else : f = Qt.ItemFlag.NoItemFlags
         return f
 
     def rowCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
         if self.pdata.active() :
             return self.pdata.page_count()
-        return 1 # always have one, empty row
+        return 1 # no data - have one, empty row
 
     def headerData(self, col, axis, role):
         global COL_ALIGNMENT, COL_HEADERS, COL_TOOLTIPS
-        if (axis == Qt.Horizontal) and (col >= 0):
-            if role == Qt.DisplayRole : # wants actual text
+        if (axis == Qt.Orientation.Horizontal) and (col >= 0):
+            if role == Qt.ItemDataRole.DisplayRole : # wants actual text
                 return COL_HEADERS[col]
-            if (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
+            if (role == Qt.ItemDataRole.ToolTipRole) \
+               or (role == Qt.ItemDataRole.StatusTipRole) :
                 return COL_TOOLTIPS[col]
-            if (role == Qt.TextAlignmentRole) :
+            if (role == Qt.ItemDataRole.TextAlignmentRole) :
                 return COL_ALIGNMENT[col]
-        return None # we don't do that
+        return None # we don't do that whatever it was
 
     def data(self, index, role ):
         global COL_ALIGNMENT
         c = index.column()
-        if (role == Qt.TextAlignmentRole) :
+        if (role == Qt.ItemDataRole.TextAlignmentRole) :
             return COL_ALIGNMENT[c]
-        if (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
+        if (role == Qt.ItemDataRole.ToolTipRole) \
+           or (role == Qt.ItemDataRole.StatusTipRole) :
             return COL_TOOLTIPS[c]
         r = index.row()
-        if role == Qt.DisplayRole : # wants actual data
+        if role == Qt.ItemDataRole.DisplayRole : # wants actual data
             if self.pdata.active() :
-                # The normal case: there exists good page data
-                # and we return the appropriate stuff per column.
+                '''
+                The normal case: there exists good page data
+                and we return the appropriate stuff for that column.
+                '''
                 [rule,fmt,val] = self.pdata.folio_info(r)
                 if c == 0:
                     return self.pdata.filename(r)
@@ -196,15 +215,18 @@ class PageTableModel(QAbstractTableModel):
                     return ' '.join(self.pdata.proofers(r))
                 return None # should never be reached
             else :
-                # The page model has not yet loaded metadata so there
-                # is nothing to display. Regardless we want to have one
-                # empty row of data so that column widths can be set.
+                '''
+                The page model has not yet loaded metadata so there
+                is nothing to display. Regardless we want to have one
+                empty row of data so that column widths can be set.
+                '''
                 return '   '
-        if (role == Qt.UserRole) :
-            # request from a custom item delegate for the numeric
-            # value of a column, not the formatted string. This
-            # can only happen when a column is editable, which is
-            # only when there exists real data.
+        if (role == Qt.ItemDataRole.UserRole) :
+            '''
+            request is from a custom item delegate for the numeric value of a
+            column, not the formatted string. This can only happen when a
+            column is editable, which is only when there exists real data.
+            '''
             [rule,fmt,val] = self.pdata.folio_info(r)
             if c == 1 : # format delegate
                 return fmt
@@ -216,10 +238,14 @@ class PageTableModel(QAbstractTableModel):
         # don't support other roles
         return None
 
-    # Slot to actually update the data after the Refresh button is clicked.
-    # Run through the page table and reset folio values based on the folio
-    # rules. This changes the numeric codes and values in the database. The
-    # table will reflect this by fetching items via data() above.
+    '''
+    Slot that receives the signal when the Refresh button is clicked.
+    Run through the page table and reset folio values based on the folio
+    rules. This changes the numeric codes and values in the database.
+    
+    The call to begin/endResetModel causes the Qt code to re-fetch displayed
+    items via data() above.
+    '''
     def update_folios(self):
         self.beginResetModel()
         folio = 0
@@ -236,75 +262,85 @@ class PageTableModel(QAbstractTableModel):
                 # nothing to do
         self.endResetModel()
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Define a "custom delegate" for each of the three folio columns.
+'''
 
-# A custom delegate is an object that presents an instance of a widget
-# to do edit the data of a particular type of table cell. The delegate
-# must implement 3 methods:
-#  - createEditor() returns a widget that the table view will position
-#    over the table cell to act as an editor. This widget, e.g. a
-#    combobox, provides the UI for editing this type of data.
-#  - setEditorData() initializes the editor widget with data to display
-#    (presumably, the current contents of the cell being edited).
-#  - setModelData() is called when editing is complete (indicated by
-#    a return key, and not cancelled as by Escape), to store
-#    possibly-changed data back to the model.
-#
-# The init parameters are: parent, the individual table item over which to
-# center the editor widget; style, a QStyleOptionViewItem that we don't touch,
-# and index, the model index of the edited item.
+Define a "custom delegate" for each of the three folio columns.
 
-# Custom delegate for column 1, the format code. Our editor is a combobox
-# with the four choices in it (three on row 0, where "Same" is not
-# permitted).
+A custom delegate is an object that is created by the table to manage the
+editing of a particular type of table cell. The delegate must implement 3
+methods:
 
+ - createEditor() returns a widget that the table view will position
+   over the table cell to act as an editor. This widget, e.g. a
+   combobox, provides the UI for editing this type of data.
+
+ - setEditorData() initializes the editor widget with data to display
+   (presumably, the current contents of the cell being edited).
+
+ - setModelData() is called when editing is complete (indicated by
+   a return key, and not cancelled as by Escape), to store
+   possibly-changed data back to the model.
+
+The init parameters are:
+
+    parent, the individual table item over which the editor widget appears
+    style, a QStyleOptionViewItem that we don't touch
+    index, the model index of the edited item.
+
+Custom delegate for column 1, the format code. Our editor is a combobox with
+four types of folio format (three when called for row 0, where "Same" is not
+permitted).
+'''
 class FormatDelegate(QStyledItemDelegate):
-    # Create a combobox loaded with the names of the four formats
+    ''' Create a combobox loaded with the names of the four formats '''
     def createEditor(self, parent, style, index):
         if index.column() != 1 : return None # should never happen
         cb = QComboBox(parent)
-        # give it strong focus policy so it will get mouse events
-        cb.setFocusPolicy(Qt.StrongFocus)
-        # Add choices but do not provide "(same)" on row 0
+        ''' give it strong focus policy so it will get mouse events '''
+        cb.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        ''' Add choices but do not provide "(same)" on row 0 '''
         cb.addItems(FORMAT_NAMES[:4 if index.row() else 3])
         return cb
-    # Set the combobox to initially open on the current rule
+    ''' Set the combobox to initially choose the current rule '''
     def setEditorData(self,cb,index):
-        fmt = index.data(Qt.UserRole) # get numeric code
-        cb.setCurrentIndex(fmt) # make that row of combobox active
-    # Return key on combobox; data may (or may not) be changed. We are
-    # helpfully given access to our data model. Reach in and use its pdata
-    # reference to pagedata to set the fmt value.
+        ''' get the value from this row of the table via data() '''
+        fmt = index.data(Qt.ItemDataRole.UserRole)
+        ''' make that row of the combobox active '''
+        cb.setCurrentIndex(fmt)
+    '''
+    Return key on combobox; data may (or may not) be changed. We are
+    helpfully given access to our data model. Reach in and use its pdata
+    reference to pagedata to set the fmt value.
+    '''
     def setModelData(self,cb,model,index):
         model.pdata.set_folios(index.row(), fmt = cb.currentIndex())
 
-# Custom delegate for column 2, folio action rule. The editor is a combobox
-# with the three choices in it.
-
+'''
+Custom delegate for column 2, folio action rule. The editor is a combobox
+with the three choices in it. Operation just like the above.
+'''
 class RuleDelegate(QStyledItemDelegate):
     def createEditor(self, parent, style, index):
         if index.column() != 2 : return None # should never happen
         cb = QComboBox(parent)
-        # give it strong focus policy so it will get mouse events
-        cb.setFocusPolicy(Qt.StrongFocus)
+        cb.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         cb.addItems(ACTION_NAMES)
         return cb
     def setEditorData(self,cb,index):
-        rule = index.data(Qt.UserRole) # get numeric code
+        rule = index.data(Qt.ItemDataRole.UserRole) # get numeric code
         cb.setCurrentIndex(rule) # make that row active
     def setModelData(self,cb,model,index):
         model.pdata.set_folios(index.row(), rule = cb.currentIndex())
 
-# Custom delegate for column 3, the folio value. Our editor widget is a
-# spinbox. This column is only flagged Editable when the Rule column is Set
-# to N (see flags() in the model). Thus we do not need to worry about the
-# rule value.
+'''
+Custom delegate for column 3, the folio value. Our editor widget is a
+spinbox. This column is only flagged Editable when the Rule column is Set to
+N (see flags() method, above). Thus we do not need to check the rule value.
+'''
 class FolioDelegate(QStyledItemDelegate):
     def createEditor(self, parent, style, index):
         if index.column() != 3 : return None # should never happen
         sb = QSpinBox(parent)
-        # give it strong focus policy so it will get mouse events
         sb.setFocusPolicy(Qt.StrongFocus)
         sb.setMaximum(2000) # arbitrary limit
         return sb
@@ -313,11 +349,11 @@ class FolioDelegate(QStyledItemDelegate):
     def setModelData(self,sb,model,index):
         model.pdata.set_folios(index.row(), number = sb.value())
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# The table view. This could be set up entirely from in the _uic method
-# (and was, in V1) but here we put the various initializers in the
-# __init__, including creation of item delegates.
-
+'''
+Define the table view. The __init__ method disables word wrap and sorting,
+and instantiates and assigns the three "delegates" for editing the folio
+columns.
+'''
 class PageTableView(QTableView):
     def __init__(self, parent):
         super().__init__(parent)
@@ -332,48 +368,59 @@ class PageTableView(QTableView):
         self.c3_delegate = FolioDelegate()
         self.setItemDelegateForColumn(3,self.c3_delegate)
 
-    # (Re-)Configure column displays after the table is refreshed.
+    '''
+    (Re-)Configure columns is called when the table is created
+    or refreshed. We use the opportunity to set column widths.
+    '''
     def configure_columns(self):
-        # Make our first four columns uniformly 10 ens based
-        # on the current header font.
         hdr = self.horizontalHeader()
-        # Size column 0, filename, to contents.
-        hdr.setSectionResizeMode(0,QHeaderView.ResizeToContents)
-        # Size columns 1 and 2 to 10 ens, making room for delegates.
+        ''' Size column 0, filename, to contents. '''
+        hdr.setSectionResizeMode(0,QHeaderView.ResizeMode.ResizeToContents)
+        '''
+        Size columns 1 and 2 to 10 ens, based on the font in use by
+        the header. This makes room for delegates.
+        '''
         pix = hdr.fontMetrics().width("0123456789")
         hdr.resizeSection(1,pix)
         hdr.resizeSection(2,pix)
-        # Column 3 can be less
+        '''
+        Column 3, folio value, can be less as it is normally an arabic or
+        roman number of not more than three digits.
+        '''
         hdr.resizeSection(3,pix/2)
-        # Let column 4, proofers, fill the rest of the frame
+        ''' Let column 4, proofers, fill the rest of the frame '''
         hdr.setStretchLastSection(True)
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Define the Page Panel by instantiating all the above and hooking up
-# the signals.
+'''
+Define the Page Panel widget. Instantiate all the above, and hook up
+the signals.
+'''
 
 class PagePanel(QWidget):
     def __init__(self, my_book):
         super().__init__(None)
+        ''' save access to the Book '''
         self.my_book = my_book
+        ''' save access to the PageData for the Book '''
         self.pdata = my_book.get_page_model()
-        # Take the UI setup out of line. This call creates the members
-        # self.refresh_button
-        # self.insert_button
-        # self.insert_text
-        # self.model: PageTableModel
-        # self.view: PageTableView
+        '''
+        Take the UI setup out of line. This call creates the members
+            self.refresh_button
+            self.insert_button
+            self.insert_text
+            self.model: PageTableModel
+            self.view: PageTableView
+        '''
         self._uic()
-        # Connect signals.
-        # Connect the double-clicked signal of the view
+        ''' Connect the double-clicked signal of the view '''
         self.view.doubleClicked.connect(self.go_to_row)
-        # Connect the update button to the model's update method
+        ''' Connect the update button to the model's update method '''
         self.refresh_button.clicked.connect(self.do_refresh)
-        # Connect the actual page model's signal on metadata-read
+        ''' Connect the actual page model's signal on metadata-read '''
         self.pdata.PagesUpdated.connect(self.do_update)
-        # Connect the insert button to our do_insert method
+        ''' Connect the insert button to our do_insert method '''
         self.insert_button.clicked.connect(self.do_insert)
-        # Ask the fonts module to tell us if the mono font changes
+        ''' Ask the fonts module to tell us if the mono font changes '''
         fonts.notify_me(self.font_change)
         # and that's page table setup.
 
@@ -381,38 +428,49 @@ class PagePanel(QWidget):
         if boolean : # mono font change
             self.insert_text.setFont( fonts.get_fixed() )
 
-    # Slot for the refresh button. Call the model to do the actual update.
-    # Then call the view to set the widths of the columns.
-
+    '''
+    Slot for the refresh button clicked signal. Call the model to do the
+    actual update. Then call the view to set the widths of the columns.
+    '''
     def do_refresh(self):
         self.model.update_folios()
         self.view.configure_columns()
 
-    # Slot for the PagesUpdated signal from the pagedata model,
-    # indicating we should refresh the table to show new metadata.
-
+    '''
+    Slot for the PagesUpdated signal from the pagedata model, indicating we
+    should refresh the table to show new values. We tell the table view to
+    reset, which it does by fetching new data for all visible cells.
+    '''
     def do_update(self):
         self.model.beginResetModel()
         self.model.endResetModel()
         self.view.configure_columns()
 
-    # This slot receives a double-click from the table view, passing an
-    # index. Note that double-clicks on columns 1 and 2 always, and column 3
-    # sometimes, initiate editing with a custom delegate. Maybe someday a
-    # double-click on column 4 will do something useful with the proofer list
-    # but for now, double-clicks on column 0 and 4 (and sometimes 3) come
-    # here. Get the position of the start of the page from the page data
-    # and ask the editor to center that.
-
+    '''
+    
+    This slot receives a double-click from the table view. The signal
+    parameter is the index of the cell that was clicked.
+    
+    Double-clicks on columns 1 and 2 always, and column 3 sometimes, initiate
+    editing with a custom delegate -- because those cells are flagged
+    editable. The only double-clicks that come here are ones where the target
+    was not editable, thus columns 0 and 4 and sometimes 3.    
+    
+    Get the position of the start of the page from the page data and ask the
+    editor to center that text in its window.
+    '''
     def go_to_row(self,index):
         p = self.pdata.position(index.row())
         self.my_book.get_edit_view().center_position(p)
 
-    # On the Insert button being pressed, make some basic sanity checks
-    # and get user go-ahead. Then insert the given text at the head of
-    # every page.
+    '''
+    On the Insert button being pressed, make some basic sanity checks
+    and get user go-ahead. Then insert the given text at the head of
+    every page. This is a rarely-used service that permits inserting,
+    for example, custom HTML at every page-boundary.
+    '''
     def do_insert(self):
-        # Copy the text and if it is empty, complain and exit.
+        ''' Copy the text and if it is empty, complain and exit.'''
         ins_text = self.insert_text.text()
         if 0 == len(ins_text) :
             utilities.warning_msg(
@@ -423,8 +481,10 @@ class PagePanel(QWidget):
                 self
             )
             return
-        # See how many pages are involved, which is just the ones that aren't
-        # marked skip. If no page info, or all are skip, complain and exit.
+        '''
+        See how many pages are involved, which is just the ones that aren't
+        marked skip. If no page info, or all are skip, complain and exit.
+        '''
         n = 0
         for i in range( self.pdata.page_count() ):
             if self.pdata.folio_info(i)[0] != C.FolioRuleSkip :
@@ -438,37 +498,42 @@ class PagePanel(QWidget):
                 self
             )
             return
-        # Get permission to do this significant operation.
+        ''' Get permission to do this significant operation. '''
         ok = utilities.ok_cancel_msg(
             _TR("Page Table permission request",
                 "OK to insert the following string into %n pages?", n=n),
             ins_text, self)
         if ok :
-            # get a cursor on the edit document.
+            ''' get a cursor on the edit document. '''
             tc = self.my_book.get_edit_view().get_cursor()
-            # Start a single undo-able operation on that cursor
+            ''' Start a single undo-able operation on that cursor '''
             tc.beginEditBlock()
-            # Working from the end of the document backward, go to the
-            # top of each page and insert the string
+            '''
+            Working from the end of the document backward, go to the
+            top of each page and insert the string.
+            '''
             for i in reversed( range( self.pdata.page_count() ) ) :
                 [rule, fmt, val] = self.pdata.folio_info(i)
                 if rule != C.FolioRuleSkip :
-                    # Note the page's start position and set our work cursor to it
+                    ''' Note the page's start position and set our work cursor to it '''
                     pos = self.pdata.position(i)
                     tc.setPosition(pos)
-                    # Copy the insert string, replacing %f with this folio
-                    # and %i with the image filename.
+                    '''
+                    Copy the insert string, replacing %f with this folio
+                    and %i with the image filename.
+                    '''
                     f_str = self.pdata.folio_string(i)
                     i_str = self.pdata.filename(i)
                     temp = ins_text.replace('%f',f_str).replace('%i',i_str)
-                    # Insert that text at the position of the start of this page.
+                    ''' Insert that text at the position of the start of this page. '''
                     tc.insertText(temp)
-                    # The insertion goes in ahead of the saved cursor
-                    # position so now it points after the inserted string --
-                    # effectively, the insert has gone to the end of the
-                    # prior page not the start of this one. Put the cursor
-                    # for this page back where it was, thus preceding the
-                    # inserted text.
+                    '''
+                    The insertion goes in ahead of the saved cursor position,
+                    so the cursor now points after the inserted string --
+                    effectively, the insert has gone to the end of the prior
+                    page not the start of this one. Put the cursor for this
+                    page back where it was, thus preceding the inserted text.                    
+                    '''
                     self.pdata.set_position(i, pos)
             tc.endEditBlock() # wrap up the undo op
 
