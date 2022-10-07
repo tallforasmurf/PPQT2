@@ -24,16 +24,18 @@ __email__ = "tallforasmurf@yahoo.com"
 '''
 
                           PAGEDATA.PY
+A Distributed Proofreaders post-processing text file contains encoded lines
+showing the boundaries between the text that was scanned from each page image.
 
-Defines a class to store info extracted from page boundary lines, and to act
-as the Data Model for pageview.py, which displays the page images with user
-controls. Defines some constants used by pagedata and pageview.
+This module defines a class to store info extracted from page boundary lines,
+and to act as the Data Model for pageview.py, which displays the page images
+with user controls. Also defines some constants used here and pageview.
 
-One of these objects is created by each Book object. It:
+One of these objects is created by the Book object. The module:
   * is called by the Book to load metadata for a known book.
   * is called by the Book to scan page separators for a new book.
   * is called by the Book during save, to write metadata.
-  * acts as data model to the the Pages view panel
+  * acts as the data model to the the table in the Pages view panel
   * also is data model to the Images view panel (for page boundaries and filenames)
   * also is data model to the Edit view panel (for folio number display)
 
@@ -42,18 +44,16 @@ One of these objects is created by each Book object. It:
 When the Book is created it creates a PageData object which registers a
 reader and writer for the PAGETABLE metadata section.
 
-If the main window tells the Book to load a known file (one with matching
+If the main window tells the Book to load a known file (one with a matching
 metadata file), the metadata manager calls the registered read_pages method to
-store the page info from the metadata file.
+take the page info from the metadata file and initialize the data store.
 
 If the main window tells the Book to load a new file, one with no metadata,
-the Book calls the scan_pages() method. It uses the editdata module
-all_blocks iterator to scan the document and extract the key info from any
-page separator lines. When the book is later saved, these data are saved in
-the metadata file for next time, so page boundary lines are checked only the
+the Book calls the scan_pages() method. This uses the editdata module
+all_blocks iterator to scan the document and extract the info from any page
+separator lines. When the book is later saved, these data are saved in the
+metadata file for next time, so page boundary lines are checked only the
 first time a file is opened.
-
-In either case QTextCursors are created to mark the start of each page.
 
     Save Process
 
@@ -69,13 +69,14 @@ This "data model" has 6 items to store about each scan page:
   that Qt will update it continuously as the document is edited -- usually!
   See the note on Page Boundary Cursors below.
 
-  * The scan image filename string, usually a number like "002" or "0075" but
+  * The filename of the scan image, usually a number like "002" or "0075" but
   sometimes alphanumeric.
 
   * Three ints related to the Folio value, defined in constants.py:
        - the folio rule, e.g. C.FolioRuleAdd1
        - the folio format, e.g. C.FolioFormatArabic
        - the folio number, e.g. 17
+    (These values are managed by pageview.py.)
 
   * A string of proofer names separated by backslashes, e.g.
   \\Frau Sma\\fsmwalb\Scribe
@@ -83,7 +84,7 @@ This "data model" has 6 items to store about each scan page:
   Spaces are permitted in proofer names ("Frau Sma").
 
 In effect this is a 6-column table indexed by row number. However in memory,
-data is in lists indexed by row number:
+the data is in lists indexed by row number:
 
   * cursor_list is a list of QTextCursor objects
 
@@ -101,6 +102,7 @@ pagedata has three clients:
 
  * imageview needs the scan image filename that corresponds to an edit
    cursor location;
+   
  * editview needs the scan image filename to display in its status line;
  
  * pageview displays all the data in a table in the Pages panel.
@@ -233,7 +235,6 @@ class PageData(QObject):
         self.last_row = 0
         self.explicit_formats = set()
     '''
-    
     Scan all lines of a new document (one with no metadata) and create page
     sep info. We fetch QTextBlocks, not just content strings, because we need
     to get the .position() of the matching lines.
@@ -276,17 +277,20 @@ class PageData(QObject):
             self._add_stopper()
             self.PagesUpdated.emit()
 
-    # common to scan_pages and read_pages, add a search-stopper
-    # to the list of cursors - see page_at() below for use.
+    '''
+    Common to scan_pages and read_pages, add a search-stopper
+    sentinel to the list of cursors - see page_at() below for use.
+    '''
     def _add_stopper(self) :
         qtc = QTextCursor(self.document)
         qtc.setPosition( self.document.characterCount()-1 )
         self.cursor_list.append(qtc)
 
-    # Metadata output: collect our data into a single Python object.
-    # Specifically we return a list of lists:
-    # [ [ pos, "fname", "\proofer\names", rule, format, number]... ]
-
+    '''
+    Metadata output: collect our data into a single Python object.
+    Specifically we return a list of lists:
+    [ [ pos, "fname", "\proofer\names", rule, format, number],... ]
+    '''
     def write_pages(self, section):
         if not self._active : return # don't write an empty section
         table = []
@@ -300,10 +304,11 @@ class PageData(QObject):
             table.append( [posn, fname, pstr, rule, fmt, nbr] )
         return table
 
-    # Metadata input: get the list output by write_pages and store in our
-    # lists. We don't expect user meddling with the metadata but cannot rule
-    # it out.
-
+    '''
+    Metadata input: get the list output by write_pages and store in our
+    lists. We don't expect user meddling with the metadata but cannot rule
+    it out, so validate all input.
+    '''
     def read_pages(self, section, value, version):
         valid_rule = {C.FolioRuleAdd1,C.FolioRuleSet,C.FolioRuleSkip}
         valid_fmt = {C.FolioFormatArabic,C.FolioFormatLCRom,C.FolioFormatUCRom,C.FolioFormatSame}
@@ -328,15 +333,17 @@ class PageData(QObject):
                 nbr = int(nbr)
                 if not ( (rule in valid_rule) and (fmt in valid_fmt) and (nbr >= 0) ) :
                     raise ValueError("Invalid folio info")
-                # All looks good, do permanent things
+                ''' All looks good, do permanent things '''
                 self.cursor_list.append(tc)
                 self.filename_list.append(fn)
                 self.folio_list.append( [rule, fmt, nbr] )
                 if fmt != C.FolioFormatSame :
                     self.explicit_formats.add(len(self.folio_list)-1)
-                # get list of proofer strings, dropping opening null string
-                # due to leading backslash. If it is only '\\' the result
-                # is the list [''].
+                '''
+                Get list of proofer strings, dropping opening null string
+                due to leading backslash. If it is only '\\' the result
+                is the list [''].
+                '''
                 plist = pfrs.split('\\')[1:]
                 self.proofers_list.append(plist)
             except Exception as thing:
@@ -349,46 +356,85 @@ class PageData(QObject):
 
     def active(self) :
         return self._active
-    # Use filename_list as the official length; cursor_list has an extra row.
+    ''' For page_count, use filename_list as the official length;
+    cursor_list has an extra row for the sentinel. '''
     def page_count(self) :
         return len(self.filename_list)
 
-    # Return the row index R of the scan page matching a document offset.
-    # Return None if the user is "off the top" in text preceding the first
-    # page. imageview and editview call this every time the user moves the
-    # cursor, so it needs to be quick. Use binary search to find the cursor
-    # in the cursor_list with the highest position less than or equal to the
-    # given offset.
-    #
-    # Speed the search with heuristics based on these assumptions:
-    # * we get called from multiple widgets for any one cursor move
-    # * the user typically moves the cursor forward, incrementing P
-    # * forward or backward, the user typically stays on one page for a while.
-    # So we keep track of the last-checked position P and also the
-    # row index of the last-returned page R and its filename value F.
-    # If P == last_position : return F
-    # If P > cursor_list[R].position(),
-    #     if P < cursor_list[R+1].position(): return F
-    #     else setup binary search between R and max
-    # else setup binary search between 0 and R
-
+    '''
+    Return the row index R of the scan page matching a document offset.
+    Return None if the user is "off the top" in text preceding the first
+    page.
+    
+    imageview and editview call this every time the user moves the cursor, so
+    it needs to be quick. Use binary search to find the cursor in the
+    cursor_list with the highest position less than or equal to the given
+    offset. Speed the search with heuristics based on these assumptions:
+    
+    * we get called from multiple widgets for any one cursor move
+    * the user typically moves the cursor forward, incrementing P
+    * forward or backward, the user typically stays on one page for a while.
+    * when the user moves off a page it is often to the adjacent page
+    
+    So we cache the last-checked position P and also the row index of the
+    last-returned page R.
+    
+        If P == last_position : return F
+        If P > cursor_list[R].position(),
+            if P < cursor_list[R+1].position(): return F
+            check if P is in page R+1
+            else setup binary search between R and max
+        else
+            check if P is in page R-1
+            else setup binary search between 0 and R
+    '''
     def page_index(self,P):
         if self._active:
-            if P < self.cursor_list[0].position() :
-                # user is fiddling around in text preceding page 1
-                self.last_row = 0 # must keep a valid row
-                return None
             if P == self.last_pos : return self.last_row
+            ''' moved to a new position '''
             self.last_pos = P
             R = self.last_row
+            '''
+            Maybe we are still on the same page span? Note that the final
+            cursor is a sentinel set to the end of the document, so this test
+            succeeds even if P is on or beyond the last known page
+            '''
+            if P < self.cursor_list[R+1].position() :
+                ''' still in the range of the previous page '''
+                return R
             if P >= self.cursor_list[R].position() :
-                if P < self.cursor_list[R+1].position() :
-                    return R # still in same page span
-                hi = len(self.cursor_list) - 1 # moved on, search in ..
-                lo = R # .. upper part of list
+                '''
+                Moving downward in document. Take the time to check the page
+                R+1 before doing the binary search. We know there exists a
+                row R+1 because the previous test traps P in the last page.
+                '''
+                if P < self.cursor_list[R+2].position() :
+                    self.last_row = R+1 # no can't use := here
+                    return self.last_row
+                ''' Moved on, search in the bottom part of the list '''
+                hi = len(self.cursor_list) - 1
+                lo = R+1
             else :
-                hi = R # moved back, search in lower part of list
+                '''
+                Moved upward in the document. Check if the user has gone off
+                into text preceding the known page 1.
+                '''
+                if P < self.cursor_list[0].position() :
+                    self.last_row = 0 # must keep a valid row
+                    return None
+                '''
+                Take the time to check page R-1 before committing to a full
+                search. We know there is a row R-1 because if P was still in,
+                or above, page 0, one of the preceding tests would have
+                caught it.
+                '''
+                if P >= self.cursor_list[R-1].position() :
+                    self.last_row = R-1
+                    return self.last_row
+                ''' OK, sigh, search the upper range of the list '''
+                hi = R
                 lo = 0
+            ''' Classic binary search for the page containing position P '''
             while lo < hi :
                 mid = (lo + hi)//2
                 if P < self.cursor_list[mid].position() :
@@ -400,17 +446,18 @@ class PageData(QObject):
         # else not active
         return None # no data
 
-    # Return the index of a user-entered filename (in editview). This is
-    # called only from the edit view when the user keys an image name and
-    # hits return. There is NO constraint on image filenames. Although they
-    # are conventionally just numbers, 0005.png, 099.png, etc., there is no
-    # requirement that they be numeric or ascending: frontispiece.png,
-    # indexA.png, all ok. Here we are just doing a linear search of the list.
-    #
-    # If linear search should become a performance problem, then during
-    # reading or scanning of the page metadata we could store an inverse dict
-    # of {name:row#} so we could do a quick hash lookup of any fname.
-
+    '''
+    Return the index of a user-entered filename (in editview). This is called
+    only from the edit view when the user keys an image name and hits return.
+    There is NO constraint on image filenames. Although they are
+    conventionally just numbers, 0005.png, 099.png, etc., there is no
+    requirement that they be numeric, or ascending: frontispiece.png,
+    indexA.png, all ok. Here we are just doing a linear search of the list.
+    
+    If linear search should become a performance problem, then during reading
+    or scanning of the page metadata we could store an inverse dict of
+    {name:row#} so we could do a quick hash lookup of any fname.
+    '''
     def name_index(self, fname):
         if self.active() :
             for j in range(len(self.filename_list)):
@@ -418,39 +465,19 @@ class PageData(QObject):
                     return j
         return None # no data, or fname not found
 
-    # Return page values for display by pageview. Note that
-    # returning a reference to a list (like the list of folio data)
-    # means the caller can modify it in place. However to maintain
-    # the integrity of the model/view structure, pagedata does not do
-    # this, it calls set_folios with one or more modified values.
-    #
-    # At this time there is no need to modify proofer names.
-
+    '''
+    Return page values for display by pageview. Note that returning a
+    reference to a list (like the list of folio data) means the caller can
+    modify it in place. However to maintain the integrity of the model/view
+    structure, pagedata does not do this. It calls set_folios with one or
+    more modified values.
+    '''
     def filename(self, R):
         try :
             return self.filename_list[R]
         except:
             pagedata_logger.debug('Invalid index {0} to filename'.format(R))
             return None
-
-    # Return the display form of the folio number based on its value and
-    # explicit format. Note we are computing folio strings from numeric
-    # on demand. If this is a performance problem, they could be precomputed
-    # and kept in the database -- with some extra trouble.
-
-    def folio_string(self, R):
-        try :
-            [rule, fmt, number] = self.folio_list[R]
-            if rule == C.FolioRuleSkip :
-                return ''
-            if fmt == C.FolioFormatSame :
-                fmt = self.folio_format(R) # calculate actual, see below
-            if fmt == C.FolioFormatArabic :
-                return str(number)
-            return utilities.to_roman(number, fmt == C.FolioFormatLCRom)
-        except IndexError:
-            pagedata_logger.error('Invalid index {0} to folio_string'.format(R))
-            return ''
 
     def position(self, R):
         try :
@@ -472,9 +499,10 @@ class PageData(QObject):
             pagedata_logger.error('Invalid index {0} to proofers'.format(R))
             return []
 
-    # Return the raw folio items Rule, Format, and Number. Format is very
-    # probably folioFormatSame.
-
+    '''
+    Return the raw folio items Rule, Format, and Number as list. Format is
+    typically folioFormatSame.
+    '''
     def folio_info(self, R):
         try :
             return self.folio_list[R]
@@ -482,9 +510,40 @@ class PageData(QObject):
             pagedata_logger.error('Invalid index {0} to folio_info'.format(R))
             return []
 
-    # Return the actual folio format, resolving the "same" to the next
-    # higher explicit format.
+    '''
+    Return the display form of the folio number based on its value and
+    explicit format. Note we are computing folio strings from numeric on
+    demand. If this is a performance problem, they could be precomputed and
+    kept in the database -- with some extra trouble.
+    '''
+    def folio_string(self, R):
+        try :
+            [rule, fmt, number] = self.folio_list[R]
+            if rule == C.FolioRuleSkip :
+                return ''
+            if fmt == C.FolioFormatSame :
+                fmt = self.folio_format(R) # get actual format
+            ''' at this point format is either Arabic or roman '''
+            if fmt == C.FolioFormatArabic :
+                return str(number)
+            return utilities.to_roman(number, fmt == C.FolioFormatLCRom)
+        except IndexError:
+            pagedata_logger.error('Invalid index {0} to folio_string'.format(R))
+            return ''
 
+    '''
+    Return the actual folio format, resolving the "same" to the next
+    higher explicit format. In typical use, the great majority of formats
+    are "Same as above", and explicit formats are usually only given when the
+    format changes, e.g. lowercase roman at the start of the front matter,
+    then arabic at the start of the body, and most other pages are "ditto".
+    
+    For this reason we cache a set of the row numbers where explicit formats
+    are given, expecting them to be very few. Here we look through that set
+    for the row that is nearest above the given row. Sets are not ordered so
+    we have to look at all the items of the set. If this became a performance
+    issue there are other ways to handle it.
+    '''
     def folio_format(self, R):
         try :
             fmt = self.folio_list[R][1]
