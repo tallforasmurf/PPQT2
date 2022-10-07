@@ -28,12 +28,12 @@ fnotview.py	6 C
 fonts.py	6
 helpview.py	6
 imageview.py	6 Cx
-loupeview.py	
+loupeview.py	6 C needs work
 mainwindow.py	6
 meta2bin.py	not needed?
 metadata.py	6
 noteview.py	6 C
-pagedata.py	
+pagedata.py	6 C
 pageview.py	
 paths.py	6 C
 PPQT2.py	6 C
