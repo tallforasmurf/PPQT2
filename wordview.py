@@ -114,7 +114,7 @@ import constants as C
 import worddata # our data model
 import mainwindow # for set_up_edit_menu
 import regex
-from natsort import natsorted, natsort_keygen
+import natsort
 from PyQt6.QtCore import (
     pyqtSignal,
     Qt,
@@ -363,7 +363,7 @@ class WordTableView(QTableView):
         ''' Save access to the respect case switch '''
         self.sw_case = sw_case
         ''' Set up to receive keystrokes '''
-        self.setFocusPolicy(Qt.ClickFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         ''' Set up to allow multiple discontiguous selections '''
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         ''' Set up to allow dragging out '''
@@ -390,10 +390,10 @@ class WordTableView(QTableView):
         har2_action.triggered.connect(self.second_harmonic)
         ''' Create the list of actions for our minimal Edit menu. '''
         self.ed_action_list = [
-            (C.ED_MENU_COPY,self.copy_action,QKeySequence.Copy),
+            (C.ED_MENU_COPY,self.copy_action,QKeySequence.StandardKey.Copy),
             (None,None,None),
-            (C.ED_MENU_FIND,self.find_action,QKeySequence.Find),
-            (C.ED_MENU_NEXT,self.find_next_action,QKeySequence.FindNext)
+            (C.ED_MENU_FIND,self.find_action,QKeySequence.StandardKey.Find),
+            (C.ED_MENU_NEXT,self.find_next_action,QKeySequence.StandardKey.FindNext)
         ]
 
     '''
@@ -700,9 +700,9 @@ class GoodView(QListView):
         self.setMovement(QListView.Movement.Free)
         # Create the list of actions for our minimal Edit menu.
         self.ed_action_list = [
-            (C.ED_MENU_COPY,self.copy_action,QKeySequence.Copy),
-            (C.ED_MENU_PASTE,self.paste_action, QKeySequence.Paste),
-            (C.ED_MENU_DELETE,self.delete_action, QKeySequence.Delete)
+            (C.ED_MENU_COPY,self.copy_action,QKeySequence.StandardKey.Copy),
+            (C.ED_MENU_PASTE,self.paste_action, QKeySequence.StandardKey.Paste),
+            (C.ED_MENU_DELETE,self.delete_action, QKeySequence.StandardKey.Delete)
         ]
 
     '''
@@ -974,7 +974,7 @@ class WordPanel(QWidget) :
             _TR('Words panel legend on row-count',
                 'rows' ) )
         row_count_label.setToolTip( self.row_count.toolTip() )
-        row_count_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        row_count_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         top_layout.addWidget(row_count_label)
         '''
         That completes the top row. Lay out the bottom with the
@@ -987,7 +987,7 @@ class WordPanel(QWidget) :
         self.view.setCornerButtonEnabled(False)
         self.view.setWordWrap(False)
         self.view.setAlternatingRowColors(True)
-        self.view.sortByColumn( 0, Qt.AscendingOrder )
+        self.view.sortByColumn( 0, Qt.SortOrder.AscendingOrder )
         ''' Create the table model and connect it to the view. '''
         self.model = WordTableModel(self.words, self)
         self.view.setModel(self.model)
