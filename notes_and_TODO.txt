@@ -39,7 +39,7 @@ paths.py	6 C
 PPQT2.py	6 C
 preferences.py	6 C
 resources.py	6 x
-translators.py	
+translators.py	6 C
 utilities.py	6
 worddata.py	6 C
 wordview.py	6 C
