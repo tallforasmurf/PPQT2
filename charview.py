@@ -64,6 +64,7 @@ _TR = QCoreApplication.translate
 from PyQt6.QtWidgets import (
     QWidget,
     QComboBox,
+    QHBoxLayout,
     QVBoxLayout,
     QPushButton,
     QTableView
