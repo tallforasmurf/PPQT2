@@ -34,9 +34,15 @@ is marked up according to some different convention, for example HTML.
 
 In practice, a Translator is a file of Python code located in the Translators
 folder of the Extras folder. It is loaded into Python at startup, and its
-name is put in a submenu of the File menu. When the user chooses that menu
-action, the Translator is executed according to the API documented below,
-producing a new document that is added to the set being edited.
+name is put in a submenu of the File menu.
+
+When the user chooses that menu action, the Translator is executed. It then
+uses the API documented below, producing a new document that is added to the
+set being edited.
+
+The new document is a "Book" exactly like all other open documents. It has no
+page boundary information but it has an edit window, a words window, etc.,
+and metadata. It should be saved under its own name.
 
 The methods available are:
 
@@ -56,7 +62,7 @@ The methods available are:
 
         Called from the Main window when one of the Translators is selected
         from the submenu built above. The book is a Book object from which
-        we can get the document text and metadata. xlt_info is whatever
+        we can get the document text and its metadata. xlt_info is whatever
         build_xlt_menu put as the data() of the menu QAction (in fact, an
         index into _XLT_NAMESPACES). When translation is successful, a new
         Book object is returned with the translated contents. If it fails,
@@ -67,7 +73,7 @@ The methods available are:
 import logging
 xlt_logger = logging.getLogger(name='Translator Support')
 
-from PyQt5.QtCore import QCoreApplication
+from PyQt6.QtCore import QCoreApplication
 _TR = QCoreApplication.translate
 
 import os
@@ -79,8 +85,8 @@ import utilities
 import xlate_utils as XU
 import constants as C
 
-from PyQt5.QtWidgets import (
-    QAction,
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
@@ -97,93 +103,96 @@ from PyQt5.QtWidgets import (
 
 import importlib.machinery
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Set up the Translators sub-menu by looking at all files in the Translators
-# folder of the Extras folder. If a file is readable and has the .py suffix,
-# attempt to load it into a namespace (this executes its code).
-#
-# Examine the loaded namespace for a MENU_NAME global which is a string of
-# reasonable length. If there is none, the namespace is ignored (and will
-# eventually be trashed). Use the MENU_NAME value for as the visible name of
-# that action of the submenu.
-#
-# Verify the namespace contains global functions initialize(), translate(),
-# and finalize().
-#
-# Keep a permanent list of the accepted namespaces as they are loaded. This
-# ensures they will not go out of scope and be lost. The "data" stored in a
-# submenu action is the index of the matching namespace in this list.
+'''
+Set up the Translators sub-menu by looking at all files in the Translators
+folder of the Extras folder. If a file is readable and has the .py suffix,
+attempt to load it into a namespace (this executes its code).
 
+Examine the loaded namespace for a MENU_NAME global which is a string of
+reasonable length. If there is none, the namespace is ignored (and will
+eventually be trashed). Use the MENU_NAME value for the visible name of
+that action of the submenu.
+
+Verify the namespace contains global functions initialize(), translate(),
+and finalize().
+
+Keep a permanent list of the accepted namespaces as they are loaded. This
+ensures they will not go out of scope and be lost. The "data" stored in a
+submenu action is the index of the matching namespace in this list.
+'''
 _XLT_NAMESPACES = []
 
 def build_xlt_menu( mainwindow, slot ):
 
-    # Create the submenu but assume it will be empty.
+    ''' Create the submenu but assume it will be empty. '''
     submenu = QMenu(
-        _TR( 'Name of Translators submenu', 'Translators...' ) )
+        _TR( 'Name of Translators submenu in File menu', 'Translators...' ) )
     submenu.setToolTip(
         _TR( 'Translators submenu tooltip',
              'Available Translators in extras/Translators folder' ) )
     submenu.setEnabled( False )
 
-    # Form the path to extras/Translators and try to get a list
-    # of all files in it. If it doesn't exist or isn't a dir,
-    # we get an error.
+    '''
+    Form the path to extras/Translators and try to get a list of all files in
+    it. If it doesn't exist or isn't a dir, we get an error.
+    '''
     xlt_dir = os.path.join( paths.get_extras_path(), 'Translators' )
     try :
         xlt_files = os.listdir( xlt_dir )
     except Exception as E:
-        # this error is logged but not displayed to the user as its
-        # only effect is an empty, disabled submenu.
+        ''' this error is logged but not displayed to the user as its
+        only effect is an empty, disabled submenu. '''
         xlt_logger.error( 'Unable to load any Translator modules')
         xlt_logger.error( str(E) )
         xlt_files = []
 
-    # Check every file in extras/Translators as a possible Translator
+    ''' Check every file in extras/Translators as a possible Translator. '''
     for candidate in xlt_files :
 
-        # Form the full path
+        ''' Form the full path '''
         candidate_path = os.path.join( xlt_dir, candidate )
 
-        # Is it readable?
+        ''' Is it readable? '''
         if not os.access( candidate_path, os.R_OK ) : continue
 
-        # Is it a python source? (Not supporting .pyc just now)
+        ''' Is it a python source? (Not supporting .pyc just now) '''
         if not candidate.endswith('.py') : continue
 
-        # Create a loader object - this throws no exceptions
+        ''' Create a loader object - this throws no exceptions '''
         xlt_logger.info( 'Loading translator module '+candidate )
         xlt_loader = importlib.machinery.SourceFileLoader(
             os.path.splitext( candidate )[0], candidate_path )
 
-        # Try the actual load, which executes the code and can throw
-        # exceptions either directly from the loader, or uncaught exceptions
-        # thrown by the loaded code. If any exceptions, skip it.
+        '''
+        Try the actual load, which executes the code and can throw exceptions
+        either directly from the loader, or uncaught exceptions thrown by the
+        loaded code. If any exceptions, skip it.
+        '''
         xlt_logger.info( 'Executing translator into namespace '+candidate )
         try:
             xlt_namespace = xlt_loader.load_module()
         except Exception as E :
-            # This error is only logged. It is of interest only to the
-            # coder of a Translator wondering why it doesn't appear.
+            ''' This error is only logged. It is of interest only to the
+            coder of a Translator wondering why it doesn't appear. '''
             xlt_logger.error( 'Error loading or executing Translator {}:'.format(candidate) )
             xlt_logger.error( str(E) )
             continue
 
-        # The loaded module should have a MENU_NAME which is a string
+        ''' The loaded module should have a MENU_NAME which is a string '''
         xlt_name = getattr( xlt_namespace, 'MENU_NAME', False )
         if not isinstance(xlt_name, str) :
             xlt_logger.error('Translator {} has no MENU_NAME string'.format(candidate) )
             continue
 
-        # The MENU_NAME should be of reasonable length for a menu item
+        ''' The MENU_NAME should be of reasonable length for a menu item '''
         if ( len( xlt_name ) > 16 ) or ( len( xlt_name ) < 3 ) :
             xlt_logger.error('Translator {} MENU_NAME too long or too short'.format(candidate) )
             continue
 
-        # The loaded module should offer global functions initialize() and
-        # translate(). If not, log an error.
-
+        '''
+        The loaded module should offer global functions initialize() and
+        translate(). If not, log an error.
+        '''
         xlt_fun = getattr( xlt_namespace, 'initialize', False )
         if not isinstance( xlt_fun, types.FunctionType ):
             xlt_logger.error('Translator {} lacks initialize() member'.format(candidate) )
@@ -196,65 +205,68 @@ def build_xlt_menu( mainwindow, slot ):
         if not isinstance( xlt_fun, types.FunctionType ) :
             xlt_logger.error('Translator {} lacks finalize() member'.format(candidate) )
             continue
-        # OK, we are going to trust it. Save the namespace for use later.
+        ''' OK, we are going to trust it. Save the namespace for use later. '''
         xlt_index = len( _XLT_NAMESPACES )
         _XLT_NAMESPACES.append( xlt_namespace )
 
-        # Build the menu action with the given name and an optional tooltip.
+        ''' Build the menu action with the given name and an optional tooltip. '''
         action = submenu.addAction( xlt_namespace.MENU_NAME )
         action.setToolTip( getattr( xlt_namespace, 'TOOLTIP', '' ) )
 
-        # Save the index to the namespace as the menu action's data()
+        ''' Save the index to the namespace as the menu action's data() '''
         action.setData( xlt_index )
 
-        # Connect the action to the slot provided
+        ''' Connect the action to the slot provided '''
         action.triggered.connect( slot )
 
-        # The menu is not going to be empty, so make it enabled
+        ''' The menu is not going to be empty, so make it enabled '''
         submenu.setEnabled( True )
 
     # end for candidate in xlt_files
     return submenu
 
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Translate one book using a chosen translator. Translation proceeds in
-# six steps.
-#
-# One, if the selected Translator has an OPTION_DIALOG, build it and display
-# it. If the user clicks OK, store the chosen values back into the namespace
-# for reference. If CANCEL, return an error.
-#
-# Two, parse the current document and verify its structure. In the course of
-# parsing, build a list of WorkUnit objects to represent the document. If the
-# document structure fails the parse, display an error to the user and exit.
-#
-# Three, call the Translator's initialize() method. We know it exists, but
-# we do not know if its signature is appropriate, and anyhow it might have
-# a bug, so we call it in a try, and fail the translation on error.
-#
-# Four, create an iterator over the list of work units and pass it to the
-# translate() function to deal with. Again, the signature might be wrong or
-# it might throw other exceptions, so guard it in a try.
-#
-# Five, call the Translator's finalize() method, guarding as necessary.
-#
-# Six, complete building a new book from the Translator's output data
-# and return it.
-#
+'''
+
+Translate one book using a chosen translator, proceeding in six steps.
+
+One, if the selected Translator has an OPTION_DIALOG, build it and display
+it. If the user clicks OK, store the chosen values back into the namespace
+for reference. If CANCEL, return an error.
+
+Two, parse the current document and verify its structure. In the course of
+parsing, build a list of WorkUnit objects to represent the document. If the
+document structure fails the parse, display an error to the user and exit.
+
+Three, call the Translator's initialize() method. We know it exists, but
+we do not know if its signature is appropriate, and anyhow it might have
+a bug, so we call it in a try, and fail the translation on error.
+
+Four, create an iterator over the list of work units and pass it to the
+translate() function to deal with. Again, the signature might be wrong or
+it might throw other exceptions, so guard it in a try.
+
+Five, call the Translator's finalize() method, guarding as necessary.
+
+Six, complete building a new book from the Translator's output data
+and return it.
+'''
 
 def xlt_book( source_book, xlt_index, main_window ) :
     global WORK_UNITS
 
-    # Get the namespace of the chosen Translator, based on the index saved in
-    # the menu action.
+    '''
+    Get the namespace of the chosen Translator, based on the index saved in
+    the menu action.
+    '''
     xlt_namespace = _XLT_NAMESPACES[ xlt_index ]
     menu_name = getattr( xlt_namespace, 'MENU_NAME' )
     xlt_logger.info('Translating {}: {}'.format(xlt_index, menu_name) )
 
-    # If it has an option dialog, now is the time to run it. If the
-    # user clicks Cancel, we are done.
+    '''
+    If it has an option dialog, now is the time to run it. If the
+    user clicks Cancel, we are done.
+    '''
     dialog_list = getattr( xlt_namespace, 'OPTION_DIALOG', None )
     if dialog_list :
         answer = _run_dialog( dialog_list, menu_name, main_window )
@@ -262,16 +274,19 @@ def xlt_book( source_book, xlt_index, main_window ) :
             xlt_logger.error('User cancelled option dialog for', menu_name)
             return None
 
-    # Perform the document parse. If it succeeds, the list of work units is
-    # ready. If it fails, a message has been shown to the user and we exit.
+    '''
+    Perform the document parse. If it succeeds, the list of work units is
+    ready. If it fails, a message has been shown to the user and we exit.
+    '''
     WORK_UNITS = []
     if not _do_parse( source_book, main_window ) :
         return None
 
-    # Initialize the translator. Create three streams. Collect the book facts
-    # dict. Make a page boundary offset list filled with -1. Pass all that to
-    # the initialize function to store.
-
+    '''
+    Initialize the translator. Create three streams. Collect the book facts
+    dict. Make a page boundary offset list filled with -1. Pass all that to
+    the initialize function to store.
+    '''
     prolog = utilities.MemoryStream()
     body = utilities.MemoryStream()
     epilog = utilities.MemoryStream()
@@ -293,9 +308,10 @@ def xlt_book( source_book, xlt_index, main_window ) :
         return None
     if not result : return None
 
-    # The translator is initialized, so call its translate() passing our
-    # event_generator(), below.
-
+    '''
+    The translator is initialized, so call its translate() passing our
+    event_generator(), below.
+    '''
     try:
         event_iterator = event_generator( source_page_model, source_book.get_edit_model() )
         result = xlt_namespace.translate( event_iterator )
@@ -309,8 +325,7 @@ def xlt_book( source_book, xlt_index, main_window ) :
         return None
     if not result : return None
 
-    # Translating over, finalize it.
-
+    ''' Translating done! Finalize it. '''
     try:
         result = xlt_namespace.finalize( )
     except Exception as e :
@@ -323,12 +338,13 @@ def xlt_book( source_book, xlt_index, main_window ) :
         return None
     if not result : return None
 
-    # Now put it all together as a Book. First, have mainwindow create a
-    # New book and display it.
-
+    '''
+    Now put it all together as a Book. First, have mainwindow create a
+    New book and display it.
+    '''
     new_book = main_window.do_new()
 
-    # Get an edit cursor and use it to insert all the translated text.
+    ''' Get an edit cursor and use it to insert all the translated text. '''
 
     new_edit_view = new_book.get_edit_view()
     qtc = new_edit_view.get_cursor()
@@ -339,15 +355,15 @@ def xlt_book( source_book, xlt_index, main_window ) :
     epilog.rewind()
     qtc.insertText( epilog.readAll() )
 
-    # Position the file at the top.
-
+    ''' Position the file at the top. '''
     new_edit_view.go_to_line_number( 1 )
 
-    # Read relevant metadata sections from the source book and install them
-    # on the new book. metadata.write_section() gets a specific section.
-    # metadata.load_meta() doesn't care if the stream is a single section
-    # or a whole file.
-
+    '''
+    Read relevant metadata sections from the source book and install them
+    on the new book. metadata.write_section() gets a specific section.
+    metadata.load_meta() doesn't care if the stream is a single section
+    or a whole file.
+    '''
     source_mgr = source_book.get_meta_manager()
     new_mgr = new_book.get_meta_manager()
 
@@ -359,18 +375,20 @@ def xlt_book( source_book, xlt_index, main_window ) :
     _move_meta( source_mgr, new_mgr, C.MD_MD ) # main dictionary
     _move_meta( source_mgr, new_mgr, C.MD_NO ) # notes
     if source_page_model.active() and page_list[0] > -1 :
-        # It looks as if the translator did update the page offset list. Get
-        # the source page metadata and modify it. (Note the original design
-        # was to just transfer the old page metadata the way we transfer the
-        # other types, above, then use pagedata.set_position() to set the new
-        # positions. HOWEVER there is a possibility that the new book is
-        # shorter than the old one, in which case pagedata.read_pages() would
-        # see some of the (old) positions as invalid, and would discard some
-        # of the final rows. So we get the metadata; translate it back to
-        # python; modify it in place with the new positions which are
-        # presumably all valid for the new book; convert it to json and feed
-        # that to the new book. If the translator messed up any of those
-        # positions, there will be log messages.
+        '''
+        It looks as if the translator did update the page offset list. Get
+        the source page metadata and modify it. (Note the original design was
+        to just transfer the old page metadata the way we transfer the other
+        types, above, then use pagedata.set_position() to set the new
+        positions. HOWEVER there is a possibility that the new book is
+        shorter than the old one, in which case pagedata.read_pages() would
+        see some of the (old) positions as invalid, and would discard some of
+        the final rows. So we get the metadata; translate it back to python;
+        modify it in place with the new positions which are presumably all
+        valid for the new book; convert it to json and feed that to the new
+        book. If the translator messed up any of those positions, there will
+        be log messages.
+        '''
         stream = utilities.MemoryStream()
         source_mgr.write_section( stream, C.MD_PT )
         stream.rewind()
@@ -385,7 +403,7 @@ def xlt_book( source_book, xlt_index, main_window ) :
         new_book.hook_images()
 
 
-# Get one section's json from the source, and load it into the target.
+''' Get one section's json from the source, and load it into the target. '''
 
 def _move_meta( from_mgr, to_mgr, section ) :
     stream = utilities.MemoryStream()
@@ -394,36 +412,33 @@ def _move_meta( from_mgr, to_mgr, section ) :
     to_mgr.load_meta( stream )
     stream.rewind()
 
+'''
+        option dialog implementation
 
+_run_dialog: Check the validity of OPTION_DIALOG. If it is not a list
+of Dialog_Item objects, log an error and return False.
 
+When the list is ok, build a list of the widgets described in it. We can
+keep the list as a global because we only do one Translate command at a
+time, and we destroy all the built widgets before exiting.
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#
-#        option dialog implementation
-#
-# _run_dialog: Check the validity of OPTION_DIALOG. If it is not a list
-# of Dialog_Item objects, log an error and return False.
-#
-# When the list is ok, build a list of the widgets described in it. We can
-# keep the list as a global because we only do one Translate command at a
-# time, and we destroy all the built widgets before exiting.
-#
-# Next build a QDialog containing those widgets in a stack. The Checkbox
-# widget has its own label, but the other types need to be put into a
-# horizontal layout with their labels in front.
-#
-# Run the dialog and return True if the user clicked OK, or False for Cancel.
-#
+Next build a QDialog containing those widgets in a stack. The Checkbox
+widget has its own label, but the other types need to be put into a
+horizontal layout with their labels in front.
 
+Run the dialog and return True if the user clicked OK, or False for Cancel.
+
+'''
 DIALOG_LIST = []
 
 def _run_dialog( dialog_list, menu_name, main_window ):
 
     global DIALOG_LIST
-
-    # Do basic validation: is OPTION_DIALOG a list of Dialog_Items?
-    # If it is an empty list, return True, accept the dialog.
-    # The try/except catches the error of it not being a list.
+    '''
+    Do basic validation: is OPTION_DIALOG a list of Dialog_Items?
+    If it is an empty list, return True, accept the dialog.
+    The try/except catches the error of it not being a list.
+    '''
     try:
         for j, item in enumerate( dialog_list ) :
             if not isinstance( item, XU.Dialog_Item ) :
@@ -434,44 +449,47 @@ def _run_dialog( dialog_list, menu_name, main_window ):
     if 0 == len( dialog_list ) :
         xlt_logger.info( '{} OPTION_DIALOG is empty list, accepting'.format( menu_name ) )
         return True
-
-    # dialog_list is a list of at least one Dialog_Item. Build the widgets
-    # and store (item,widget) in DIALOG_LIST. The widgets are also loaded
-    # from the item.result members.
+    '''
+    dialog_list is a list of at least one Dialog_Item. Build the widgets
+    and store (item,widget) in DIALOG_LIST. The widgets are also loaded
+    from the item.result members.
+    '''
     for item in dialog_list :
         DIALOG_LIST.append( ( item, _make_widget( item ) ) )
 
-    # Create the dialog, centered over the main window
+    ''' Create the dialog, centered over the main window. '''
     dialog = QDialog( main_window )
     buttons = QDialogButtonBox( QDialogButtonBox.Ok | QDialogButtonBox.Cancel )
     buttons.accepted.connect( dialog.accept )
     buttons.rejected.connect( dialog.reject )
 
-    # Stack up the requested widgets, each in an HBoxLayout
+    ''' Stack up the requested widgets, each in an HBoxLayout '''
     vbox = QVBoxLayout()
     for ( item, widget ) in DIALOG_LIST :
         vbox.addLayout( _make_layout( item, widget ) )
 
-    # Add the OK/Cancel buttons and finish the dialog
+    ''' Add the OK/Cancel buttons and finish the dialog '''
     vbox.addWidget( buttons )
     dialog.setLayout( vbox )
 
-    # Display the modal dialog and get a result. If OK is clicked, unload
-    # the widget values into their dicts so the Translator can query them.
+    '''
+    Display the modal dialog and get a result. If OK is clicked, unload
+    the widget values into their dicts so the Translator can query them.
+    '''
     answer = dialog.exec_()
-    if answer == QDialog.Accepted :
+    if answer == QDialog.DialogCode.Accepted :
         for ( item, widget ) in DIALOG_LIST :
             _unload_widget( item, widget )
 
-    # Destroy the dialog and free all the widgets before exiting.
+    ''' Destroy the dialog and free all the widgets before exiting. '''
     dialog = None
     DIALOG_LIST = []
-    return answer == QDialog.Accepted
+    return answer == QDialog.DialogCode.Accepted
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Given one Dialog_Item from an OPTION_DIALOG list, build the thing it
-# describes and load it with data from the result member.
-
+'''
+Given one Dialog_Item from an OPTION_DIALOG list, build the thing it
+describes and load it with data from the result member.
+'''
 def _make_widget( item ) :
 
     if item.kind == 'checkbox' :
@@ -517,11 +535,11 @@ def _make_widget( item ) :
 
     return widget
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Given a dialog item and the widget built from it, create an hbox layout
-# with the label appropriately positioned. A Checkbox item already has
-# its label.
-
+'''
+Given a dialog item and the widget built from it, create an hbox layout
+with the label appropriately positioned. A Checkbox item already has
+its label.
+'''
 def _make_layout( item, widget ) :
     hbox = QHBoxLayout()
     if item.kind in ['number','string'] :
@@ -529,12 +547,12 @@ def _make_layout( item, widget ) :
     hbox.addWidget( widget )
     return hbox
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Given a dialog item and the widget built from it, unload the widget's
-# current value (presumably set by the user) back into the result member of
-# the item. The value is easy to get except for the choice, where we have to
-# ask the groupbox for its list of children and poll them.
-
+'''
+Given a dialog item and the widget built from it, unload the widget's
+current value (presumably set by the user) back into the result member of
+the item. The value is easy to get except for the choice, where we have to
+ask the groupbox for its list of children and poll them.
+'''
 def _unload_widget( item, widget ) :
     if item.kind == 'checkbox' :
         item.result = widget.isChecked()
@@ -554,22 +572,20 @@ def _unload_widget( item, widget ) :
         item.result = None
 
 #         End of option dialog code.
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#
-#         document parsing implementation
-#
-# The following elaborate and sophisticated (if I do say so) machinery allows
-# a formal definition of the structure of a DP document as augmented by my
-# rules. The syntax definition is in dpdocsyntax.g. This is processed by the
-# YAPPS2 parser generator to produce dpdocsyntax.py, which contains
-# DPDOCScanner, a token scanner, and DPDOC, the generated parser.
-#
-# While doing the parse we generate Work Units which will be fed into the
-# selected Translator as Events. When the parse succeeds we know the document
-# structure is valid with all blocks properly nested and closed.
-#
+'''
+         document parsing implementation
+
+The following elaborate and sophisticated (if I do say so) machinery allows
+a formal definition of the structure of a DP document as augmented by my
+rules. The syntax definition is in dpdocsyntax.g. This is processed by the
+YAPPS2 parser generator to produce dpdocsyntax.py, which contains
+DPDOCScanner, a token scanner, and DPDOC, the generated parser.
+
+While doing the parse we generate Work Units which will be fed into the
+selected Translator as Events. When the parse succeeds we know the document
+structure is valid with all blocks properly nested and closed.
+'''
 
 def _do_parse( book, mainwindow ) :
     global WORK_UNITS
@@ -600,10 +616,10 @@ def _do_parse( book, mainwindow ) :
         WORK_UNITS = []
     return good_parse
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Define a WorkUnit. One is created for each non-empty line of the document
-# and eventually gets fed to the Translator as an Event.
-
+'''
+Define a WorkUnit. One is created for each non-empty line of the document
+and eventually gets fed to the Translator as an Event.
+'''
 class WorkUnit( object ) :
     __slots__ = ['lnum','tok','text','stuff']
     def __init__ ( self, lnum, tok, text ) :
@@ -621,12 +637,12 @@ class WorkUnit( object ) :
 WORK_UNITS = [] # units appended in the scanner.grab_input()
 HEAD_UNIT = None # last HEAD2/3 unit appended, see check_head below.
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Small functions called out of the parser at special transitions in the
-# parse. These are named in the grammer file dpdocsyntax.g, and so they
-# are also named in dpdocsyntax.DPDOC. However they are not available
-# in that namespace until we insert them.
-
+'''
+Small functions called out of the parser at special transitions in the
+parse. These are named in the grammer file dpdocsyntax.g, and so they
+are also named in dpdocsyntax.DPDOC. However they are not available
+in that namespace until we insert them.
+'''
 def open_para():
     global WORK_UNITS, HEAD_UNIT
     '''
@@ -697,10 +713,10 @@ def close_note() :
         unit = WorkUnit( WORK_UNITS[-1].lnum, ']', '' )
         WORK_UNITS.append( unit )
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Import the code generated by YAPPS as a namespace. Insert into that
-# namespace the names of the above functions.
-
+'''
+Import the code generated by YAPPS as a namespace. Insert into that
+namespace the names of the above functions.
+'''
 import dpdocsyntax
 dpdocsyntax.open_para = open_para
 dpdocsyntax.close_para = close_para
@@ -709,14 +725,14 @@ dpdocsyntax.close_head = close_head
 dpdocsyntax.check_head = check_head
 dpdocsyntax.close_note = close_note
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Globals needed to perform "tokenization" of the lines of the document.
-# (c.f. https://docs.python.org/dev/library/re.html#writing-a-tokenizer)
-# The following tuples are ( match-group-name, match-expression ).
-#
-# The combined regex will be matched against a single line, so ^$ have
-# their normal meanings.
+'''
+Globals needed to perform "tokenization" of the lines of the document.
+(c.f. https://docs.python.org/dev/library/re.html#writing-a-tokenizer)
+The following tuples are ( match-group-name, match-expression ).
 
+The combined regex will be matched against a single line, so ^$ have
+their normal meanings.
+'''
 TOKEN_RXS = [
     ( 'EMPTY',  r'^\s*$'           ),
     ( 'XOPEN',  r'^/[X\*]'         ),
@@ -741,21 +757,21 @@ TOKEN_RXS = [
     ( 'TBREAK', r'^\s*\<\s*tb\s*\>|(\s*\*){5}' ),
     ( 'LINE',   r'^.'              ) # i.e., none of the above
 ]
-
-# Combine the above as alternatives in a single regex. The combined
-# expression will always produce a match, to the EMPTY or LINE expressions if
-# nothing else. The group name of the matching expression is in the lastgroup
-# member of the match object.
-
+'''
+Combine the above as alternatives in a single regex. The combined
+expression will always produce a match, to the EMPTY or LINE expressions if
+nothing else. The group name of the matching expression is in the lastgroup
+member of the match object.
+'''
 TOKEN_EXPR = '|'.join(
     '(?P<{0}>{1})'.format(*pair) for pair in TOKEN_RXS
 )
 TOKEN_X = regex.compile( TOKEN_EXPR )
-
-# This dictionary maps the regex match group name into a single character to
-# feed the parser. The parser will recognize it as a "token" of the same name,
-# see the dpdocsyntax.g file.
-
+'''
+This dictionary maps the regex match group name into a single character to
+feed the parser. The parser will recognize it as a "token" of the same name,
+see the dpdocsyntax.g file.
+'''
 TOKEN_VALUE = {
     'EMPTY'  : 'E',
     'XOPEN'  : 'X',
@@ -781,11 +797,11 @@ TOKEN_VALUE = {
     'LINE'   : 'L'
     }
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Override the YAPPS scanner with our own code to generate one character
-# per line of the document. It is initialized with the editdata.all_lines
-# iterator from the Book.
-
+'''
+Override the YAPPS scanner with our own code to generate one character
+per line of the document. It is initialized with the editdata.all_lines
+iterator from the Book.
+'''
 class DocScanner( dpdocsyntax.DPDOCScanner ) :
     # recognize head of a footnote isolating the Key
     fnrex = regex.compile( r'\[Footnote\s+([^:]+):\s*' )
@@ -965,36 +981,34 @@ class DocScanner( dpdocsyntax.DPDOCScanner ) :
         return ( '', 1, self.line_number )
 
 # End of document-parsing code
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#
-#         "Event" generator
-#
-# The following generator function yields a sequence of Events based on the
-# contents of WORK_UNITS above.
-#
-# An Event is a tuple (code, text, stuff, lnum) which in most cases is just
-# the contents of a WorkUnit. We have to make the following modifications.
-#
-# 1, in a no-flow section we have to recreate any blank lines because those
-# are not saved by the parser.
-#
-# 2, The F/L/R values in work units are only set on the containers XCRPUQ
-# and some of these can be nested, although nesting is uncommon and never deep.
-# So we keep a little pushdown list of container work units and replicate
-# the top one's F/L/R into every non-container unit.
-#
-# 3, the close-bracket-group token ']' needs to be expanded into CLOSE_FNOTE,
-# CLOSE_SNOTE, or CLOSE_ILLO. These bracket groups cannot be nested, so we
-# just note the prior open-token and lowercase it to make the close-token.
-#
-# 4, if the pagedata is active we note when the position of a line (textblock)
-# exceeds the start of the next page and generate a pagebreak event.
-#
-# 5, on finding a Table, break it down into separate events. This is
-# raw-ther complex.
+'''
+         "Event" generator
 
+The following generator function yields a sequence of Events based on the
+contents of WORK_UNITS above.
+
+An Event is a tuple (code, text, stuff, lnum) which in most cases is just
+the contents of a WorkUnit. We have to make the following modifications.
+
+1, in a no-flow section we have to recreate any blank lines because those
+are not saved by the parser.
+
+2, The F/L/R values in work units are only set on the containers XCRPUQ
+and some of these can be nested, although nesting is uncommon and never deep.
+So we keep a little pushdown list of container work units and replicate
+the top one's F/L/R into every non-container unit.
+
+3, the close-bracket-group token ']' needs to be expanded into CLOSE_FNOTE,
+CLOSE_SNOTE, or CLOSE_ILLO. These bracket groups cannot be nested, so we
+just note the prior open-token and lowercase it to make the close-token.
+
+4, if the pagedata is active we note when the position of a line (textblock)
+exceeds the start of the next page and generate a pagebreak event.
+
+5, on finding a Table, break it down into separate events. This is
+raw-ther complex.
+'''
 def event_generator( page_model, edit_model ) :
     global WORK_UNITS
 
@@ -1127,7 +1141,7 @@ U/
 '''
 
     import io
-    import yapps_runtime
+    import yapps.runtime as yapps_runtime
     DOCFILE = io.StringIO( initial_value = DOC9 )
     scanner = DocScanner( DOCFILE )
     parser = dpdocsyntax.DPDOC( scanner )
