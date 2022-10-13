@@ -223,7 +223,7 @@ class PTEditor( QPlainTextEdit ):
 
     def keyPressEvent(self, event):
         #utilities.printKeyEvent(event)
-        kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key())
+        kkey = int( int(event.modifiers().value) & C.KBD_MOD_PAD_CLEAR) | int(event.key())
         if kkey in C.KEYS_EDITOR :
             event.accept() # yes, this is one we handle
             if kkey in C.KEYS_FIND :
