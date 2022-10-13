@@ -86,11 +86,13 @@ from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMenu,
     QPlainTextEdit,
     QSizePolicy,
     QSpacerItem,
     QTextEdit,
+    QVBoxLayout,
     QWidget
     )
 from PyQt6.QtGui import (
@@ -202,7 +204,7 @@ class PTEditor( QPlainTextEdit ):
             (C.ED_MENU_FIND, lambda:self.emit_key(C.CTL_F),QKeySequence.StandardKey.Find),
             (C.ED_MENU_FIND_SELECTED, lambda:self.emit_key(C.CTL_SHFT_F),0),
             (C.ED_MENU_NEXT, lambda:self.emit_key(C.CTL_G) ,QKeySequence.StandardKey.FindNext),
-            (C.ED_MENU_PRIOR, lambda:self.emit_key(C.CTL_SHFT_G), QKeySequence.FindPrevious),
+            (C.ED_MENU_PRIOR, lambda:self.emit_key(C.CTL_SHFT_G), QKeySequence.StandardKey.FindPrevious),
             (None, None, None),
             (C.ED_MENU_TO_LOWER, lambda:self.case_mod(C.CTL_SHFT_L), QKeySequence(C.CTL_SHFT_L) ),
             (C.ED_MENU_TO_UPPER, lambda:self.case_mod(C.CTL_SHFT_U), QKeySequence(C.CTL_SHFT_U) ),
@@ -250,7 +252,7 @@ class PTEditor( QPlainTextEdit ):
                     if mark_list[mark_number] is not None:
                         pos = mark_list[mark_number].position()
                         tc = QTextCursor(self.textCursor())
-                        tc.setPosition(pos, QTextCursor.KeepAnchor)
+                        tc.setPosition(pos, QTextCursor.MoveMode.KeepAnchor)
                         self.setTextCursor(tc)
                         self.ensureCursorVisible()
         else: # not a key for the editor, pass it on.
@@ -279,8 +281,8 @@ class PTEditor( QPlainTextEdit ):
             func = lambda m : m.group(0)[0].upper() + m.group(0)[1:].lower()
         new_text = re_word.sub( func, text ) # do it!
         tc.insertText( new_text )
-        tc.setPosition( start_pos, QTextCursor.MoveAnchor )
-        tc.setPosition( start_pos + len(new_text), QTextCursor.KeepAnchor )
+        tc.setPosition( start_pos, QTextCursor.MoveMode.MoveAnchor )
+        tc.setPosition( start_pos + len(new_text), QTextCursor.MoveMode.KeepAnchor )
         self.setTextCursor(tc)
 
 
@@ -463,7 +465,7 @@ class EditView( QWidget ):
         # cursor "tc" may or may not have a selection; to make sure, we clone
         # it and remove any selection from it.
         cltc = QTextCursor(tc)
-        cltc.setPosition(tc.position(),QTextCursor.MoveAnchor)
+        cltc.setPosition(tc.position(),QTextCursor.MoveMode.MoveAnchor)
         # Set the cloned cursor into the current line extra selection object.
         self.current_line_sel.cursor = cltc
         # Re-assign the list of extra selections to force update of display.
@@ -664,7 +666,7 @@ class EditView( QWidget ):
     def set_find_range(self):
         tc = self.Editor.textCursor()
         self.range_sel.cursor.setPosition(tc.selectionEnd())
-        self.range_sel.cursor.setPosition(tc.selectionStart(), QTextCursor.KeepAnchor)
+        self.range_sel.cursor.setPosition(tc.selectionStart(), QTextCursor.MoveMode.KeepAnchor)
         self.range_sel.format = colors.get_find_range_format(True)
         self.Editor.setExtraSelections(self.extra_sel_list)
     '''
@@ -682,7 +684,7 @@ class EditView( QWidget ):
     def get_find_range(self):
         tc = QTextCursor(self.range_sel.cursor) # copy of range cursor
         if not tc.hasSelection() :
-            tc.select(QTextCursor.Document)
+            tc.select(QTextCursor.SelectionType.Document)
         return tc
     '''
     Called from other panels who need to connect editor signals,
@@ -797,7 +799,7 @@ class EditView( QWidget ):
         anchor = min( max(0,anchor), mx ) # guaranteed valid anchor
         position = min ( max(0,position), mx ) # .. and position
         tc.setPosition(anchor)
-        tc.setPosition(position,QTextCursor.KeepAnchor)
+        tc.setPosition(position,QTextCursor.MoveMode.KeepAnchor)
         return tc
     '''
                INITIALIZE UI
@@ -812,14 +814,14 @@ class EditView( QWidget ):
         First set up the properties of "self", a QWidget.
         '''
         self.setObjectName("EditViewWidget")
-        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(1)
         sizePolicy.setHeightForWidth(False) # don't care to bind height to width
         self.setSizePolicy(sizePolicy)
         self.setMinimumSize(QSize(250, 250))
-        self.setFocusPolicy(Qt.StrongFocus)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.setWindowTitle("")
         self.setToolTip("")
         self.setStatusTip("")
@@ -829,32 +831,32 @@ class EditView( QWidget ):
         '''
         self.Editor = PTEditor(self,self.my_book) # defined 700 lines earlier
         self.Editor.setObjectName("Editor")
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(2) # Edit deserves all available space
         sizePolicy.setVerticalStretch(2)
         sizePolicy.setHeightForWidth(False)
         self.Editor.setSizePolicy(sizePolicy)
-        self.Editor.setFocusPolicy(Qt.StrongFocus)
-        self.Editor.setContextMenuPolicy(Qt.NoContextMenu)
+        self.Editor.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.Editor.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.Editor.setAcceptDrops(True)
         self.Editor.setLineWidth(2)
         self.Editor.setDocumentTitle("")
-        self.Editor.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.Editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         '''
         Set up the frame that will contain the bottom row of widgets
         It doesn't need a parent and doesn't need to be a class member
         because it will be added to a layout, which parents it.
         '''
         bot_frame = QFrame()
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(False)
         bot_frame.setSizePolicy(sizePolicy)
         bot_frame.setMinimumSize(QSize(0, 24))
-        bot_frame.setContextMenuPolicy(Qt.NoContextMenu)
-        bot_frame.setFrameShape(QFrame.Panel)
-        bot_frame.setFrameShadow(QFrame.Sunken)
+        bot_frame.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+        bot_frame.setFrameShape(QFrame.Shape.Panel)
+        bot_frame.setFrameShadow(QFrame.Shadow.Sunken)
         bot_frame.setLineWidth(3)
         '''
         Set up the horizontal layout that will contain the following
@@ -871,71 +873,71 @@ class EditView( QWidget ):
         self.norm_style = 'color:Black;font-weight:normal;'
         self.mod_style = 'color:Red;font-weight:bold;'
         self.DocName.setStyleSheet( self.norm_style )
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(2)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(False)
         self.DocName.setSizePolicy(sizePolicy)
         self.DocName.setMinimumSize(QSize(60, 12))
-        self.DocName.setContextMenuPolicy(Qt.NoContextMenu)
-        self.DocName.setFrameShape(QFrame.StyledPanel)
+        self.DocName.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+        self.DocName.setFrameShape(QFrame.Shape.StyledPanel)
         self.DocName.setObjectName("DocName")
         self.DocName.setToolTip(_TR("EditViewWidget", "Document filename", "tool tip"))
         self.DocName.setWhatsThis(_TR("EditViewWidget", "The filename of the document being edited. It changes color when the document has been modified."))
         HBL.addWidget(self.DocName)
-        spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        spacerItem = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         HBL.addItem(spacerItem)
         '''
         Set up the label "Folio:" and the Folio display label
         '''
         FolioLabel = QLabel(bot_frame)
-        FolioLabel.setAlignment(Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+        FolioLabel.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
         FolioLabel.setText(_TR("EditViewWidget", "Folio", "label of folio display"))
         HBL.addWidget(FolioLabel)
         self.Folio = QLabel(bot_frame)
-        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Preferred)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(False)
         self.Folio.setSizePolicy(sizePolicy)
         self.Folio.setMinimumSize(QSize(30, 12))
-        self.Folio.setContextMenuPolicy(Qt.NoContextMenu)
-        self.Folio.setFrameShape(QFrame.StyledPanel)
-        self.Folio.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        self.Folio.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+        self.Folio.setFrameShape(QFrame.Shape.StyledPanel)
+        self.Folio.setAlignment( Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter )
         self.Folio.setObjectName("Folio display")
         self.Folio.setToolTip(_TR("EditViewWidget", "Folio value for current page", "tooltip"))
         self.Folio.setStatusTip(_TR("EditViewWidget", "Folio value for the page under the edit cursor", "statustip"))
         self.Folio.setWhatsThis(_TR("EditViewWidget", "The Folio (page number) value for the page under the edit cursor. Use the Pages panel to adjust folios to agree with the printed book.","whats this"))
         HBL.addWidget(self.Folio)
-        spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        spacerItem = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         HBL.addItem(spacerItem)
         FolioLabel.setBuddy(self.Folio)
         '''
         Set up the image filename lineedit and its buddy label.
         '''
         ImageFilenameLabel = QLabel(bot_frame)
-        ImageFilenameLabel.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        ImageFilenameLabel.setAlignment( Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter )
         ImageFilenameLabel.setText(_TR("EditViewWidget", "Image", "Image field label"))
         HBL.addWidget(ImageFilenameLabel)
         self.ImageFilename = QLineEdit(bot_frame)
-        sizePolicy = QSizePolicy( QSizePolicy.Expanding, QSizePolicy.Fixed )
+        sizePolicy = QSizePolicy( QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed )
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(False)
         self.ImageFilename.setSizePolicy(sizePolicy)
         self.ImageFilename.setMinimumSize(QSize(30, 12))
         self.ImageFilename.setMouseTracking(False)
-        self.ImageFilename.setFocusPolicy(Qt.ClickFocus)
-        self.ImageFilename.setContextMenuPolicy(Qt.NoContextMenu)
+        self.ImageFilename.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.ImageFilename.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.ImageFilename.setAcceptDrops(True)
         self.ImageFilename.setInputMask("")
-        self.ImageFilename.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        self.ImageFilename.setAlignment( Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter )
         self.ImageFilename.setObjectName("ImageFilename")
         self.ImageFilename.setToolTip(_TR("EditViewWidget", "Scan image filename", "Image tooltip"))
         self.ImageFilename.setStatusTip(_TR("EditViewWidget", "Filename of the scan image under the edit cursor", "Image status tip"))
         self.ImageFilename.setWhatsThis(_TR("EditViewWidget", "This is the name of the scanned image that produced the text under the edit cursor. This image file is displayed in the Image panel.","Image whats this"))
         HBL.addWidget(self.ImageFilename)
-        spacerItem =  QSpacerItem(0, 0,  QSizePolicy.Expanding,  QSizePolicy.Minimum)
+        spacerItem =  QSpacerItem(0, 0,  QSizePolicy.Policy.Expanding,  QSizePolicy.Policy.Minimum)
         HBL.addItem(spacerItem)
         ImageFilenameLabel.setBuddy(self.ImageFilename)
         '''
@@ -943,51 +945,51 @@ class EditView( QWidget ):
         '''
         LineNumberLabel = QLabel(bot_frame)
         LineNumberLabel.setText(_TR("EditViewWidget", "Line#", "Line number label"))
-        LineNumberLabel.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        LineNumberLabel.setAlignment( Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter )
         HBL.addWidget(LineNumberLabel)
         self.LineNumber = QLineEdit(bot_frame)
-        sizePolicy = QSizePolicy( QSizePolicy.Expanding,  QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy( QSizePolicy.Policy.Expanding,  QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(False)
         self.LineNumber.setSizePolicy(sizePolicy)
         self.LineNumber.setMinimumSize(QSize(0, 12))
         self.LineNumber.setMouseTracking(False)
-        self.LineNumber.setFocusPolicy(Qt.ClickFocus)
-        self.LineNumber.setContextMenuPolicy(Qt.NoContextMenu)
+        self.LineNumber.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.LineNumber.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.LineNumber.setAcceptDrops(True)
-        self.LineNumber.setLayoutDirection(Qt.LeftToRight)
+        self.LineNumber.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.LineNumber.setCursorPosition(0)
-        self.LineNumber.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        self.LineNumber.setAlignment( Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter )
         self.LineNumber.setPlaceholderText("")
-        self.LineNumber.setCursorMoveStyle(Qt.LogicalMoveStyle)
+        self.LineNumber.setCursorMoveStyle(Qt.CursorMoveStyle.LogicalMoveStyle)
         self.LineNumber.setObjectName("LineNumber")
         self.LineNumber.setToolTip(_TR("EditViewWidget", "Line number at cursor", "Line number tooltip"))
         self.LineNumber.setStatusTip(_TR("EditViewWidget", "Line number under cursor or top of current selection","Line number statustip"))
         self.LineNumber.setWhatsThis(_TR("EditViewWidget", "The line number in the document where the edit cursor is, or the top line of the selection. Enter a new number to jump to that line.","Line number whatsthis"))
         ImageFilenameLabel.setBuddy(self.ImageFilename)
         HBL.addWidget(self.LineNumber)
-        spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        spacerItem = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         HBL.addItem(spacerItem)
         '''
         Set up the column number field and its buddy label.
         '''
         ColNumberLabel = QLabel(bot_frame)
-        ColNumberLabel.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        ColNumberLabel.setAlignment( Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter )
         ColNumberLabel.setText(_TR("EditViewWidget", "Col#", "Col number label"))
         HBL.addWidget(ColNumberLabel)
         self.ColNumber = QLabel(bot_frame)
-        sizePolicy = QSizePolicy( QSizePolicy.Expanding, QSizePolicy.Preferred )
+        sizePolicy = QSizePolicy( QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(False)
         self.ColNumber.setSizePolicy(sizePolicy)
         self.ColNumber.setMinimumSize(QSize(30, 12))
-        self.ColNumber.setContextMenuPolicy(Qt.NoContextMenu)
-        self.ColNumber.setFrameShape(QFrame.StyledPanel)
-        self.ColNumber.setFrameShadow(QFrame.Plain)
+        self.ColNumber.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+        self.ColNumber.setFrameShape(QFrame.Shape.StyledPanel)
+        self.ColNumber.setFrameShadow(QFrame.Shadow.Plain)
         self.ColNumber.setLineWidth(1)
-        self.ColNumber.setAlignment( Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter )
+        self.ColNumber.setAlignment( Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter )
         self.ColNumber.setObjectName("ColNumber")
         self.ColNumber.setToolTip(_TR("EditViewWidget", "Cursor column number", "tool tip"))
         self.ColNumber.setStatusTip(_TR("EditViewWidget", "Cursor column number", "status tip"))
