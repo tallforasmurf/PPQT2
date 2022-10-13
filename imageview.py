@@ -78,7 +78,9 @@ from PyQt6.QtWidgets import (
     QAbstractScrollArea, QScrollArea,
     QSizePolicy,
     QPushButton,
+    QSpinBox,
     QToolButton,
+    QVBoxLayout,
     QWidget
 )
 from PyQt6.QtGui import (
