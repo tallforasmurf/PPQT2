@@ -41,9 +41,9 @@ preferences.py	6 C
 resources.py	6 x
 translators.py	
 utilities.py	6
-worddata.py	
-wordview.py	
-xlate_utils.py	6
+worddata.py	6 C
+wordview.py	6 C
+xlate_utils.py	6 C
 
 
 
