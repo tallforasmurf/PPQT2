@@ -59,13 +59,13 @@ import constants as C
 import os # for access, path.join
 # no need for logging
 
-from PyQt6.QtCore import QCoreApplication, QUrl
-_TR = QCoreApplication.translate
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWebEngineCore import QWebEnginePage
 
 from PyQt6.QtWidgets import QWidget, QHBoxLayout
 
-from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWebEngineCore import QWebEnginePage
+from PyQt6.QtCore import QCoreApplication, QUrl
+_TR = QCoreApplication.translate
 
 # TODO : find a way to get this translated.
 DEFAULT_HTML = '''
