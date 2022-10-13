@@ -112,7 +112,9 @@ def set_up_edit_menu( action_list ) :
             if title is None :
                 _EDIT_MENU.addSeparator()
             else :
-                _EDIT_MENU.addAction(title, slot, key)
+                act = _EDIT_MENU.addAction(title)
+                act.setShortcut(key)
+                act.triggered.connect(slot)
 
 def hide_edit_menu():
     global _EDIT_MENU
