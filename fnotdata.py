@@ -323,8 +323,8 @@ class FnoteData(QObject):
             '''
             a = find_tc.anchor() + 1
             p = find_tc.position() - 1
-            find_tc.setPosition( a, QTextCursor.MoveAnchor )
-            find_tc.setPosition( p, QTextCursor.KeepAnchor )
+            find_tc.setPosition( a, QTextCursor.MoveMode.MoveAnchor )
+            find_tc.setPosition( p, QTextCursor.MoveMode.KeepAnchor )
             progresso.setValue( p )
             '''
             Special case: the PGDP conventional diphthong [oe] or [OE] looks
@@ -346,7 +346,7 @@ class FnoteData(QObject):
             '''
             while True:
                 ''' "drag" to the end of the block selecting the whole line. '''
-                find_tc.movePosition( QTextCursor.EndOfBlock, QTextCursor.KeepAnchor )
+                find_tc.movePosition( QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor )
                 if find_tc.selectedText().endswith(']') :
                     break # find_tc selects a whole Note
                 ''' Make sure we have not reached the end of the document. '''
@@ -360,7 +360,7 @@ class FnoteData(QObject):
                     find_tc.clearSelection()
                     break
                 else : # there is another line, move to its head and try again
-                    find_tc.movePosition(QTextCursor.NextBlock,QTextCursor.KeepAnchor)
+                    find_tc.movePosition(QTextCursor.MoveOperation.NextBlock,QTextCursor.MoveMode.KeepAnchor)
             # end of while true looking for end of Note
             if find_tc.hasSelection() : # we did find a line or lines ending in ]
                 notes_list.append( QTextCursor( find_tc ) )
@@ -625,12 +625,12 @@ class FnoteData(QObject):
         key_len_diff = len(new_key) - len(old_key)
         ''' Update the Anchor text '''
         anchor_start = anchor_tc.selectionStart()
-        work_tc.setPosition( anchor_start, QTextCursor.MoveAnchor )
-        work_tc.setPosition( anchor_tc.selectionEnd(), QTextCursor.KeepAnchor )
+        work_tc.setPosition( anchor_start, QTextCursor.MoveMode.MoveAnchor )
+        work_tc.setPosition( anchor_tc.selectionEnd(), QTextCursor.MoveMode.KeepAnchor )
         work_tc.insertText( new_key ) # that replaces the Key in the Anchor
         ''' Reset the anchor_tc to select the replaced Key '''
-        anchor_tc.setPosition( anchor_start, QTextCursor.MoveAnchor )
-        anchor_tc.setPosition( anchor_start+len(new_key), QTextCursor.KeepAnchor )
+        anchor_tc.setPosition( anchor_start, QTextCursor.MoveMode.MoveAnchor )
+        anchor_tc.setPosition( anchor_start+len(new_key), QTextCursor.MoveMode.KeepAnchor )
         ''' Update the Note. First, extract its full text as a Python string.'''
         note_text = note_tc.selectedText()
         note_start = note_tc.selectionStart()
@@ -641,13 +641,13 @@ class FnoteData(QObject):
         '''
         match = self.note_finder_re.match( note_text )
         ''' point work_tc at the Key within the note '''
-        work_tc.setPosition( note_tc.selectionStart() + match.start(1), QTextCursor.MoveAnchor )
-        work_tc.setPosition( note_tc.selectionStart() + match.end(1), QTextCursor.KeepAnchor )
+        work_tc.setPosition( note_tc.selectionStart() + match.start(1), QTextCursor.MoveMode.MoveAnchor )
+        work_tc.setPosition( note_tc.selectionStart() + match.end(1), QTextCursor.MoveMode.KeepAnchor )
         ''' replace the key in the note '''
         work_tc.insertText( new_key )
         ''' Reposition the note_tc to account for a change in the length of the key. '''
-        note_tc.setPosition( note_start, QTextCursor.MoveAnchor )
-        note_tc.setPosition( note_start + len(note_text) + key_len_diff, QTextCursor.KeepAnchor )
+        note_tc.setPosition( note_start, QTextCursor.MoveMode.MoveAnchor )
+        note_tc.setPosition( note_start + len(note_text) + key_len_diff, QTextCursor.MoveMode.KeepAnchor )
 
     '''
     Record the defined footnote zones as a list of lists, [tcA, tcZ] where
@@ -730,11 +730,11 @@ class FnoteData(QObject):
             using work_tc so it is part of the undo action.
             '''
             work_tc.setPosition(note_tc.anchor()-1)
-            work_tc.setPosition(note_tc.position()+1, QTextCursor.KeepAnchor)
+            work_tc.setPosition(note_tc.position()+1, QTextCursor.MoveMode.KeepAnchor)
             work_tc.removeSelectedText()
             ''' Set note_tc to point to the new location of the note text. '''
             note_tc.setPosition(tcZ.position() - len(note_text) - 2)
-            note_tc.setPosition(tcZ.position() - 1,QTextCursor.KeepAnchor)
+            note_tc.setPosition(tcZ.position() - 1,QTextCursor.MoveMode.KeepAnchor)
         # end for notes in the_list
     # end move_notes
 
