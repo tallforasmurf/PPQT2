@@ -170,7 +170,7 @@ _GENL_QFONT = QFont()
 def set_defaults():
     global _GENL_SIZE,_MONO_SIZE,_GENL_FAMILY,_MONO_FAMILY,_GENL_QFONT,_MONO_QFONT
     # get the name of the font family the DB thinks is the default UI font
-    _GENL_FAMILY = _FONT_DB.systemFont(QFontDatabase.GeneralFont).family()
+    _GENL_FAMILY = _FONT_DB.systemFont(QFontDatabase.SystemFont.GeneralFont).family()
     # default to the name of our preferred font (which we know exists)
     _MONO_FAMILY = 'Liberation Mono'
     # set default sizes
