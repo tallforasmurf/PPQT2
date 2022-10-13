@@ -117,7 +117,7 @@ Ask it to show itself. Then initiate the application event loop.
 from mainwindow import MainWindow
 the_main_window = MainWindow( the_settings )
 the_main_window.show()
-the_app.exec_()
+the_app.exec()
 
 '''
 The application event loop has ended, meaning probably that Quit has been
