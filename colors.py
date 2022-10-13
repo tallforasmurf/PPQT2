@@ -216,13 +216,13 @@ def set_defaults(signal=True):
     global _SPU_COLOR, _SPU_STYLE, _SNO_COLOR, _SNO_STYLE
     colors_logger.debug('Resetting colors and styles to defaults')
     _CL_COLOR = QColor('#FAFAE0') # very light yellow
-    _CL_STYLE = QTextCharFormat.NoUnderline # bg only no underline
+    _CL_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline # bg only no underline
     _FR_COLOR = QColor('#CCFFFF') # very light blue
-    _FR_STYLE = QTextCharFormat.NoUnderline # bg, no-underline
+    _FR_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline # bg, no-underline
     _SNO_COLOR = QColor('thistle') # lavender, no underline
-    _SNO_STYLE = QTextCharFormat.NoUnderline
+    _SNO_STYLE = QTextCharFormat.UnderlineStyle.NoUnderline
     _SPU_COLOR = QColor('magenta') # strong red wavy underline
-    _SPU_STYLE = QTextCharFormat.WaveUnderline
+    _SPU_STYLE = QTextCharFormat.UnderlineStyle.WaveUnderline
     if signal: _emit_signal()
 
 '''
