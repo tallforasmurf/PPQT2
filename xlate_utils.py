@@ -103,9 +103,10 @@ index of the default choice starting from 0.
 
 import regex
 
-# The "events" we can throw at a Translator. Most of them are, by a
-# remarkable coincidence, the same as the token codes used when parsing.
-
+'''
+The "events" we can throw at a Translator. Most of them are, by a
+remarkable coincidence, the same as the token codes used when parsing.
+'''
 class Events( object ) :
     LINE          = 'L'
     OPEN_PARA     = 'E'
@@ -143,7 +144,7 @@ class Events( object ) :
     CLOSE_TROW    = '>'
     CLOSE_TABLE   = 't'
 
-# The parts of a LINE as yielded by line_parts()
+''' The parts of a LINE as yielded by line_parts(). '''
 
 class TokenCodes ( object ) :
     ITAL_ON   = 'ITAL_ON'  # ( 'ITAL_ON, "i" ) or ('ITAL_ON', "i lang='fr_FR')
@@ -168,29 +169,32 @@ class TokenCodes ( object ) :
     PUNCT     = 'PUNCT'    # ( PUNCT, '!', ';', '.' etc )
     OTHER     = 'OTHER'    # ( OTHER, '$' maybe? '*'? )
 
-# Globals needed to perform "tokenization" of a text line (c.f.
-# https://docs.python.org/dev/library/re.html#writing-a-tokenizer)
-# The following tuples are ( match-group-name, match-expression ).
-#
-# Order matters here, the regexes are applied in sequence. For example
-# the SUB text \w_(\w+)_ must come before the fallback SUB1.
+'''
+Globals needed to perform "tokenization" of a text line
+(c.f. https://docs.python.org/dev/library/re.html#writing-a-tokenizer)
+The following tuples are ( match-group-name, match-expression ).
 
-# regex to select a word including hyphenated and possessives.
-#
-# One wee problem: In the DP format, the only valid use for underscore is to
-# show a subscript as in H_2_O. However, to a PCRE regular expression, the
-# "word character" (\w) set includes the underscore. However, the most
-# excellent regex module allows character class arithmetic! So we look for \w
-# minus underscore, which is written [\w--_].
+Order matters here, the regexes are applied in sequence. For example
+the SUB text \w_(\w+)_ must come before the fallback SUB1.
 
+regex to select a word including hyphenated and possessives.
+
+One wee problem: In the DP format, the only valid use for underscore is to
+show a subscript as in H_2_O. However, to a PCRE regular expression, the
+"word character" (\w) set includes the underscore. However, the most
+excellent regex module allows character class arithmetic! So we look for \w
+minus underscore, which is written [\w--_].
+'''
 WORD_EXPR = r"([\w--_]*(\[..\])?[\w--_]+)+"
 WORDHY_EXPR = "(" + WORD_EXPR + r"[\'\-\u2019])*" + WORD_EXPR
-# regex to parse an html opener to pick up both the verb and
-# the value of a lang= property. Underscores ok here: fr_FR
+'''
+regex to parse an html opener to pick up both the verb and
+the value of a lang= property. Underscores ok here: fr_FR
+'''
 LANG_EXPR = r'\<(\w+).+lang=[\'\"]([\w]+)[\'\"]'
 LANG_XP = regex.compile( LANG_EXPR )
 
-# regex to pick off poem line number
+''' regex to pick off poem line number '''
 POEM_LNUM_EXPR = r'\ {2,}(\d+)$'
 POEM_LNUM_XP = regex.compile( POEM_LNUM_EXPR )
 
@@ -218,11 +222,12 @@ TOKEN_RXS = [
 ( TokenCodes.OTHER,    r'.' ) # so we always match something.
 ]
 
-# Combine the above as alternatives in a single regex. The combined
-# expression will always produce a match, to the EMPTY or LINE expressions if
-# nothing else. The group name of the matching expression is in the lastgroup
-# member of the match object.
-
+'''
+Combine the above as alternatives in a single regex. The combined
+expression will always produce a match, to the EMPTY or LINE expressions if
+nothing else. The group name of the matching expression is in the lastgroup
+member of the match object.
+'''
 TOKEN_EXPR = '|'.join(
     '(?P<{0}>{1})'.format(*pair) for pair in TOKEN_RXS
 )
