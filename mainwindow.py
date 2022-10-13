@@ -58,14 +58,17 @@ from PyQt6.QtCore import (
     Qt,
     QByteArray,
     QCoreApplication,
+    QPoint,
     QTimer
     )
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import (
     QMainWindow,
     QMenu,
+    QMenuBar,
     QSplitter,
-    QTabWidget
+    QTabWidget,
+    QWidget
     )
 _TR = QCoreApplication.translate
 import os# TODO remove
@@ -169,7 +172,7 @@ import colors
 import constants as C
 import logging
 import utilities
-import helpview
+#import helpview
 import book
 #import translators # TODO - reenable translators
 mainwindow_logger = logging.getLogger(name='main_window')
@@ -671,14 +674,14 @@ class MainWindow(QMainWindow):
         r = p.exec_()
 
 
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    # Help menu action triggered. If the Help widget has not yet been
-    # created, create it. Otherwise just show it and raise it.
-    def _show_help(self):
-        if self.help_widget is None:
-            self.help_widget = helpview.HelpWidget()
-        self.help_widget.show()
-        self.help_widget.raise_()
+    ## -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    ## Help menu action triggered. If the Help widget has not yet been
+    ## created, create it. Otherwise just show it and raise it.
+    #def _show_help(self):
+        #if self.help_widget is None:
+            #self.help_widget = helpview.HelpWidget()
+        #self.help_widget.show()
+        #self.help_widget.raise_()
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Create the UI contained within this QMainWindow object. This is a lean
@@ -700,7 +703,7 @@ class MainWindow(QMainWindow):
         self.panel_tabset = QTabWidget()
         self.panel_tabset.setMovable(True)
         # Create the splitter that contains the above two parts.
-        self.splitter = QSplitter(Qt.Horizontal, self)
+        self.splitter = QSplitter(Qt.Orientation.Horizontal, self)
         self.splitter.setChildrenCollapsible(False)
         # Give just a little margin to the left of the editor
         self.splitter.setContentsMargins(8,0,0,0)
@@ -732,27 +735,27 @@ class MainWindow(QMainWindow):
         # Populate the File menu with actions.
         #  File:New -> _new()
         work = self.file_menu.addAction( _TR('File menu command','&New') )
-        work.setShortcut(QKeySequence.New)
+        work.setShortcut(QKeySequence.StandardKey.New)
         work.setToolTip( _TR('File:New tooltip','Create a new, empty document') )
         work.triggered.connect(self._new)
         #  File:Open -> _file_open()
         work = self.file_menu.addAction( _TR('File menu command','&Open') )
-        work.setShortcut(QKeySequence.Open)
+        work.setShortcut(QKeySequence.StandardKey.Open)
         work.setToolTip( _TR('File:Open tooltip','Open an existing book') )
         work.triggered.connect(self._file_open)
         #  File:Save -> _file_save()
         work = self.file_menu.addAction( _TR('File menu command', '&Save') )
-        work.setShortcut(QKeySequence.Save)
+        work.setShortcut(QKeySequence.StandardKey.Save)
         work.setToolTip( _TR('File:Save tooltip','Save the active book') )
         work.triggered.connect(self._save)
         #  Save As -> _file_save_as()
         work = self.file_menu.addAction( _TR('File menu command', 'Save &As') )
-        work.setShortcut(QKeySequence.SaveAs)
+        work.setShortcut(QKeySequence.StandardKey.SaveAs)
         work.setToolTip( _TR('File:Save As tooltip','Save the active book under a new name') )
         work.triggered.connect(self._save_as)
         #  Close -> _close()
         work = self.file_menu.addAction( _TR('File menu command', 'Close') )
-        work.setShortcut(QKeySequence.Close)
+        work.setShortcut(QKeySequence.StandardKey.Close)
         work.setToolTip( _TR('File:Close tooltip', 'Close the active book') )
         work.triggered.connect(self._close)
         #  Load Find Buttons -> _find_load()
@@ -783,22 +786,22 @@ class MainWindow(QMainWindow):
         # Put in a divider above the Help, Preferences and Quit actions.
         self.file_menu.addSeparator()
 
-        # Help opens or un-hides the Help viewer
-        work = self.file_menu.addAction( _TR('Help menu item', 'Help') )
-        work.setToolTip( _TR( 'Help menu item tooltip', 'Display the Help/User Manual in a separate window' ) )
-        work.triggered.connect(self._show_help)
-        self.file_menu.addAction(work)
+        ## Help opens or un-hides the Help viewer
+        #work = self.file_menu.addAction( _TR('Help menu item', 'Help') )
+        #work.setToolTip( _TR( 'Help menu item tooltip', 'Display the Help/User Manual in a separate window' ) )
+        #work.triggered.connect(self._show_help)
+        #self.file_menu.addAction(work)
 
         # Preferences: On the Mac, Preferences is automatically moved to the app menu.
         work = self.file_menu.addAction( _TR('Preferences menu item', 'Preferences') )
         work.setToolTip( _TR( 'Preferences menu item tooltip', 'Open the Preferences dialog to set paths, fonts, and text styles') )
-        work.setMenuRole( QAction.PreferencesRole )
+        work.setMenuRole( QAction.MenuRole.PreferencesRole )
         work.triggered.connect( self._preferences )
 
         #  Quit choice, with the menu role that moves it to the app menu
         work = QAction( _TR('Quit command','&Quit'), self )
-        work.setMenuRole(QAction.QuitRole)
-        work.setShortcut(QKeySequence.Quit)
+        work.setMenuRole(QAction.MenuRole.QuitRole)
+        work.setShortcut(QKeySequence.StandardKey.Quit)
         work.triggered.connect(self.close)
         self.file_menu.addAction(work)
 
