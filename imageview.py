@@ -67,7 +67,8 @@ import math # for isnan() only
 from PyQt6.QtCore import (
     Qt,
     QDir,
-    QCoreApplication
+    QCoreApplication,
+    QSize
 )
 _TR = QCoreApplication.translate
 
