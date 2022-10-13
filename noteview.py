@@ -123,17 +123,17 @@ class NotesPanel(QPlainTextEdit):
         ''' Create the list of actions for our edit menu and save it
         for use on focus-in. '''
         self.ed_action_list = [
-            (C.ED_MENU_UNDO, self.undo, QKeySequence.Undo),
-            (C.ED_MENU_REDO,self.redo,QKeySequence.Redo),
+            (C.ED_MENU_UNDO, self.undo, QKeySequence.StandardKey.Undo),
+            (C.ED_MENU_REDO,self.redo,QKeySequence.StandardKey.Redo),
             (None, None, None),
-            (C.ED_MENU_CUT,self.cut,QKeySequence.Cut),
-            (C.ED_MENU_COPY,self.copy,QKeySequence.Copy),
-            (C.ED_MENU_PASTE,self.paste,QKeySequence.Paste),
+            (C.ED_MENU_CUT,self.cut,QKeySequence.StandardKey.Cut),
+            (C.ED_MENU_COPY,self.copy,QKeySequence.StandardKey.Copy),
+            (C.ED_MENU_PASTE,self.paste,QKeySequence.StandardKey.Paste),
             (None, None, None),
-            (C.ED_MENU_FIND,self.find_action,QKeySequence.Find),
-            (C.ED_MENU_NEXT,self.find_next_action,QKeySequence.FindNext)
+            (C.ED_MENU_FIND,self.find_action,QKeySequence.StandardKey.Find),
+            (C.ED_MENU_NEXT,self.find_next_action,QKeySequence.StandardKey.FindNext)
             ]
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
     '''
     Save the current notes text to a metadata file. We write the whole text
@@ -192,7 +192,7 @@ class NotesPanel(QPlainTextEdit):
     ''' The actual search, factored out of the two actions '''
     def _do_find(self):
         if not self.find(self.find_text): # no hits going down
-            self.moveCursor(QTextCursor.Start) # go to top
+            self.moveCursor(QTextCursor.MoveOperation.Start) # go to top
             if not self.find(self.find_text): # still no hit
                 utilities.beep()
 
@@ -292,7 +292,7 @@ class NotesPanel(QPlainTextEdit):
             return
         ''' Select the found value, then move the editor putting focus in it '''
         self.textCursor().setPosition( tb.position()+match.end() )
-        self.textCursor().setPosition( tb.position()+match.start(), QTextCursor.KeepAnchor )
+        self.textCursor().setPosition( tb.position()+match.start(), QTextCursor.MoveMode.KeepAnchor )
         self.book.get_edit_view().go_to_line_number(line_number)
 
     '''
@@ -332,5 +332,5 @@ class NotesPanel(QPlainTextEdit):
             return
         ''' Select the found value, then move the editor putting focus in it '''
         self.textCursor().setPosition( tb.position()+match.end() )
-        self.textCursor().setPosition( tb.position()+match.start(), QTextCursor.KeepAnchor )
+        self.textCursor().setPosition( tb.position()+match.start(), QTextCursor.MoveMode.KeepAnchor )
         self.book.get_edit_view().go_to_image_name(match.group(1))
