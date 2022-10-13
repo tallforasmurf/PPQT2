@@ -160,6 +160,7 @@ Version 2 JSON-based metadata system. See FindPanel._meta_read() and
 
 from PyQt6.QtWidgets import(
     QCheckBox,
+    QFrame,
     QGridLayout, QHBoxLayout, QVBoxLayout,
     QLineEdit,
     QMenu,
@@ -1397,8 +1398,8 @@ class FindPanel(QWidget):
         checkboxes, the find text, and four go-buttons.
         '''
         frame_find = QFrame()
-        frame_find.setFrameShape(QFrame.Panel)
-        frame_find.setFrameShadow(QFrame.Raised)
+        frame_find.setFrameShape(QFrame.Shape.Panel)
+        frame_find.setFrameShadow(QFrame.Shadow.Raised)
         frame_find.setLineWidth(3)
         box_find = QVBoxLayout(frame_find)
         box_find.setContentsMargins(4,2,4,2)
@@ -1496,7 +1497,7 @@ class FindPanel(QWidget):
 
         # Create and lay out the replace objects within a frame.
         frame_reps = QFrame()
-        frame_reps.setFrameShape(QFrame.Box)
+        frame_reps.setFrameShape(QFrame.Shape.Box)
         #frame_reps.setFrameShadow(QFrame.Plain)
         #frame_reps.setLineWidth(2)
 
@@ -1528,7 +1529,7 @@ class FindPanel(QWidget):
             self.do_replace[j].setToolTip(
                 _TR('Find panel','Text that was matched is replaced with the text in Replace field {0}'.format(j),'tooltip')
                 )
-            self.do_replace[j].setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Fixed)
+            self.do_replace[j].setSizePolicy(QSizePolicy.Policy.Minimum,QSizePolicy.Policy.Fixed)
             self.do_replace[j].setMaximumHeight(30)
 
             box_1_rep.addWidget(self.recall_buttons[j],0)
@@ -1571,8 +1572,8 @@ class FindPanel(QWidget):
         # string for initializing them so they go in with (empty) contents.
         # The metadata reader may load some of them later.
         frame_user = QFrame()
-        frame_user.setFrameShape(QFrame.Box)
-        #frame_user.setFrameShadow(QFrame.Sunken)
+        frame_user.setFrameShape(QFrame.Shape.Box)
+        #frame_user.setFrameShadow(QFrame.Shadow.Sunken)
         #frame_user.setLineWidth(3)
         grid_user = QGridLayout(frame_user)
         for i in range(FindPanel.USER_BUTTON_MAX):
