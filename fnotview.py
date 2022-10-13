@@ -202,10 +202,10 @@ class FnoteTableModel(QAbstractTableModel):
     '''
     def headerData(self, column, axis, role):
         global COL_HEADS, COL_TOOLTIPS
-        if ( axis == Qt.Horizontal ) and ( column >= 0 ):
-            if role == Qt.DisplayRole : # wants actual text
+        if ( axis == Qt.Orientation.Horizontal ) and ( column >= 0 ):
+            if role == Qt.ItemDataRole.DisplayRole : # wants actual text
                 return COL_HEADS[column]
-            if (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
+            if (role == Qt.ItemDataRole.ToolTipRole) or (role == Qt.ItemDataRole.StatusTipRole) :
                 return COL_TOOLTIPS[column]
         return None # we don't do that, whatever it is
 
