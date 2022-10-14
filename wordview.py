@@ -488,7 +488,7 @@ class WordTableView(QTableView):
     '''
     def keyPressEvent(self, event):
         key = int(event.key())
-        mods = int(event.modifiers())
+        mods = int(event.modifiers().value)
         #utilities.printKeyEvent(event) # dbg
         if ( key < 0x01000000) and \
            ( (mods == Qt.KeyboardModifier.NoModifier) or \

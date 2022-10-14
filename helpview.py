@@ -139,7 +139,7 @@ class HelpWidget(QWidget) :
             self.restoreGeometry( self.last_shape )
 
     def keyPressEvent( self, event ) :
-        kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key() )
+        kkey = int( int(event.modifiers().value) & C.KEYPAD_MOD_CLEAR) | int(event.key() )
         if kkey == C.CTL_F :
             event.accept()
             self.find_action()

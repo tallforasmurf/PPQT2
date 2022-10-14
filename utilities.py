@@ -636,7 +636,7 @@ def to_alpha( n, lc=True ) :
     #return cmods
 #def printKeyEvent(event):
     #key = int(event.key())
-    #mods = int(event.modifiers())
+    #mods = int(event.modifiers().value)
     #if key & 0x01000000 : # special/standard key
         #print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
     #else:

@@ -231,7 +231,7 @@ class NotesPanel(QPlainTextEdit):
     '''
     def keyPressEvent(self, event):
         #utilities.printKeyEvent(event) # dbg
-        kkey = int( int(event.modifiers()) & C.KEYPAD_MOD_CLEAR) | int(event.key())
+        kkey = int( int(event.modifiers().value) & C.KEYPAD_MOD_CLEAR) | int(event.key())
         if kkey in C.KEYS_NOTES :
             # this is a key we do handle, so...
             event.accept()
