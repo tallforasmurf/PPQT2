@@ -172,26 +172,24 @@ class CharData(QObject):
         cd_logger.debug('Loading CHARCENSUS metadata')
         ''' release existing census values for garbage collection '''
         self.census = SortedDict()
-        self.v_view = None
-        self.k_view = None
-        if isinstance(value,dict) :
-            for (letter,count) in value.items() :
-                try:
-                    if isinstance(letter,str) \
-                    and (1 == len(letter)) \
-                    and isinstance(count,int) \
-                    and (count > 0) :
-                        self.census[letter] = count                        
-                    else :
-                        raise ValueError
-                except :
-                    cd_logger.error(
-                        'Ignoring invalid CHARCENSUS entry {}'.format([letter,count])
-                    )
-            # Emit a Qt signal that will cause the visible table to be refreshed
-            self.CharsLoaded.emit()
-        else :
-            cd_logger.error('CHARCENSUS metadata must be a dict, ignoring all')
-        # in any case, recreate views on possibly empty dict
         self.k_view = self.census.keys()
-        self.v_view = self.census.values()
+        self.v_view = self.census.values()            
+        if not isinstance(value,dict) :
+            cd_logger.error('CHARCENSUS metadata must be a dict, ignoring all')
+            return
+    
+        for (letter,count) in value.items() :
+            try:
+                if isinstance(letter,str) \
+                and (1 == len(letter)) \
+                and isinstance(count,int) \
+                and (count > 0) :
+                    self.census[letter] = count                        
+                else :
+                    raise ValueError
+            except :
+                cd_logger.error(
+                    'Ignoring invalid CHARCENSUS entry {}'.format([letter,count])
+                )
+        # Emit a Qt signal that will cause the visible table to be refreshed
+        self.CharsLoaded.emit()
