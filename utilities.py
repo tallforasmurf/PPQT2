@@ -209,7 +209,7 @@ def _check_encoding(fname):
 # Convert a QFile for a valid path, into a FileBasedTextStream.
 # Refactored out of the following functions.
 def _qfile_to_stream(a_file, I_or_O, encoding=None):
-    if not a_file.open(I_or_O | QIODevice.OpenModeFla.Text) :
+    if not a_file.open(I_or_O | QIODevice.OpenModeFlag.Text) :
         f_info = QFileInfo(a_file) # for the name
         utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
             a_file.error(), a_file.errorString(), f_info.fileName() ) )
