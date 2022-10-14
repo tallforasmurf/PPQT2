@@ -258,7 +258,7 @@ class ImageDisplay(QWidget):
                     self.image = QImage(self.png_dir.absoluteFilePath(f_name))
                     if not self.image.isNull():
                         ''' we loaded it; make a full-scale pixmap for display '''
-                        self.pix_map = QPixmap.fromImage(self.image,Qt.ColorOnly)
+                        self.pix_map = QPixmap.fromImage(self.image,Qt.ImageConversionFlag.ColorOnly)
         '''
         Whether or not the page changed, rescale the pixmap to the current
         zoom. The .resize method takes a QSize; pix_map.size() returns one,
@@ -332,10 +332,10 @@ class ImageDisplay(QWidget):
             event.accept()
             fac = (0.8) if (modkey == C.CTL_MINUS) else (1.25)
             self._set_zoom_real( fac * self.zoom_factor)
-        elif (event.key() == Qt.Key_PageUp) or (event.key() == Qt.Key_PageDown) :
+        elif (event.key() == Qt.Key.Key_PageUp) or (event.key() == Qt.Key.Key_PageDown) :
             ''' page up/down, show the current page +/- 1 if it exists '''
             event.accept()
-            pgix = self.last_index + (1 if (event.key() == Qt.Key_PageDown) else -1)
+            pgix = self.last_index + (1 if (event.key() == Qt.Key.Key_PageDown) else -1)
             if pgix >= 0 and pgix < self.page_data.page_count() :
                 self._show_page(pgix)
                 if self.image_to_cursor.isChecked():
@@ -386,8 +386,8 @@ class ImageDisplay(QWidget):
         # it to indexed-8 format, one byte per pixel.
         work_image = self.image.scaled(
             QSize(int(orig_cols/scale_factor),int(orig_rows/scale_factor)),
-            Qt.KeepAspectRatio, Qt.FastTransformation)
-        work_image = work_image.convertToFormat(QImage.Format_Indexed8,Qt.ColorOnly)
+            Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation)
+        work_image = work_image.convertToFormat(QImage.Format.Format_Indexed8,Qt.ImageConversionFlag.ColorOnly)
         # Get a reduced version of the color table by extracting just the GG
         # values of each entry, as a dict keyed by the pixel byte value. For
         # PNG-2, this gives [0,255] but it could have 8, 16, even 256 elements.
@@ -459,8 +459,8 @@ class ImageDisplay(QWidget):
         # it to indexed-8 format, one byte per pixel.
         work_image = self.image.scaled(
             QSize(int(orig_cols/scale_factor),int(orig_rows/scale_factor)),
-            Qt.KeepAspectRatio, Qt.FastTransformation)
-        work_image = work_image.convertToFormat(QImage.Format_Indexed8,Qt.ColorOnly)
+            Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation)
+        work_image = work_image.convertToFormat(QImage.Format.Format_Indexed8,Qt.ImageConversionFlag.ColorOnly)
         # Get a reduced version of the color table by extracting just the GG
         # values of each entry, as a dict keyed by the pixel byte value. For
         # PNG-2, this gives [0,255] but it could have 8, 16, even 256 elements.
