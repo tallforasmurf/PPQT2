@@ -165,7 +165,7 @@ class PageTableModel(QAbstractTableModel):
                 f |= Qt.ItemFlag.ItemIsEditable # cols 1-2 always editable
             elif (c == 3) and \
                  (self.pdata.folio_info(index.row())[0] == C.FolioRuleSet) :
-                f |= Qt.ItemIsEditable
+                f |= Qt.ItemFlag.ItemIsEditable
         else : f = Qt.ItemFlag.NoItemFlags
         return f
 
