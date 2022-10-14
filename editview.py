@@ -608,7 +608,7 @@ class EditView( QWidget ):
     Override the parent's contextMenuEvent to display and execute that menu.
     '''
     def contextMenuEvent(self, event):
-        self.context_menu.exec_(event.globalPos())
+        self.context_menu.exec(event.globalPos())
     
     '''
 
