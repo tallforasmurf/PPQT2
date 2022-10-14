@@ -476,7 +476,7 @@ def _run_dialog( dialog_list, menu_name, main_window ):
     Display the modal dialog and get a result. If OK is clicked, unload
     the widget values into their dicts so the Translator can query them.
     '''
-    answer = dialog.exec_()
+    answer = dialog.exec()
     if answer == QDialog.DialogCode.Accepted :
         for ( item, widget ) in DIALOG_LIST :
             _unload_widget( item, widget )

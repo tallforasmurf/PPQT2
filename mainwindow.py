@@ -260,7 +260,7 @@ class MainWindow(QMainWindow):
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # As part of setup we often need to show the user a dialog, but when our
     # __init__ is first called, our window has not been shown and the
-    # app.exec_() call has not been made. If ok_cancel_msg() is used in that
+    # app.exec() call has not been made. If ok_cancel_msg() is used in that
     # condition, there is a big delay and spinning cursor on the mac. So this
     # code is called from a one-shot timer 300ms after the window has been
     # created, so we are sure the app is processing events etc.

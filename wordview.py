@@ -535,7 +535,7 @@ class WordTableView(QTableView):
             ''' Get the index for the datum under the widget-relative position '''
             self.contextIndex = self.indexAt(event.pos())
             ''' Display the popup menu which needs the global click position '''
-            self.contextMenu.exec_(event.globalPos())
+            self.contextMenu.exec(event.globalPos())
 
     ''' Slot for the "Similar words" context menu choice. '''
     def similar_words(self) :
