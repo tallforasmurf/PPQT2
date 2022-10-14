@@ -932,8 +932,13 @@ class FindPanel(QWidget):
             '''
             Normal string search: apply the QTextDocument.find() method
             passing our respect-case, whole-word and direction flags.
+            
+            Only way I can find to create a type-valid FindFlags is to
+            select one of them and then remove it. There is apparently
+            no FindFlag.<empty>
             '''
-            flags = QTextDocument.FindFlags(0)
+            flags = QTextDocument.FindFlag.FindCaseSensitively
+            flags ^= QTextDocument.FindFlag.FindCaseSensitively
             if (flag & FindPanel.SEARCH_BACKWARD) :
                 flags |= QTextDocument.FindFlag.FindBackward
             if self.sw_respect_case.isChecked() :
