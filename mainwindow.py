@@ -440,7 +440,7 @@ class MainWindow(QMainWindow):
         bw_stream = None
         #gg_stream = None
         # open the metadata stream, which is always UTF-8
-        meta_stream = utilities.related_suffix(fbts, C.METAFILE_SUFFIX, encoding=C.ENCODING_UTF)
+        meta_stream = utilities.related_suffix(fbts, C.METAFILE_SUFFIX, encoding=C.ENCODING_UTF8)
         if meta_stream is None :
             # opening book without metadata; look for .bin which is always LTN1
             # This is no longer supported - somebody who cares, can write a

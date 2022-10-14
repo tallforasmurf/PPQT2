@@ -32,6 +32,7 @@ read-only. Stylistically they should be ALL-CAP.
 from PyQt6.QtCore import PYQT_VERSION_STR
 from PyQt6.QtCore import QT_VERSION_STR
 from PyQt6.QtCore import QSize, QCoreApplication
+from PyQt6.QtCore import QStringConverter
 _TR = QCoreApplication.translate
 import platform
 PLATFORM_NAME_STR = platform.uname().system # e.g 'Darwin', 'Windows'
@@ -43,10 +44,10 @@ PLATFORM_IS_WIN = PLATFORM_NAME_STR.startswith('Win')
 STARTUP_DEFAULT_SPLITTER = b'\x00\x00\x00\xff\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x02"\x00\x00\x01\xec\x00\x00\x00\x00\x07\x01\x00\x00\x00\x01\x00'
 STARTUP_DEFAULT_SIZE = QSize(1024,600)
 
-# constant values for file encodings, just cause I was trained
-# not to go writing literal string constants everywhere
-ENCODING_UTF = 'UTF-8'
-ENCODING_LATIN = 'ISO-8859-1'
+# constant values for file encodings. Previously we could just pass the
+# string name e.g. 'UTF-8', as in Python, but Qt6 wants its bloody enum
+ENCODING_UTF8 = QStringConverter.Encoding.Utf8
+ENCODING_LATIN = QStringConverter.Encoding.Latin1
 # File suffix to tack on to a book filename to name our metadata file
 METAFILE_SUFFIX = 'ppqt'
 # constant value for the line-delimiter used by QPlainTextEdit

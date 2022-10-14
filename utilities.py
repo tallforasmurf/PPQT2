@@ -34,6 +34,7 @@ from PyQt6.QtCore import (
     QFile,
     QFileInfo,
     QIODevice,
+    QStringConverter,
     QTextStream,
     QByteArray
 )
@@ -198,7 +199,7 @@ class FileBasedTextStream(QTextStream):
 # Otherwise we open it UTF-8.
 #
 def _check_encoding(fname):
-    enc = C.ENCODING_UTF
+    enc = C.ENCODING_UTF8
     if '-l.' in fname \
     or '-ltn.' in fname \
     or '-lat.' in fname \
@@ -215,7 +216,7 @@ def _qfile_to_stream(a_file, I_or_O, encoding=None):
             a_file.error(), a_file.errorString(), f_info.fileName() ) )
         return None
     fbts = FileBasedTextStream(a_file)
-    fbts.setCodec(_check_encoding(fbts.filename()) if encoding is None else encoding)
+    fbts.setEncoding(_check_encoding(fbts.filename()) if encoding is None else encoding)
     return fbts
 
 # Convert a canonical file path to an input FileBasedTextStream, allowing for
@@ -234,8 +235,8 @@ def path_to_stream(requested_path, encoding=None):
 
 def related_file(FBTS, filename, encoding=None):
     qd = QDir( FBTS.folderpath() )
-    qd.setFilter(QDir.Files | QDir.Readable)
-    qd.setSorting(QDir.Type | QDir.Reversed)
+    qd.setFilter(QDir.Filter.Files | QDir.Filter.Readable)
+    qd.setSorting(QDir.SortFlag.Type | QDir.SortFlag.Reversed)
     qd.setNameFilters( [filename] ) # literal name or 'foo*.*'
     names = qd.entryList()
     if names : # list is not empty, open the first
@@ -257,7 +258,7 @@ def related_suffix(FBTS, suffix=C.METAFILE_SUFFIX, encoding=None):
 
 def file_less_suffix(FBTS):
     qd = QDir( FBTS.folderpath() )
-    qd.setFilter(QDir.Files | QDir.Readable)
+    qd.setFilter(QDir.Filter.Files | QDir.Filter.Readable)
     if qd.exists(FBTS.basename()):
         a_file = QFile( qd.absoluteFilePath(FBTS.basename()) )
         return _qfile_to_stream(a_file, FBTS.open_mode())
@@ -270,8 +271,7 @@ def path_to_output(requested_path, encoding=None):
     return _qfile_to_stream(a_file, QIODevice.OpenModeFlag.WriteOnly, encoding)
 
 # Given a FileBasedTextStream, try to open an output file of the same
-# basename but different suffix. Using the rather circuitous Qt
-# equivalent of os.path.join.
+# basename but different suffix.
 def related_output(FBTS, suffix, encoding=None):
     qd = QDir( FBTS.folderpath() )
     target = FBTS.filename() + '.' + suffix
@@ -282,11 +282,11 @@ def related_output(FBTS, suffix, encoding=None):
 # QTemporaryFile. When the FBTS is garbage-collected, the temp qfile goes out
 # of scope and is automatically deleted. Although based on a QTemporaryFile
 # all functions of FBTS work including filename, folderpath, rewind, etc.
-def temporary_file(encoding = 'UTF-8'):
+def temporary_file(encoding = C.ENCODING_UTF8):
     tf = QTemporaryFile()
     tf.open() # actually create the file
     fbts = FileBasedTextStream(tf)
-    fbts.setCodec(encoding)
+    fbts.setEncoding(encoding)
     return fbts
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
