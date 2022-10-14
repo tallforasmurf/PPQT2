@@ -516,9 +516,9 @@ class WordTableView(QTableView):
                 else :
                     hi = mid
             self.scrollTo(mp.index(lo,0),QAbstractItemView.ScrollHint.PositionAtCenter)
-        elif key == Qt.Key_Home :
+        elif key == Qt.Key.Key_Home :
             self.scrollToTop()
-        elif key == Qt.Key_End :
+        elif key == Qt.Key.Key_End :
             self.scrollToBottom()
         else : # pass it on to our parent class
             super().keyPressEvent(event)
