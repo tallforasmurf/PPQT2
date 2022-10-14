@@ -620,7 +620,7 @@ class GoodModel(QAbstractListModel):
         if role == Qt.ItemDataRole.DisplayRole :
             return 'Good Words'
         elif (role == Qt.ItemDataRole.TextAlignmentRole) :
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
         return None
 
     def flags(self, index):
@@ -630,7 +630,7 @@ class GoodModel(QAbstractListModel):
         if role == Qt.ItemDataRole.DisplayRole : # wants actual data
             return self.good_list[index.row()]
         elif (role == Qt.ItemDataRole.TextAlignmentRole) :
-            return Qt.AlignLeft
+            return Qt.AlignmentFlag.AlignLeft
         elif (role == Qt.ItemDataRole.ToolTipRole) or (role == Qt.ItemDataRole.StatusTipRole) :
             return _TR(
                 'Good-word list tooltip', 'Words that are always correctly spelled')
