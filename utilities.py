@@ -30,6 +30,7 @@ even though that means some lengthy call indirections.
 
 '''
 from PyQt6.QtCore import (
+    Qt,
     QDir,
     QFile,
     QFileInfo,
@@ -428,7 +429,7 @@ def beep():
 
 def _make_message ( text, icon, info = '', parent=None):
     mb = QMessageBox( parent )
-    mb.setTextFormat(Qt.PlainText)
+    mb.setTextFormat(Qt.TextFormat.PlainText)
     mb.setText( text )
     mb.setIcon( icon )
     if info:
@@ -440,14 +441,14 @@ def _make_message ( text, icon, info = '', parent=None):
 
 def info_msg ( text, info = '', parent=None ):
     mb = _make_message(text, QMessageBox.Icon.Information, info, parent)
-    mb.exec_()
+    mb.exec()
 
 # Display a modal warning message, blocking until the user clicks OK.
 # No return value.
 
 def warning_msg ( text, info = '', parent=None ):
     mb = _make_message(text, QMessageBox.Icon.Warning, info, parent)
-    mb.exec_()
+    mb.exec()
 
 # Display a modal query message, blocking until the user clicks OK/Cancel
 # Return True for OK, False for Cancel.
@@ -455,7 +456,7 @@ def warning_msg ( text, info = '', parent=None ):
 def ok_cancel_msg ( text, info = '', parent=None ):
     mb = _make_message ( text, QMessageBox.Icon.Question, info, parent)
     mb.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
-    return QMessageBox.StandardButton.Ok == mb.exec_()
+    return QMessageBox.StandardButton.Ok == mb.exec()
 
 # Display a Save/Discard/Cancel choice and return True/False/None
 # respectively. This is used by mainwindow when shutting down
@@ -465,7 +466,7 @@ def save_discard_cancel_msg( text, info = '', parent=None ):
     mb = _make_message( text, QMessageBox.Icon.Warning, info, parent)
     mb.setStandardButtons(QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel)
     mb.setDefaultButton(QMessageBox.StandardButton.Save)
-    ret = mb.exec_()
+    ret = mb.exec()
     if ret == QMessageBox.StandardButton.Cancel : return None
     return ret == QMessageBox.StandardButton.Save
 
@@ -489,7 +490,7 @@ def _string_query( title, caption, parent, prepared='', ok_label=None ):
     qd.setTextValue(prepared)
     qd.setWindowTitle(title)
     qd.setLabelText(caption)
-    ok = ( QDialog.Accepted == qd.exec_() )
+    ok = ( QDialog.Accepted == qd.exec() )
     answer = qd.textValue() if ok else ''
     return (ok, answer)
 
@@ -562,7 +563,7 @@ def show_info_dialog( caption, parent, initial_text ):
     vbox.addWidget(pt_editor,1)
     vbox.addLayout(hbox,0)
     dialog.setLayout(vbox)
-    result = dialog.exec_()
+    result = dialog.exec()
     if result :
         return pt_editor.document().toPlainText()
     else :
