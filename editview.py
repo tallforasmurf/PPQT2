@@ -632,7 +632,7 @@ class EditView( QWidget ):
             utilities.beep()
             editview_logger.debug('Request for invalid image name {0}'.format(self.ImageFilename.text()))
             self._cursor_moved()
-        self.Editor.setFocus(Qt.TabFocusReason)
+        self.Editor.setFocus(Qt.FocusReason.TabFocusReason)
     '''
     Retrieve the current line number string. Called from Notes.
     '''
@@ -760,7 +760,7 @@ class EditView( QWidget ):
     def show_this(self, tc):
         self.Editor.setTextCursor(tc)
         self.Editor.centerCursor()
-        self.Editor.setFocus(Qt.TabFocusReason)
+        self.Editor.setFocus(Qt.FocusReason.TabFocusReason)
 
     def center_position(self, pos):
         tc = self.Editor.textCursor()

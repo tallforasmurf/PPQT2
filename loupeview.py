@@ -426,7 +426,7 @@ class LoupeView(QWidget):
         if col_num > 0 :
             (pos, anchor) = edview.get_cursor_val()
             edview.show_position(pos+col_num)
-        self.view.setFocus(Qt.TabFocusReason)
+        self.view.setFocus(Qt.FocusReason.TabFocusReason)
 
     def _uic(self):
         # create the refresh button left-aligned

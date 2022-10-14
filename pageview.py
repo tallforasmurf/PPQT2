@@ -341,7 +341,7 @@ class FolioDelegate(QStyledItemDelegate):
     def createEditor(self, parent, style, index):
         if index.column() != 3 : return None # should never happen
         sb = QSpinBox(parent)
-        sb.setFocusPolicy(Qt.StrongFocus)
+        sb.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         sb.setMaximum(2000) # arbitrary limit
         return sb
     def setEditorData(self,sb,index):
