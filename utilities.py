@@ -38,6 +38,7 @@ from PyQt6.QtCore import (
     QByteArray
 )
 from PyQt6.QtWidgets import (
+    QApplication,
     QFileDialog,
     QInputDialog,
     QPlainTextEdit,
@@ -108,7 +109,7 @@ class MemoryStream(QTextStream):
         # Create a byte array that stays in scope as long as we do
         self.buffer = QByteArray()
         # Initialize the "real" QTextStream with a ByteArray buffer.
-        super().__init__(self.buffer, QIODevice.ReadWrite)
+        super().__init__(self.buffer, QIODevice.OpenModeFlag.ReadWrite)
         # Previously we set up a UTF-8 text encoder because the
         # default was the local encoding. However in Qt6, this class
         # defaults to UTF8 and has automatic Unicode detection enabled.
@@ -208,7 +209,7 @@ def _check_encoding(fname):
 # Convert a QFile for a valid path, into a FileBasedTextStream.
 # Refactored out of the following functions.
 def _qfile_to_stream(a_file, I_or_O, encoding=None):
-    if not a_file.open(I_or_O | QIODevice.Text) :
+    if not a_file.open(I_or_O | QIODevice.OpenModeFla.Text) :
         f_info = QFileInfo(a_file) # for the name
         utilities_logger.error('Error {0} ({1}) opening file {2}'.format(
             a_file.error(), a_file.errorString(), f_info.fileName() ) )
@@ -224,7 +225,7 @@ def path_to_stream(requested_path, encoding=None):
     if not a_file.exists():
         utilities_logger.error('Request for nonexistent input file {0}'.format(requested_path))
         return None
-    return _qfile_to_stream(a_file, QIODevice.ReadOnly, encoding)
+    return _qfile_to_stream(a_file, QIODevice.OpenModeFlag.ReadOnly, encoding)
 
 # Given a FileBasedTextStream (probably a document opened by the preceding
 # function), look for a related file in the same folder and if found, return
@@ -239,7 +240,7 @@ def related_file(FBTS, filename, encoding=None):
     names = qd.entryList()
     if names : # list is not empty, open the first
         a_file = QFile( qd.absoluteFilePath(names[0]) )
-        return _qfile_to_stream(a_file, QIODevice.ReadOnly, encoding)
+        return _qfile_to_stream(a_file, QIODevice.OpenModeFlag.ReadOnly, encoding)
     return None
 
 # Given a FileBasedTextStream, look for a file with the same filename plus an
@@ -266,7 +267,7 @@ def file_less_suffix(FBTS):
 # None if that isn't possible.
 def path_to_output(requested_path, encoding=None):
     a_file = QFile(requested_path)
-    return _qfile_to_stream(a_file, QIODevice.WriteOnly, encoding)
+    return _qfile_to_stream(a_file, QIODevice.OpenModeFlag.WriteOnly, encoding)
 
 # Given a FileBasedTextStream, try to open an output file of the same
 # basename but different suffix. Using the rather circuitous Qt
@@ -275,7 +276,7 @@ def related_output(FBTS, suffix, encoding=None):
     qd = QDir( FBTS.folderpath() )
     target = FBTS.filename() + '.' + suffix
     a_file = QFile( qd.absoluteFilePath(target) )
-    return _qfile_to_stream(a_file, QIODevice.WriteOnly, encoding)
+    return _qfile_to_stream(a_file, QIODevice.OpenModeFlag.WriteOnly, encoding)
 
 # Create and return a FileBasedTextStream in a temporary location. Uses
 # QTemporaryFile. When the FBTS is garbage-collected, the temp qfile goes out
