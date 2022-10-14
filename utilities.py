@@ -42,6 +42,7 @@ from PyQt6.QtWidgets import (
     QApplication,
     QFileDialog,
     QInputDialog,
+    QMessageBox,
     QPlainTextEdit,
     QProgressDialog,
     QVBoxLayout
@@ -438,35 +439,35 @@ def _make_message ( text, icon, info = '', parent=None):
 # No return value.
 
 def info_msg ( text, info = '', parent=None ):
-    mb = _make_message(text, QMessageBox.Information, info, parent)
+    mb = _make_message(text, QMessageBox.Icon.Information, info, parent)
     mb.exec_()
 
 # Display a modal warning message, blocking until the user clicks OK.
 # No return value.
 
 def warning_msg ( text, info = '', parent=None ):
-    mb = _make_message(text, QMessageBox.Warning, info, parent)
+    mb = _make_message(text, QMessageBox.Icon.Warning, info, parent)
     mb.exec_()
 
 # Display a modal query message, blocking until the user clicks OK/Cancel
 # Return True for OK, False for Cancel.
 
 def ok_cancel_msg ( text, info = '', parent=None ):
-    mb = _make_message ( text, QMessageBox.Question, info, parent)
-    mb.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-    return QMessageBox.Ok == mb.exec_()
+    mb = _make_message ( text, QMessageBox.Icon.Question, info, parent)
+    mb.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+    return QMessageBox.StandardButton.Ok == mb.exec_()
 
 # Display a Save/Discard/Cancel choice and return True/False/None
 # respectively. This is used by mainwindow when shutting down
 # or when closing a modified file.
 
 def save_discard_cancel_msg( text, info = '', parent=None ):
-    mb = _make_message( text, QMessageBox.Warning, info, parent)
-    mb.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-    mb.setDefaultButton(QMessageBox.Save)
+    mb = _make_message( text, QMessageBox.Icon.Warning, info, parent)
+    mb.setStandardButtons(QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel)
+    mb.setDefaultButton(QMessageBox.StandardButton.Save)
     ret = mb.exec_()
-    if ret == QMessageBox.Cancel : return None
-    return ret == QMessageBox.Save
+    if ret == QMessageBox.StandardButton.Cancel : return None
+    return ret == QMessageBox.StandardButton.Save
 
 # Generic internal method to display a modal request for string input and
 # wait for Ok or Cancel. The parameters are:
