@@ -336,7 +336,7 @@ class FindRepValidator(QValidator):
             string = string.replace(u'\n',u'\\n')
             posn += n
         self.partner.check_regex() # see below
-        return QValidator.Acceptable, string, posn
+        return QValidator.State.Acceptable, string, posn
 
 class FindRepEdit(QLineEdit):
     def __init__(self, my_recall, ref_to_find, sw_regex, sw_respect_case, parent=None):
