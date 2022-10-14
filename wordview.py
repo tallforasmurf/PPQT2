@@ -627,11 +627,11 @@ class GoodModel(QAbstractListModel):
         return Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
 
     def data(self, index, role ):
-        if role == Qt.DisplayRole : # wants actual data
+        if role == Qt.ItemDataRole.DisplayRole : # wants actual data
             return self.good_list[index.row()]
-        elif (role == Qt.TextAlignmentRole) :
+        elif (role == Qt.ItemDataRole.TextAlignmentRole) :
             return Qt.AlignLeft
-        elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
+        elif (role == Qt.ItemDataRole.ToolTipRole) or (role == Qt.ItemDataRole.StatusTipRole) :
             return _TR(
                 'Good-word list tooltip', 'Words that are always correctly spelled')
         # don't support other roles
