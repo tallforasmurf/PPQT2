@@ -994,7 +994,7 @@ class FindPanel(QWidget):
                     '''
                     (a, z) = fp.match.span()
                     find_tc.setPosition(z)
-                    find_tc.setPosition(a, QTextCursor.KeepAnchor)
+                    find_tc.setPosition(a, QTextCursor.MoveMode.KeepAnchor)
         return find_tc
 
     '''
@@ -1082,7 +1082,7 @@ class FindPanel(QWidget):
         
         Then if we are supposed to search again after replace, do that.
         '''
-        tc.setPosition(pa, QTextCursor.KeepAnchor)
+        tc.setPosition(pa, QTextCursor.MoveMode.KeepAnchor)
         self.editv.set_cursor(tc)
         if and_next :
             self.start_search(0)
@@ -1157,7 +1157,7 @@ class FindPanel(QWidget):
         for j in reversed(range(count)):
             m = mlist[j]
             find_tc.setPosition(m.end())
-            find_tc.setPosition(m.start(),QTextCursor.KeepAnchor)
+            find_tc.setPosition(m.start(),QTextCursor.MoveMode.KeepAnchor)
             find_tc.insertText(m.expand(r_pattern))
         find_tc.endEditBlock() # complete undo macro block
 
