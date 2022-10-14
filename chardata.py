@@ -34,30 +34,32 @@ appropriately defined in the charview module.
 
     Storing Characters
 
-Characters are stored as the keys in a dict, with the count of the character
-as the value of the key. The count is tallied during a census. (In an earlier
-version the type "sorteddict" was used, but that type has been withdrawn and
-now an ordinary dict is used, since Python 3.7 dicts promise to preserve the
-insertion sequence of data. We have to make sure when building the dict, that
-insertion sequence is also character-value sequence.
+Characters are stored as the keys in a SortedDict, self.vocab. The count of
+the character is the value of the key. The data are tallied during a census.
+The main reason we are still using SortedDict is that "view object" on a
+SortedDict can be indexed (the standard dictionary view objects cannot). This
+allows us to index into the sequence of keys, to return the character for a
+given row of the table.
 
-The char_read() method is registered with the metadata manager to read the
-CHARCENSUS section of a metadata file, and initializes the char dict as it
-was when the file was saved.
-
-During a Save, the metamanager calls the method char_save() to write the
-current census as metadata, passing a text stream to write into.
+The Chars panel calls refresh() when the user clicks that button, causing us
+to rip through the whole document counting the characters and to rebuild the
+dict and two views on it.
 
 The QAbstractTableModel in charview.py calls char_count() to size its table.
 It calls get_tuple(n) for a tuple of (char, count) for the value and count of
 the nth character in the sorted sequence.
 
-The Chars panel calls refresh() when the user clicks that button, causing us
-to rip through the whole document counting the characters and to rebuild the
-dict.
+During a Save, the metamanager calls the method char_save() to write the
+current census as metadata, passing a text stream to write into.
+
+The char_read() method is registered with the metadata manager to read the
+CHARCENSUS section of a metadata file, and initializes the char dict as it
+was when the file was saved. Thus when a book is re-opened the census is 
+already built.
 '''
 import metadata
 import constants as C
+from sortedcontainers import SortedDict
 import logging
 cd_logger = logging.getLogger(name='Char Data')
 from PyQt6.QtCore import QObject, pyqtSignal
@@ -68,16 +70,23 @@ class CharData(QObject):
 
     def __init__(self,my_book):
         super().__init__()
-        # Save access to the Book, from which we learn the metadata
-        # manager and the edit data model.
+        '''
+        Save access to the Book, from which we learn the metadata
+        manager and the edit data model.
+        '''
         self.my_book = my_book
-        # The character list as a dict {'x':count}.
-        self.census = dict()
-        # Key and Value views on the census dict, so that we can get
-        # the nth character from the sorted list.
-        self.k_view = None # supplied during refresh
-        self.v_view = None
-        # Register to handle metadata.
+        '''
+        Initialize the character census as a SortedDict {'x':count},
+        initially empty (so char_count() returns 0)
+        '''
+        self.census = SortedDict()
+        '''
+        Key and Value views on the census dict, so that we can get
+        the nth character from the sorted list.
+        '''
+        self.k_view = self.census.keys()
+        self.v_view = self.census.values()
+        ''' Register to handle metadata. '''
         self.my_book.get_meta_manager().register(C.MD_CC, self.char_read, self.char_save)
 
     '''    
@@ -114,46 +123,30 @@ class CharData(QObject):
     refresh. There is no value in trying to preserve an existing census; in
     all cases we build a new one by counting all the characters in the text.
     
-    Since 3.7, Python dicts preserve insertion sequence. We want the dict to
-    be in alphabetic sequence, so that self.census[0] or self.k_view[0] is
-    the alphabetically first character in the book. If the dict is built from
-    a scan over the book text, self.census[0] is instead, the first character
-    seen in the text (insertion order).
-    
-    So we build a scrap census dict in book text order as we scan the text.
-    Then, in one large dict comprehension, create self.census in alpha order.
     '''
     
     def refresh(self):
         editm = self.my_book.get_edit_model()
-        work = dict() # temp dict
-        self.census = None # free up some space
+        self.census = SortedDict() # garbage collect existing dict
+        work = self.census # save a few dict lookups
         self.k_view = None # also don't want these updating while
         self.v_view = None # ..we load self.census
-        # rip through text counting all chars
+        ''' Rip through text counting all chars. '''
         for line in editm.all_lines() :
             for char in line :
                 count = work.get(char,0)
                 work[char] = count+1
-        # now, sort dat dict
-        self.census = {
-            char:work[char] for char in work.keys().sort()
-            }
-        # Create the views for fast access
+        ''' Create the views for fast access '''
         self.k_view = self.census.keys()
         self.v_view = self.census.values()
-        # Reach back to the Book object and turn on the modified flag.
+        ''' Reach back to the Book object and turn on the modified flag.
+        The metadata needs saving. '''
         self.my_book.metadata_modified(C.MD_MOD_FLAG,True)
 
-    '''   
+    '''
     Pass the character census entire to be written to the metadata file. See
-    metadata.py for the interface.
-    
-    Previously we used the now-obsolete sorteddict for the census, and that
-    could not be serialized by json.dumps(), so we converted it to a list.
-    Now we are using a normal dict, which json.dumps can serialize, we can
-    just return self.census and be done with it.
-    
+    metadata.py for the interface. Metadata is written using json.dumps(),
+    which handles the SortedDict perfectly well, as a dict.
     '''
     def char_save(self, sentinel) :
         return self.census
@@ -168,18 +161,17 @@ class CharData(QObject):
     to make sure the key is a single char and the value is an int>0. Bad
     values are logged and not saved.
     
-    Also we ought not assume the metadata items are in alpha order. After all
+    Also we need not assume the metadata items are in alpha order. After all
     if the user diddled with the file they might have inserted a character
-    into the dict out of sequence. However this is extremely unlikely, so
-    rather than check for this, or go through the work of sorting what is
-    almost certainly an already-sorted dict, we ignore it. In this unlikely
-    event the display of characters will have an out-of-order value until the
-    next time it is refreshed.
+    into the dict out of sequence. However we need to convert the ordinary
+    dict returned by json.loads(), into a SortedDict anyway. So proper
+    alpha sequence will be restored automatically.
     '''
 
     def char_read(self, sentinel, value, version) :
         cd_logger.debug('Loading CHARCENSUS metadata')
-        self.census.clear()
+        ''' release existing census values for garbage collection '''
+        self.census = SortedDict()
         self.v_view = None
         self.k_view = None
         if isinstance(value,dict) :
