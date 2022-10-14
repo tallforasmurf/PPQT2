@@ -380,7 +380,7 @@ class PageTableView(QTableView):
         Size columns 1 and 2 to 10 ens, based on the font in use by
         the header. This makes room for delegates.
         '''
-        pix = hdr.fontMetrics().width("0123456789")
+        pix = hdr.fontMetrics().horizontalAdvance("0123456789")
         hdr.resizeSection(1,pix)
         hdr.resizeSection(2,pix)
         '''
