@@ -326,7 +326,7 @@ class ImageDisplay(QWidget):
         ''' ignore all keys until we are showing some image '''
         if self.no_image or (self.last_index is None) : return 
         ''' We have images to show, check the key value. '''
-        modkey = int( int(event.key() | (int(event.modifiers()) & C.KEYPAD_MOD_CLEAR)) )
+        modkey = int( int(event.key() | (int(event.modifiers()) & C.KBD_MOD_PAD_CLEAR)) )
         if modkey in C.KEYS_ZOOM :
             ''' ctrl-+/- keys, modify the zoom value '''
             event.accept()
