@@ -772,7 +772,7 @@ class EditView( QWidget ):
             self.first_center_tc = tc
         self.Editor.setTextCursor(QTextCursor(tc))
         self.Editor.centerCursor()
-        self.Editor.setFocus(Qt.TabFocusReason)
+        self.Editor.setFocus(Qt.FocusReason.TabFocusReason)
     '''
     Lots of other code needs a textcursor for the current document.
     '''
