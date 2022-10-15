@@ -622,30 +622,30 @@ def to_alpha( n, lc=True ) :
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Diagnostic routines for evaluating events
 # TODO REMOVE
-#from PyQt6.QtCore import QEvent, Qt
-#from PyQt6.QtGui import QMouseEvent, QKeyEvent
-#def printEventMods(mods):
-    #'''
-    #Return a string containing names of the modifier bits in mods.
-    #mods is from event.modifiers.
-    #'''
-    #imods = int(mods)
-    #cmods = u''
-    #if imods & Qt.ControlModifier : cmods += u'Ctl '
-    #if imods & Qt.AltModifier: cmods += u'Alt '
-    #if imods & Qt.ShiftModifier : cmods += u'Shft '
-    #if imods & Qt.KeypadModifier : cmods += u'Kpd '
-    #if imods & Qt.MetaModifier : cmods += u'Meta '
-    #return cmods
-#def printKeyEvent(event):
-    #key = int(event.key())
-    #mods = int(event.modifiers().value)
-    #if key & 0x01000000 : # special/standard key
-        #print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
-    #else:
-        #cmods = printEventMods(mods)
-        #cmods += "'{0:c}'".format(key)
-        #print('data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
+from PyQt6.QtCore import QEvent, Qt
+from PyQt6.QtGui import QMouseEvent, QKeyEvent
+def printEventMods(mods):
+    '''
+    Return a string containing names of the modifier bits in mods.
+    mods is from event.modifiers.
+    '''
+    imods = int(mods)
+    cmods = u''
+    if imods & Qt.KeyboardModifier.ControlModifier.value : cmods += u'Ctl '
+    if imods & Qt.KeyboardModifier.AltModifier.value: cmods += u'Alt '
+    if imods & Qt.KeyboardModifier.ShiftModifier.value : cmods += u'Shft '
+    if imods & Qt.KeyboardModifier.KeypadModifier.value : cmods += u'Kpd '
+    if imods & Qt.KeyboardModifier.MetaModifier.value : cmods += u'Meta '
+    return cmods
+def printKeyEvent(event):
+    key = int(event.key())
+    mods = int(event.modifiers().value)
+    if key & 0x01000000 : # special/standard key
+        print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
+    else:
+        cmods = printEventMods(mods)
+        cmods += "'{0:c}'".format(key)
+        print('data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
 
 #_Mevs = [2,3,4,5]
 #_Mnm = {QEvent.MouseButtonPress:'Down',
