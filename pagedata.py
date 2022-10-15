@@ -216,8 +216,8 @@ class PageData(QObject):
         ''' Flag that's True if we have data and are open for business '''
         self._active = False
         ''' Last-returned position and row: see page_index() below '''
-        self.last_pos = None
-        self.last_row = 0
+        self.prior_P = None
+        self.prior_R = 0
         ''' Set of rows having an explicit folio format, as opposed to "same" '''
         self.explicit_formats = set()
     '''
@@ -231,8 +231,8 @@ class PageData(QObject):
         self.folio_list = []
         self.proofers_list = []
         self._active = False
-        self.last_pos = None
-        self.last_row = 0
+        self.prior_P = None
+        self.prior_R = 0
         self.explicit_formats = set()
     '''
     Scan all lines of a new document (one with no metadata) and create page
@@ -362,9 +362,10 @@ class PageData(QObject):
         return len(self.filename_list)
 
     '''
-    Return the row index R of the scan page matching a document offset.
+    Return the row index R of the scan page matching a document position.
+    
     Return None if the user is "off the top" in text preceding the first
-    page.
+    known page.
     
     imageview and editview call this every time the user moves the cursor, so
     it needs to be quick. Use binary search to find the cursor in the
@@ -376,12 +377,14 @@ class PageData(QObject):
     * forward or backward, the user typically stays on one page for a while.
     * when the user moves off a page it is often to the adjacent page
     
-    So we cache the last-checked position P and also the row index of the
-    last-returned page R.
+    So we cache the last-given position prior_P and also the row index
+    prior_R of the last-returned page.
     
-        If P == last_position : return F
-        If P > cursor_list[R].position(),
-            if P < cursor_list[R+1].position(): return F
+        If P == prior_P : return prior_R
+        If P > cursor_list[prior_R].position(),
+            # forward: we are on the same or higher page
+            if P < cursor_list[prior_R+1].position():
+                return prior_R # still on same page
             check if P is in page R+1
             else setup binary search between R and max
         else
@@ -389,62 +392,69 @@ class PageData(QObject):
             else setup binary search between 0 and R
     '''
     def page_index(self,P):
-        if self._active:
-            if P == self.last_pos : return self.last_row
-            ''' moved to a new position '''
-            self.last_pos = P
-            R = self.last_row
+        if not self._active:
+            ''' Nothing to tell, return None '''
+            return
+        if P == self.prior_P :
+            ''' no change, probably 2nd call for same move '''
+            return self.prior_R
+        ''' Cursor moved to a new position from prior_P '''
+        self.prior_P = P # save for next time
+        R = self.prior_R # save Python several dict lookups
+        ''' Have we moved upward or downward in the document? '''
+        if P >= self.cursor_list[R].position() :
             '''
-            Maybe we are still on the same page span? Note that the final
-            cursor is a sentinel set to the end of the document, so this test
-            succeeds even if P is on or beyond the last known page
+            Maybe we are still on the same page, i.e. still between cursor R
+            and cursor R+1? Note that the final cursor in the list is a
+            sentinel set to the end of the document, so this test is safe
+            even if P is on or beyond the last known page
             '''
             if P < self.cursor_list[R+1].position() :
                 ''' still in the range of the previous page '''
-                return R
-            if P >= self.cursor_list[R].position() :
-                '''
-                Moving downward in document. Take the time to check the page
-                R+1 before doing the binary search. We know there exists a
-                row R+1 because the previous test traps P in the last page.
-                '''
-                if P < self.cursor_list[R+2].position() :
-                    self.last_row = R+1 # no can't use := here
-                    return self.last_row
-                ''' Moved on, search in the bottom part of the list '''
-                hi = len(self.cursor_list) - 1
-                lo = R+1
+                return R # which is still == self.prior_R
+            '''
+            Moved downward past page prior_R. Take the time to check the page
+            R+1 before doing the binary search. We know there exists a row
+            R+1 because the preceding test succeeds for P in the last page.
+            '''
+            if P < self.cursor_list[R+2].position() :
+                self.prior_R = R+1 # no can't use := here
+                return self.prior_R
+            '''
+            Moved down past R+1, do binary search in the bottom part of
+            the list
+            '''
+            hi = len(self.cursor_list) - 1
+            lo = R+1
+        else :
+            '''
+            Moved upward in the document. Check if the user has gone off
+            into text preceding the known page 1.
+            '''
+            if P < self.cursor_list[0].position() :
+                self.prior_R = 0 # must keep a valid row
+                return None
+            '''
+            Take the time to check page R-1 before committing to a full
+            search. We know there is a row R-1 because if P was still in,
+            page 0 or above it, one of the preceding tests would have
+            caught it.
+            '''
+            if P >= self.cursor_list[R-1].position() :
+                self.prior_R = R-1
+                return self.prior_R
+            ''' OK, sigh, search the upper range of the list '''
+            hi = R
+            lo = 0
+        ''' Classic binary search for the page containing position P '''
+        while lo < hi :
+            mid = (lo + hi)//2
+            if P < self.cursor_list[mid].position() :
+                hi = mid
             else :
-                '''
-                Moved upward in the document. Check if the user has gone off
-                into text preceding the known page 1.
-                '''
-                if P < self.cursor_list[0].position() :
-                    self.last_row = 0 # must keep a valid row
-                    return None
-                '''
-                Take the time to check page R-1 before committing to a full
-                search. We know there is a row R-1 because if P was still in,
-                or above, page 0, one of the preceding tests would have
-                caught it.
-                '''
-                if P >= self.cursor_list[R-1].position() :
-                    self.last_row = R-1
-                    return self.last_row
-                ''' OK, sigh, search the upper range of the list '''
-                hi = R
-                lo = 0
-            ''' Classic binary search for the page containing position P '''
-            while lo < hi :
-                mid = (lo + hi)//2
-                if P < self.cursor_list[mid].position() :
-                    hi = mid
-                else :
-                    lo = mid + 1
-            self.last_row = lo-1
-            return self.last_row
-        # else not active
-        return None # no data
+                lo = mid + 1
+        self.prior_R = lo-1
+        return self.prior_R
 
     '''
     Return the index of a user-entered filename (in editview). This is called
