@@ -487,13 +487,13 @@ def save_discard_cancel_msg( text, info = '', parent=None ):
 
 def _string_query( title, caption, parent, prepared='', ok_label=None ):
     qd = QInputDialog(parent)
-    qd.setInputMode(QInputDialog.TextInput)
+    qd.setInputMode(QInputDialog.inputMode.TextInput)
     if ok_label is not None :
         qd.setOkButtonText(ok_label)
     qd.setTextValue(prepared)
     qd.setWindowTitle(title)
     qd.setLabelText(caption)
-    ok = ( QDialog.Accepted == qd.exec() )
+    ok = ( QDialog.DialogCode.Accepted == qd.exec() )
     answer = qd.textValue() if ok else ''
     return (ok, answer)
 
