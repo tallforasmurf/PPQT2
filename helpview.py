@@ -60,7 +60,10 @@ import os # for access, path.join
 # no need for logging
 
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWebEngineCore import QWebEnginePage
+from PyQt6.QtWebEngineCore import (
+    QWebEnginePage,
+    QWebEngineFindTextResult
+    )
 
 from PyQt6.QtWidgets import QWidget, QHBoxLayout
 
@@ -93,8 +96,6 @@ class HelpWidget(QWidget) :
             _TR( "title of help viewer window", "PPQT Help Viewer" ) )
         # Initialize saved geometry, see showEvent()
         self.last_shape = None
-        # Initialize find string, see find_action().
-        self.find_text = None
         self.view = QWebEngineView()
         hb = QHBoxLayout()
         hb.addWidget(self.view)
@@ -143,12 +144,6 @@ class HelpWidget(QWidget) :
         if kkey == C.CTL_F :
             event.accept()
             self.find_action()
-        elif kkey == C.CTL_G :
-            event.accept()
-            self.find_next_action()
-        elif kkey == C.CTL_SHFT_G :
-            event.accept()
-            self.find_prior_action()
         elif kkey in C.KEYS_WEB_BACK :
             event.accept()
             if self.view.history().canGoBack() :
@@ -165,50 +160,52 @@ class HelpWidget(QWidget) :
         else :
             super().keyPressEvent(event)
 
-    # Methods for a basic Find operation. Other modules e.g. noteview have a
-    # custom Edit menu with Find/Next as menu actions. Here we do not support
-    # any editing actions, so support Find/Next/Prior only via keystrokes.
-    #
-    # Use the simple find dialog in utilities to get a string to look for.
-    # Initialize the dialog with up to 40 chars of the current selection. If
-    # the user clicks Cancel in the Find dialog, self.find_text is None; if
-    # the user just clears the input area and clicks OK the find_text is an
-    # empty string. In either case do nothing.
-    #
-    # Following a successful find, the found text is selected in the view, so
-    # if you do ^f again without disturbing that selection, that text is back
-    # in the dialog to be used or replaced. So ^f+Enter is the same as ^g.
+    '''
+    Methods for a basic Find operation. Other modules e.g. noteview have a
+    custom Edit menu with Find/Next as menu actions. Here we do not support
+    any editing actions, so support Find only via the ^f keystroke.
     
+    Use the simple input dialog in utilities to get a string to look for.
+    Initialize the dialog with up to 40 chars of the current selection. If
+    the user clicks Cancel in the Find dialog, self.find_text is None; if
+    the user just clears the input area and clicks OK the find_text is an
+    empty string. In either case do nothing.
+    
+    The actual find operation of QWebEngineView has changed radically in Qt6.
+    You call view.findText passing the string and find flags, and also a
+    function to receive a QWebEngineFindTextResult object. This function is
+    called asynchronously.
+    
+    During the find operation, all matching strings in the view are highlighted
+    (selected), thus there is no longer any value in find-next or find-prior
+    operations and those keystrokes have been eliminated here.
+    
+    We initiate the find and return. At some later time, _receive_find_result
+    is entered. It looks to see if there were any hits; if not, it beeps.
+    That's all there is any more, to find.
+    '''
     FIND_NORMAL = QWebEnginePage.FindFlag.FindCaseSensitively
-    FIND_PRIOR = QWebEnginePage.FindFlag.FindBackward | QWebEnginePage.FindFlag.FindCaseSensitively
 
     def find_action(self):
         prep_text = self.view.selectedText()[:40]
-        self.find_text = utilities.get_find_string(
+        find_text = utilities.get_find_string(
             _TR('Help viewer find dialog','Text to find'),
             self, prep_text)
-        if self.find_text : # is not None nor an empty string
-            self._do_find( self.FIND_NORMAL )
+        if find_text : # is not None nor an empty string
+            self.view.findText( find_text, self.FIND_NORMAL, self._receive_find_result )
+    
+    def _receive_find_result(self, result):
+        if result.numberOfMatches() > 0: return
+        utilities.beep()
 
-    # For ^g Find Next, if there is no active find-text pretend that ^f was
-    # hit. If there was a prior search, repeat the search.
-    def find_next_action(self):
-        if self.find_text : # is not None nor an empty string
-            self._do_find( self.FIND_NORMAL )
-        else :
-            self.find_action()
-
-    # for ^G Find Prior, same as for ^g but backward.
-    def find_prior_action(self):
-        if self.find_text :
-            self._do_find( self.FIND_PRIOR )
-        else :
-            self.find_action()
-
-    # The actual search, factored out of the above actions. The WebEngineView
-    # search doesn't wrap around. If the search fails, just beep. The user
-    # has to figure out to go to the top manually.
-
-    def _do_find( self, find_flags ) :
-        if not self.view.page().findText( self.find_text, find_flags ):
-            utilities.beep()
+if __name__ == '__main__':
+    from PyQt6.QtWidgets import QApplication
+    args = []
+    the_app = QApplication( args )
+    the_app.setOrganizationName( "PGDP" )
+    the_app.setOrganizationDomain( "pgdp.net" )
+    the_app.setApplicationName( "PPQT2" )
+    test_page = HelpWidget()
+    test_page.show()
+    the_app.exec()
+        
