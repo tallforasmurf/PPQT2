@@ -241,25 +241,25 @@ def set_current_line_format(qtcf):
     global _CL_COLOR, _CL_STYLE
     (_CL_COLOR, _CL_STYLE) = _parse_format(qtcf)
     _emit_signal()
-    colors_logger.debug('Set current line format to {} {}'.format(int(_CL_STYLE),_CL_COLOR.name()))
+    colors_logger.debug('Set current line format to {} {}'.format(int(_CL_STYLE.value),_CL_COLOR.name()))
 
 def set_find_range_format(qtcf):
     global _FR_COLOR, _FR_STYLE
     (_FR_COLOR, _FR_STYLE) = _parse_format(qtcf)
     _emit_signal()
-    colors_logger.debug('Set find range format to {} {}'.format(int(_FR_STYLE),_FR_COLOR.name()))
+    colors_logger.debug('Set find range format to {} {}'.format(int(_FR_STYLE.value),_FR_COLOR.name()))
 
 def set_scanno_format(qtcf):
     global _SNO_COLOR, _SNO_STYLE
     (_SNO_COLOR, _SNO_STYLE) = _parse_format(qtcf)
     _emit_signal()
-    colors_logger.debug('Set scanno format to {0} {1}'.format(int(_SNO_STYLE),_SNO_COLOR.name()))
+    colors_logger.debug('Set scanno format to {0} {1}'.format(int(_SNO_STYLE.value),_SNO_COLOR.name()))
 
 def set_spelling_format(qtcf):
     global _SPU_COLOR, _SPU_STYLE
     (_SPU_COLOR, _SPU_STYLE) = _parse_format(qtcf)
     _emit_signal()
-    colors_logger.debug('Set spelling format to {0} {1}'.format(int(_SPU_STYLE),_SPU_COLOR.name()))
+    colors_logger.debug('Set spelling format to {0} {1}'.format(int(_SPU_STYLE.value),_SPU_COLOR.name()))
 
 '''
 Generic color-picker dialog to be called by the Preferences dialog.
