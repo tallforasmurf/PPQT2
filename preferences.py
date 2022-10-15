@@ -73,11 +73,15 @@ from PyQt6.QtCore import pyqtSignal
 
 from PyQt6.QtWidgets import (
     QApplication,
+    QComboBox,
     QDialog,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
-    QTextEdit
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout
 )
 from PyQt6.QtGui import (
     QColor,
@@ -155,7 +159,7 @@ class ChooseFixedFont( ChoiceWidget ) :
                           explainer )
         self.fcb = QComboBox()
         self.fcb.addItems( fonts.list_of_good_families() )
-        self.fcb.activated[str].connect( self.choice_made )
+        self.fcb.textActivated.connect( self.choice_made )
         self.layout().addWidget(self.fcb)
         self.reset() # set the current font
         self.explanation = _TR( 'Preference item details',
@@ -190,7 +194,7 @@ class ChooseDefaultDict( ChoiceWidget ):
                           explainer )
         self.dcb = QComboBox()
         self.layout().addWidget(self.dcb)
-        self.dcb.activated[str].connect( self.choice_made )
+        self.dcb.textActivated.connect( self.choice_made )
         self.reset() # load the combobox
         paths.notify_me( self.path_changed )
         self.explanation = _TR( 'Preference item details',
@@ -424,7 +428,7 @@ color or combobox changes, update the sample to show the effect.
 underline styles 0..6 for loading the combobox.
 '''
 
-UNDERLINES = {
+UNDERLINE_NAMES = {
     QTextCharFormat.UnderlineStyle.NoUnderline : 'No underline',
     QTextCharFormat.UnderlineStyle.SingleUnderline : 'Single',
     QTextCharFormat.UnderlineStyle.DashUnderline : 'Dash',
@@ -433,7 +437,7 @@ UNDERLINES = {
     QTextCharFormat.UnderlineStyle.DashDotDotLine : 'Dash-dot-dot',
     QTextCharFormat.UnderlineStyle.WaveUnderline : 'Wave'
 }
-
+UNDERLINE_VALUES = list(UNDERLINE_NAMES.keys())
 class FormatChoice( ChoiceWidget ) :
     # combobox value
     def __init__( self, title, explainer ) :
@@ -442,8 +446,8 @@ class FormatChoice( ChoiceWidget ) :
         self.text_format = QTextCharFormat()
         # Set up the underline menu
         self.ul_menu = QComboBox()
-        self.ul_menu.addItems( list( UNDERLINES.values() ) )
-        self.ul_menu.currentIndexChanged[int].connect(self.ul_change)
+        self.ul_menu.addItems( list( UNDERLINE_NAMES.values() ) )
+        self.ul_menu.currentIndexChanged.connect(self.ul_change)
         self.layout().addWidget( self.ul_menu, 0 )
         # Set up the color swatch
         self.swatch = Swatch( self )
@@ -458,8 +462,9 @@ class FormatChoice( ChoiceWidget ) :
     '''
     def make_format( self, ul_index, qc ) :
         qtcf = QTextCharFormat()
-        qtcf.setUnderlineStyle( ul_index )
-        if ul_index == QTextCharFormat.UnderlineStyle.NoUnderline :
+        style = UNDERLINE_VALUES[ul_index]
+        qtcf.setUnderlineStyle( style )
+        if style == QTextCharFormat.UnderlineStyle.NoUnderline :
             qtcf.setBackground(QBrush(qc))
         else :
             qtcf.setUnderlineColor(qc) # underline color gets a QColor
@@ -475,7 +480,7 @@ class FormatChoice( ChoiceWidget ) :
         else :
             qc = self.text_format.underlineColor()
         self.swatch.set_color( qc )
-        self.ul_menu.setCurrentIndex( un )
+        self.ul_menu.setCurrentIndex( un.value )
         self.sample.change_format(self.text_format)
     '''
     Handle a change in selection of the underline popup
