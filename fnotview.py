@@ -190,7 +190,7 @@ class FnoteTableModel(QAbstractTableModel):
     the renumbering tool.
     '''
     def flags(self,index):
-        return Qt.ItemIsEnabled
+        return Qt.ItemFlag.ItemIsEnabled
     '''
     Return the count of rows. This will be 0 until a refresh is done.
     '''
