@@ -41,11 +41,14 @@ from PyQt6.QtCore import (
 )
 from PyQt6.QtWidgets import (
     QApplication,
+    QDialog,
     QFileDialog,
+    QHBoxLayout,
     QInputDialog,
     QMessageBox,
     QPlainTextEdit,
     QProgressDialog,
+    QPushButton,
     QVBoxLayout
 )
 import constants as C # for encoding names
