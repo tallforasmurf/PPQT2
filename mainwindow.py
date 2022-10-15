@@ -673,7 +673,7 @@ class MainWindow(QMainWindow):
     # show it.
     def _preferences( self ) :
         p = preferences.PreferenceDialog( self )
-        r = p.exec_()
+        r = p.exec()
 
 
     ## -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
