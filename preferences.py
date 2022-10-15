@@ -69,7 +69,7 @@ import utilities
 
 import os
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QCoreApplication
 
 from PyQt6.QtWidgets import (
     QApplication,
