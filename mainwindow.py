@@ -174,7 +174,7 @@ import colors
 import constants as C
 import logging
 import utilities
-#import helpview
+import helpview
 import book
 #import translators # TODO - reenable translators
 mainwindow_logger = logging.getLogger(name='main_window')
@@ -599,7 +599,7 @@ class MainWindow(QMainWindow):
                 'Choose file to contain find button definitions'),
             self,
             starting_path=target_book.get_last_find_button_path(),
-            encoding='UTF-8')
+            encoding=C.ENCODING_UTF8)
         if stream : # is not None, file is open
             target_book.set_last_find_button_path( stream.fullpath() )
             find_panel.user_button_output(stream)
@@ -613,7 +613,7 @@ class MainWindow(QMainWindow):
                 'Choose a file of find button definitions'),
             self,
             starting_path=target_book.get_last_find_button_path(),
-            encoding='UTF-8')
+            encoding=C.ENCODING_UTF8)
         if stream :# is not None, we opened it
             target_book.set_last_find_button_path( stream.fullpath() )
             find_panel.user_button_input(stream)
@@ -676,14 +676,14 @@ class MainWindow(QMainWindow):
         r = p.exec()
 
 
-    ## -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    ## Help menu action triggered. If the Help widget has not yet been
-    ## created, create it. Otherwise just show it and raise it.
-    #def _show_help(self):
-        #if self.help_widget is None:
-            #self.help_widget = helpview.HelpWidget()
-        #self.help_widget.show()
-        #self.help_widget.raise_()
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # Help menu action triggered. If the Help widget has not yet been
+    # created, create it. Otherwise just show it and raise it.
+    def _show_help(self):
+        if self.help_widget is None:
+            self.help_widget = helpview.HelpWidget()
+        self.help_widget.show()
+        self.help_widget.raise_()
 
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # Create the UI contained within this QMainWindow object. This is a lean
@@ -788,11 +788,11 @@ class MainWindow(QMainWindow):
         # Put in a divider above the Help, Preferences and Quit actions.
         self.file_menu.addSeparator()
 
-        ## Help opens or un-hides the Help viewer
-        #work = self.file_menu.addAction( _TR('Help menu item', 'Help') )
-        #work.setToolTip( _TR( 'Help menu item tooltip', 'Display the Help/User Manual in a separate window' ) )
-        #work.triggered.connect(self._show_help)
-        #self.file_menu.addAction(work)
+        # Help opens or un-hides the Help viewer
+        work = self.file_menu.addAction( _TR('Help menu item', 'Help') )
+        work.setToolTip( _TR( 'Help menu item tooltip', 'Display the Help/User Manual in a separate window' ) )
+        work.triggered.connect(self._show_help)
+        self.file_menu.addAction(work)
 
         # Preferences: On the Mac, Preferences is automatically moved to the app menu.
         work = self.file_menu.addAction( _TR('Preferences menu item', 'Preferences') )
