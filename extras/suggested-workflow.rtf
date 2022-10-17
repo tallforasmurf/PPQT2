@@ -1,111 +1,113 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1348\cocoasubrtf170
-\cocoascreenfonts1{\fonttbl\f0\froman\fcharset0 Palatino-Roman;\f1\fmodern\fcharset0 Courier;\f2\fswiss\fcharset0 Helvetica;
-\f3\fnil\fcharset0 LucidaGrande;\f4\fmodern\fcharset0 CourierNewPSMT;\f5\fnil\fcharset0 Monaco;
-\f6\fmodern\fcharset0 Courier-Bold;}
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoascreenfonts1\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Palatino-Bold;\f1\froman\fcharset0 Palatino-Roman;\f2\fmodern\fcharset0 Courier;
+\f3\fswiss\fcharset0 Helvetica;\f4\froman\fcharset0 Palatino-BoldItalic;\f5\fnil\fcharset0 LucidaGrande;
+\f6\froman\fcharset0 Palatino-Italic;\f7\fmodern\fcharset0 CourierNewPSMT;\f8\fnil\fcharset0 Monaco;
+\f9\fmodern\fcharset0 Courier-Bold;}
 {\colortbl;\red255\green255\blue255;}
-\margl1440\margr1440\vieww13100\viewh21840\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\qc
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww13100\viewh17760\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\qc\partightenfactor0
 
 \f0\b\fs28 \cf0 A Post-Processing Workflow\
 Using PPQT2\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\pardirnatural\partightenfactor0
 \cf0 \
 
-\b0 These are the steps I take using PPQT2 to post-process a moderately complex book. The notes here will show you how the features of PPQT2 work together to make post-processing easier.\
+\f1\b0 These are the steps I take using PPQT2 to post-process a moderately complex book. The notes here will show you how the features of PPQT2 work together to make post-processing easier.\
 
-\b \
+\f0\b \
 1. Set up book folder.\
 
-\b0 \
+\f1\b0 \
 Create a folder for the book anywhere you like. Name the folder whatever you like. (I use the project ID as it is sure to be unique.)\
 \
 Download the text of the book and the scan images. Unpack the 
-\f1 .zip 
-\f0 files and move their contents into the book folder. Discard the 
-\f1 .zip
-\f0  files. The book folder should now contain:\
+\f2 .zip 
+\f1 files and move their contents into the book folder. Discard the 
+\f2 .zip
+\f1  files. The book folder should now contain:\
 \
 * the text, e.g. 
-\f1 projectIDxxxxxxxxxxx.txt
-\f0 \
+\f2 projectIDxxxxxxxxxxx.txt
+\f1 \
 * 
-\f1 good_words.txt
-\f0 \
+\f2 good_words.txt
+\f1 \
 * 
-\f1 bad_words.txt 
-\f0 if it was provided\
+\f2 bad_words.txt 
+\f1 if it was provided\
 * 
-\f1 projectIDxxxxxxxxxxx_comments.html
-\f0  - the project comments as an html file\
+\f2 projectIDxxxxxxxxxxx_comments.html
+\f1  - the project comments as an html file\
 \
 PPQT2 expects all text files to be encoded UTF-8. If the text file, good_words, and/or bad_words files are encoded Latin-1 (as text files from DP-U.S. often are) then rename them to show this:\
 \
 * 
-\f1 projectIDxxxxxxxxxxx-ltn.txt
-\f0 \
+\f2 projectIDxxxxxxxxxxx-ltn.txt
+\f1 \
 * 
-\f1 good_words-ltn.txt
-\f0 \
+\f2 good_words-ltn.txt
+\f1 \
 * 
-\f1 bad_words-ltn.txt
-\f0 \
+\f2 bad_words-ltn.txt
+\f1 \
 \
 Unzip the folder of scan images, move it to the book folder, and rename it to 
-\f1 pngs
-\f0 .\
+\f2 pngs
+\f1 .\
   \
 If the book has illustrations, create the 
-\f1 images
-\f0  folder to contain them, in this same book folder.\
+\f2 images
+\f1  folder to contain them, in this same book folder.\
 \
 If there are high-resolution scans for illustrations (either in a separate zip file or in the 
-\f1 pngs
-\f0  folder), create another folder to hold them (I usually name it 
-\f1 hires
-\f0  for high-resolution scans)
-\f2\fs24 .
-\f0\fs28  You'll work on them in step 22.\
+\f2 pngs
+\f1  folder), create another folder to hold them (I usually name it 
+\f2 hires
+\f1  for high-resolution scans)
+\f3\fs24 .
+\f1\fs28  You'll work on them in step 22.\
 \
 It is also useful to save the URL of the project page, which you can do by simply dragging the URL from the address bar of a web browser and dropping it in the open book folder. Then you can double-click it to get back to the project page whenever you want.\
 \
 
-\b 2. First Open\
+\f0\b 2. First Open\
 
-\b0 \
+\f1\b0 \
 Start PPQT2. Use File>Open to open the book. Its text appears in the Edit panel.\
 \
 Select the Chars panel and click Refresh. Click the Symbol column heading to make the table sort from high numbers to low (if it is not that way already). Note if the highest-numbered symbol is  (0xfffd, the replacement character). \
 \
 
-\b If the book has any of these, it was opened with the wrong encoding.
-\b0  
-\i\b \ul Close the book immediately without saving!
-\i0 \ulnone  
-\b0 Perhaps it is a Latin-1 file opened as UTF-8, or it has some other encoding such as Windows CP-1252. Find out how it is encoded. If it is Latin-1, rename the file appropriately. Otherwise, use some other utility to convert it to UTF-8. Then start this step over.
-\f3 \
+\f0\b If the book has any of these, it was opened with the wrong encoding.
+\f1\b0  
+\f4\i\b \ul Close the book immediately without saving!
+\f0\i0 \ulnone  
+\f1\b0 Perhaps it is a Latin-1 file opened as UTF-8, or it has some other encoding such as Windows CP-1252. Find out how it is encoded. If it is Latin-1, rename the file appropriately. Otherwise, use some other utility to convert it to UTF-8. Then start this step over.
+\f5 \
 
-\f0 \
+\f1 \
 When the book does not contain any replacement characters, select the Images panel. In the Edit panel, page forward rapidly. The scan images will be displayed to match the cursor position.\
 \
 
-\b 3. First Save.\
+\f0\b 3. First Save.\
 
-\b0 \
+\f1\b0 \
 Use File>Save to save the book. This creates the 
-\i bookname
-\f1\i0 .ppqt2
-\f0  file in the book folder.\
+\f6\i bookname
+\f2\i0 .ppqt2
+\f1  file in the book folder.\
 \
 
-\b 4. Turn on Scanno Highlights.\
+\f0\b 4. Turn on Scanno Highlights.\
 
-\b0 \
+\f1\b0 \
 Right-click (Mac: control-click) in the Edit panel and from the context menu select Scanno File... Choose a file of common "scannos" such as the file en-common-ltn.txt in the Extras folder. Right-click again and choose Mark Scannos. Page back and forth in the text and note the lilac-colored highlights on common words such as "be".\
 \
 
-\b 5. First editing pass.\
+\f0\b 5. First editing pass.\
 
-\b0 \
+\f1\b0 \
 Read sequentially through the book. This is the longest single step. It will take several hours at least; possibly several days.\
 \
 Your aims in this first pass are, first, to repair things that are broken or misplaced by page boundaries; and second, to double-check text formatting. Do the following checks and edits on each page from first to last:\
@@ -121,10 +123,10 @@ d. If a paragraph ends at the bottom of a page, check that there is a blank line
 e. Note where a style markup (italic, etc.) is broken over the page boundary. Remove the superfluous markup above and below the  page separator.\
 \
 f. Observe any quotes, poetry and tables. Make sure they are appropriately marked per the formatting guidelines (
-\f1 /#..#/
-\f0  for quotes and 
-\f1 /*..*/
-\f0  for everything else) and have a blank line before and after the markup lines.\
+\f2 /#..#/
+\f1  for quotes and 
+\f2 /*..*/
+\f1  for everything else) and have a blank line before and after the markup lines.\
 \
 g. Note where a table, quote, or poem spans the page boundary. Remove superfluous markup delimiters above and below the page separator. (These block markups have their own steps later.)\
 \
@@ -141,9 +143,9 @@ l. Make notes in the Notes panel about anything that might need attention later 
 Perform these actions on each page to the end of the book.\
 \
 
-\i Pro-tip: Using bookmarks.\
+\f6\i Pro-tip: Using bookmarks.\
 
-\i0 \
+\f1\i0 \
 PPQT supports 9 bookmarks. I like to set bookmark 9 as I start a new page.\
 Then I can page around in the book to check something else, and quickly return to where I was. Set bookmark 9 by keying alt-ctl-9 (Mac: cmd-ctl-9).\
 \
@@ -153,56 +155,56 @@ For example, I often set bookmark 1 at the head of the Table of Contents.\
 You don't need to set bookmarks at the very beginning or very end of the book. You can always reach the beginning with control-Home (Mac: command-Up) and the end with control-End (command-Down).\
   \
 
-\i Pro-tip: Moving notes by dragging.\
+\f6\i Pro-tip: Moving notes by dragging.\
 
-\i0 \
+\f1\i0 \
 Here's a tip on moving footnotes, illustrations and sidenotes. Select the text from the end of the preceding line to the end of the note, for example:\
 \
 
-\f1 the last line on the page, not end of a para-*
-\f3 \uc0\u8592 
-\f0\fs24 click down there
-\f4\fs28 \
+\f2 the last line on the page, not end of a para-*
+\f5 \uc0\u8592 
+\f1\fs24 click down there
+\f7\fs28 \
 
-\f1 \
+\f2 \
 [Footnote A: some footnote that needs to be moved down.]\
 -----File> 257.png--- page separator ---
 \fs24  
-\f4\fs28       
-\f0\fs24 drag to there
-\f3\fs28 \uc0\u8593 
-\f4 \
+\f7\fs28       
+\f1\fs24 drag to there
+\f5\fs28 \uc0\u8593 
+\f7 \
 
-\f1 *graph, but continues to here.
-\f3 \uc0\u8592 
-\f0\fs24 drop selection here
-\f4\fs28 \
+\f2 *graph, but continues to here.
+\f5 \uc0\u8592 
+\f1\fs24 drop selection here
+\f7\fs28 \
 
-\f0 \
+\f1 \
 Click just right of the last letter on the line above the note. Drag just through the right bracket of the markup, and let go. You have selected the newline preceding the note, through the note, but not the newline at the end of the note. Now click down on the selected text and drag it, dropping it when the insertion point is just right of the line above the destination. This preserves all line-breaks without using the keyboard.\
 \
 
-\b 6. Asterisk Removal: Proofer comments, typos, odd hyphens\
+\f0\b 6. Asterisk Removal: Proofer comments, typos, odd hyphens\
 
-\b0 \
+\f1\b0 \
 Proofers leave asterisks to mark doubtful things; now resolve them. Use find (non-regex) to look for any asterisk. (Use ctl-g to step rapidly from asterisk to asterisk.)\
 \
 If the proofers entered a thought-break as five asterisks, change it to <tb>. We'll change it back later.\
 \
 If the proofers left a footnote key as 
-\f1 [*]
-\f0 , change the key to a capital letter as stated in the guidelines.\
+\f2 [*]
+\f1 , change the key to a capital letter as stated in the guidelines.\
 \
 When a hyphenated word at the end of a line is marked with an asterisk, the proofer wasn't sure whether to retain the hyphen. Search the book for similar words and make the dubious word consistent, either hyphenated or not. (Record your decision in the Notes tab.)\
 \
 When the proofers have found a definite typo, mark it thus:\
   
-\f1 [typo:
-\f0\i originaltext
-\f1\i0 |
-\f0\i correctedtext
-\f1\i0 ]
-\f0 \
+\f2 [typo:
+\f6\i originaltext
+\f2\i0 |
+\f6\i correctedtext
+\f2\i0 ]
+\f1 \
 This will permit useful HTML markup of these errors.\
 \
 When the proofers question a spelling or a grammatical usage, search the text for similar spellings or words and decide what the author intended.\
@@ -212,28 +214,28 @@ When the proofers left other notes or queries, resolve them.\
 As you resolve proofer notes, delete the note text, brackets, and asterisks.\
 \
 At the end of this step there should be no asterisks left except 
-\f1 /*..*/
-\f0  markup, and where the original text has them.\
+\f2 /*..*/
+\f1  markup, and where the original text has them.\
 \
 
-\b 7. Clear page separators\
+\f0\b 7. Clear page separators\
 
-\b0 \
+\f1\b0 \
 Select File>Load Find Buttons. Choose 
-\f1 extras/find_page_separators.utf
-\f0 . This loads button 24 with a regular-expression search to find a page-separator line and replace it with nothing (Replace-1) or a single newline (Replace-2). PPQT will remember where the text of each page begins after the visible page separator text has been removed.\
+\f2 extras/find_page_separators.utf
+\f1 . This loads button 24 with a regular-expression search to find a page-separator line and replace it with nothing (Replace-1) or a single newline (Replace-2). PPQT will remember where the text of each page begins after the visible page separator text has been removed.\
 \
 On the Find panel click First to find the first page separator line. Then click the first Replace button to delete the line, or the second Replace button to replace it with a blank line. Or you can click in the Edit panel and walk through all the page separators using ctl-g. At each, delete the current line with the Delete key or use Return to replace it with a blank line.\
 \
 You could set the All! switch and replace all separators with nothing, but there is the possibility that a paragraph ends at the bottom of a page with no blank line after it. Going through the separators one at a time is your last chance to catch this error.\
 \
 
-\b 8. Check for common errors
-\b0 \
+\f0\b 8. Check for common errors
+\f1\b0 \
 \
 Select File>Load Find Buttons. Choose 
-\f1 extras/common_errors.utf
-\f0 . This loads buttons 9-24 with searches that implement checks for many of the common errors found by the gutcheck or bookloupe utility. Choose a search pattern by clicking one of the buttons. Then click First and use ctl-g to step through all occurrences of that pattern, verifying it is or is not a problem. The search patterns are (from bottom up):\
+\f2 extras/common_errors.utf
+\f1 . This loads buttons 9-24 with searches that implement checks for many of the common errors found by the gutcheck or bookloupe utility. Choose a search pattern by clicking one of the buttons. Then click First and use ctl-g to step through all occurrences of that pattern, verifying it is or is not a problem. The search patterns are (from bottom up):\
 \
 * Any asterisk that is not preceded or followed by a slash (that is, not used to mark a special section). The asterisks that remain should be in the original text.\
 \
@@ -270,9 +272,9 @@ Select File>Load Find Buttons. Choose
 * "Faux hyphen" search: looks for all the Unicode characters that might pass for a hyphen, but are not.\
 \
 
-\b 9. Character counts\
+\f0\b 9. Character counts\
 
-\b0 \
+\f1\b0 \
 Now that the page-separator lines are gone, the count of characters is useful. Go to the Chars panel and click Refresh.\
 \
 Click the head of the Count column to sort from smallest counts to largest. Inspect the characters that appear only once. To see a character in context, double-click it in the first column. The Find panel opens with that character as the Find text and the first instance found. Use ctl-g to look for the next.\
@@ -284,9 +286,9 @@ From the popup menu select \'ac 7-bit and inspect the non-ASCII values.\
 From the popup menu select \'ac Latin-1 and inspect the Unicode values if any.\
 \
 
-\b 10. Set up for spellcheck\
+\f0\b 10. Set up for spellcheck\
 
-\b0 \
+\f1\b0 \
 At this point you have fixed all word fragments created by page breaks and proofer notes, so the Word census is now useful.\
 \
 Right-click in the Edit panel and turn off Mark Scannos. Scanno highlighting has done its job.\
@@ -298,9 +300,9 @@ Go to the Words panel and click Refresh. PPQT counts words and checks their spel
 Right-click in the Edit panel and turn on Mark Spelling. Words that fail spellcheck with the current dictionary are highlighted.\
 \
 
-\b 11. Note all "Good" Words\
+\f0\b 11. Note all "Good" Words\
 
-\b0 \
+\f1\b0 \
 Go to the Word panel. Turn off Respect Case if it is on. (When the table is large, this and any other change in the table sorting may cause a short delay.)\
 \
 From the popup menu select Misspelt. The words (tokens, really) that fail spellcheck and are not in the Good Words list are shown. Your aim is to clear this list entirely, either by correcting misspelt words or by adding valid words to the Good Words list. If  the book uses archaic, latinate, or technical terms, the list of misspelled words may be long, and clearing it may be the second-longest PP task, but it is also a fruitful way to find unnoticed typos.\
@@ -310,8 +312,8 @@ To see any word in context, double-click the word in the first column. This copi
 Quickly scan the list for correctly spelled proper names, valid technical terms, and other obviously correct items. Drag these words to the right and drop them on the Good Words list. If you put a word in the Good Words list in error, just select it there and key Delete.\
 \
 
-\b 12. Resolve spelling errors.
-\b0 \
+\f0\b 12. Resolve spelling errors.
+\f1\b0 \
 \
 When the Good Words are all found, select Misspelled from the popup menu again. Examine remaining words of whose spelling you are unsure. \
 \
@@ -320,30 +322,30 @@ If a word appears only because it was a typo and is now the original-text in a t
 Sometimes an unusual form of a word is marked as an error, and you wonder if the author was consistent in its use. For example the text has "centre" (which is an error according to the en_US dictionary), and you wonder, did they always use "centre" or sometimes use "center"? To answer this, first select All from the popup menu. Then control-click the word and select Second Harmonic. The result is a list of all words that  could be made from the first one by at most two changes. The Second Harmonic of "centre" includes "center" so if they used both, both will appear.\
 \
 If the book has significant passages in a second language, you can mark such text as follows: 
-\f1 <span lang='
-\f0\i dict
-\f1\i0 '>
-\f2\fs24 \'85
-\f1\fs28 </span>
-\f0  where 
-\i dict
-\i0  is one of the dictionary names that appears in the Dictionaries dialog. For example a phrase or paragraph in French can be marked up with\
+\f2 <span lang='
+\f6\i dict
+\f2\i0 '>
+\f3\fs24 \'85
+\f2\fs28 </span>
+\f1  where 
+\f6\i dict
+\f1\i0  is one of the dictionary names that appears in the Dictionaries dialog. For example a phrase or paragraph in French can be marked up with\
     
-\f1 <span lang='fr_FR'>je t'aime, ma cherie</span>
-\f0 \
+\f2 <span lang='fr_FR'>je t'aime, ma cherie</span>
+\f1 \
 The words in the marked section are checked against that dictionary instead of the normal dictionary for the document. After inserting this markup, click Refresh to rebuild the table.\
 \
 (The 
-\f1 lang='
-\f0\i dict
-\f1\i0 '
-\f0  attribute is valid in any HTML and XML markup. Obviously it has to be deleted from the ASCII etext. The Ppgen and Fpgen translators will convert it to the convention used in those markups.)\
+\f2 lang='
+\f6\i dict
+\f2\i0 '
+\f1  attribute is valid in any HTML and XML markup. Obviously it has to be deleted from the ASCII etext. The Ppgen and Fpgen translators will convert it to the convention used in those markups.)\
 \
 When there are no more misspelled words in the list, save the document and refresh the Word panel.\
 \
 
-\b 13. Other word checks
-\b0 \
+\f0\b 13. Other word checks
+\f1\b0 \
 \
 From the popup menu select Alphanumeric. Scan these tokens that have both digits and letters. Look for mis-scanned one/ell and oh/zero errors.\
 \
@@ -357,113 +359,101 @@ Filter on UPPERCASE and scan that set of words for oddities.\
 \
 Filter on Numeric and scan the list of all-numeric tokens.\
 
-\b \
+\f0\b \
 14. Heading-format check\
 
-\b0 \
+\f1\b0 \
 In DP format, the number of consecutive empty lines is a critical part of the book format. A chapter head is marked by four empty lines before it and two after it. A subhead is marked by two empty lines before it and one after it. And of course, paragraphs are separated by single empty lines. This means there should never be a sequence of 
-\i three
-\i0  or 
-\i five
-\i0  empty lines, and sequences of 
-\i two
-\i0  and 
-\i four
-\i0  empty lines should only appear around headings.\
+\f6\i three
+\f1\i0  or 
+\f6\i five
+\f1\i0  empty lines, and sequences of 
+\f6\i two
+\f1\i0  and 
+\f6\i four
+\f1\i0  empty lines should only appear around headings.\
 \
 In this step we will check for correct use of these rules.\
 \
 Select File>Load Find Buttons. Choose 
-\f1 extras/heading_format_check.utf
-\f0 . This loads Find buttons 20-25 with regular expressions that search for sequences of one, two, three, four and five-or-more empty lines.\
+\f2 extras/heading_format_check.utf
+\f1 . This loads Find buttons 20-25 with regular expressions that search for sequences of one, two, three, four and five-or-more empty lines.\
 \
 Click the last button, named "5+ empty lines". Click First. Nothing should be found. If there are any spans of 5+ empty lines (outside of a special table or some other section marked with 
-\f1 /*..*/
-\f0  delimiters) they are a mistake.\
+\f2 /*..*/
+\f1  delimiters) they are a mistake.\
 \
 Click the button named "3 empty lines". Click First. Nothing should be found. Any span of just 3 empty lines  (outside of a special table or some other section marked with 
-\f1 /*..*/
-\f0  delimiters) is a mistake, probably a heading with the wrong number of empty lines.\
+\f2 /*..*/
+\f1  delimiters) is a mistake, probably a heading with the wrong number of empty lines.\
 \
 Click the "4 empty lines" button. Click First, then walk through the book using ctl-g. This should stop at every chapter head, and only at chapter heads.\
 \
 Click the "2 empty lines" button. Click First, then walk through the book with ctl-g. Verify that the search stops just below each chapter head, and just above each sub-head.\
 \
 If this search stops anywhere that is 
-\i not
-\i0  a heading, you have found a mistake. It is common to have an extra newline after an illustration or between paragraphs that were on either side of a page boundary. The two empty lines are selected; just hit the Return key to replace them with a single empty line.\
+\f6\i not
+\f1\i0  a heading, you have found a mistake. It is common to have an extra newline after an illustration or between paragraphs that were on either side of a page boundary. The two empty lines are selected; just hit the Return key to replace them with a single empty line.\
 \
 
-\b 15. Transliterations\
+\f0\b 15. Transliterations\
 
-\b0 \
+\f1\b0 \
 Put the regular expression 
-\f1 \\[[^FIS]
-\f0  (literal left-bracket not followed by F I or S) in the Find field and search. What comes up should be transliterations such as 
-\f1 [Greek:Mia glossa]
-\f0 , or possibly actual Greek characters, 
-\f1 [Greek:
-\f5 \uc0\u924 
-\f3 \uc0\u943 \u945 
-\f1  
-\f3 \uc0\u947 \u955 \u974 \u963 \u963 \u945 
-\f1 ].
-\f0  You need to check the letters against the original image. Here are two important resources:\
-    www.gutenberg.org/wiki/Gutenberg:Greek_How-To\
-    www.pgdp.net/phpBB2/viewtopic.php?t=16124\
+\f2 \\[[^FIS]
+\f1  (literal left-bracket not followed by F I or S) in the Find field and search. What comes up should be transliterations such as 
+\f2 [Greek:Mia glossa]
+\f1 , or possibly actual Greek characters, 
+\f2 [Greek:
+\f8 \uc0\u924 
+\f5 \uc0\u943 \u945 
+\f2  
+\f5 \uc0\u947 \u955 \u974 \u963 \u963 \u945 
+\f2 ].
+\f1  You need to check the letters against the original image. Here are some informative pages:\
+\
+    https://www.gutenberg.org/attic/greek_how_to.html (still informative)\
+    https://www.pgdp.net/wiki/Greek\
+\
+Note that PG and PGDP no longer require or recommend transliteration of Greek. Rather, just leave the original Greek letters in the text and make sure the text is saved as UTF-8 encoding. Transliteration may still be desirable for Cyrillic characters; ask the project manager.\
 \
 If you plan to translate to Ppgen format, be sure to read the Ppgen tutorial on Greek syntax.\
 \
 
-\b 16. Illustrations\
+\f0\b 16. Illustrations\
 
-\b0 \
+\f1\b0 \
 This step ensures that illustrations are marked properly. We work on the images themselves in step 22.\
 \
 In the Word panel, display All. Click in the table and key ctl-f for the find dialog. Find the word Illustration. Right-click on the word and select Second Harmonic to see if there are versions with different capitalization or spelling errors. Examine these (double-click each one to see it in context). If any are miscoded illustration markups, fix them.\
 \
 Enter this in the Find field: 
-\f1 \\[Illustration:.*?\\]\\n
-\f0  and set Respect Case and Regex on. (The pattern searches for literal left-bracket, Illustration:, any amount of other stuff up to a right-bracket that is the last character on its line. This should select all of one Illustration markup.)\
+\f2 \\[Illustration:.*?\\]\\n
+\f1  and set Respect Case and Regex on. (The pattern searches for literal left-bracket, Illustration:, any amount of other stuff up to a right-bracket that is the last character on its line. This should select all of one Illustration markup.)\
 \
 Click First and use ctl-g to step through all the Illustration markups. Make sure each is properly located above or below the paragraph that mentions it. Make sure that the search has selected all of, but only, the Illustration markup. If it selects too much or not enough, the closing bracket is missing or is not at the end of its line.\
 \
 It is ok for an Illustration to contain formatted text such as poetry or tables. It is even ok for it to have a footnote reference such as[A]. However, the footnote itself must be outside the Illustration because a footnote, also, must end with a right-bracket at the end of a line.\
 \
 
-\b 17. Sidenotes\
+\f0\b 17. Sidenotes\
 
-\b0 \
+\f1\b0 \
 In the Word panel find "Sidenote". Right-click and apply Second Harmonic to see if there are versions with different capitalization or spelling errors. Examine these (double-click each one to see it in context). If any are miscoded sidenote markups, fix them.\
 \
 Enter this in the Find field: 
-\f1 \\[Sidenote:.*?\\]\\n
-\f0  and set Respect Case and Regex on. (The pattern searches for a literal left-bracket, Sidenote:, then any amount of other stuff up to the first right-bracket that is the last character on its line. It should select the entire Sidenote markup.)\
+\f2 \\[Sidenote:.*?\\]\\n
+\f1  and set Respect Case and Regex on. (The pattern searches for a literal left-bracket, Sidenote:, then any amount of other stuff up to the first right-bracket that is the last character on its line. It should select the entire Sidenote markup.)\
 \
-Use ctl-g to step through all sidenotes. Make sure each is on a line by itself just above the paragraph it describes. See also this discussion in the DP Wiki:\
+Use ctl-g to step through all sidenotes. Make sure each is on a line by itself just above the paragraph it describes. Carefully review this discussion in the DP Wiki:\
 \
-    www.pgdp.net/widki/sidenotes\
+    www.pgdp.net/wiki/sidenotes\
 \
-As discussed in that link, there are occasions when a Sidenote needs to be run-in to the paragraph. In this case, replace the opening 
-\f1 [Sidenote:
-\f0  with 
-\f1 <sn>
-\f0 ;\
-replace the closing right-bracket with 
-\f1 </sn>
-\f0 ; and put the note's text as a single line within the paragraph. It should look like this:\
+As discussed in that link, there are occasions when a Sidenote needs to be run-in to the paragraph. The means of coding this are various and complicated. It is best to leave such formatting until after the book has been translated into its final format (e.g. EPUB, HTML) and then encode the run-in sidetones using that format\'92s method of markup.\
 \
 
-\f1     preceding line of paragraph. Rambles on and such,\
-    <sn>Rambling occurs</sn>\
-    saying not much but rambling a lot.\
-
-\f0 \
-Different Translators may or may not handle this format correctly.\
-\
-
-\b 18. Footnote format and numbering
-\b0 \
+\f0\b 18. Footnote format and numbering
+\f1\b0 \
 \
 In the Word panel find "Footnote". Right-click and apply Second Harmonic to see if there are versions with different capitalization or spelling errors. Examine these (double-click each one to see it in context). If any are miscoded footnote markups, fix them.\
 \
@@ -474,38 +464,40 @@ Start at the top of the table and examine each footnote in sequence: click on th
 There is no substitute for looking at every footnote in this way! This is the only way to ensure that PPQT has correctly paired Anchors and Notes and recognized the scope of each Note correctly.\
 \
 Here's a common problem. If some Note A is malformed, the Anchor 
-\f1 [A]
-\f0  that ought to be paired with it will instead be paired with the next well-formed Note A below it. Then 
-\i every
-\i0  Key-A/Note-A pair 
-\i for the rest of the book
-\i0  will be mismatched. However, only the very 
-\i last
-\i0  Key A will be colored pink (because only it could not be matched to a note). This is why sequential checking from the top down (or bottom up, your choice) is necessary.\
+\f2 [A]
+\f1  that ought to be paired with it will instead be paired with the next well-formed Note A below it. Then 
+\f6\i every
+\f1\i0  Key-A/Note-A pair 
+\f6\i for the rest of the book
+\f1\i0  will be mismatched. However, only the very 
+\f6\i last
+\f1\i0  Key A will be colored pink (because only it could not be matched to a note). This is why sequential checking from the top down (or bottom up, your choice) is necessary.\
 \
 When all footnotes are correctly matched, renumber them. Decide on the numbering convention, select the correct number streams at the bottom of the Fnote panel, and click Renumber.  (Refer to the Help topic for the meaning of the "number streams".) Click Refresh and look for problems. If any, click in the Edit panel and undo the renumbering.\
 \
-Decide whether to have in-line footnotes (as they are now, located after their paragraphs of reference) or out-of-line footnotes (grouped at the end of each chapter or at the end of the book). If out-of-line, define the footnote zones with 
-\f1 /F..F/
-\f0  markup. Click Move Notes on the Fnote panel. Check the results. If any problem, click in the Edit panel and undo the move.\
+Decide whether to have in-line footnotes (as they are now, located after their paragraphs of reference) or out-of-line footnotes (grouped at the end of each chapter or at the end of the book).\
+\
+If you choose out-of-line, you now define the footnote zones with 
+\f2 /F..F/
+\f1  markup. When that is done, click Move Notes on the Fnote panel. Check the results. If any problem, click in the Edit panel and undo the move.\
 \
 (If you will translate the book to Ppgen markup, be aware that Ppgen has its own method of moving footnotes. Leave the footnotes close to their reference paragraphs for now, and set up the Ppgen dynamic move system later.)\
 \
 
-\b 19. Balanced markup
-\b0 \
+\f0\b 19. Balanced markup
+\f1\b0 \
 \
 Select File>Load Find Buttons. Choose 
-\f1 extras/unbalanced_markup.utf
-\f0 . This loads the last three Find buttons with regular expressions that search for some cases of unbalanced italic, bold, and small-cap markup. They will find the common error where the slash is omitted from the closing 
-\f1 <b>
-\f0 markup
-\f1 <b>
-\f0 .\
+\f2 extras/unbalanced_markup.utf
+\f1 . This loads the last three Find buttons with regular expressions that search for some cases of unbalanced italic, bold, and small-cap markup. They will find the common error where the slash is omitted from the closing 
+\f2 <b>
+\f1 markup
+\f2 <b>
+\f1 .\
 \
 
-\b 20. Bookloupe
-\b0 \
+\f0\b 20. Bookloupe
+\f1\b0 \
 \
 Have you installed the Bookloupe utility? Here is the relevant link:\
     http://www.juiblex.co.uk/pgdp/bookloupe/\
@@ -513,316 +505,316 @@ Have you installed the Bookloupe utility? Here is the relevant link:\
 If you have installed it, and used the PPQT2 Preferences dialog to show where the Bookloupe executable is found, you can run it now. Go to the Loupe panel and click Refresh. The table fills with the messages Bookloupe produced. Double-click a row in the table to jump the edit cursor to that line and column. (If you work from the end of the book backward, the line numbers remain correct even if you add or delete lines in editing.)\
 \
 
-\b 21. Pagination and folios.
-\b0 \
+\f0\b 21. Pagination and folios.
+\f1\b0 \
 \
 Open the Pages panel. The first column shows the scan image filenames from first to last. These are typically just numbers from 001 up. The fourth column, "Folio", shows the logical page number of the corresponding book page. Initially this is also just a sequence from 1 up. But if you look at the page images, you see that the book pages have different visible page numbers, or 
-\i folios
-\i0  as they are properly called.\
+\f6\i folios
+\f1\i0  as they are properly called.\
 \
 Possibly the opening few pages have no numbers. Sometimes front-matter sections such as Contents and Preface are numbered in lowercase roman numerals. Then the text proper starts with 1.\
 \
 You can use the controls in the second and third columns to adjust the Folios column so that it shows the same values as the actual book pages. If the first couple of pages have no folios, double-click in the Action column and set them to "Omit".\
 \
 If on image 004 the Preface begins with a folio of roman numeral 
-\i i
-\i0 , double-click Action for that image and make it Set To. Double-click the Folio column and set the number 1. Double-click the Format column and set it to "roman".\
+\f6\i i
+\f1\i0 , double-click Action for that image and make it Set To. Double-click the Folio column and set the number 1. Double-click the Format column and set it to "roman".\
 \
 If the full text begins on image 017 with folio 1, go to that line of the table. Double-click Action and make it Set To; double-click Folio and provide the number 1; double-click Format and set Arabic. Click the Refresh button.\
 \
 Now make the Images panel visible. Click in the Edit panel and page through the text. The Folio value can be seen on bottom edge of the Edit panel. Compare it to what is visible in the scanned image. With further adjustments of the Pages table you can arrange that the proper Folio is shown for every page image. It is these Folio values that are available as link targets (next topic).\
 \
 
-\b 22. Internal links
-\b0 \
+\f0\b 22. Internal links
+\f1\b0 \
 \
 Books often contain internal cross-references, for example "See discussion, page 482". You want to mark these so that in formats that support linking (HTML, EPUB, PDF) the text will be a link that can be clicked.\
 \
 Every link has two parts: the link and the target (or "anchor" in HTML terms). You have to somehow mark both ends.\
 \
 
-\b Targets.
-\b0  You can give an Illustration a target name by writing <
-\f1 id="
-\f0\i target
-\f1\i0 ">
-\f0  at the head of the caption. You can give a chapter head or subhead a target name by writing <
-\f1 id="
-\f0\i target
-\f1\i0 ">
-\f0  at the start of the first line of the heading. You can add a target anywhere in open text by inserting <
-\f1 id="
-\f0\i target
-\f1\i0 ">
-\f0 .\
+\f0\b Targets.
+\f1\b0  You can give an Illustration a target name by writing <
+\f2 id="
+\f6\i target
+\f2\i0 ">
+\f1  at the head of the caption. You can give a chapter head or subhead a target name by writing <
+\f2 id="
+\f6\i target
+\f2\i0 ">
+\f1  at the start of the first line of the heading. You can add a target anywhere in open text by inserting <
+\f2 id="
+\f6\i target
+\f2\i0 ">
+\f1 .\
 \
 If you have set the Folios properly as described in the step 21, you can use Folios as link targets. A target id of the form 
-\f1 Page_418
-\f0  or 
-\f1 Page_xiv 
-\f0 is made automatically for every unique Folio value.\
+\f2 Page_418
+\f1  or 
+\f2 Page_xiv 
+\f1 is made automatically for every unique Folio value.\
 \
 
-\b Links.
-\b0  When the target of a cross-reference exists, you create the link by inserting the markup 
-\f6\b #
-\f0\i\b0 link-text
-\f6\i0\b :
-\f0\i\b0 target-id
-\f6\i0\b #
-\f0\b0  where 
-\i link-text
-\i0  is what should be displayed in the text, and 
-\i target-id
-\i0  is the target. For example the text might now read,\
+\f0\b Links.
+\f1\b0  When the target of a cross-reference exists, you create the link by inserting the markup 
+\f9\b #
+\f6\i\b0 link-text
+\f9\i0\b :
+\f6\i\b0 target-id
+\f9\i0\b #
+\f1\b0  where 
+\f6\i link-text
+\f1\i0  is what should be displayed in the text, and 
+\f6\i target-id
+\f1\i0  is the target. For example the text might now read,\
 \
 
-\f1     See #Fig. 17:Fig_17#\
+\f2     See #Fig. 17:Fig_17#\
 
-\f0 or\
+\f1 or\
 
-\f1     as discussed on #Page 418:Page_418#\
+\f2     as discussed on #Page 418:Page_418#\
 \
 
-\f0 As a convenience, 
-\f1 #
-\f0\i nnn
-\f1\i0 #
-\f0  is a shorthand for 
-\f1 #
-\f0\i nnn
-\f1\i0 :Page_
-\f0\i nnn
-\f1\i0 #
-\f0 . You can use this in the index (
-\f1 Burrowing owls, #36#, #192#
-\f0 ) or the Table of Contents.\
+\f1 As a convenience, 
+\f2 #
+\f6\i nnn
+\f2\i0 #
+\f1  is a shorthand for 
+\f2 #
+\f6\i nnn
+\f2\i0 :Page_
+\f6\i nnn
+\f2\i0 #
+\f1 . You can use this in the index (
+\f2 Burrowing owls, #36#, #192#
+\f1 ) or the Table of Contents.\
 \
 
-\b 23. Illustrations, image files, and ids.
-\b0 \
+\f0\b 23. Illustrations, image files, and ids.
+\f1\b0 \
 \
 Some books have many illustrations, others few or none. Now is a good time to take a break from editing the text and process the image files for the Illustrations. Set up a (not-regex) search for 
-\f1 [Illustration
-\f0  and step through the illustrations. At each one,\
+\f2 [Illustration
+\f1  and step through the illustrations. At each one,\
 \
 * Locate the high-resolution image file that matches it.\
 \
 * Use Photoshop or other software to do any image processing needed.\
 \
 * Save the processed image in the 
-\f1 images
-\f0  folder. (The PPVer will require that image filenames be short and all-lowercase.)\
+\f2 images
+\f1  folder. (The PPVer will require that image filenames be short and all-lowercase.)\
 \
 If there are two sizes, a small inline image and a larger, linked image, store both using some consistent naming scheme. (Note that linking to larger images is not supported by EPUB; and that EPUB limits all images to less than 600px width and less than 200KB file size.)\
 \
 Some Translators recognize the filename of the image to be displayed, and optionally the filename of a larger linked image, as part of this markup. Put the inline filename immediately after the colon, and the optional linked filename after a stile:\
 \
     
-\f1 [Illustration:fig023.png|hr023.jpg <sc>Fig.</sc> 23...]
-\f0 \
+\f2 [Illustration:fig023.png|hr023.jpg <sc>Fig.</sc> 23...]
+\f1 \
 \
 You can note that an image has a target-id for linking from the text. Write it as <
-\f1 id="
-\f0\i target
-\f1\i0 ">
-\f0  before the beginning of the caption text:\
+\f2 id="
+\f6\i target
+\f2\i0 ">
+\f1  before the beginning of the caption text:\
 
-\f1\fs24   [Illustration:fig023.png|hr023.jpg 
-\f6\b <id=F023>
-\f1\b0  <sc>Fig.</sc> 23...]
-\f0\fs28 \
+\f2\fs24   [Illustration:fig023.png|hr023.jpg 
+\f9\b <id=F023>
+\f2\b0  <sc>Fig.</sc> 23...]
+\f1\fs28 \
 \
 
-\b 24. Book Facts
-\b0 \
+\f0\b 24. Book Facts
+\f1\b0 \
 \
 You can add "facts" about the book such as its title, author, or publication date. Facts like these are sometimes called "metadata". (PPQT2 uses that term instead for the file of important stuff it keeps alongside the book, so here we just call them "book facts".)\
 \
 Right-click in the Edit panel and choose Edit Book Facts... from the context menu. A small dialog opens in which you can write any facts you like. Enter one fact per line, in the form 
-\i fact-title
-\i0  
-\b\fs34 :
-\b0\fs28  
-\i fact-value
-\i0  for example,\
+\f6\i fact-title
+\f1\i0  
+\f0\b\fs34 :
+\f1\b0\fs28  
+\f6\i fact-value
+\f1\i0  for example,\
     Author : Bilious Billikins\
     Title : Through Arabia with Gun and Camera\
     Language : English\
     Publication date : 1887\
 \
 The list of facts is saved in the metadata file, and it is passed to any Translator you run. For example the HTML Translator will take the "Title"  and "Author" facts, if they are given, and put them in a 
-\f1 <title>
-\f0  statement. The Ppgen Translator puts the "Title" and "Author" facts, if given, in the ".dt" statement at the top of the document. DP Canada's Fpgen markup supports a scheme of facts based on the Dublin Core standard. You can add such facts with lines like: DC.Language : en\
+\f2 <title>
+\f1  statement. The Ppgen Translator puts the "Title" and "Author" facts, if given, in the ".dt" statement at the top of the document. DP Canada's Fpgen markup supports a scheme of facts based on the Dublin Core standard. You can add such facts with lines like: DC.Language : en\
 \
 
-\b 25. Extended block markup.
-\b0 \
+\f0\b 25. Extended block markup.
+\f1\b0 \
 \
 The DP formatting guidelines support only two types of block markup: 
-\f1 /#..#/
-\f0  for block quotes, and 
-\f1 /*..*/
-\f0  for any other block that should not be "reflowed". The latter includes formatted front matter, tables, indexes, and poetry. The markup styles into which you will eventually translate your book--for example, HTML or EPUB--support much more precise types of formatting, with centering, right-aligning, and control of margins.\
+\f2 /#..#/
+\f1  for block quotes, and 
+\f2 /*..*/
+\f1  for any other block that should not be "reflowed". The latter includes formatted front matter, tables, indexes, and poetry. The markup styles into which you will eventually translate your book--for example, HTML or EPUB--support much more precise types of formatting, with centering, right-aligning, and control of margins.\
 \
 In the following steps you supplement the DP markup with more information. 
-\i These steps are optional
-\i0 . If you are going to Translate the book to some other markup convention such as Ppgen or Fpgen, you could skip immediately to step 33. Then you can work in the translated document and use its markup conventions to complete the book layout.\
+\f6\i These steps are optional
+\f1\i0 . If you are going to Translate the book to some other markup convention such as Ppgen or Fpgen, you could skip immediately to step 33. Then you can work in the translated document and use its markup conventions to complete the book layout.\
 \
 The following markups accept 
-\f1 First:
-\f0\i n
-\i0 , 
-\f1 Left:
-\f0\i n
-\i0  and 
-\f1 Right:
-\f0\i n
-\i0  parameters to control margins, for example\
+\f2 First:
+\f6\i n
+\f1\i0 , 
+\f2 Left:
+\f6\i n
+\f1\i0  and 
+\f2 Right:
+\f6\i n
+\f1\i0  parameters to control margins, for example\
 	
-\f1 /X First:2 Right:2
-\f0 \
+\f2 /X First:2 Right:2
+\f1 \
 In each case 
-\i n
-\i0  represents a count of ASCII spaces, relative to the standard ASCII maximum line of 75 characters. 
-\f1 First:
-\f0  specifies the indent for the first line of a paragraph, or for each line of a poem. 
-\f1 Left:
-\f0  specifies the indent for lines of a paragraph that follow the first one, or for the part of a line of a poem that has to be "broken" because the line doesn't fit in the width.\
+\f6\i n
+\f1\i0  represents a count of ASCII spaces, relative to the standard ASCII maximum line of 75 characters. 
+\f2 First:
+\f1  specifies the indent for the first line of a paragraph, or for each line of a poem. 
+\f2 Left:
+\f1  specifies the indent for lines of a paragraph that follow the first one, or for the part of a line of a poem that has to be "broken" because the line doesn't fit in the width.\
 
-\f1 Right:
-\f0  specifies an indent from the right margin.\
+\f2 Right:
+\f1  specifies an indent from the right margin.\
 \
 
-\f1 First
-\f0 , 
-\f1 Left
-\f0  and 
-\f1 Right
-\f0  can be abbreviated to their initial letters.\
+\f2 First
+\f1 , 
+\f2 Left
+\f1  and 
+\f2 Right
+\f1  can be abbreviated to their initial letters.\
 \
 The HTML Translator converts these numbers to HTML "em" units in the ratio 2:1, that is, 2 ASCII spaces equal one HTML em.  For example a 
-\f1 First:4
-\f0  parameter translates to a CSS style of 
-\f1 margin-left:2em
-\f0 .\
+\f2 First:4
+\f1  parameter translates to a CSS style of 
+\f2 margin-left:2em
+\f1 .\
 \
 
-\b 26. No-reflow sections.\
+\f0\b 26. No-reflow sections.\
 
-\b0 \
+\f1\b0 \
 No-reflow sections are sections of highly-formatted text that need to be left as-is, and will probably require individual attention when the book is translated to some other format such as HTML. Mark these with 
-\f1 /X..X/
-\f0 , or just leave them marked with  
-\f1 /*..*/
-\f0  as the proofers marked them.\
+\f2 /X..X/
+\f1 , or just leave them marked with  
+\f2 /*..*/
+\f1  as the proofers marked them.\
 \
 
-\b 27. Centered lines.
-\b0 \
+\f0\b 27. Centered lines.
+\f1\b0 \
 \
 A block of centered lines, like the typical book title page, is now surrounded with 
-\f1 /*..*/
-\f0 . Mark it instead with 
-\f1 /C..C/
-\f0 . The default 
-\f1 First:
-\f0  is 2 and 
-\f1 Right:
-\f0  is 0. So in the output, the longest line will be indented by 2 spaces (as is standard for no-reflow sections in an etext), and shorter lines will be centered on it. In the ASCII translation, if the longest line exceeds 70 characters (so the total exceeds 72) there will be a diagnostic message in the translated book. Other Translators may convert 
-\f1 /C..C/
-\f0  into their equivalent markup or treat it like 
-\f1 /X..X/
-\f0 .\
+\f2 /*..*/
+\f1 . Mark it instead with 
+\f2 /C..C/
+\f1 . The default 
+\f2 First:
+\f1  is 2 and 
+\f2 Right:
+\f1  is 0. So in the output, the longest line will be indented by 2 spaces (as is standard for no-reflow sections in an etext), and shorter lines will be centered on it. In the ASCII translation, if the longest line exceeds 70 characters (so the total exceeds 72) there will be a diagnostic message in the translated book. Other Translators may convert 
+\f2 /C..C/
+\f1  into their equivalent markup or treat it like 
+\f2 /X..X/
+\f1 .\
 \
 
-\b 28. Right-aligned sections.\
+\f0\b 28. Right-aligned sections.\
 
-\b0 \
+\f1\b0 \
 A right-aligned section consists of one or more no-reflow lines that are to be justified against a right margin. Right-aligned lines are useful as quote attributions and when duplicating old letterhead styles. The default for 
-\f1 Right
-\f0  is 2; specify a larger number for a deeper indent, or 0 to right-align on the normal right margin.\
+\f2 Right
+\f1  is 2; specify a larger number for a deeper indent, or 0 to right-align on the normal right margin.\
 \
 
-\b 29. Poetry.
-\b0 \
+\f0\b 29. Poetry.
+\f1\b0 \
 \
 When 
-\f1 /*..*/
-\f0  encloses poetry, change it to 
-\f1 /P..P/
-\f0 . The difference between lines of poetry is that a poem's lines can be wrapped on an individual basis, that is, a very long line can be "broken" and indented under the start of that line. Also, poems are assumed to have stanzas, groups of lines separated by a blank line; and they may have line numbers.\
+\f2 /*..*/
+\f1  encloses poetry, change it to 
+\f2 /P..P/
+\f1 . The difference between lines of poetry is that a poem's lines can be wrapped on an individual basis, that is, a very long line can be "broken" and indented under the start of that line. Also, poems are assumed to have stanzas, groups of lines separated by a blank line; and they may have line numbers.\
 \
 Default First, Left and Right indents for poetry are 2, 12 and 0. You can add explicit 
-\f1 FIRST:
-\f0\i n
-\i0 , 
-\f1 LEFT:
-\f0\i n
-\i0 , and/or 
-\f1 RIGHT:
-\f0\i n
-\i0  values for special cases. The 
-\f1 Left
-\f0  indent is only used when a long line has to be "folded"; the folded part(s) of the long line are indented to the 
-\f1 Left
-\f0  indent.\
+\f2 FIRST:
+\f6\i n
+\f1\i0 , 
+\f2 LEFT:
+\f6\i n
+\f1\i0 , and/or 
+\f2 RIGHT:
+\f6\i n
+\f1\i0  values for special cases. The 
+\f2 Left
+\f1  indent is only used when a long line has to be "folded"; the folded part(s) of the long line are indented to the 
+\f2 Left
+\f1  indent.\
 \
 In a poem, stanza breaks are indicated by single blank lines and are part of the poem. A poem title, or a canto or stanza number, is a heading. Put it 
-\i outside
-\i0  the markup (i.e. insert 
-\f1 P/
-\f0 , two blank lines to indicate a heading, the canto number, one blank line, 
-\f1 /P
-\f0  to continue the poem).\
+\f6\i outside
+\f1\i0  the markup (i.e. insert 
+\f2 P/
+\f1 , two blank lines to indicate a heading, the canto number, one blank line, 
+\f2 /P
+\f1  to continue the poem).\
 \
 If the poem has line numbers, make sure that each line number is separated from the text of its line by at least two spaces.\
 \
 
-\b 30. Lists.
-\b0  When 
-\f1 /*..*/
-\f0  encloses a list, change it to 
-\f1 /U..U/
-\f0  and put a single blank line between list items (in other words, treat each list item as a paragraph). The default margins for a list are 
-\f1 FIRST:2 LEFT:4
-\f0 . This assumes that each item begins with an asterisk or single digit; so any continuation line is indented 4 and the asterisk or digit plus a space stands out to the left. Add explicit 
-\f1 FIRST:
-\f0\i n
-\i0 , 
-\f1 LEFT:
-\f0\i n
-\i0 , and/or 
-\f1 RIGHT:
-\f0\i n
-\i0  values as desired. For example if\
+\f0\b 30. Lists.
+\f1\b0  When 
+\f2 /*..*/
+\f1  encloses a list, change it to 
+\f2 /U..U/
+\f1  and put a single blank line between list items (in other words, treat each list item as a paragraph). The default margins for a list are 
+\f2 FIRST:2 LEFT:4
+\f1 . This assumes that each item begins with an asterisk or single digit; so any continuation line is indented 4 and the asterisk or digit plus a space stands out to the left. Add explicit 
+\f2 FIRST:
+\f6\i n
+\f1\i0 , 
+\f2 LEFT:
+\f6\i n
+\f1\i0 , and/or 
+\f2 RIGHT:
+\f6\i n
+\f1\i0  values as desired. For example if\
 each item begins with a digit and a dot, 
-\f1 3.
-\f0  etc., then the Left indent needs to\
+\f2 3.
+\f1  etc., then the Left indent needs to\
 be one greater, 
-\f1 FIRST:2 LEFT:5
-\f0 .\
+\f2 FIRST:2 LEFT:5
+\f1 .\
 \
 
-\b 31. Block quotes.
-\b0 \
+\f0\b 31. Block quotes.
+\f1\b0 \
 \
 A block quote is a section of one or more paragraphs that can be reflowed but which should be indented with respect to the main text flow. Change 
-\f1 /*..*/
-\f0  markup to 
-\f1 /Q..Q/
-\f0 . The default for 
-\f1 First
-\f0 , 
-\f1 Left
-\f0 , and 
-\f1 Right
-\f0  is 2,2,4 (for a total line length of 72-2-4=66 characters in ASCII).\
+\f2 /*..*/
+\f1  markup to 
+\f2 /Q..Q/
+\f1 . The default for 
+\f2 First
+\f1 , 
+\f2 Left
+\f1 , and 
+\f2 Right
+\f1  is 2,2,4 (for a total line length of 72-2-4=66 characters in ASCII).\
 \
 PPQT allows block quotes to include multiple paragraphs, other quotes, poems, footnote anchors (but not the footnotes themselves), centered and right-aligned sections. Here is an example:\
 \
 
-\f1 /Q\
+\f2 /Q\
 /R R:4\
 London\
 5th May, 1890\
@@ -838,89 +830,89 @@ Moriarty\
 Q/\
 Q/\
 
-\f0 \
+\f1 \
 
-\b 32. Tables.
-\b0 \
+\f0\b 32. Tables.
+\f1\b0 \
 \
 Tables are always a problem for the post-processor. The editors and typographers of the original work used all their skills to display information efficiently. The DP proofers have done their best to render the data using ASCII characters, spaces, and stile (vertical-bar) characters. But that formatting is of little use when converting to HTML, PDF or EPUB.\
 \
 If you are going to translate to Ppgen or Fpgen, you can leave tables marked with 
-\f1 /*..*/
-\f0  or 
-\f1 /X..X/
-\f0   and work on the format in those markup systems. Or you can edit a table as follows, and some at least of the information will Translate into other markups.\
+\f2 /*..*/
+\f1  or 
+\f2 /X..X/
+\f1   and work on the format in those markup systems. Or you can edit a table as follows, and some at least of the information will Translate into other markups.\
 \
 Delimit the table with 
-\f1 /T..T/
-\f0 . On the 
-\f1 /T
-\f0  line you may specify the columnar layout. For each column, write one or two letters to specify alignment and optionally a number to give the column width. The alignment letters are 
-\f1 l
-\f0  (ell), 
-\f1 r
-\f0  and 
-\f1 c
-\f0  for left, right and center alignment, and 
-\f1 T
-\f0 , 
-\f1 C
-\f0 , and 
-\f1 B
-\f0  for top, center and bottom vertical alignment. The width is a count of characters relative to the 75-character ASCII line. In assigning widths keep in mind that there must be a stile character between  columns in the output.\
+\f2 /T..T/
+\f1 . On the 
+\f2 /T
+\f1  line you may specify the columnar layout. For each column, write one or two letters to specify alignment and optionally a number to give the column width. The alignment letters are 
+\f2 l
+\f1  (ell), 
+\f2 r
+\f1  and 
+\f2 c
+\f1  for left, right and center alignment, and 
+\f2 T
+\f1 , 
+\f2 C
+\f1 , and 
+\f2 B
+\f1  for top, center and bottom vertical alignment. The width is a count of characters relative to the 75-character ASCII line. In assigning widths keep in mind that there must be a stile character between  columns in the output.\
 \
 For example 
-\f1 /T r5 l55 rB8
-\f0  begins a three column table with the first column 5 characters wide and right-aligned and the second column 55 characters left-aligned. The third column is 8 characters wide and cell contents are to be left-aligned horizontally and bottom-aligned vertically. (This might be a Table of Contents with a chapter number, a chapter title, and a page number.)\
+\f2 /T r5 l55 rB8
+\f1  begins a three column table with the first column 5 characters wide and right-aligned and the second column 55 characters left-aligned. The third column is 8 characters wide and cell contents are to be left-aligned horizontally and bottom-aligned vertically. (This might be a Table of Contents with a chapter number, a chapter title, and a page number.)\
 \
 If you only specify the alignments, but not the widths, PPQT calculates the widths based on the cell contents of the first line of the table. If you do not specify any columns on the 
-\f1 /T
-\f0  line, PPQT assumes that there are as many columns as there are stile characters in the first data line. It defaults all the columns to left alignment and gives them widths based on the separation of those stile characters.\
+\f2 /T
+\f1  line, PPQT assumes that there are as many columns as there are stile characters in the first data line. It defaults all the columns to left alignment and gives them widths based on the separation of those stile characters.\
 \
 Each line of text in a table has the contents of one table row. The contents of the cells are 
-\i\b terminated
-\i0\b0  by stile characters. Each row of data must have the same number as stiles as the table has columns. White space around the stiles is ignored.\
+\f4\i\b terminated
+\f1\i0\b0  by stile characters. Each row of data must have the same number as stiles as the table has columns. White space around the stiles is ignored.\
 \
 
-\f1 /T r5 l55 rB8\
+\f2 /T r5 l55 rB8\
    | <b>CONTENTS</b> | |\
    | <sc>Preface</sc> | 1  |\
   I|<sc>A Letter Arrives</sc>| 5  |\
  II|<sc>An Answer is Written</sc> | 16|\
 T/
-\f0 \
+\f1 \
 \
 The HTML and ASCII Translators support "reflowing" the contents of a cell that are too long for the width of its column. The Ppgen Translator converts this table markup into the Ppgen table markup.\
 \
 This table markup has no provision for continuing a long cell on multiple lines. It also has no provision for spanned columns or rows, or for making the alignment of one cell different from the default for the column, or for stylings such as borders. After you Translate it into some other markup style you can add spanning and other features.\
 \
 
-\b 33. Translate to other formats.
-\b0 \
+\f0\b 33. Translate to other formats.
+\f1\b0 \
 \
 The book is 100% complete according to the DP Formatting Guidelines, possibly augmented with markup of block sections. Now it needs to be converted into other formats such as HTML, EPUB, and plain text. This is done by a Translator. A Translator converts the book as it is now, into a new document with the same contents but a different format.\
 \
 All Translators are found in the Translators folder in the Extras folder. Each Translator is a file with the suffix 
-\f1 .py
-\f0 . For each one there should be a file of documentation with the same name and suffix of 
-\f1 .txt
-\f0  or 
-\f1 .utf
-\f0 . This file will tell you what features the Translator can accept and what it does with them.\
+\f2 .py
+\f1 . For each one there should be a file of documentation with the same name and suffix of 
+\f2 .txt
+\f1  or 
+\f2 .utf
+\f1 . This file will tell you what features the Translator can accept and what it does with them.\
 \
 Open the File>Translate menu and select one of the translators in the sub-menu.  The chosen Translator is initialized. It may present a dialog with options for you to select, or not.\
 \
 Next, PPQT performs a document structure check of the entire document. The purpose is to ensure that all block markups are properly closed, and where block markup is nested, the nesting is legitimate.\
 \
 The document structure check is quite a little robot bureaucrat. The first few times you attempt a Translation you are likely to see an error message "Document structure error around line 
-\i n
-\i0 " followed by some cryptic notes about "Processing XXXX trying to find one of YYYY ZZZZ...". The first all-cap name is a clue to what element the parser was trying to finish, for example QUOTE, PARA or FNOTE. The others tell you what type of element could legally follow, for example EMPTY (blank line), LINE (non-empty line), BCLOSE (right-bracket to end a Footnote or Illustration) and so on. Jump to the line number in the message and figure out what the problem is, for example a missing Q/ line at the end of a block quote.\
+\f6\i n
+\f1\i0 " followed by some cryptic notes about "Processing XXXX trying to find one of YYYY ZZZZ...". The first all-cap name is a clue to what element the parser was trying to finish, for example QUOTE, PARA or FNOTE. The others tell you what type of element could legally follow, for example EMPTY (blank line), LINE (non-empty line), BCLOSE (right-bracket to end a Footnote or Illustration) and so on. Jump to the line number in the message and figure out what the problem is, for example a missing Q/ line at the end of a block quote.\
 \
 When PPQT finds the document structure correct, it feeds the book's contents into the Translator. The Translator writes a new version of the document using a different markup scheme.\
 \
 The translated document appears as a new document with its own Edit panel and other panels. The original book is still open and unchanged. The name of the new document is 
-\i Untitled-n
-\i0 . It contains a copy of the Notes, the good-word list, the bad-word list, and the Find panel search history from the source book. It may or may be able to display scan images in the Images panel (this depends on the Translator).\
+\f6\i Untitled-n
+\f1\i0 . It contains a copy of the Notes, the good-word list, the bad-word list, and the Find panel search history from the source book. It may or may be able to display scan images in the Images panel (this depends on the Translator).\
 \
 Examine the new document. If there is some problem, you can simply close it without saving it, and return to the original for more editing before you Translate again.\
 \
