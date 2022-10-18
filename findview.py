@@ -533,9 +533,15 @@ class UserButton(QPushButton):
     Note originally we used contextMenuEvent to generate this signal which
     should be the same, but it elicited some funny behavior from Qt so we
     went to plain mouseReleaseEvent with manual test for control-click.
+    
+    mouseReleaseEvent() is an abstract method of the grandparent class,
+    QAbstractButton. The passed event is a QMouseEvent, which inherits
+    the button() method from QSinglePointEvent, and its value is one of
+    the enums Qt.MouseButton, and we test for Qt.MouseButton.RightButton
+    whose value is 0x0002.
     '''
     def mouseReleaseEvent(self,event):
-        if 2 != int(event.button()) : # right- or control-click
+        if 2 != int(event.button().value) : # right- or control-click
             event.ignore() # our parent should not see this
             # create a new fake event for FindPanel to see
             super(UserButton, self).mouseReleaseEvent(event)
