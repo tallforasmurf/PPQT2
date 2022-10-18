@@ -82,7 +82,13 @@ Create the Qt application, passing it either an empty list of options
 or, in Linux, a selected style chosen to avoid a GTK bug in Ubuntu Unity
 
 TODO: test to see if that is still needed or appropriate!
+
+The following import is required here, before creating the application,
+to avoid a stupid error message when creating the QWebEngineView in the
+helpview module.
+
 '''
+import PyQt6.QtWebEngineWidgets
 
 from PyQt6.QtWidgets import QApplication
 args = []
