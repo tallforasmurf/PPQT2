@@ -8,6 +8,15 @@ This is a major rewrite of PPQT to achieve certain goals.
 a vanity project, nobody wants to know but me. Hit a snag with Hunspell
 and then discovered Spylls, a pure-Python remake of Hunspell. So continuing.
 
+(October 2022 Testing pretty much complete, this program is functional! But
+only in Python 3.9 -- not a problem -- under MacOS Monterey on an M1 MacBook.
+Do I want to go to the boring effort of setting up virtual environments so
+as to test Linux and -- gag -- Win 10?
+
+(Answer: only if somebody else seriously
+wanted to use the program. And who would, unless I were to advertise it
+on the PPTools forum of PGDP?)
+
 ## What Is PPQT?
 
 PPQT (Post-processing in Python and Qt) is an integrated application
