@@ -240,7 +240,7 @@ class RecallMenuButton(QToolButton):
         self.my_menu = QMenu(self)
         self.my_menu.triggered.connect(self.menu_choice)
         # Create our look.
-        # self.setToolButtonStyle(Qt.ToolButtonIconOnly) # this is default
+        # self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly) # this is default
         # set the icon to the one in our resources. setIcon is a method of
         # the parent class, QAbstractButton
         self.setIcon(QIcon(':/recent-icon.png'))
@@ -1509,7 +1509,7 @@ class FindPanel(QWidget):
         # Create and lay out the replace objects within a frame.
         frame_reps = QFrame()
         frame_reps.setFrameShape(QFrame.Shape.Box)
-        #frame_reps.setFrameShadow(QFrame.Plain)
+        #frame_reps.setFrameShadow(QFrame.Shadow.Plain)
         #frame_reps.setLineWidth(2)
 
         box_reps = QHBoxLayout(frame_reps)

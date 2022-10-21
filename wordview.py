@@ -451,7 +451,7 @@ class WordTableView(QTableView):
                 self.last_find_row = j # ...and row for find_next_action
                 self.clearSelection() # Make the found row the table selection
                 self.selectRow( j )
-                self.scrollTo( ix, QAbstractItemView.PositionAtCenter )
+                self.scrollTo( ix, QAbstractItemView.ScrollHint.PositionAtCenter )
                 return
         # no hit
         utilities.beep()
@@ -500,7 +500,7 @@ class WordTableView(QTableView):
             event.accept() # .,.this, we can handle.
             case = self.sw_case.isChecked()
             char = chr(key) # key is normally uppercase regardless shift
-            if case and (mods == Qt.NoModifier) :
+            if case and (mods == Qt.KeyboardModifier.NoModifier) :
                 char = char.lower() # case matters, make actual lowercase
             ''' Do a binary search over the (sorted) data for initial char '''
             mp = self.model()
@@ -580,7 +580,7 @@ class WordTableView(QTableView):
 
     ''' Slot for the "Second Harmonic" context menu choice. '''
     def second_harmonic(self):
-        word = self.contextIndex.data(Qt.DisplayRole)
+        word = self.contextIndex.data(Qt.ItemDataRole.DisplayRole)
         rex = regex.compile('^(' + word + '){1<e<3}$',flags=regex.WORD)
         hits = set()
         for j in range(self.words.vocab_count()) :
@@ -858,7 +858,7 @@ class WordPanel(QWidget) :
     #def setup_table(self):
         #self.row_count.setNum(self.model.rowCount())
         ##self.view.resizeRowsToContents()
-        ##self.view.sortByColumn(0,Qt.AscendingOrder)
+        ##self.view.sortByColumn(0,Qt.SortOrder.AscendingOrder)
         #self.view.setColumnWidth(0,180)
         #self.view.setColumnWidth(1,50)
 

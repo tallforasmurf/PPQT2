@@ -345,7 +345,7 @@ class EditView( QWidget ):
         self.DocName.setText(self.my_book.get_book_name())
         # Set the cursor shape to IBeam -- no idea why this supposed default
         # inherited from QTextEdit, doesn't happen. But it doesn't.
-        # self.Editor.viewport().setCursor(Qt.IBeamCursor)
+        # self.Editor.viewport().setCursor(Qt.CursorShape.IBeamCursor)
         # Connect the Editor's modificationChanged signal to our slot.
         self.Editor.modificationChanged.connect(self.mod_change_signal)
         # Connect the returnPressed signal of the LineNumber widget

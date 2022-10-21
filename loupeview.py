@@ -182,7 +182,7 @@ class LoupeModel(QAbstractTableModel):
 
     def headerData(self, col, axis, role):
         global COL_HEADS, COL_TOOLTIPS
-        if (axis == Qt.Horizontal) and (col >= 0):
+        if (axis == Qt.Orientation.Horizontal) and (col >= 0):
             if role == Qt.ItemDataRole.DisplayRole : # wants actual text
                 return COL_HEADS[col]
             elif (role == Qt.ItemDataRole.ToolTipRole) or (role == Qt.ItemDataRole.StatusTipRole) :
@@ -232,7 +232,7 @@ class LoupeModel(QAbstractTableModel):
         self.active_sort_vector = []
         if 0 == len(self.message_tuples) : # nothing to display
             return
-        self.layoutAboutToBeChanged.emit([],QAbstractItemModel.VerticalSortHint)
+        self.layoutAboutToBeChanged.emit([],QAbstractItemModel.LayoutChangeHint.VerticalSortHint)
         # treat columns 0 and 1 the same
         if col : # is 1 or 2
             col -= 1 # make it 0 or 1
@@ -250,12 +250,12 @@ class LoupeModel(QAbstractTableModel):
                 sorted_dict[key] = j
                 vector = self.sort_vectors_ascending[ col ] = sorted_dict.values()
         # vector now has an ascending sort vector which is cached..
-        if order == Qt.DescendingOrder : # ..but we need the descending one
+        if order == Qt.SortOrder.DescendingOrder : # ..but we need the descending one
             if self.sort_vectors_descending[ col ] is None : # we need to make it
                 self.sort_vectors_descending[ col ] = [ j for j in reversed( vector ) ]
             vector = self.sort_vectors_descending[ col ]
         self.active_sort_vector = vector
-        self.layoutChanged.emit([],QAbstractItemModel.VerticalSortHint)
+        self.layoutChanged.emit([],QAbstractItemModel.LayoutChangeHint.VerticalSortHint)
 
     '''
     OK, the money method. Generate the table data by invoking bookloupe in a
@@ -415,10 +415,10 @@ class LoupeView(QWidget):
     # back to us.
     def go_to_line(self, index):
         self.view.setCurrentIndex( index )
-        line_num = int( index.data(Qt.DisplayRole) )
+        line_num = int( index.data(Qt.ItemDataRole.DisplayRole) )
         # get a column number the same way
         index = index.sibling(index.row(),1)
-        col_num = int( index.data(Qt.DisplayRole) )
+        col_num = int( index.data(Qt.ItemDataRole.DisplayRole) )
         # Tell the editor to go to this line
         edview = self.my_book.get_edit_view()
         edview.go_to_line_number(line_num)

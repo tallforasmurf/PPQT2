@@ -345,7 +345,7 @@ class FolioDelegate(QStyledItemDelegate):
         sb.setMaximum(2000) # arbitrary limit
         return sb
     def setEditorData(self,sb,index):
-        sb.setValue(index.data(Qt.UserRole))
+        sb.setValue(index.data(Qt.ItemDataRole.UserRole))
     def setModelData(self,sb,model,index):
         model.pdata.set_folios(index.row(), number = sb.value())
 

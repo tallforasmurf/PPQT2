@@ -346,7 +346,7 @@ def ask_saving_file(caption, parent=None, starting_path='', filter_string='', en
 
 # The following uses QFileDialog.getOpenFileName to get the name of an existing
 # file and then tests that the file is executable. Note that the static function
-# getOpenFilename does not provide for a QDir.Executable enum-type filter. It
+# getOpenFilename does not provide for a QDir.Filter.Executable enum-type filter. It
 # only supports text-style filters e.g. "*.jpg" but that won't work to choose
 # an executable in every platform. So we test for execut-ability on the return.
 #
@@ -651,12 +651,12 @@ def printKeyEvent(event):
         print('data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
 
 #_Mevs = [2,3,4,5]
-#_Mnm = {QEvent.MouseButtonPress:'Down',
-        #QEvent.MouseButtonRelease:'Up',
-        #QEvent.MouseButtonDblClick:'Dblclick',
-        #QEvent.MouseMove:'Move'}
-#_Mbs = {Qt.LeftButton:'Left',
-        #Qt.RightButton:'Right',
+#_Mnm = {QEvent.Type.MouseButtonPress:'Down',
+        #QEvent.Type.MouseButtonRelease:'Up',
+        #QEvent.Type.MouseButtonDblClick:'Dblclick',
+        #QEvent.Type.MouseMove:'Move'}
+#_Mbs = {Qt.MouseButton.LeftButton:'Left',
+        #Qt.MouseButton.RightButton:'Right',
         #Qt.MidButton:'Middle'}
 
 #def printMouseEvent(event):
@@ -695,18 +695,18 @@ def printKeyEvent(event):
         #104:'WindowUnblocked'
     #}
 #_IQs = {
-    #Qt.ImEnabled:'ImEnable',
+    #Qt.InputMethodQuery.ImEnabled:'ImEnable',
     #Qt.ImMicroFocus:'ImMicroFocus',
-    #Qt.ImCursorRectangle:'CursorRectangle',
-    #Qt.ImFont:'ImFont',
-    #Qt.ImCursorPosition:'CursorPosition',
-    #Qt.ImSurroundingText:'SurroundingText',
-    #Qt.ImCurrentSelection:'CurrentSelection',
-    #Qt.ImMaximumTextLength:'MaxTextLen',
-    #Qt.ImAnchorPosition:'AnchorPosn',
-    #Qt.ImHints:'Hints',
-    #Qt.ImPreferredLanguage:'PreferredLang',
-    #Qt.ImPlatformData:'PlatformData'
+    #Qt.InputMethodQuery.ImCursorRectangle:'CursorRectangle',
+    #Qt.InputMethodQuery.ImFont:'ImFont',
+    #Qt.InputMethodQuery.ImCursorPosition:'CursorPosition',
+    #Qt.InputMethodQuery.ImSurroundingText:'SurroundingText',
+    #Qt.InputMethodQuery.ImCurrentSelection:'CurrentSelection',
+    #Qt.InputMethodQuery.ImMaximumTextLength:'MaxTextLen',
+    #Qt.InputMethodQuery.ImAnchorPosition:'AnchorPosn',
+    #Qt.InputMethodQuery.ImHints:'Hints',
+    #Qt.InputMethodQuery.ImPreferredLanguage:'PreferredLang',
+    #Qt.InputMethodQuery.ImPlatformData:'PlatformData'
     #}
 
 #def printIMQ(event):

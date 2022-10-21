@@ -459,7 +459,7 @@ def _run_dialog( dialog_list, menu_name, main_window ):
 
     ''' Create the dialog, centered over the main window. '''
     dialog = QDialog( main_window )
-    buttons = QDialogButtonBox( QDialogButtonBox.Ok | QDialogButtonBox.Cancel )
+    buttons = QDialogButtonBox( QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel )
     buttons.accepted.connect( dialog.accept )
     buttons.rejected.connect( dialog.reject )
 
