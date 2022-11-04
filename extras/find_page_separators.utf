@@ -1,40 +1,22 @@
-# Find page-separator lines and set up to replace them with either
-# nothing (rep1) or a single newline (rep2).
 #
-# The regex allows for the many cases possible: a variable number of
-# proofer names (possibly zero), and a proofer name can include any
-# character including dash and space (but not backslash thank goodness).
+# Saved user-buttons from the Find panel. Each button definition starts with
+# a number that says what button to set. The button numbers go from 0 (upper
+# left button) to 23 (lower right button). Or use 99 to mean, the unused
+# button with the highest number. The button number is followed by a colon.
 #
-# Match the initial --File:, allow for spaces, and the name of the image
-# file as group 1 (you could use \1 in a replace to get the filename).
+# Next comes a Python dictionary { key:value, key:value...}. Each key is a
+# string such as 'find' or 'regex' that names a part of the Find panel.
+# Each value is either True, False, or a 'quoted string'. In a quoted string,
+# every backslash must be doubled!
 #
-# -+File:\s+([^\.]+)
-#
-# then a literal dot, png, dashes:
-# \.png-+
-#
-# Proofer names as a group are optional: (...)? so the complete
-# list of proofer names is \2
-#
-# One proofer name is \ then anything except a \ or a newline.
-# This pattern repeats at least once, followed by a final \
-#
-# (
-# (\\[^\\\n]+)+\\
-# )?
-#
-# Proofer names or not, the line ends in zero or more dashes
-# and a newline is next.
-#
-# -*(?=\n)
-#
-# So with every backslash doubled to make a Python literal string:
-#
-99: {		'all' : False,
+# The only required key is 'label'. Its value is a string that is the label
+# on the button. Use the 'tooltip' key to give an explanation that pops up
+# when the mouse is over the button.
+23: {		'all' : False,
 	'andnext' : True,
 	'andprior' : False,
 	'case' : False,
-	'find' : '(?<=\\n)-+File:\\s+([^\\.]+)\\.png-+((\\\\[^\\\\\\n]+)+\\\\)?-*?\\n',
+	'find' : '(?<=\\n)-+File:\\s+([^\\.]+)\\.png-+(\\\\[^\\\\\\-]*)+-+\\n',
 	'insel' : False,
 	'label' : 'pseps',
 	'regex' : True,
@@ -43,3 +25,4 @@
 	'rep3' : '',
 	'word' : False
 }
+
