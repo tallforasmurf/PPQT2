@@ -54,7 +54,7 @@ the_book = book.Book(mw)
 from PyQt5.QtCore import QFile, QIODevice, QTextStream
 path_to_sb = os.path.join(path_to_Files,'small_book.txt')
 qfile = QFile(path_to_sb)
-qfile.open(QIODevice.ReadOnly)
+qfile.open(QIODevice.OpenModeFlag.ReadOnly)
 doc_stream = QTextStream(qfile)
 the_book.new_book(doc_stream, 'small_book.txt', path_to_Files)
 # Load the words data with the vocabulary
