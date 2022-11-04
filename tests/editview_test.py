@@ -115,17 +115,17 @@ mw.show()
 # now to the testing
 
 key_names = {
-    'up':Qt.Key_Up,'dn':Qt.Key_Down,'lf':Qt.Key_Left,'rt':Qt.Key_Right
+    'up':Qt.Key.Key_Up,'dn':Qt.Key.Key_Down,'lf':Qt.Key.Key_Left,'rt':Qt.Key.Key_Right
     }
 mod_names = {
-    'ctl':Qt.ControlModifier, 'shf':Qt.ShiftModifier,
-    'alt':Qt.AltModifier }
+    'ctl':Qt.KeyboardModifier.ControlModifier, 'shf':Qt.KeyboardModifier.ShiftModifier,
+    'alt':Qt.KeyboardModifier.AltModifier }
 
 test_target = None
 
 def key_into( key, mod=None, wait=50 ):
     xkey = key_names[key] if isinstance(key,str) else key
-    xmod = mod_names[mod] if mod else Qt.NoModifier
+    xmod = mod_names[mod] if mod else Qt.KeyboardModifier.NoModifier
     QTest.keyClick( test_target, xkey, xmod, wait )
 
 def key_seq(seq):
@@ -148,10 +148,10 @@ assert check_sel('1.')
 
 # click in the linenumber field, select-all, key a 3 and return
 test_target = ev.LineNumber
-QTest.mouseClick(test_target,Qt.LeftButton)
-key_into(Qt.Key_A, 'ctl')
-key_into(Qt.Key_3)
-key_into(Qt.Key_Enter)
+QTest.mouseClick(test_target,Qt.MouseButton.LeftButton)
+key_into(Qt.Key.Key_A, 'ctl')
+key_into(Qt.Key.Key_3)
+key_into(Qt.Key.Key_Enter)
 # focus should now be back to editor, shift-right to select "3."
 test_target = ev.Editor
 key_seq( [('rt','shf'),('rt','shf')] )
@@ -160,18 +160,18 @@ assert check_sel('3.')
 # try a couple of invalid line numbers, each time verifying the
 # selection hasn't changed.
 test_target = ev.LineNumber
-QTest.mouseClick(test_target,Qt.LeftButton)
-key_into(Qt.Key_A, 'ctl')
-key_into(Qt.Key_0)
-key_into(Qt.Key_Enter)
+QTest.mouseClick(test_target,Qt.MouseButton.LeftButton)
+key_into(Qt.Key.Key_A, 'ctl')
+key_into(Qt.Key.Key_0)
+key_into(Qt.Key.Key_Enter)
 assert check_sel('3.')
 assert check_log('invalid line number',logging.ERROR)
-QTest.mouseClick(test_target,Qt.LeftButton)
-key_into(Qt.Key_A, 'ctl')
-key_into(Qt.Key_9)
-key_into(Qt.Key_9)
-key_into(Qt.Key_9)
-key_into(Qt.Key_Enter)
+QTest.mouseClick(test_target,Qt.MouseButton.LeftButton)
+key_into(Qt.Key.Key_A, 'ctl')
+key_into(Qt.Key.Key_9)
+key_into(Qt.Key.Key_9)
+key_into(Qt.Key.Key_9)
+key_into(Qt.Key.Key_Enter)
 assert check_sel('3.')
 assert check_log('invalid line number',logging.ERROR)
 
@@ -179,10 +179,10 @@ assert check_log('invalid line number',logging.ERROR)
 # then verify that the field has been cleared and the editor
 # position hasn't changed.
 test_target = ev.ImageFilename
-QTest.mouseClick(test_target,Qt.LeftButton)
-key_into(Qt.Key_A, 'ctl')
-key_into(Qt.Key_X)
-key_into(Qt.Key_Enter)
+QTest.mouseClick(test_target,Qt.MouseButton.LeftButton)
+key_into(Qt.Key.Key_A, 'ctl')
+key_into(Qt.Key.Key_X)
+key_into(Qt.Key.Key_Enter)
 # focus should now be back to editor with "3." still selected
 check_sel('3.')
 dbg=test_target.text()
@@ -192,20 +192,20 @@ assert check_log('invalid image name',logging.INFO)
 import fonts
 test_target = ev.Editor
 pts = ev.Editor.font().pointSize()
-key_into(Qt.Key_Plus, 'ctl')
+key_into(Qt.Key.Key_Plus, 'ctl')
 ptz  = ev.Editor.font().pointSize()
 assert ptz == (pts+1)
 while ptz < fonts.POINT_SIZE_MAXIMUM:
-    key_into(Qt.Key_Plus, 'ctl')
+    key_into(Qt.Key.Key_Plus, 'ctl')
     ptz = ev.Editor.font().pointSize()
-key_into(Qt.Key_Plus, 'ctl') # take it to max
-key_into(Qt.Key_Plus, 'ctl') # past max
+key_into(Qt.Key.Key_Plus, 'ctl') # take it to max
+key_into(Qt.Key.Key_Plus, 'ctl') # past max
 assert check_log('rejecting zoom',logging.ERROR)
 while ptz > fonts.POINT_SIZE_MINIMUM:
-    key_into(Qt.Key_Minus, 'ctl')
+    key_into(Qt.Key.Key_Minus, 'ctl')
     ptz = ev.Editor.font().pointSize()
-key_into(Qt.Key_Minus, 'ctl') # to min
-key_into(Qt.Key_Minus, 'ctl') # past min
+key_into(Qt.Key.Key_Minus, 'ctl') # to min
+key_into(Qt.Key.Key_Minus, 'ctl') # past min
 assert check_log('rejecting zoom',logging.ERROR)
 # stay up?
 #app.exec_()

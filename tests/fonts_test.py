@@ -42,7 +42,7 @@ def same_font(qf1, qf2):
 
 T.settings.clear()
 myfdb = QFontDatabase()
-genqf = myfdb.systemFont(QFontDatabase.GeneralFont)
+genqf = myfdb.systemFont(QFontDatabase.SystemFont.GeneralFont)
 fonts.initialize(T.settings)
 assert same_font(genqf,fonts.get_general())
 monqf = fonts.get_fixed()

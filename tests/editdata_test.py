@@ -105,7 +105,7 @@ tc.setPosition(5) # middle of 2nd line
 for line in the_doc.cursor_lines(tc):
     assert line == test_lines[1]
 tc.setPosition(10) # middle of 3rd line
-tc.movePosition(1,QTextCursor.KeepAnchor)
+tc.movePosition(1,QTextCursor.MoveMode.KeepAnchor)
 j = 0
 for line in the_doc.cursor_lines(tc):
     assert line == test_lines[j]
