@@ -37,16 +37,18 @@ The following are called from the mainwindow:
 
     shutdown(settings) saves current font choices in the settings.
 
-The following are called by widgets that allow font changes:
+The following are called by all widgets that support font changes:
 
     notify_me(slot) sets the caller's slot to receive the fontChanged
         signal, emitted when the user changes the general or fixed
-        font preference.
+        font preference. The caller's slot can then take whatever action
+        that widget needs to display itself in the new current font,
+        e.g. by calling get_fixed() or get_general().
 
     POINT_SIZE_MINIMUM static constants that limit font zoom range.
     POINT_SIZE_MAXIMUM
 
-    get_fixed() returns a QFont for the selected monospaced font
+    get_fixed() returns a QFont for the currently selected monospaced font
         at a specified or default point size.
 
     get_general() returns a QFont for the selected general font
@@ -55,23 +57,23 @@ The following are called by widgets that allow font changes:
     scale() scales the size of a font up or down 1 point and returns the
         modified QFont.
 
-The following are called by the Preferences dialog:
+The following are called only by the Preferences dialog:
 
     choose_font() puts up a font-choice dialog for fixed or general
         and returns the choice, or None if the user cancels.
-        Called from preferences.
 
-    set_fixed(qf) set the user's choice of mono font, and if it is a
-        change from the previous font, emits the fontChanged(True) signal,
-        so widgets that have monospaced elements can change them.
+    set_fixed(qf) set the user's choice of mono font. If it is a
+        change from the previous font, we emit the fontChanged(True)
+        signal, so widgets that have monospaced elements can change them.
 
-    set_general(qf) set the user's choice of UI font, and if it is
-        a change, emits the fontChanged(False) signal. This is probably
-        only handled by the main window object.
+    set_general(qf) set the user's choice of UI font. If it is
+        a change, we emit the fontChanged(False) signal, so a widget
+        that has a general type of text can change (which is probably
+        only the main window object).
 
     set_defaults() returns to the default families and sizes.
 
-Signal generation: in the new PyQt5 signal/slot API, a signal is an attribute
+Signal generation: as of the PyQt5 signal/slot API, a signal is an attribute
 of a class. This module is mostly "static global" methods, but it needs to
 emit the fontChanged(bool) signal. In order to do that, it needs a class and
 an object of that class. So we define a class FontSignaller, make one
@@ -88,12 +90,11 @@ import constants as C
 from PyQt6.QtCore import QCoreApplication
 _TR = QCoreApplication.translate
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#
-# Create a global object that can send the fontChange signal. Objects
-# that want to know when the user changes font preferences, connect
-# to this signal: fonts.notify_me(my_slot)
-#
+'''
+Create a global object that can send the fontChange signal. Objects that want
+to know when the user changes font preferences, connect to this signal:
+fonts.notify_me(my_slot)
+'''
 
 from PyQt6.QtCore import (
     pyqtSignal,
@@ -142,11 +143,12 @@ font system, loading them from our resources module.
 _FONT_DB.addApplicationFont(':/liberation_mono.ttf')
 _FONT_DB.addApplicationFont(':/cousine.ttf')
 
-# Return a list of available monospaced families for use in the preferences
-# dialog. Because for some stupid reason the font database refuses to
-# acknowledge that liberation mono and cousine are in fact, monospaced,
-# insert those names too.
-
+'''
+Return a list of available monospaced families for use in the preferences
+dialog. Because for some stupid reason the font database refuses to
+acknowledge that liberation mono and cousine are in fact, monospaced, insert
+those names too.
+'''
 def list_of_good_families():
     selection = _FONT_DB.families() # all known family names
     short_list = [family for family in selection if _FONT_DB.isFixedPitch(family) ]
@@ -154,11 +156,16 @@ def list_of_good_families():
     short_list.insert(0,'Cousine')
     return short_list
 
-# Primary use of these global constants is in unit test
+'''
+For all other modules, specify supported range of font sizes.
+'''
 POINT_SIZE_MINIMUM = 6 # smallest point size for zooming
 POINT_SIZE_MAXIMUM = 48 # largest for zooming
 
-# These globals contain the current defaults, see initialize()
+'''
+These global variables store the current default values, see initialize()
+and set_defaults().
+'''
 _MONO_SIZE = C.DEFAULT_FONT_SIZE
 _GENL_SIZE = C.DEFAULT_FONT_SIZE
 _MONO_FAMILY = ''
@@ -166,7 +173,10 @@ _GENL_FAMILY = ''
 _MONO_QFONT = QFont()
 _GENL_QFONT = QFont()
 
-# Set default values for all font settings.
+'''
+Set default values for all font settings. Called during initialization and
+from the Preferences dialog.
+'''
 def set_defaults():
     global _GENL_SIZE,_MONO_SIZE,_GENL_FAMILY,_MONO_FAMILY,_GENL_QFONT,_MONO_QFONT
     # get the name of the font family the DB thinks is the default UI font
@@ -180,7 +190,9 @@ def set_defaults():
     _GENL_QFONT = QFont(_GENL_FAMILY,_GENL_SIZE)
     _MONO_QFONT = QFont(_MONO_FAMILY,_MONO_SIZE)
 
-# Initialize the font system - called from mainwindow.py while starting up
+'''
+Initialize the font system - called from mainwindow.py while starting up
+'''
 def initialize(settings):
     global _GENL_SIZE,_MONO_SIZE,_GENL_FAMILY,_MONO_FAMILY,_GENL_QFONT,_MONO_QFONT
     fonts_logger.debug('Fonts initializing')
@@ -199,9 +211,10 @@ def initialize(settings):
     _GENL_QFONT = QFont( _GENL_FAMILY, _GENL_SIZE )
     _MONO_QFONT = QFont( _MONO_FAMILY, _MONO_SIZE )
 
-# On shutdown, save the user's current font choices. Called from 
-# mainwindow.py at shutdown.
-
+'''
+On shutdown, save the user's current font choices. Called from 
+mainwindow.py at shutdown.
+'''
 def shutdown(settings):
     fonts_logger.debug('Saving font info in settings')
     settings.setValue( 'fonts/general_family', _GENL_FAMILY )
@@ -209,9 +222,11 @@ def shutdown(settings):
     settings.setValue( 'fonts/general_size', _GENL_SIZE )
     settings.setValue( 'fonts/mono_size', _MONO_SIZE )
 
-# At some future time the following get/sets might need some
-# logic, who knows, but for now they just access the above globals.
-
+'''
+At some future time the following get/sets might need some logic, who
+knows, but for now they just access the above globals. Called from a number
+of modules to retrieve the current font preference.
+'''
 def get_fixed(point_size=None):
     qf_mono = QFont(_MONO_QFONT)
     qf_mono.setPointSize(_MONO_SIZE if point_size is None else point_size)
@@ -222,10 +237,12 @@ def get_general(point_size=None):
     qf_general.setPointSize(_GENL_SIZE if point_size is None else point_size)
     return qf_general
 
-# Called from editview and others to zoom a current font up or down 1 point,
-# depending on the key, which should be one of constants.KEYS_ZOOM. Limit the
-# font size range.
-
+'''
+Called from editview and others to zoom a current font up or down 1 point.
+The caller passes the keystroke value, one of the set constants.KEYS_ZOOM, to
+indicate whether it is up or down. We limit the resulting font size range to
+the min/max set above.
+'''
 def scale(zoom_key, qfont ) :
     if zoom_key in C.KEYS_ZOOM :
         pts = qfont.pointSize()
@@ -238,13 +255,10 @@ def scale(zoom_key, qfont ) :
         fonts_logger.error('ignoring non-zoom key argument')
     return qfont
 
-# The following are for use from the Preferences dialog.
-#
-# todo? Could this use QFontComboBox? No it could not, because that's a
-# drop-down not a full dialog. However the preferences dialog could use
-# QFontComboBox instead of calling this method.
-#
-
+'''
+Change the mono font specified to the Preferences module. Notify the
+world that it is happening.
+'''
 def set_fixed(qfont):
     global _MONO_FAMILY, _MONO_QFONT, _MONO_SIZE
     fonts_logger.debug('fonts:set_fixed')
@@ -254,7 +268,10 @@ def set_fixed(qfont):
         _MONO_FAMILY = qfont.family()
         _MONO_SIZE = qfont.pointSize()
         _emit_signal(True)
-
+'''
+Convert a font family name string to a QFont object at the currently
+selected point size. Only used when choosing the fixed font.
+'''
 def font_from_family(family):
     qf = QFont(family)
     qf.setPointSize(_MONO_SIZE)
