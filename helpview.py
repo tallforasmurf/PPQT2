@@ -26,10 +26,11 @@ __email__ = "tallforasmurf@yahoo.com"
 
 Create and manage the display of the Help file.
 
-One object of class HelpWidget is created by the main window the first time
-the user selects File>Show Help. The object initializes a window containing
-only a QWebEngineView, and populates it with either the distributed
-ppqt2help.html file, or with a default text explaining how to open that file.
+One object of class HelpWidget is created by the main window, not at startup
+but the first time the user selects File>Show Help. The object initializes a
+window containing only a QWebEngineView, and populates it with either the
+distributed ppqt2help.html file, or with a default text explaining how to
+open that file.
 
 The window title is set to "PPQT Help Viewer".
 
@@ -70,7 +71,13 @@ from PyQt6.QtWidgets import QWidget, QHBoxLayout
 from PyQt6.QtCore import QCoreApplication, QUrl
 _TR = QCoreApplication.translate
 
-# TODO : find a way to get this translated.
+'''
+This is the default text displayed in the Help window in the event
+that the actual ppqt2help.html file cannot be found.
+
+TODO : find a way to get this translated and displayed in the local language.
+All our other messages are translated.
+'''
 DEFAULT_HTML = '''
 <h1>PPQT Help Viewer</h1>
 <p>This is not the real help text!
@@ -94,28 +101,40 @@ class HelpWidget(QWidget) :
         # Set window title to translated value
         self.setWindowTitle(
             _TR( "title of help viewer window", "PPQT Help Viewer" ) )
-        # Initialize saved geometry, see showEvent()
+        '''
+        Initialize the geometry to be used when next displayed. We do not
+        try to remember the geometry in settings over shutdown, like other
+        windows. See showEvent() for use.
+        '''
         self.last_shape = None
+        '''
+        Create the widget, basically a WebEngineView in a box.
+        '''
         self.view = QWebEngineView()
         hb = QHBoxLayout()
         hb.addWidget(self.view)
         self.setLayout(hb)
-        # Look for the help text file and load it if found.
+        '''
+        Look for the help text file and load it if found. Also set up to learn
+        about a change in the user choice of the Extras folder.
+        '''
         paths.notify_me( self.path_change )
         self.help_url = None
         self.path_change( ) # force a load now
 
-    # Slot to receive the pathChanged signal from the paths module. That
-    # signal is given when any of the standard paths are changed. Use the
-    # extras path to (re)load the help file.
-    #
-    # This is also called from __init__ to do the initial load, and from
-    # keyEvent processing to implement Back when the history stack is empty.
-    #
-    # The file we need to load is not actually ppqt2help.html but the
-    # file sphinx/index.html. QWebView only shows the nice trimmings if we
-    # open that.
-
+    '''
+    
+    Slot to receive the pathChanged signal from the paths module. That signal
+    is given when any of the standard paths are changed. Use the extras path
+    to (re)load the help file.
+    
+    This is also called from __init__ to do the initial load, and from
+    keyEvent processing to implement Back when the history stack is empty.
+    
+    The file we need to load is not actually ppqt2help.html but the file
+    sphinx/index.html. QWebView only shows the nice trimmings if we open
+    that.
+    '''
     def path_change( self, code='extras' ) :
         if code == 'extras' :
             extras_path = paths.get_extras_path()
@@ -128,7 +147,9 @@ class HelpWidget(QWidget) :
             else :
                 self.help_url = None
                 self.view.setHtml( DEFAULT_HTML )
-
+    '''
+    When the user closes the help window, do not close it but hide it.
+    '''
     def closeEvent( self, event ) :
         self.last_shape = self.saveGeometry()
         event.ignore()
@@ -138,7 +159,9 @@ class HelpWidget(QWidget) :
     def showEvent( self, event ) :
         if self.last_shape : # is not None
             self.restoreGeometry( self.last_shape )
-
+    '''
+    Handle a few key events for convenience.
+    '''
     def keyPressEvent( self, event ) :
         kkey = int( int(event.modifiers().value) & C.KBD_MOD_PAD_CLEAR) | int(event.key() )
         if kkey == C.CTL_F :
@@ -208,4 +231,3 @@ if __name__ == '__main__':
     test_page = HelpWidget()
     test_page.show()
     the_app.exec()
-        
