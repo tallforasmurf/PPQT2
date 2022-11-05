@@ -66,12 +66,14 @@ The following are called only by the Preferences dialog:
         change from the previous font, we emit the fontChanged(True)
         signal, so widgets that have monospaced elements can change them.
 
+    Note the following has never been implemented! Not here or in Preferences.
     set_general(qf) set the user's choice of UI font. If it is
         a change, we emit the fontChanged(False) signal, so a widget
         that has a general type of text can change (which is probably
         only the main window object).
 
-    set_defaults() returns to the default families and sizes.
+    set_defaults() returns to the default families and sizes and optionally
+        emits the font-changed signal.
 
 Signal generation: as of the PyQt5 signal/slot API, a signal is an attribute
 of a class. This module is mostly "static global" methods, but it needs to
@@ -177,7 +179,7 @@ _GENL_QFONT = QFont()
 Set default values for all font settings. Called during initialization and
 from the Preferences dialog.
 '''
-def set_defaults():
+def set_defaults(signal=True):
     global _GENL_SIZE,_MONO_SIZE,_GENL_FAMILY,_MONO_FAMILY,_GENL_QFONT,_MONO_QFONT
     # get the name of the font family the DB thinks is the default UI font
     _GENL_FAMILY = _FONT_DB.systemFont(QFontDatabase.SystemFont.GeneralFont).family()
@@ -189,6 +191,7 @@ def set_defaults():
     # create QFonts based on the defaults
     _GENL_QFONT = QFont(_GENL_FAMILY,_GENL_SIZE)
     _MONO_QFONT = QFont(_MONO_FAMILY,_MONO_SIZE)
+    if signal: _emit_signal(True)
 
 '''
 Initialize the font system - called from mainwindow.py while starting up
@@ -196,7 +199,7 @@ Initialize the font system - called from mainwindow.py while starting up
 def initialize(settings):
     global _GENL_SIZE,_MONO_SIZE,_GENL_FAMILY,_MONO_FAMILY,_GENL_QFONT,_MONO_QFONT
     fonts_logger.debug('Fonts initializing')
-    set_defaults()
+    set_defaults(signal=False)
     # Read the saved names out of the settings, with above defaults
     _GENL_FAMILY = settings.value( 'fonts/general_family', _GENL_FAMILY )
     _MONO_FAMILY = settings.value( 'fonts/mono_family', _MONO_FAMILY )
