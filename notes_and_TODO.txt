@@ -34,7 +34,7 @@ fonts.py	6 C
 helpview.py	6 C
 imageview.py	6 Cx
 loupeview.py	6 C needs work
-mainwindow.py	6
+mainwindow.py	6 C
 meta2bin.py	not needed?
 metadata.py	6
 noteview.py	6 C
@@ -45,7 +45,7 @@ PPQT2.py	6 C
 preferences.py	6 C
 resources.py	6 x
 translators.py	6 C
-utilities.py	6
+utilities.py	6 C
 worddata.py	6 C
 wordview.py	6 C
 xlate_utils.py	6 C
