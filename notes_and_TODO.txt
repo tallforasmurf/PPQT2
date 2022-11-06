@@ -1,5 +1,33 @@
 
 Examine, convert, and try tests/*.py
+book_test
+chardata
+charview
+colors 		X
+constants
+dictionaries
+editdata
+editview
+findview
+findview-1
+fnotdata
+fnotview
+fonts
+helpview
+imageview
+mainwindow
+mainwindow1
+mainwindow2
+metadata
+notedata
+noteview
+pagedata
+pageview
+paths
+utilities
+worddata
+wordview
+
 make venv from imac
 try pyinstaller
 
