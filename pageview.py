@@ -387,7 +387,7 @@ class PageTableView(QTableView):
         Column 3, folio value, can be less as it is normally an arabic or
         roman number of not more than three digits.
         '''
-        hdr.resizeSection(3,pix/2)
+        hdr.resizeSection(3,int(pix/2))
         ''' Let column 4, proofers, fill the rest of the frame '''
         hdr.setStretchLastSection(True)
 
