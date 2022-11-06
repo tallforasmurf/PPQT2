@@ -33,7 +33,7 @@ T.make_app()
 
 import constants as C
 import colors
-from PyQt5.QtGui import (QColor,QBrush, QTextCharFormat)
+from PyQt6.QtGui import (QColor,QBrush, QTextCharFormat)
 
 # check initialize
 # check defaults on empty settings
