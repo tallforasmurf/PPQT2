@@ -35,9 +35,9 @@ Common boilerplate for test drivers:
   T.open(path,title) to make T.book open on real book
      path defaults to path_to_Files, title defaults to small_book.txt
 '''
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QSettings
-from PyQt5.QtCore import Qt,QPoint,QSize
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import QSettings
+from PyQt6.QtCore import Qt,QPoint,QSize
 import sys
 import os
 import logging
@@ -70,10 +70,10 @@ path_to_Sikuli = '.'
 def set_up_paths():
     global path_to_Files,path_to_Sikuli,path_to_Tests
     _path = os.path.realpath(__file__)
-    while 'ppqt' != os.path.basename(_path):
+    while 'PPQT2' != os.path.basename(_path):
         _path = os.path.dirname(_path)
     sys.path.append(_path) # allow imports of ppqt modules
-    path_to_Tests = os.path.join(_path,'Tests')
+    path_to_Tests = os.path.join(_path,'tests')
     path_to_Files = os.path.join(path_to_Tests,'Files')
     os.chdir(path_to_Files) # make that cwd
     path_to_Sikuli = os.path.join(path_to_Tests,'Sikuli')
