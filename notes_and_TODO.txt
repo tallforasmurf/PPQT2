@@ -1,4 +1,9 @@
 
+Examine, convert, and try tests/*.py
+make venv from imac
+try pyinstaller
+
+
 Changing spellchecker to Spylls (hunspell in pure python)
 https://spylls.readthedocs.io/en/latest/
 https://pypi.org/project/spylls/
@@ -25,8 +30,8 @@ editview.py	6 C
 findview.py	6 C
 fnotdata.py	6 C
 fnotview.py	6 C
-fonts.py	6
-helpview.py	6
+fonts.py	6 C
+helpview.py	6 C
 imageview.py	6 Cx
 loupeview.py	6 C needs work
 mainwindow.py	6
