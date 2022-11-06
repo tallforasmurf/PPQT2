@@ -49,7 +49,8 @@ assert T.settings.value('colors/current_line') == '#fafae0'
 assert T.settings.value('colors/current_line_style') == QTextCharFormat.UnderlineStyle.NoUnderline
 assert T.settings.value('colors/find_range') == "#ccffff"
 assert T.settings.value('colors/find_range_style') == QTextCharFormat.UnderlineStyle.NoUnderline
-assert T.settings.value('colors/modified_name') == '#ff0000' # == 'red'
+#now done with literal value in editview.py
+#assert T.settings.value('colors/modified_name') == '#ff0000' # == 'red'
 
 # make some changes
 SIGCOUNT = 0
@@ -58,26 +59,24 @@ def dingdong():
     SIGCOUNT += 1
 colors.notify_me(dingdong)
 
-colors.set_modified_color(QColor('#101010'))
-assert SIGCOUNT == 1
-assert colors.get_modified_color().name() == '#101010'
+# colors.set_modified_color(QColor('#101010'))
+#assert SIGCOUNT == 1
+#assert colors.get_modified_color().name() == '#101010'
 
 qtcf = QTextCharFormat()
 qtcf.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
 qtcf.setUnderlineColor(QColor('#202020'))
 colors.set_current_line_format(qtcf)
-assert SIGCOUNT == 2
-s0cf = QTextCharFormat()
-colors.get_current_line_format(s0cf)
+assert SIGCOUNT == 1
+s0cf = colors.get_current_line_format()
 assert '#202020' == s0cf.underlineColor().name()
 assert s0cf.underlineStyle() == QTextCharFormat.UnderlineStyle.WaveUnderline
 
 s0cf.setUnderlineStyle(QTextCharFormat.UnderlineStyle.NoUnderline)
 s0cf.setBackground(QColor('#303030'))
 colors.set_find_range_format(s0cf)
-assert SIGCOUNT == 3
-s0cf = QTextCharFormat()
-colors.get_find_range_format(s0cf)
+assert SIGCOUNT == 2
+s0cf = colors.get_find_range_format(s0cf)
 assert '#303030' == s0cf.background().color().name()
 assert s0cf.underlineStyle() == QTextCharFormat.UnderlineStyle.NoUnderline
 
@@ -85,7 +84,7 @@ s1cf = QTextCharFormat()
 s1cf.setUnderlineStyle(QTextCharFormat.UnderlineStyle.DashDotDotLine)
 s1cf.setUnderlineColor(QColor('#303030'))
 colors.set_scanno_format(s1cf)
-assert SIGCOUNT == 4
+assert SIGCOUNT == 3
 s2cf = colors.get_scanno_format()
 assert s2cf.underlineStyle() == QTextCharFormat.UnderlineStyle.DashDotDotLine
 assert s2cf.underlineColor().name() == '#303030'
@@ -94,7 +93,7 @@ s3cf = QTextCharFormat()
 s3cf.setUnderlineColor(QColor('#404040'))
 s3cf.setUnderlineStyle(QTextCharFormat.UnderlineStyle.DashUnderline)
 colors.set_spelling_format(s3cf)
-assert SIGCOUNT == 5
+assert SIGCOUNT == 4
 s4cf = colors.get_spelling_format()
 assert s4cf.underlineStyle() == QTextCharFormat.UnderlineStyle.DashUnderline
 assert s4cf.underlineColor().name() == '#404040'
@@ -106,7 +105,7 @@ assert T.settings.value('colors/scanno_color') == '#303030' # == 'thistle'
 assert T.settings.value('colors/scanno_style') == QTextCharFormat.UnderlineStyle.DashDotDotLine
 assert T.settings.value('colors/current_line') == '#202020'
 assert T.settings.value('colors/find_range') == '#303030'
-assert T.settings.value('colors/modified_name') == '#101010' # == 'red'
+#assert T.settings.value('colors/modified_name') == '#101010' # == 'red'
 
 T.settings.clear() # don't leave junk for next time...
 
