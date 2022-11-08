@@ -4,8 +4,8 @@ book_test
 chardata
 charview
 colors 		X
-constants
-dictionaries
+constants	X
+dictionaries	X
 editdata
 editview
 findview
