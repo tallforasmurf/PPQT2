@@ -43,7 +43,7 @@ import os
 import logging
 import io
 log_stream = io.StringIO()
-logging.basicConfig(stream=log_stream,level=logging.INFO)
+logging.basicConfig(stream=log_stream,level=logging.DEBUG)
 def check_log(text, level):
     '''check that the log_stream contains the given text at the given level,
        and rewind the log, then return T/F'''
