@@ -24,33 +24,29 @@ __email__ = "tallforasmurf@yahoo.com"
 '''
 Unit test for dictionaries.py
 '''
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Unit test module boilerplate stuff
-#
-# set up logging to a stream
 import logging
 import sys
 import os
 import test_boilerplate as T
 T.set_up_paths()
 T.make_app()
+T.settings.clear()
 
 # Initialize paths to Tests/Files/extras/dicts (from paths_test)
 import paths
 test_extras = os.path.join(T.path_to_Files,'extras')
-T.settings.clear()
 T.settings.setValue("paths/extras_path", test_extras)
+test_dicts = os.path.join(test_extras,'dictionaries')
 paths.initialize(T.settings)
-assert paths.get_extras_path() == test_extras
-test_dicts = paths.get_dicts_path()
-
+paths.set_extras_path(test_extras)
+paths.set_dicts_path(test_dicts)
 import dictionaries
 T.settings.setValue("dictionaries/default_tag",'en_GB')
 dictionaries.initialize(T.settings)
 assert 'en_GB' == dictionaries.get_default_tag()
 
-# There are 3 dicts in Tests/Files/extras/dicts: en_US, en_GB, fr_FR
-# There are 4 in Tests/Files/extras, those 3 plus de_DE
+# There are 3 dicts in Tests/Files/extras/dictionaries: en_US, en_GB, fr_FR
+# There is one more in Tests/Files/extras, de_DE
 
 expect_tag_list = {'en_US':test_dicts,'en_GB':test_dicts,'fr_FR':test_dicts,'de_DE':test_extras}
 tag_list = dictionaries.get_tag_list()
@@ -75,7 +71,7 @@ os.remove(aff_path) # clean up Files
 
 # "skipping" should appear if we check a path twice
 tag_list = dictionaries.get_tag_list(test_dicts)
-assert T.check_log("Skipping",logging.INFO)
+assert T.check_log("Skipping",logging.DEBUG)
 
 # Check the spellcheck object: bad input makes not is_valid
 # and all words are ok
