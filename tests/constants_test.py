@@ -25,39 +25,9 @@ __email__ = "tallforasmurf@yahoo.com"
 Unit test for constants.py, which consists simply of including the
 module, so causing an error on any syntax error.
 '''
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Unit test module boilerplate stuff
-#
-# set up logging to a stream
-import io
-log_stream = io.StringIO()
+import test_boilerplate as T
 import logging
-logging.basicConfig(stream=log_stream,level=logging.INFO)
-def check_log(text, level):
-    '''check that the log_stream contains the given text at the given level,
-       and rewind the log, then return T/F'''
-    global log_stream
-    level_dict = {logging.DEBUG:'DEBUG',
-                  logging.INFO:'INFO',
-                  logging.WARN:'WARN',
-                  logging.ERROR:'ERROR',
-                  logging.CRITICAL:'CRITICAL'}
-    log_data = log_stream.getvalue()
-    x = log_stream.seek(0)
-    x = log_stream.truncate()
-    return (-1 < log_data.find(text)) & (-1 < log_data.find(level_dict[level]))
+T.set_up_paths()
+T.make_app()
 
-# add .. dir to sys.path so we can import ppqt modules which
-# are up one directory level
-import sys
-import os
-path = os.path.realpath(__file__)
-path = os.path.dirname(path)
-path = os.path.dirname(path)
-sys.path.append(path)
-#from PyQt5.QtWidgets import QApplication
-#app = QApplication(sys.argv)
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-import constants
+import constants as C
