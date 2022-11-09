@@ -12,7 +12,7 @@ findview
 findview-1
 fnotdata
 fnotview
-fonts
+fonts		X
 helpview
 imageview
 mainwindow
