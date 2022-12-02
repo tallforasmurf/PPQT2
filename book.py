@@ -641,14 +641,13 @@ Each line must have a key such as Title, a colon, then a value.'''),
 
     '''
     When the dicts path changes, recreate our speller. A change in dicts path
-    might not mean a change in the spell check because we might be getting
-    the dict for this book from its own folder. But make the change in case.
-    It will show up next time words gets refreshed.
+    might not mean a change in the spell check because at this point the actual
+    dict_tag is not changing. But make the change in case.
     '''
     def path_change_slot(self, what_path):
         if what_path == 'dicts' :
             self._speller = dictionaries.Speller(
-                self.dict_tag, self.book_folder)
+                self.dict_tag, paths.get_dicts_path() )
     '''
     Note when metadata changes its modified state. Each module that stows
     metadata may have its own bit-flag, so that type of metadata can change
