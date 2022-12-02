@@ -203,18 +203,24 @@ class ImageDisplay(QWidget):
         return [self.cursor_to_image.isChecked(), self.image_to_cursor.isChecked()]
 
     '''
-    
     The Book calls here after it has loaded a book which it is sure has
     defined page data, passing the path to the folder containing the book. If
-    we can find a folder named 'pngs' we record that path and enable our
-    widgets, and fake a cursorMoved signal to display the current edit page.
+    we can find a folder named 'pngs' or one named 'images' we record that
+    path as self.png_dir. Having what looks like a folder of page images,
+    enable our widgets, and fake a cursorMoved signal to display the current
+    edit page.
     
-    We save the QDir self.png_dir and use it when loading page image files.
+    There is no guarantee that this folder contains all, or indeed any, of
+    the page images. But when it is time to display, see _show_page(), that
+    is where we look for the image file named in the page-boundary line.
     '''
     def set_path(self,book_folder_path):
         book_dir = QDir(book_folder_path)
-        if book_dir.exists('pngs') :
-            self.png_dir = QDir(book_dir.absoluteFilePath('pngs'))
+        folder_name = None
+        if book_dir.exists('pngs') : folder_name = 'pngs'
+        elif book_dir.exists('images') : folder_name = 'images'
+        if folder_name :
+            self.png_dir = QDir(book_dir.absoluteFilePath(folder_name))
             self._enable()
             self.cursor_move()
 
